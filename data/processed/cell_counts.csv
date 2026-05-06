@@ -1,0 +1,73 @@
+condition,replicate,cell_type,count
+Control,1,T cells,425.5
+Control,1,B cells,261.3
+Control,1,Myeloid,203.5
+Control,1,NK cells,161.9
+Control,2,T cells,384.9
+Control,2,B cells,256.6
+Control,2,Myeloid,192.3
+Control,2,NK cells,139.3
+Control,3,T cells,419.7
+Control,3,B cells,264.6
+Control,3,Myeloid,205.8
+Control,3,NK cells,159.0
+Control,4,T cells,421.2
+Control,4,B cells,300.3
+Control,4,Myeloid,198.4
+Control,4,NK cells,129.5
+Control,5,T cells,426.6
+Control,5,B cells,262.7
+Control,5,Myeloid,205.8
+Control,5,NK cells,144.1
+Control,6,T cells,416.7
+Control,6,B cells,267.7
+Control,6,Myeloid,212.0
+Control,6,NK cells,142.2
+Treatment A,1,T cells,467.3
+Treatment A,1,B cells,317.7
+Treatment A,1,Myeloid,235.3
+Treatment A,1,NK cells,181.8
+Treatment A,2,T cells,482.4
+Treatment A,2,B cells,331.8
+Treatment A,2,Myeloid,264.3
+Treatment A,2,NK cells,167.9
+Treatment A,3,T cells,465.8
+Treatment A,3,B cells,309.4
+Treatment A,3,Myeloid,236.8
+Treatment A,3,NK cells,195.6
+Treatment A,4,T cells,472.9
+Treatment A,4,B cells,308.9
+Treatment A,4,Myeloid,210.9
+Treatment A,4,NK cells,187.0
+Treatment A,5,T cells,488.4
+Treatment A,5,B cells,333.8
+Treatment A,5,Myeloid,213.8
+Treatment A,5,NK cells,179.4
+Treatment A,6,T cells,477.1
+Treatment A,6,B cells,327.9
+Treatment A,6,Myeloid,241.4
+Treatment A,6,NK cells,179.3
+Treatment B,1,T cells,527.2
+Treatment B,1,B cells,357.2
+Treatment B,1,Myeloid,257.0
+Treatment B,1,NK cells,208.6
+Treatment B,2,T cells,488.8
+Treatment B,2,B cells,350.2
+Treatment B,2,Myeloid,243.3
+Treatment B,2,NK cells,185.8
+Treatment B,3,T cells,510.0
+Treatment B,3,B cells,382.9
+Treatment B,3,Myeloid,236.2
+Treatment B,3,NK cells,214.7
+Treatment B,4,T cells,484.7
+Treatment B,4,B cells,350.0
+Treatment B,4,Myeloid,254.7
+Treatment B,4,NK cells,207.8
+Treatment B,5,T cells,527.8
+Treatment B,5,B cells,370.3
+Treatment B,5,Myeloid,245.5
+Treatment B,5,NK cells,188.9
+Treatment B,6,T cells,530.4
+Treatment B,6,B cells,352.6
+Treatment B,6,Myeloid,228.8
+Treatment B,6,NK cells,176.9

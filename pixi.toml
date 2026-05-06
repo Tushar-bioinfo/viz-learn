@@ -1,0 +1,49 @@
+[workspace]
+authors = ["Tushar Singh"]
+channels = ["conda-forge"]
+name = "python-plotting-guide"
+platforms = ["osx-arm64", "osx-64", "linux-64"]
+
+[activation.env]
+MPLBACKEND = "Agg"
+
+[dependencies]
+python = ">=3.11,<3.13"
+pip = ">=24,<26"
+pandas = ">=2.2,<3"
+numpy = ">=1.26,<3"
+matplotlib = ">=3.9,<4"
+seaborn = ">=0.13,<0.14"
+plotly = ">=5.24,<6"
+jupyterlab = ">=4.3,<5"
+ipykernel = ">=6.29,<7"
+scikit-learn = ">=1.6,<2"
+scipy = ">=1.14,<2"
+statsmodels = ">=0.14,<0.15"
+nbformat = ">=5.10,<6"
+nbconvert = ">=7.16,<8"
+
+[pypi-dependencies]
+kaleido = ">=0.2.1,<0.3"
+
+[tasks.lab]
+cmd = ["jupyter", "lab"]
+
+[tasks.import-check]
+cmd = [
+  "python",
+  "-c",
+  """
+import importlib
+import platform
+
+packages = ["numpy", "pandas", "matplotlib", "seaborn", "plotly", "sklearn", "scipy", "statsmodels", "nbformat"]
+print(f"Python: {platform.python_version()}")
+for name in packages:
+    module = importlib.import_module(name)
+    print(f"{name}: {getattr(module, '__version__', 'unknown')}")
+""",
+]
+
+[tasks.execute-notebook]
+cmd = ["jupyter", "nbconvert", "--to", "notebook", "--execute", "--inplace", "notebooks/01_plotting_walkthrough.ipynb"]
