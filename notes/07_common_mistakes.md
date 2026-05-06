@@ -1,9 +1,9 @@
 # Common Mistakes and Fixes
 
-    Most plotting mistakes are not coding mistakes. They are communication mistakes.
-    The table below lists common problems and practical fixes.
+Most plotting mistakes are not coding mistakes. They are communication mistakes.
+The table below lists common problems and practical fixes.
 
-    | Mistake | Why it hurts | Better fix |
+| Mistake | Why it hurts | Better fix |
 | --- | --- | --- |
 | Using bars for raw distributions | Bars hide spread and outliers. | Use box, violin, strip, or swarm plots. |
 | Too many colors | The viewer cannot track the mapping. | Limit colors to meaningful groups. |
@@ -16,8 +16,8 @@
 | Alphabetical category order by accident | Story and comparison become harder. | Set a meaningful category order. |
 | Using interactivity as a substitute for design | A weak figure is still weak when interactive. | Make the static design clear first. |
 
-    ## Extra Advice
+## Extra Advice
 
-    - Always ask what question the figure should answer.
-    - If a reader needs a long explanation, the figure may need redesign.
-    - A cleaner plot usually wins over a more decorative plot.
+- Always ask what question the figure should answer.
+- If a reader needs a long explanation, the figure may need redesign.
+- A cleaner plot usually wins over a more decorative plot.

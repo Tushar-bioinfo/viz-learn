@@ -1,9 +1,9 @@
 # Common Parameters Across Matplotlib, Seaborn, and Plotly
 
-    Many plotting ideas are shared across libraries even when the exact function names differ.
-    Learn the concept first, then learn each library's spelling of that concept.
+Many plotting ideas are shared across libraries even when the exact function names differ.
+Learn the concept first, then learn each library's spelling of that concept.
 
-    | Concept | Matplotlib | Seaborn | Plotly | Meaning |
+| Concept | Matplotlib | Seaborn | Plotly | Meaning |
 | --- | --- | --- | --- | --- |
 | Figure size | `fig, ax = plt.subplots(figsize=(w, h))` | `plt.subplots(figsize=...)` or figure-level `height=` / `aspect=` | `fig.update_layout(width=..., height=...)` | Controls how much space the plot gets. Matplotlib and Seaborn use inches. Plotly uses pixels. |
 | Title | `ax.set_title(...)` | `ax.set_title(...)` or `g.fig.suptitle(...)` | `fig.update_layout(title=...)` | Adds the main message of the chart. |
@@ -19,13 +19,13 @@
 | Axis limits | `ax.set_xlim(...)`, `ax.set_ylim(...)` | Same Matplotlib methods on the returned axes | `fig.update_xaxes(range=[...])` | Limits control zoom. Do not crop data without a reason. |
 | Grid lines | `ax.grid(True, alpha=...)` | `sns.set_theme(style='whitegrid')` and `ax.grid(...)` | `fig.update_xaxes(showgrid=True)` | Light grids help people read values. |
 | Fonts | `plt.rcParams[...]` or text methods | Use Matplotlib font settings or Seaborn context helpers | `fig.update_layout(font=dict(...))` | Keep fonts readable and consistent across all panels. |
-| Subplots | `plt.subplots(...)` | `FacetGrid`, `catplot`, `relplot`, or Matplotlib subplots` | `make_subplots(...)` | Subplots compare related views without leaving one figure. |
+| Subplots | `plt.subplots(...)` | `FacetGrid`, `catplot`, `relplot`, or plain Matplotlib subplots | `make_subplots(...)` | Subplots compare related views without leaving one figure. |
 | Annotations | `ax.annotate(...)`, `ax.text(...)` | Same Matplotlib tools after plotting | `fig.add_annotation(...)` | Annotations call attention to an important point. |
 | Error bars | `ax.errorbar(...)` | `errorbar=` on modern categorical and line functions | `error_y=...` or `error_x=...` | Show uncertainty or variability around a summary value. |
 | Export settings | `fig.savefig(path, dpi=300, bbox_inches='tight')` | Same Matplotlib save step using `g.fig.savefig(...)` | `fig.write_html(...)` and `fig.write_image(...)` | Export settings control resolution, file type, and whether interactivity is preserved. |
 
-    ## Reading the Table
+## Reading the Table
 
-    - Matplotlib is usually the most direct and explicit.
-    - Seaborn often uses Matplotlib underneath, so many final edits still happen on the axes.
-    - Plotly tends to split styling between the initial function call and `update_layout` or `update_*axes`.
+- Matplotlib is usually the most direct and explicit.
+- Seaborn often uses Matplotlib underneath, so many final edits still happen on the axes.
+- Plotly tends to split styling between the initial function call and `update_layout` or `update_*axes`.

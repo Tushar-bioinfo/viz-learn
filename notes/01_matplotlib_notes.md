@@ -1,19 +1,19 @@
 # Matplotlib Notes
 
-    ## What Matplotlib Is
+## What Matplotlib Is
 
-    Matplotlib is the foundational plotting library in the scientific Python ecosystem.
-    It gives you direct control over figures, axes, labels, legends, annotations, and export settings.
+Matplotlib is the foundational plotting library in the scientific Python ecosystem.
+It gives you direct control over figures, axes, labels, legends, annotations, and export settings.
 
-    ## When to Use It
+## When to Use It
 
-    - When you need exact control over layout and styling.
-    - When you are building publication figures panel by panel.
-    - When another library returns Matplotlib axes and you want to polish them.
+- When you need exact control over layout and styling.
+- When you are building publication figures panel by panel.
+- When another library returns Matplotlib axes and you want to polish them.
 
-    ## Important Functions
+## Important Functions
 
-    | Function | What it does | Typical use |
+| Function | What it does | Typical use |
 | --- | --- | --- |
 | `plt.subplots` | Creates the figure and axes objects. | Starting almost any Matplotlib workflow. |
 | `ax.plot` | Draws lines. | Time series or ordered x-values. |
@@ -24,9 +24,9 @@
 | `ax.errorbar` | Draws points or lines with error bars. | Uncertainty summaries. |
 | `fig.savefig` | Writes the figure to disk. | Final export. |
 
-    ## Important Parameters
+## Important Parameters
 
-    | Parameter | Why it matters |
+| Parameter | Why it matters |
 | --- | --- |
 | `figsize` | Controls overall canvas size. |
 | `color` | Sets line or fill color. |
@@ -37,33 +37,33 @@
 | `cmap` | Chooses a colormap for numeric color mapping. |
 | `dpi` | Controls raster export sharpness. |
 
-    ## Strengths
+## Strengths
 
-    - Extremely flexible.
-    - Strong export support for PNG, SVG, and PDF.
-    - Excellent for multi-panel figures and journal-style polishing.
+- Extremely flexible.
+- Strong export support for PNG, SVG, and PDF.
+- Excellent for multi-panel figures and journal-style polishing.
 
-    ## Weaknesses
+## Weaknesses
 
-    - More verbose than Seaborn or Plotly.
-    - Beginners often struggle with the figure-versus-axes distinction.
-    - Default styles can look plain unless you customize them.
+- More verbose than Seaborn or Plotly.
+- Beginners often struggle with the figure-versus-axes distinction.
+- Default styles can look plain unless you customize them.
 
-    ## Best Practices
+## Best Practices
 
-    - Start with `fig, ax = plt.subplots(...)`.
-    - Set titles and labels on the axes, not with loose global commands.
-    - Save with `bbox_inches='tight'` to avoid cut-off labels.
-    - Use consistent `rcParams` if many figures should share one style.
+- Start with `fig, ax = plt.subplots(...)`.
+- Set titles and labels on the axes, not with loose global commands.
+- Save with `bbox_inches='tight'` to avoid cut-off labels.
+- Use consistent `rcParams` if many figures should share one style.
 
-    ## Common Mistakes
+## Common Mistakes
 
-    - Mixing `plt.*` stateful calls and `ax.*` object-oriented calls without understanding the difference.
-    - Forgetting to set figure size before drawing a complex plot.
-    - Using default color cycles without checking readability.
-    - Exporting low-resolution PNG files for print.
+- Mixing `plt.*` stateful calls and `ax.*` object-oriented calls without understanding the difference.
+- Forgetting to set figure size before drawing a complex plot.
+- Using default color cycles without checking readability.
+- Exporting low-resolution PNG files for print.
 
-    ## Documentation
+## Documentation
 
-    - [Matplotlib documentation](https://matplotlib.org/stable/)
-    - [Matplotlib gallery](https://matplotlib.org/stable/gallery/index.html)
+- [Matplotlib documentation](https://matplotlib.org/stable/)
+- [Matplotlib gallery](https://matplotlib.org/stable/gallery/index.html)

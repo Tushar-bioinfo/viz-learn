@@ -1,6 +1,6 @@
 # Common Parameters Intersection
 
-    | Concept | Matplotlib | Seaborn | Plotly |
+| Concept | Matplotlib | Seaborn | Plotly |
 | --- | --- | --- | --- |
 | Figure size | `fig, ax = plt.subplots(figsize=(w, h))` | `plt.subplots(figsize=...)` or figure-level `height=` / `aspect=` | `fig.update_layout(width=..., height=...)` |
 | Title | `ax.set_title(...)` | `ax.set_title(...)` or `g.fig.suptitle(...)` | `fig.update_layout(title=...)` |
@@ -16,7 +16,7 @@
 | Axis limits | `ax.set_xlim(...)`, `ax.set_ylim(...)` | Same Matplotlib methods on the returned axes | `fig.update_xaxes(range=[...])` |
 | Grid lines | `ax.grid(True, alpha=...)` | `sns.set_theme(style='whitegrid')` and `ax.grid(...)` | `fig.update_xaxes(showgrid=True)` |
 | Fonts | `plt.rcParams[...]` or text methods | Use Matplotlib font settings or Seaborn context helpers | `fig.update_layout(font=dict(...))` |
-| Subplots | `plt.subplots(...)` | `FacetGrid`, `catplot`, `relplot`, or Matplotlib subplots` | `make_subplots(...)` |
+| Subplots | `plt.subplots(...)` | `FacetGrid`, `catplot`, `relplot`, or plain Matplotlib subplots | `make_subplots(...)` |
 | Annotations | `ax.annotate(...)`, `ax.text(...)` | Same Matplotlib tools after plotting | `fig.add_annotation(...)` |
 | Error bars | `ax.errorbar(...)` | `errorbar=` on modern categorical and line functions | `error_y=...` or `error_x=...` |
 | Export settings | `fig.savefig(path, dpi=300, bbox_inches='tight')` | Same Matplotlib save step using `g.fig.savefig(...)` | `fig.write_html(...)` and `fig.write_image(...)` |

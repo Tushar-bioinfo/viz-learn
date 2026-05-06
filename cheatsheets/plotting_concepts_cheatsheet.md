@@ -1,6 +1,6 @@
 # Plotting Concepts Cheatsheet
 
-    | Concept | Meaning | Quick reminder |
+| Concept | Meaning | Quick reminder |
 | --- | --- | --- |
 | Figure | Full canvas | One figure can contain many axes. |
 | Axes | Single plotting area | Most labels and titles belong here. |
@@ -10,9 +10,9 @@
 | Colormap | Numeric color scale | Use for heatmaps and numeric encodings. |
 | DPI | Raster sharpness | 300+ for print. |
 
-    ## Which Plot for Which Question
+## Which Plot for Which Question
 
-    | Question | Use |
+| Question | Use |
 | --- | --- |
 | How does a number change across ordered time or distance? | Line plot |
 | Do two numeric variables move together? | Scatter plot |
@@ -30,10 +30,10 @@
 | How do high-dimensional samples cluster after reduction? | PCA or UMAP-like embedding |
 | Which genes have both large fold change and strong significance? | Volcano plot |
 
-    ## Fast Workflow
+## Fast Workflow
 
-    1. Identify the question.
-    2. Check the data shape.
-    3. Pick the simplest matching plot.
-    4. Label clearly.
-    5. Export carefully.
+1. Identify the question.
+2. Check the data shape.
+3. Pick the simplest matching plot.
+4. Label clearly.
+5. Export carefully.

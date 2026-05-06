@@ -1,7 +1,7 @@
 # Unique Parameters and Ideas by Library
 
-    Shared plotting concepts are helpful, but each library has features that feel natural only inside that library.
-    These are the ideas worth learning after you understand the common plotting vocabulary.
+Shared plotting concepts are helpful, but each library has features that feel natural only inside that library.
+These are the ideas worth learning after you understand the common plotting vocabulary.
 
 
 ## Matplotlib

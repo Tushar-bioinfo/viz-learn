@@ -1,74 +1,74 @@
 # Overall Plotting Notes
 
-    Plotting is the process of turning data into a visual object that people can read quickly.
-    A good figure reduces mental work. It makes the important pattern visible without forcing
-    the reader to hunt for it.
+Plotting is the process of turning data into a visual object that people can read quickly.
+A good figure reduces mental work. It makes the important pattern visible without forcing
+the reader to hunt for it.
 
-    ## Basic Vocabulary
+## Basic Vocabulary
 
-    - **Figure**: the full canvas that holds one or more plots.
-    - **Axes**: the plotting area where data is drawn. One figure can hold multiple axes.
-    - **Subplot**: one axes object inside a grid of several axes.
-    - **Title**: a short sentence that tells the reader what the figure is about.
-    - **Axis label**: text that names the meaning of the x-axis or y-axis.
-    - **Tick**: the marks and values shown along an axis.
-    - **Legend**: the guide that explains colors, line types, or marker shapes.
-    - **Annotation**: extra text or arrows used to point at something important.
-    - **Resolution / DPI**: dots per inch. Higher DPI gives sharper raster images.
+- **Figure**: the full canvas that holds one or more plots.
+- **Axes**: the plotting area where data is drawn. One figure can hold multiple axes.
+- **Subplot**: one axes object inside a grid of several axes.
+- **Title**: a short sentence that tells the reader what the figure is about.
+- **Axis label**: text that names the meaning of the x-axis or y-axis.
+- **Tick**: the marks and values shown along an axis.
+- **Legend**: the guide that explains colors, line types, or marker shapes.
+- **Annotation**: extra text or arrows used to point at something important.
+- **Resolution / DPI**: dots per inch. Higher DPI gives sharper raster images.
 
-    ## Figure Anatomy
+## Figure Anatomy
 
-    A simple workflow is:
+A simple workflow is:
 
-    1. Start with a question.
-    2. Check what columns or variables answer that question.
-    3. Pick a plot type that matches the data and the message.
-    4. Draw a clear draft.
-    5. Improve labels, colors, and spacing.
-    6. Export the final figure in the right format.
+1. Start with a question.
+2. Check what columns or variables answer that question.
+3. Pick a plot type that matches the data and the message.
+4. Draw a clear draft.
+5. Improve labels, colors, and spacing.
+6. Export the final figure in the right format.
 
-    ## Common Data Shapes
+## Common Data Shapes
 
-    - **One numeric column**: histogram, KDE, box plot.
-    - **One category plus one numeric column**: bar plot, box plot, violin plot, strip plot.
-    - **Two numeric columns**: scatter plot, line plot.
-    - **Matrix or table of values**: heatmap.
-    - **High-dimensional matrix**: PCA or UMAP-like embedding after dimensionality reduction.
+- **One numeric column**: histogram, KDE, box plot.
+- **One category plus one numeric column**: bar plot, box plot, violin plot, strip plot.
+- **Two numeric columns**: scatter plot, line plot.
+- **Matrix or table of values**: heatmap.
+- **High-dimensional matrix**: PCA or UMAP-like embedding after dimensionality reduction.
 
-    ## Labels, Legends, and Ticks
+## Labels, Legends, and Ticks
 
-    - Titles should describe the message, not just repeat the variable name.
-    - Axis labels should include units when units exist.
-    - Legends should be removed if they repeat labels already printed on the plot.
-    - Tick labels should be readable without rotating them unless rotation is truly needed.
-    - Keep decimal precision honest. Do not show five decimals when one is enough.
+- Titles should describe the message, not just repeat the variable name.
+- Axis labels should include units when units exist.
+- Legends should be removed if they repeat labels already printed on the plot.
+- Tick labels should be readable without rotating them unless rotation is truly needed.
+- Keep decimal precision honest. Do not show five decimals when one is enough.
 
-    ## Color
+## Color
 
-    - Use color to encode meaning, not decoration.
-    - Use categorical palettes for groups and continuous colormaps for numeric values.
-    - Avoid relying on red versus green alone because many readers have color-vision limitations.
-    - Keep background and grid lines quiet so the data carries the attention.
+- Use color to encode meaning, not decoration.
+- Use categorical palettes for groups and continuous colormaps for numeric values.
+- Avoid relying on red versus green alone because many readers have color-vision limitations.
+- Keep background and grid lines quiet so the data carries the attention.
 
-    ## DPI and File Formats
+## DPI and File Formats
 
-    - **PNG**: raster format. Good for slides, notebooks, and quick sharing.
-    - **SVG**: vector format. Good for diagrams, line art, and web use.
-    - **PDF**: vector-friendly and common for papers and supplements.
-    - **HTML**: best for interactive Plotly figures.
-    - Use **300 DPI** or higher for print-style raster exports.
+- **PNG**: raster format. Good for slides, notebooks, and quick sharing.
+- **SVG**: vector format. Good for diagrams, line art, and web use.
+- **PDF**: vector-friendly and common for papers and supplements.
+- **HTML**: best for interactive Plotly figures.
+- Use **300 DPI** or higher for print-style raster exports.
 
-    ## Plotting Workflow
+## Plotting Workflow
 
-    - Start with a rough plot and confirm the data is correct.
-    - Check scales, missing values, and category order early.
-    - Simplify: remove decoration that does not help interpretation.
-    - Polish: fonts, spacing, line widths, and export settings.
-    - Verify: open the saved file and check it outside the notebook.
+- Start with a rough plot and confirm the data is correct.
+- Check scales, missing values, and category order early.
+- Simplify: remove decoration that does not help interpretation.
+- Polish: fonts, spacing, line widths, and export settings.
+- Verify: open the saved file and check it outside the notebook.
 
-    ## Which Plot Should I Use?
+## Which Plot Should I Use?
 
-    | Question | Good plot | Why |
+| Question | Good plot | Why |
 | --- | --- | --- |
 | How does a number change across ordered time or distance? | Line plot | Use when x-axis order matters. |
 | Do two numeric variables move together? | Scatter plot | Add color or shape for groups. |
@@ -86,16 +86,16 @@
 | How do high-dimensional samples cluster after reduction? | PCA or UMAP-like embedding | Use for exploration, not final proof on its own. |
 | Which genes have both large fold change and strong significance? | Volcano plot | A common genomics summary plot. |
 
-    ## Good Habits
+## Good Habits
 
-    - Use consistent fonts and color palettes across a project.
-    - Prefer direct labels or simple legends.
-    - Save source data tables when the plot is important.
-    - Keep notebooks reproducible by fixing random seeds.
-    - Re-read the figure as if you were a new reader, not the author.
+- Use consistent fonts and color palettes across a project.
+- Prefer direct labels or simple legends.
+- Save source data tables when the plot is important.
+- Keep notebooks reproducible by fixing random seeds.
+- Re-read the figure as if you were a new reader, not the author.
 
-    ## Official References
+## Official References
 
-    - [Matplotlib user guide](https://matplotlib.org/stable/users/index.html)
-    - [Seaborn tutorial](https://seaborn.pydata.org/tutorial.html)
-    - [Plotly Python graphing library](https://plotly.com/python/)
+- [Matplotlib user guide](https://matplotlib.org/stable/users/index.html)
+- [Seaborn tutorial](https://seaborn.pydata.org/tutorial.html)
+- [Plotly Python graphing library](https://plotly.com/python/)
