@@ -63,14 +63,26 @@ Small ideas can merge moves 2–3 or 4–5 into one slide. Never skip move 1 or 
 
 ## 7. Maths without mystery
 This is where decks usually fail: a table of numbers with no formula, an equation with no meaning, a number from nowhere.
-- **Equations** (`equation`): give `read:` (the formula said as a sentence), a plain meaning for every symbol, and the running example plugged in, which the kit computes when you use `expr:`. Add `code:` if the learner writes code. At most 5 terms; split a longer formula into two slides, inside first.
+- **Equations** (`equation`): a plain meaning for every symbol (its `short:` or `says:` is written under the term on the formula), the running example plugged in (the kit computes it when you use `expr:`), and `read:` (the formula said as a sentence). `read:` and `code:` sit one tap away in the more sheet. At most 5 terms; split a longer formula into two slides, inside first.
+- **Totals made of pieces** (variance = counting part + wobble part; a library split into genes): show a `parts` bar, so the sizes are seen, not only summed. Use `rows` when the split changes with something (the wobble's share as the mean grows).
 - **Arithmetic** (`calc`): one line per operation, each with `say:` (what this step does) and `expr:`. The kit writes the symbols, the numbers with their names underneath, and the result. Give each result a `name:`, so the next line can use it and the learner sees where it came from.
 - **Tables** (`table`): computed columns use `expr:` and `says:`. The kit shows a formula chip, reveals one column per step, and works the focus row in full. Keep the table at 8 rows or fewer and 6 columns or fewer.
 - **Distributions and tests:** show where a statistic falls on its distribution (a chart with an `area` mark for the tail) before saying "p-value".
 - **Notation for papers** (goal c): show the paper's notation (`tex:` with `[term]` markers), then the same thing with your symbols and numbers. Name every index and operator (`\sum_i`, `\hat{\theta}`) in `symbols`.
 
-## 8. Charts that teach
-- One chart, one claim. The slide title is the claim, the chart proves it, and the `caption` says where to look ("The open dots sit far above the line.").
+## 8. Show it: visuals that teach
+The visual is the slide; words only point at it. Pick the visual by the job:
+| The point | Visual |
+|---|---|
+| a shape, a spread or a trend in data | `chart` (with marks on the thing the title claims) |
+| a whole made of pieces, or a share that changes | `parts` |
+| a count or a rate ("1 in 20") | `units` |
+| stages or a process | `flow` |
+| the one number to remember | `stat` |
+| two methods, two outcomes | `compare` with a `stat` on each side |
+| a formula | `equation` (terms named on the formula) |
+- Put the explanation **on** the visual: label marks (`label:`), not bullet points about them. Beside a visual keep 0–2 short points; one point sits above a full-width visual.
+- One chart, one claim. The slide title is the claim, the chart proves it, and the `caption` says where to look ("The open dots sit far above the line."). Captions name shapes, never colours.
 - Mark the thing the claim is about: a `point`, `vline`, `band` or `area` mark, with its value in the label. The orange accent (`focus: true`) is for the one thing that matters now; context series are `color: mist`.
 - Use at most 3 coloured series. More than that means you need two charts or a grey context.
 - Fix the axes so slider extremes still fit (`x.min/max`, `y.min/max`), and set a `step` on each mark so the chart builds one layer per click.
@@ -89,6 +101,6 @@ Fix what fails, rebuild, recheck. Report `check: 0 warnings · sheets viewed 2/2
 ## 10. Writing
 - Simple English: short sentences, active voice, "you". One idea per sentence.
 - Titles are claims ("Deeper samples give every gene more reads"), not topics ("Sequencing depth").
-- Keep points to 24 words or fewer, and no more than 4 per slide. Put depth in `more:`, which opens a sheet; never put what the slide needs in there.
+- Few words: titles ≤ 8, leads ≤ 12, points ≤ 16 (at most 2 beside a visual), captions ≤ 20. The linter counts the words on each slide (about 40 on an idea slide). Put depth in `more:`, which opens a sheet; never put what the slide needs in there.
 - Keep units on every number. Say when data is simulated.
 - Use `==text==` for the one phrase to remember, `**bold**` sparingly, `$tex$` for inline symbols.

@@ -1,6 +1,6 @@
 ---
 name: deck
-description: Lucid learning decks. Builds a slide deck that teaches one topic from the ground up, in an ember Liquid Glass style (clear glass over a black-to-orange glow), for desktop and phone. Every equation is explained term by term and run with real numbers, every table column shows the formula that made it, charts are annotated and interactive, new ideas are bridged from things the learner already knows, and checkpoints make the learner predict before reading on. Asks 3-5 quick questions first to find what the learner knows. Use for "make a deck", "teach me X visually", "lucid", "learning slides", "explain X as slides", "glass deck", "walk me through this method", or any request to understand a method, equation, statistic or pipeline step by step.
+description: Lucid learning decks. Builds a slide deck that teaches one topic from the ground up, in the proff black-and-orange Liquid Glass style (grey glass on black, orange headlines), for desktop and phone. The visuals carry the story and words stay few. Every equation names each term on the formula and runs with real numbers, every table column shows the formula that made it, charts are annotated and interactive, new ideas are bridged from things the learner already knows, and checkpoints make the learner predict before reading on. Asks 3-5 quick questions first to find what the learner knows. Use for "make a deck", "teach me X visually", "lucid", "learning slides", "explain X as slides", "glass deck", "walk me through this method", or any request to understand a method, equation, statistic or pipeline step by step.
 ---
 
 # Lucid: decks that explain, not just show
@@ -27,6 +27,7 @@ You are a story partner first and a slide builder second. The learner should fin
 - **No idea before its rung.** A concept is used only after a slide introduces it, or after the learner said they know it (`introduces:` and `uses:`).
 - **Need before name.** Show the problem a tool solves before you name the tool.
 - **One claim per slide.** The title is the claim, and the slide's visual proves it. The `lead` line links it to the previous slide with a "But…" or a "So…".
+- **Show it, then say little.** Every content slide has a visual that makes its claim visible: a chart, a `parts` bar, units, a flow, a stat, or a formula with its terms named. Put the explanation on the visual (labelled marks, a caption that says where to look), not in bullet points. Detail goes to `more:`. The linter counts the words on each slide.
 - **Bridge from the known.** Each major new idea gets one analogy from the learner's anchors, with the mapping spelled out and where it breaks.
 - **Predict before reveal.** Add a `predict` slide at least every 7 content slides. Open with the pretest from the probe.
 - **Simple English.** Keep sentences under about 20 words. Define each term once as `plain words (term)`, and spell out each abbreviation on first use. Never write "clearly", "obviously", "just" or "imagine": show it instead.

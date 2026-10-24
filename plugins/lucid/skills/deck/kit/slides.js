@@ -1,5 +1,6 @@
-/* Lucid slides: one renderer per slide type, plus visuals (chart, stat, units, flow, code, image, eqn, svg).
-   A renderer returns { node, steps, show(k), layout(), audit() }. Steps reveal with data-step="k" (1-based). */
+/* Lucid slides: one renderer per slide type, plus visuals (chart, stat, units, parts, flow, code, image, eqn, svg).
+   A renderer returns { node, steps, show(k), layout(), audit(), more }. Steps reveal with data-step="k" (1-based);
+   `more` is HTML the renderer moved off the slide's face into the more sheet. */
 (function () {
   'use strict';
   const L = window.Lucid;
@@ -106,6 +107,56 @@
           L.svgEl('circle', { cx, cy, r, fill: on ? L.colors.accent : 'none', stroke: on ? L.colors.accent : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
       };
       vis.classList.remove('plate');
+    } else if (v.parts) {
+      const p = v.parts, box = h('div', 'parts'); vis.appendChild(box); vis.classList.remove('plate');
+      const svg = L.svgEl('svg', {}); box.appendChild(svg);
+      const items = (p.items || []).map(it => typeof it === 'string' ? { label: it } : it), multi = !!p.rows;
+      if (p.build) R.steps = multi ? p.rows.length : items.length;
+      const GREYS = ['#8b8984', '#5f5e5a', '#aeaca6', '#4a4946'];
+      const fillOf = (it, i) => it.color ? (L.colors[it.color] || it.color) : it.focus ? L.colors.accent : GREYS[i % GREYS.length];
+      R.layout = () => {
+        const W = box.clientWidth, H = box.clientHeight; if (!W || !H) return;
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
+        const val = x => L.val(x, ctx.scope, `slide ${ctx.index + 1} parts`), fmt = x => L.fmt(x, p.fmt);
+        const g = st => L.svgEl('g', st ? { 'data-pstep': st } : {}, svg);
+        const text = (par, cls, x, y, t, anchor = 'middle') => { const e = L.svgEl('text', { class: cls, x, y, 'text-anchor': anchor }, par); e.textContent = t; return e; };
+        // one bar per row; each piece's width is its share of the row's total. parOf(i) is the group piece i is drawn in
+        const bar = (parOf, vals, x0, w, y, bh) => { const sum = vals.reduce((a, b) => a + b, 0) || 1; let x = x0; return vals.map((v, i) => {
+          const ww = Math.max(0, w * v / sum), r = { x, w: ww, cx: x + ww / 2, v, share: v / sum };
+          if (ww > 0.5) L.svgEl('rect', { x: x + (i ? 2 : 0), y, width: Math.max(1, ww - (i ? 2 : 0) - (i < vals.length - 1 ? 2 : 0)), height: bh, rx: Math.min(10, bh / 4), fill: fillOf(items[i] || {}, i) }, parOf(i));
+          x += ww; return r; }); };
+        if (!multi) {
+          const vals = items.map(it => val(it.value)), sum = vals.reduce((a, b) => a + b, 0);
+          const tot = p.total ? (p.total.value != null ? val(p.total.value) : sum) : null;
+          const bh = Math.min(88, H * .22), topH = tot != null ? 92 : 0, labH = 76, y0 = Math.max(0, (H - (topH + bh + 26 + labH)) / 2) + topH;
+          const last = p.build ? items.length : 0;
+          if (tot != null) { const gt = g(last); const t = L.svgEl('text', { class: 'pt', x: W / 2, y: y0 - 50, 'text-anchor': 'middle' }, gt);
+            t.innerHTML = `<tspan class="pk">${L.esc(L.plain(p.total.label || 'total', ctx.scope))}  </tspan><tspan class="pv">${L.esc(fmt(tot))}</tspan>`;
+            L.svgEl('path', { d: `M2,${y0 - 14}V${y0 - 26}H${W - 2}V${y0 - 14}M${W / 2},${y0 - 26}V${y0 - 34}`, class: 'lead-line', fill: 'none' }, gt); }
+          const gs = items.map((_, i) => g(p.build ? i + 1 : 0)), segs = bar(i => gs[i], vals, 0, W, y0, bh); segs.forEach((sg, i) => sg.g = gs[i]);
+          // labels under their piece; a narrow piece's label slides along and keeps a leader to it
+          const lab = items.map((it, i) => { const a = p.share ? L.fmt(vals[i] / (sum || 1) * 100, 0) + '%' : fmt(vals[i]), b = L.plain(it.label || '', ctx.scope);
+            return { a, b, w: Math.max(L.measure(a, 30, 700), L.measure(b, 24, 560)) + 18, x: segs[i].cx }; });
+          for (let i = 1; i < lab.length; i++) lab[i].x = Math.max(lab[i].x, lab[i - 1].x + (lab[i - 1].w + lab[i].w) / 2);
+          for (let i = lab.length - 1; i >= 0; i--) lab[i].x = Math.min(lab[i].x, i < lab.length - 1 ? lab[i + 1].x - (lab[i + 1].w + lab[i].w) / 2 : W - lab[i].w / 2);
+          lab.forEach((l, i) => { l.x = Math.max(l.w / 2, l.x); const gi = segs[i].g, yb = y0 + bh;
+            if (Math.abs(l.x - segs[i].cx) > 6) L.svgEl('path', { d: `M${segs[i].cx},${yb + 4}L${l.x},${yb + 18}`, class: 'lead-line', fill: 'none' }, gi);
+            text(gi, 'pv', l.x, yb + 52, l.a); text(gi, 'pk', l.x, yb + 84, l.b); });
+        } else {
+          const n = p.rows.length, legH = 54, rowH = Math.min(96, (H - legH) / n), bh = rowH * .58;
+          const lw = Math.max(...p.rows.map(r => L.measure(L.plain(r.label || '', ctx.scope), 24, 640))) + 26, endW = p.share ? 96 : 120, bw = Math.max(40, W - lw - endW);
+          const fi = Math.max(0, items.findIndex(it => it.focus));
+          let lx = 0; items.forEach((it, i) => { L.svgEl('rect', { x: lx, y: 10, width: 22, height: 22, rx: 5, fill: fillOf(it, i) }, svg); const t = text(svg, 'pk', lx + 32, 29, L.plain(it.label || '', ctx.scope), 'start'); lx += 32 + L.measure(t.textContent, 24, 560) + 34; });
+          const y0 = legH + Math.max(0, (H - legH - n * rowH) / 2);
+          p.rows.forEach((r, j) => { const gj = g(p.build ? j + 1 : 0), y = y0 + j * rowH + (rowH - bh) / 2, vals = (r.values || []).map(val);
+            text(gj, 'pr', 0, y + bh / 2 + 9, L.plain(r.label || '', ctx.scope), 'start');
+            const sg = bar(() => gj, vals, lw, bw, y, bh), sum = vals.reduce((a, b) => a + b, 0);
+            text(gj, 'pt', lw + bw + 14, y + bh / 2 + 9, p.share ? L.fmt(sg[fi].share * 100, 0) + '%' : fmt(sum), 'start'); });
+        }
+        R.show(ctx.k);
+      };
+      R.show = k => svg.querySelectorAll('[data-pstep]').forEach(e => e.classList.toggle('off', +e.dataset.pstep > k));
+      R.audit = () => (!multi && items.some(it => it.value == null)) ? ['every part needs a `value`'] : [];
     } else if (v.flow) {
       const f = v.flow, box = h('div', 'flow'); vis.appendChild(box); vis.classList.remove('plate');
       const nodes = (f.nodes || []).map((n, i) => { const o = typeof n === 'string' ? { label: n } : n; const e = h('div', 'node g thin' + (f.focus === i ? ' focus' : ''), `<div class="nl">${md(o.label)}</div>${o.sub ? `<div class="ns">${md(o.sub)}</div>` : ''}`);
@@ -131,6 +182,7 @@
       R.show = k => { svg.querySelectorAll('[data-fstep]').forEach(g => { g.style.opacity = +g.dataset.fstep <= k ? 1 : 0; g.style.transition = 'opacity .5s'; }); };
     } else if (v.code) {
       vis.classList.remove('plate'); vis.classList.add('vis-code'); const pre = h('div', 'codebox', codeHTML(v.code, v.terms)); vis.appendChild(pre);
+      R.layout = () => fitCode(pre);
     } else if (v.image) {
       const box = h('div', 'imgbox'); const img = h('img'); img.src = (window.LUCID_ASSETS || {})[v.image] || v.image; img.alt = v.alt || ''; box.appendChild(img); vis.appendChild(box);
     } else if (v.eqn) {
@@ -138,7 +190,7 @@
       R.layout = () => { L.renderTex(box, L.interp(tex, ctx.scope, true), true); fitEq(box); };
     } else if (v.svg) {
       const box = h('div', 'imgbox'); box.innerHTML = v.svg; vis.appendChild(box);
-    } else L.err(`slide ${ctx.index + 1}`, `visual needs one of chart, stat, units, flow, code, image, eqn, svg`);
+    } else L.err(`slide ${ctx.index + 1}`, `visual needs one of chart, stat, units, parts, flow, code, image, eqn, svg`);
     const tg = v.chart && ctx.charts.length && ctx.charts[ctx.charts.length - 1].toggle;
     if (v.caption || tg) { const f = h('div', 'vfoot'); if (v.caption) f.appendChild(h('div', 'cap', md(v.caption))); if (tg) f.appendChild(tg); vis.appendChild(f); }
     return R;
@@ -160,6 +212,12 @@
     while (k.scrollWidth > box.clientWidth - 8 && fs > 26 && guard++ < 30) { fs -= 3; box.style.fontSize = fs + 'px'; }
   }
   L.fitEq = fitEq;
+  // shrink code until its longest line fits; below 20px it wraps instead, so it stays readable on a phone
+  function fitCode(box) {
+    box.style.fontSize = ''; box.style.whiteSpace = ''; let fs = parseFloat(getComputedStyle(box).fontSize), guard = 0;
+    while (box.scrollWidth > box.clientWidth + 1 && fs > 20 && guard++ < 30) { fs -= 1; box.style.fontSize = fs + 'px'; }
+    if (box.scrollWidth > box.clientWidth + 1) { box.style.whiteSpace = 'pre-wrap'; box.style.overflowWrap = 'anywhere'; }
+  }
 
   // underline overlays under \htmlClass{lt lt-<id>} spans (terms) inside a container
   function overlays(container, colorOf, cls = 'lt', halos = true) {
@@ -205,6 +263,30 @@
     if (need > pad0) container.style.paddingBottom = need + 'px';
   }
 
+  // the name of each term, right under the formula: the formula is the figure, so its labels sit on it.
+  // Labels go under the first place a term appears; a label that would touch its neighbour drops a row and keeps a leader.
+  function termLabels(container, items) {
+    container.querySelectorAll('.tlab').forEach(e => e.remove());
+    container.style.paddingBottom = '';
+    const base = container.getBoundingClientRect(), sc = base.width / (container.offsetWidth || 1) || L.scale || 1;
+    const low = [...container.querySelectorAll('.katex .base, .ul')].reduce((m, e) => Math.max(m, e.getBoundingClientRect().bottom), base.top);
+    const top0 = (low - base.top) / sc + 14, rows = [];
+    items.forEach(it => {
+      const sp = container.querySelector(`.lt-${CSS.escape(it.id)}`); if (!sp || !it.text) return;
+      const r = sp.getBoundingClientRect(); if (!r.width) return;
+      const lab = h('div', 'tlab', `<span class="lk"></span>${L.esc(it.text)}`); lab.dataset.term = it.id; container.appendChild(lab);
+      const w = lab.offsetWidth, hh = lab.offsetHeight;
+      const cx = Math.max(w / 2, Math.min(container.offsetWidth - w / 2, (r.left + r.width / 2 - base.left) / sc));
+      let row = 0; while (rows.some(b => b.row === row && Math.abs(b.cx - cx) < (b.w + w) / 2 + 16) && row < 4) row++;
+      const y = top0 + rows.filter(b => b.row < row).reduce((m, b) => Math.max(m, b.bottom - top0 + 10), 0);
+      rows.push({ cx, w, row, bottom: y + hh });
+      lab.style.left = cx + 'px'; lab.style.top = y + 'px';
+      lab.querySelector('.lk').style.height = Math.max(0, y - top0 + 8) + 'px';
+    });
+    const need = rows.length ? Math.max(...rows.map(b => b.bottom)) - container.offsetHeight + 6 : 0;
+    if (need > 0) container.style.paddingBottom = need + 'px';
+  }
+
   // ---------- slide types ----------
   const T = {};
   L.types = T;
@@ -220,7 +302,7 @@
   };
 
   T.chapter = (s, ctx) => {
-    const node = h('section', 'slide s-statement');
+    const node = h('section', 'slide s-statement s-chapter');
     const n = (L.chapters || []).indexOf(s.title) + 1;
     const g = h('div', 'g enter');
     g.innerHTML = `<div class="eyebrow" style="margin-bottom:22px">${n ? `Part ${n} of ${L.chapters.length}` : 'Next part'}</div><div class="big">${md(s.title)}</div>${s.q ? `<div class="sub">${md(s.q)}</div>` : ''}`;
@@ -237,7 +319,7 @@
   T.idea = (s, ctx) => {
     const node = h('section', 'slide s-idea'); node.appendChild(head(s));
     const v = s.visual ? L.visual(s.visual, ctx) : null, pts = s.points || [];
-    const layout = s.layout || (v && pts.length ? 'split' : v ? 'wide' : 'text-only');
+    const layout = s.layout || (v && pts.length > 1 ? 'split' : v ? 'wide' : 'text-only');   // one point: above a full-width visual
     const body = h('div', 'body ' + layout + (s.layout === 'vis-left' ? ' split vis-left' : '')); node.appendChild(body);
     let nPts = 0;
     if (pts.length || s.text) {
@@ -294,51 +376,45 @@
       main = String(s.tex).replace(/\[([A-Za-z_][\w]*)\]/g, (_, n) => { if (!ids.includes(n)) ids.push(n); return wrapT(n, sym(n)); });
     } else L.err(`slide ${ctx.index + 1}`, 'equation needs expr or tex');
     const inputs = (s.order || ids).filter(n => n !== s.lhs);
-    const order = s.lhs ? [...inputs, s.lhs] : inputs;
+    const order = s.lhs ? [s.lhs, ...inputs] : inputs;   // reading order: the result, then its parts
     const colorOf = n => n === s.lhs ? L.colors.accent : L.colors[TERMC[Math.min(Math.max(0, inputs.indexOf(n)), 3)]] || L.colors.mist;
     // the numbers a computable equation runs on: a term's `value`, else the name in scope
     const eqScope = () => { const sc = L.scope(ctx.scope, {}); inputs.forEach(n => { const t = term(n); if (t.value != null) sc[n] = L.val(t.value, ctx.scope, `term ${n}`); }); return sc; };
     const eq = h('div', 'eqmain'); wrap.appendChild(eq);
-    const left = h('div', 'eqleft'); wrap.appendChild(left);
-    const termBox = h('div', 'terms'); wrap.appendChild(termBox);
-    let step = 1;
-    if (s.read) { const r = h('div', 'eqrow'); r.dataset.step = ++step; r.innerHTML = `<span class="tag">Say it</span><span class="read">“${md(s.read)}”</span>`; left.appendChild(r); }
-    const termSteps = {};
-    const cards = order.map(n => {
-      const card = h('div', 'term'); card.style.setProperty('--tc', colorOf(n)); card.dataset.step = ++step; termSteps[n] = step;
-      card.innerHTML = `<span class="sw"></span><span class="sym"></span><span class="says">${md(term(n).says || '<i>meaning missing</i>')}</span><div class="eg"></div>`;
-      L.renderTex(card.querySelector('.sym'), sym(n), false); termBox.appendChild(card); return [n, card];
-    });
-    let plugRow = null;
-    if (s.plug !== false && (computable || s.plug)) { plugRow = h('div', 'eqrow'); plugRow.dataset.step = ++step; plugRow.innerHTML = `<span class="tag">With numbers</span><span class="val"></span>`; left.appendChild(plugRow); }
-    if (s.code) { const r = h('div', 'eqrow'); r.dataset.step = ++step; const tc = {}; order.forEach(n => tc[n] = colorOf(n)); r.innerHTML = `<span class="tag">In code</span>`; r.appendChild(h('div', 'codebox', codeHTML(s.code, tc))); left.appendChild(r); }
-    if (s.note) { const r = h('div', 'eqrow'); r.dataset.step = ++step; r.innerHTML = `<span class="tag">So</span><span class="p">${md(s.note)}</span>`; left.appendChild(r); }
-    if (!left.children.length) left.remove();
-    if (left.children.length || order.length) wrap.classList.add('two');
+    // step 1 is the bare formula; then each term gets its name (one per step, or all at once when there are many)
+    const build = s.build ?? order.length <= 4, termSteps = {};
+    let step = 1; order.forEach(n => { termSteps[n] = build ? ++step : 2; }); if (!build && order.length) step = 2;
+    let numRow = null;
+    if (s.plug !== false && (computable || s.plug)) { numRow = h('div', 'eqnum'); numRow.dataset.step = ++step; numRow.innerHTML = `<span class="tag">With our numbers</span><span class="val"></span>`; wrap.appendChild(numRow); }
+    if (s.note) { const r = h('div', 'eqso'); r.dataset.step = ++step; r.innerHTML = md(s.note); wrap.appendChild(r); }
+    // said aloud, and in code: one tap away in the more sheet, so the face stays the formula and its names
+    const tc = {}; order.forEach(n => tc[n] = colorOf(n));
+    const more = (s.read ? `<div class="eyebrow">Say it</div><div class="p say">“${md(s.read)}”</div>` : '') + (s.code ? `<div class="eyebrow">In code</div><div class="codebox">${codeHTML(s.code, tc)}</div>` : '');
     const draw = () => {
       L.renderTex(eq, L.interp(main, ctx.scope, true), true); fitEq(eq);
       const sc = computable ? eqScope() : ctx.scope;
       let result = null;
       if (computable) { result = L.try(s.expr, sc, `slide ${ctx.index + 1} equation`); if (s.lhs && s.store !== false) { ctx.scope[s.lhs] = result; sc[s.lhs] = result; } }
-      cards.forEach(([n, card]) => { const t = term(n), v = n === s.lhs ? result : t.value != null ? sc[n] : typeof sc[n] === 'number' ? sc[n] : null;
-        card.querySelector('.eg').innerHTML = v != null && !Number.isNaN(v) ? `e.g. <b>${L.esc(L.fmt(v, t.fmt))}</b>${t.eg ? ' · ' + md(t.eg) : ''}` : t.eg ? `e.g. ${md(t.eg)}` : ''; });
-      if (plugRow) {
-        const v = plugRow.querySelector('.val');
+      if (numRow) {
+        const v = numRow.querySelector('.val');
         if (computable) {
           const sub = L.tex(s.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null, wrap: (n, t) => wrapT(n, t), fmt: s.fmt });
           L.renderTex(v, `${sub} = \\htmlClass{res}{${L.numTex(result, s.fmt)}}`, false);
         } else L.renderTex(v, L.interp(String(s.plug).replace(/\[([A-Za-z_]\w*)\]/g, (_, n) => wrapT(n, sym(n))), ctx.scope, true), false);
       }
       L.fill(node, ctx.scope);
-      requestAnimationFrame(() => { overlays(eq, colorOf); if (plugRow) overlays(plugRow, colorOf, 'lt', false); R.show(ctx.k); });
+      requestAnimationFrame(() => {
+        overlays(eq, colorOf, 'lt', false); if (numRow) overlays(numRow, colorOf, 'lt', false);
+        termLabels(eq, order.map(n => ({ id: n, text: L.plain(term(n).short || term(n).says || '', ctx.scope) })));
+        R.show(ctx.k);
+      });
     };
     const R = {
-      node, steps: step,
+      node, steps: step, more,
       layout: draw,
       show: k => {
-        node.querySelectorAll('.ul').forEach(u => { const st = termSteps[u.dataset.term] ?? 1; u.classList.toggle('off', eq.contains(u) ? k < st : false); });
-        node.querySelectorAll('.halo').forEach(hh => { const st = termSteps[hh.dataset.term]; hh.classList.toggle('off', !(st && k === st && eq.contains(hh))); });
-        node.querySelectorAll('.term').forEach(t => t.classList.toggle('now', +t.dataset.step === k));
+        node.querySelectorAll('.ul').forEach(u => u.classList.toggle('off', eq.contains(u) ? k < (termSteps[u.dataset.term] ?? 1) : false));
+        eq.querySelectorAll('.tlab').forEach(t => t.classList.toggle('off', k < (termSteps[t.dataset.term] ?? 1)));
       },
       audit: () => { const out = []; const kx = eq.querySelector('.katex'); if (kx && kx.scrollWidth > eq.clientWidth + 4) out.push('formula is wider than its box');
         const miss = order.filter(n => !term(n).says); if (miss.length) out.push(`a term has no meaning: ${miss.join(', ')}`); return out; },
@@ -466,8 +542,9 @@
     const r = h('div', 'recap enter'); node.appendChild(r);
     r.appendChild(h('div', 'answer g warm', `<div class="at">Answer</div><div class="ap">${md(s.answer || '')}</div>`));
     const box = (title, list, i) => { if (!list || !list.length) return; const b = h('div', 'box g thin'); b.dataset.step = i; b.appendChild(h('div', 'eyebrow', title)); b.appendChild(points(list, 0, false)); r.appendChild(b); };
-    box('Keep these', s.points, 1); box('Where it breaks', s.breaks, 2); box('Go next', s.next, 3);
-    return { node, steps: [s.points, s.breaks, s.next].filter(x => x && x.length).length };
+    box('Keep these', s.points, 1); box('Where it breaks', s.breaks, 2);
+    const more = s.next && s.next.length ? `<div class="eyebrow">Go next</div><ul class="pts">${s.next.map(x => `<li><span class="pip"></span><span>${md(x)}</span></li>`).join('')}</ul>` : '';
+    return { node, steps: [s.points, s.breaks].filter(x => x && x.length).length, more };
   };
 
   T.map = (s, ctx) => {

@@ -26,7 +26,7 @@ FIELDS = {
     "statement": {"text", "sub"},
     "idea": {"points", "text", "visual", "layout", "build"},
     "predict": {"q", "options", "answer", "why", "kind", "visual"},
-    "equation": {"expr", "tex", "lhs", "terms", "order", "read", "plug", "code", "note", "fmt", "store"},
+    "equation": {"expr", "tex", "lhs", "terms", "order", "read", "plug", "code", "note", "fmt", "store", "build"},
     "calc": {"lines", "given", "visual"},
     "table": {"rows", "from", "cols", "focus"},
     "bridge": {"from", "to", "pairs", "breaks"},
@@ -37,7 +37,12 @@ FIELDS = {
 }
 REQUIRED = {"predict": ["q", "options"], "equation": [], "calc": ["lines"], "table": ["cols"], "bridge": ["pairs"],
             "compare": ["a", "b"], "quiz": ["cards"], "recap": ["answer"], "map": ["center", "links"], "statement": ["text"]}
-VISUAL = {"chart", "stat", "units", "flow", "code", "image", "eqn", "svg", "caption", "terms"}
+VISUAL = {"chart", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg", "caption", "terms"}
+PARTS = {"items", "rows", "total", "share", "fmt", "build"}
+# words a learner reads on a slide's face, per type (the more sheet, table cells and chart internals do not count).
+# The visual carries the story; past these the slide reads as a page of text.
+FACE_LIMIT = {"idea": 40, "statement": 30, "equation": 30, "calc": 45, "table": 30, "bridge": 55, "compare": 55,
+              "predict": 70, "recap": 60, "map": 60}
 CHART = {"x", "y", "series", "marks", "legend", "table", "alt", "controls"}
 SERIES_KINDS = {"line", "area", "bars", "hist", "dots", "lollipop", "step"}
 MARK_KINDS = {"vline", "hline", "band", "point", "label", "arrow", "line", "fn", "area", "span"}
@@ -119,6 +124,29 @@ def funcs(expr):
     return [m.group(1) for m in re.finditer(r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", str(expr))]
 
 
+def face_words(s):
+    """Words on the face of a slide: what the learner has to read before the visual can do its work."""
+    w = lambda x: words(x) if isinstance(x, str) else 0
+    t = s.get("type", "idea")
+    n = sum(w(s.get(k)) for k in ("title", "lead", "eyebrow", "text", "sub", "q", "why", "note", "given", "breaks", "answer", "verdict", "center"))
+    n += sum(w(x) for k in ("points", "options") for x in (s.get(k) or []))
+    if t == "recap":
+        n += sum(w(x) for x in (s.get("breaks") or []) if isinstance(s.get("breaks"), list))
+    n += sum(w(ln.get("say")) for ln in s.get("lines") or [] if isinstance(ln, dict))
+    n += sum(w(a) + w(b) for pr in s.get("pairs") or [] if isinstance(pr, list) and len(pr) == 2 for a, b in [pr])
+    n += sum(w(l.get("to")) + w(l.get("how")) for l in s.get("links") or [] if isinstance(l, dict))
+    for side in (s.get("a"), s.get("b")):
+        if isinstance(side, dict):
+            n += sum(w(side.get(k)) for k in ("title", "text", "verdict")) + sum(w(x) for x in side.get("points") or [])
+    for v in [s.get("visual")] + [(x or {}).get("visual") for x in (s.get("a"), s.get("b")) if isinstance(x, dict)]:
+        if isinstance(v, dict):
+            n += w(v.get("caption"))
+            st = v.get("stat") or {}
+            n += w(st.get("label")) + w(st.get("sub"))
+            n += w((v.get("units") or {}).get("label"))
+    return n   # labels inside a chart, flow or parts are the visual itself: they have their own limits
+
+
 def texts_of(node):
     """Every author string in a slide, for word and banned-word checks."""
     if isinstance(node, str):
@@ -187,12 +215,12 @@ def lint(deck, lint_extra_names=()):
                 Lx.err(where, f"`{f}` is required for {t}")
         if t in CONTENT and t not in ("statement", "map") and not s.get("title"):
             Lx.err(where, "needs a `title`: one line that states the claim of this slide")
-        if s.get("title") and words(s["title"]) > 12:
-            Lx.warn(where, f"title has {words(s['title'])} words; a headline claim reads best at 4–10")
+        if s.get("title") and words(s["title"]) > 10:
+            Lx.warn(where, f"title has {words(s['title'])} words; a headline claim reads best at 4–8")
         if s.get("lead"):
             leads += 1
-            if words(s["lead"]) > 18:
-                Lx.warn(where, "lead is long; it is one short bridge line from the last slide (≤ 16 words)")
+            if words(s["lead"]) > 14:
+                Lx.warn(where, "lead is long; it is one short bridge line from the last slide (≤ 12 words)")
         if t in CONTENT:
             contents += 1
             since_check += 1
@@ -217,12 +245,22 @@ def lint(deck, lint_extra_names=()):
             if ladder and c not in ladder:
                 Lx.warn(where, f"introduces `{c}`, which is not in the ladder")
             introduced.add(c)
-        # text budgets and words
-        for p in s.get("points") or []:
-            if words(p) > 24:
-                Lx.warn(where, f"a point has {words(p)} words (≤ 24): split it or move detail to `more`")
-        if len(s.get("points") or []) > 4:
-            Lx.warn(where, f"{len(s['points'])} points (≤ 4): split the slide")
+        # text budgets: the visual tells the story, words only point at it
+        pts = s.get("points") or []
+        for p in pts:
+            if words(p) > 16:
+                Lx.warn(where, f"a point has {words(p)} words (≤ 16): cut it, or put it on the visual as a label")
+        cap = 2 if s.get("visual") else 3
+        if t in ("idea", "compare") and len(pts) > cap:
+            Lx.warn(where, f"{len(pts)} points (≤ {cap}{' with a visual' if s.get('visual') else ''}): label the visual instead, or move detail to `more:`")
+        if t == "idea" and not s.get("visual"):
+            Lx.warn(where, "no visual: show it (chart, parts, units, flow, stat or image) and keep words for the caption")
+        lim = FACE_LIMIT.get(t)
+        if lim and face_words(s) > lim:
+            Lx.warn(where, f"{face_words(s)} words on the slide (aim ≤ {lim}): let the visual carry it; cut words or move detail to `more:`")
+        cap_ = (s.get("visual") or {}).get("caption") if isinstance(s.get("visual"), dict) else None
+        if cap_ and words(cap_) > 20:
+            Lx.warn(where, f"caption has {words(cap_)} words (≤ 20): one line that says where to look")
         if t == "statement" and words(s.get("text")) > 22:
             Lx.warn(where, "statement over 22 words: it should be one sentence worth remembering")
         if t == "predict":
@@ -237,6 +275,8 @@ def lint(deck, lint_extra_names=()):
                 Lx.err(where, f"answer {s['answer']} is not an option index (0–{len(opts) - 1})")
             if not s.get("why"):
                 Lx.warn(where, "predict has no `why`: the reveal is where the learning happens")
+            elif words(s["why"]) > 35:
+                Lx.warn(where, f"`why` has {words(s['why'])} words (≤ 35): the reason in two short sentences, or show it with a `visual`")
         for txt in texts_of(s):
             m = BANNED.search(txt)
             if m:
@@ -275,6 +315,8 @@ def lint(deck, lint_extra_names=()):
                     Lx.err(f"{where} line {j + 1}", "each line needs `expr` (computed, preferred) or `tex`")
                 if not ln.get("say"):
                     Lx.warn(f"{where} line {j + 1}", "each line needs `say`: what this step does, in words")
+                elif words(ln["say"]) > 9:
+                    Lx.warn(f"{where} line {j + 1}", f"`say` has {words(ln['say'])} words (≤ 9): the working shows the rest")
         if t == "table":
             cols = s.get("cols") or []
             rows = s.get("rows") or []
@@ -294,11 +336,23 @@ def lint(deck, lint_extra_names=()):
                             Lx.err(f"{where} column {c.get('key')}", f"`{n}` is used in the formula but never explained")
         if t == "map" and len(s.get("links") or []) > 6:
             Lx.warn(where, "more than 6 links: keep the strongest connections")
+        if t == "map":
+            for l in s.get("links") or []:
+                if isinstance(l, dict) and words(l.get("how")) > 7:
+                    Lx.warn(where, f"link to {l.get('to')!r}: `how` has {words(l.get('how'))} words (≤ 7)")
+        if t == "recap":
+            if len(s.get("points") or []) > 3 or len(s.get("breaks") or []) > 2:
+                Lx.warn(where, "recap keeps ≤ 3 points and ≤ 2 breaks: the rest goes to `next` (in the more sheet) or is cut")
+        if t == "equation" and s.get("note") and words(s["note"]) > 20:
+            Lx.warn(where, f"`note` has {words(s['note'])} words (≤ 20): one line that says what the formula tells you")
         if t == "bridge":
             if not s.get("breaks"):
                 Lx.warn(where, "a bridge needs `breaks`: say where the analogy stops working")
-            if len(s.get("pairs") or []) > 4:
-                Lx.warn(where, "more than 4 pairs: keep the mapping to what matters")
+            if len(s.get("pairs") or []) > 3:
+                Lx.warn(where, "more than 3 pairs: keep the mapping to what matters")
+            for pr in s.get("pairs") or []:
+                if isinstance(pr, list) and any(words(x) > 6 for x in pr if isinstance(x, str)):
+                    Lx.warn(where, f"pair {pr!r}: each side ≤ 6 words")
         vis_list = [s.get("visual")] + [(s.get(k) or {}).get("visual") for k in ("a", "b")]
         for v in vis_list:
             if v:
@@ -355,9 +409,37 @@ def lint_visual(Lx, where, v, scope):
     extra = set(v) - VISUAL
     if extra:
         Lx.err(where, f"unknown visual field(s) {sorted(extra)}")
-    kinds = [k for k in ("chart", "stat", "units", "flow", "code", "image", "eqn", "svg") if k in v]
+    kinds = [k for k in ("chart", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg") if k in v]
     if len(kinds) != 1:
-        Lx.err(where, f"a visual has exactly one of chart, stat, units, flow, code, image, eqn, svg (found {kinds or 'none'})")
+        Lx.err(where, f"a visual has exactly one of chart, stat, units, parts, flow, code, image, eqn, svg (found {kinds or 'none'})")
+    for nd in (v.get("flow") or {}).get("nodes") or []:
+        nd = nd if isinstance(nd, dict) else {"label": nd}
+        if words(nd.get("label")) > 5 or words(nd.get("sub")) > 5:
+            Lx.warn(where, f"flow node {nd.get('label')!r}: ≤ 5 words for the name and ≤ 5 for the note under it")
+    pa = v.get("parts")
+    if pa:
+        ex = set(pa) - PARTS
+        if ex:
+            Lx.err(where, f"unknown parts field(s) {sorted(ex)}")
+        items = pa.get("items") or []
+        if not items:
+            Lx.err(where, "parts needs `items`: the named pieces, e.g. [{label: counting part, value: mu}, …]")
+        for it in items:
+            if not isinstance(it, dict) or not it.get("label"):
+                Lx.err(where, f"each part needs a `label`: {it!r}")
+            elif not pa.get("rows") and it.get("value") is None:
+                Lx.err(where, f"part {it.get('label')!r} needs a `value` (a number or an expression)")
+            elif isinstance(it.get("value"), str):
+                check_expr(Lx, f"{where} part {it.get('label')}", it["value"], scope)
+        for r in pa.get("rows") or []:
+            vals = r.get("values") or []
+            if len(vals) != len(items):
+                Lx.err(where, f"row {r.get('label')!r} has {len(vals)} values for {len(items)} items")
+            for x in vals:
+                if isinstance(x, str):
+                    check_expr(Lx, f"{where} row {r.get('label')}", x, scope)
+        if isinstance(pa.get("total"), dict) and isinstance(pa["total"].get("value"), str):
+            check_expr(Lx, f"{where} parts total", pa["total"]["value"], scope)
     c = v.get("chart")
     if c:
         ex = set(c) - CHART

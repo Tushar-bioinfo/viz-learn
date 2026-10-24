@@ -64,8 +64,7 @@ slides:
     lead: Start with what the sequencer gives us.
     title: Deeper samples give every gene more reads
     points:
-      - Sample A has **{{libA/1e6|0}} million** reads, B has **{{libB/1e6|0}} million**.
-      - The same gene shows {{xA}} reads in A and {{xB}} in B.
+      - 'The same gene: {{xA}} reads in A, {{xB}} in B.'
       - The gap comes from depth, not biology.
     visual:
       chart:
@@ -112,6 +111,19 @@ slides:
       - {say: Find the gene's share of the sample, expr: xA / libA, name: p}
       - {say: Scale the share to a million reads, expr: p * 1e6, name: cpm}
 
+  - type: idea
+    lead: A share is a slice of one sample.
+    title: Each gene owns a slice of the library
+    visual:
+      parts:
+        items:
+          - {label: GeneA, value: 120, focus: true}
+          - {label: GeneB, value: 30}
+          - {label: GeneC, value: 850}
+        total: {label: library}
+        share: true
+      caption: GeneA's slice is 12% of this small library.
+
   - type: table
     lead: Every gene follows the same recipe.
     title: Each new column is one step of the recipe
@@ -127,6 +139,16 @@ slides:
       - {key: cpm, label: CPM, expr: p * 1e6, fmt: ',', says: reads per million reads}
     focus: 0
 
+  - type: predict
+    kind: check
+    q: GeneB has 30 reads in a library of 1,000. What is its CPM?
+    options:
+      - '30'
+      - '3,000'
+      - '30,000'
+    answer: 2
+    why: 30 out of 1,000 is a share of 0.03. Times a million gives **30,000**.
+
   - type: statement
     text: A count means nothing until you know ==how many reads== it came from.
     sub: Divide first, compare second.
@@ -136,8 +158,8 @@ slides:
     lead: But counts also wobble by chance.
     title: Even a fixed rate gives counts that wobble
     points:
-      - Move the rate. The spread grows with it.
-      - The shaded tail is the chance of 30 or more reads.
+      - 'Move the rate: the spread grows with it.'
+      - 'The shaded tail: 30 or more reads.'
     controls:
       - {name: lam, label: 'rate λ', min: 5, max: 40, step: 1, value: 20}
     derive:

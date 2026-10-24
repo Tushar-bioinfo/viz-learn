@@ -1,26 +1,27 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#091450"><title>Counts per million</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css"><script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script><style>/* Lucid: Liquid Glass theme for learning decks. Ember on black: the proff black-and-orange palette, lit from below.
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#091450"><title>Counts per million</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css"><script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script><style>/* Lucid: Liquid Glass theme for learning decks, in the proff-viz mono palette.
+   Black and greys carry everything; orange marks the slide headline and what matters now, never the background.
    Every colour is a token. Authors never edit this file: decks only carry content.
    Stage: 1600 x 900 (landscape) or 720 x 1280 (portrait), scaled to the screen. Sizes below are stage px. */
 
 :root {
-  /* the wall: black, warmed by ember light from below */
-  --black: #050505; --coal: #0c0b0a; --char: #161412;
-  --ember: #ff5a36; --flare: #ff7a3d; --glow: #ffb27f; --deep: #a8301a;
+  /* proff-viz v5 mono: a near-black page under grey glass */
+  --bg: #0b0c0e; --surf: #171819;
 
-  /* text (warm greys): ink on glass >= 7:1, mist >= 4.5:1, haze for ticks and eyebrows */
-  --ink: #f7f5f1; --mist: #d6d1c8; --haze: #b4afa6;
+  /* text: ink on glass >= 7:1, mist >= 4.5:1, haze for ticks and eyebrows */
+  --ink: #f2f2f0; --mist: #c2c0b9; --haze: #adaba4;
 
-  /* one accent for "what matters now" (the proff orange), and its soft tint */
-  --accent: #ff5a36; --amber: #ffb27f; --accent-wash: rgba(255, 90, 54, .14);
+  /* orange: the headline and what matters now; tint for small warm labels; tint-lo for lines only, never text */
+  --accent: #ff5a36; --tint: #ffb27f; --tint-lo: #6b4631; --accent-wash: rgba(255, 90, 54, .12);
 
-  /* categorical series under the accent: validated all-pairs WITH the accent on the plate (CVD dE 10.5, normal dE 18, >= 3:1) */
-  --s1: #22aa8a; --s2: #4992f2; --s3: #9353b7;
+  /* categorical series: proff c1 blue and c3 teal, plus a pink. All pairs, and each against the accent,
+     pass the colour-blind check on the plate (see docs/design.md) */
+  --s1: #7fb0ff; --s2: #5fdcc4; --s3: #cb85ae;
   /* status: always with an icon and a word */
   --good: #7ad9a0; --bad: #ff6f86;
 
   /* materials */
-  --hair: rgba(240, 232, 220, .12); --hair-2: rgba(240, 232, 220, .24);
-  --plate-solid: #141312;   /* dot rings and gaps inside charts */
+  --hair: rgba(255, 255, 255, .10); --hair-2: rgba(255, 255, 255, .22);
+  --plate-solid: #161718;   /* dot rings and gaps inside charts */
 
   --r-xl: 44px; --r-lg: 32px; --r-md: 24px; --r-sm: 16px; --r-pill: 999px;
   --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
@@ -31,7 +32,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; background: var(--black); }
+html, body { height: 100%; overflow: hidden; background: var(--bg); }
 body {
   font-family: var(--f-ui); color: var(--ink); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "kern"; text-rendering: optimizeLegibility; user-select: none; -webkit-tap-highlight-color: transparent;
@@ -42,22 +43,18 @@ i, em { font-style: italic; }
 code { font-family: var(--f-mono); font-size: .86em; padding: .06em .32em; border-radius: 8px; background: rgba(255, 255, 255, .09); }
 mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: .13em; text-underline-offset: .2em; text-decoration-skip-ink: none; }
 
-/* ---------- wallpaper: black sky, an ember horizon, silk ribbons of warm light, orbs, sparks, film grain ---------- */
+/* ---------- wallpaper: black, with soft grey silk for the glass to catch. No colour: orange belongs to the content ---------- */
 #wall { position: fixed; inset: 0; overflow: hidden; z-index: 0;
-  background:
-    radial-gradient(140% 70% at 50% 118%, rgba(255, 90, 54, .30) 0%, rgba(168, 48, 26, .18) 34%, transparent 64%),
-    radial-gradient(90% 60% at 50% -10%, rgba(255, 178, 127, .05), transparent 60%),
-    linear-gradient(180deg, #050505 0%, #080706 38%, #120805 72%, #1c0b05 100%); }
-#wall .ribbons { position: absolute; inset: -8%; width: 116%; height: 116%; opacity: .95; transition: transform 2s var(--ease); will-change: transform; }
+  background: radial-gradient(120% 70% at 50% -12%, rgba(255, 255, 255, .045), transparent 62%),
+    linear-gradient(180deg, #0e0f11 0%, #0b0c0e 48%, #08090a 100%); }
+#wall .ribbons { position: absolute; inset: -8%; width: 116%; height: 116%; transition: transform 2s var(--ease); will-change: transform; }
 #wall .orb { position: absolute; border-radius: 50%; transition: transform 2s var(--ease); will-change: transform; }
-#wall .o1 { width: 52vmax; height: 52vmax; left: -16vmax; bottom: -20vmax; background: radial-gradient(circle, rgba(255, 90, 54, .55) 0%, rgba(255, 90, 54, .22) 38%, transparent 66%); }
-#wall .o2 { width: 40vmax; height: 40vmax; right: -12vmax; top: 18vmax; background: radial-gradient(circle, rgba(255, 122, 61, .42) 0%, rgba(168, 48, 26, .2) 42%, transparent 68%); }
-#wall .o3 { width: 150vmax; height: 34vmax; left: -10vmax; top: -24vmax; background: radial-gradient(closest-side, rgba(255, 150, 100, .075), transparent); }
-#wall .o4 { width: 20vmax; height: 20vmax; left: 34vmax; top: 30vmax; background: radial-gradient(circle, rgba(255, 140, 80, .18) 0%, transparent 66%); }
-#wall .sparks { position: absolute; inset: 0; transition: transform 2s var(--ease); }
-#wall .sparks i { position: absolute; border-radius: 50%; }
-#wall .grain { position: absolute; inset: 0; opacity: .1; mix-blend-mode: overlay; background-repeat: repeat; background-size: 220px 220px; pointer-events: none; }
-#wall .vignette { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(0, 0, 0, .55) 100%); }
+#wall .o1 { width: 60vmax; height: 60vmax; left: -18vmax; bottom: -26vmax; background: radial-gradient(circle, rgba(255, 255, 255, .055) 0%, transparent 62%); }
+#wall .o2 { width: 44vmax; height: 44vmax; right: -14vmax; top: 14vmax; background: radial-gradient(circle, rgba(255, 255, 255, .04) 0%, transparent 64%); }
+#wall .o3 { width: 150vmax; height: 34vmax; left: -10vmax; top: -24vmax; background: radial-gradient(closest-side, rgba(255, 255, 255, .035), transparent); }
+#wall .o4 { width: 24vmax; height: 24vmax; left: 34vmax; top: 30vmax; background: radial-gradient(circle, rgba(255, 255, 255, .03) 0%, transparent 66%); }
+#wall .grain { position: absolute; inset: 0; opacity: .08; mix-blend-mode: overlay; background-repeat: repeat; background-size: 220px 220px; pointer-events: none; }
+#wall .vignette { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(0, 0, 0, .6) 100%); }
 
 /* ---------- stage ---------- */
 #viewport { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
@@ -67,67 +64,68 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .slide.on { display: flex; }
 .port .slide { --pad-x: 40px; --pad-top: 116px; --pad-bot: 132px; gap: 24px; }
 
-/* ---------- glass: clear, lit at the rim, thick at the edge ----------
-   Liquid Glass reads as glass because of its edge: a bright specular line where light enters (top left), a warm one
+/* ---------- glass: clear, lit at the rim ----------
+   Liquid Glass reads as glass because of its edge: a bright specular line where light enters (top left), a fainter one
    where it leaves (bottom right), light caught inside the rim, and the world behind showing through, only softened. */
 .g { position: relative; border-radius: var(--r-lg); isolation: isolate;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .13) 0%, rgba(255, 255, 255, .045) 36%, rgba(255, 255, 255, .02) 62%, rgba(255, 255, 255, .07) 100%),
-    rgba(12, 10, 9, .2);
-  -webkit-backdrop-filter: blur(16px) saturate(185%) brightness(1.05); backdrop-filter: blur(16px) saturate(185%) brightness(1.05);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .035) 38%, rgba(255, 255, 255, .015) 62%, rgba(255, 255, 255, .05) 100%),
+    rgba(24, 25, 27, .34);
+  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
   box-shadow:
-    inset 1.5px 1.5px 1px -.5px rgba(255, 255, 255, .72),
-    inset -1.5px -1.5px 1px -.5px rgba(255, 190, 150, .38),
-    inset 0 0 0 1px rgba(255, 255, 255, .09),
-    inset 0 16px 30px -18px rgba(255, 255, 255, .24),
-    inset 0 -18px 32px -20px rgba(255, 140, 90, .30),
-    0 22px 60px -14px rgba(0, 0, 0, .7), 0 6px 16px -6px rgba(0, 0, 0, .5); }
+    inset 1.5px 1.5px 1px -.5px rgba(255, 255, 255, .55),
+    inset -1.5px -1.5px 1px -.5px rgba(255, 255, 255, .16),
+    inset 0 0 0 1px rgba(255, 255, 255, .07),
+    inset 0 16px 30px -18px rgba(255, 255, 255, .14),
+    0 22px 60px -14px rgba(0, 0, 0, .75), 0 6px 16px -6px rgba(0, 0, 0, .55); }
 .g::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .88) 0%, rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .02) 46%, rgba(255, 160, 110, .2) 74%, rgba(255, 220, 190, .62) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .16) 22%, rgba(255, 255, 255, .02) 48%, rgba(255, 255, 255, .08) 76%, rgba(255, 255, 255, .34) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
 .g::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
-  background: linear-gradient(165deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .03) 18%, transparent 34%),
-    radial-gradient(90% 60% at 12% -8%, rgba(255, 255, 255, .12), transparent 55%); }
+  background: linear-gradient(165deg, rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, .02) 18%, transparent 34%),
+    radial-gradient(90% 60% at 12% -8%, rgba(255, 255, 255, .09), transparent 55%); }
 /* plate: the same glass, smoked, under data (charts, tables, formulas) so lines and numbers stay crisp */
-.g.plate { background: linear-gradient(160deg, rgba(255, 255, 255, .07) 0%, rgba(255, 255, 255, .015) 40%, rgba(255, 255, 255, .03) 100%), rgba(10, 9, 8, .46);
-  -webkit-backdrop-filter: blur(22px) saturate(160%) brightness(.92); backdrop-filter: blur(22px) saturate(160%) brightness(.92); }
+.g.plate { background: linear-gradient(160deg, rgba(255, 255, 255, .06) 0%, rgba(255, 255, 255, .012) 40%, rgba(255, 255, 255, .025) 100%), rgba(20, 21, 23, .58);
+  -webkit-backdrop-filter: blur(24px) saturate(130%); backdrop-filter: blur(24px) saturate(130%); }
+/* warm: glass with an orange tint, for the one card that holds the answer */
+.g.warm { background: linear-gradient(135deg, rgba(255, 90, 54, .14) 0%, rgba(255, 90, 54, .045) 45%, rgba(255, 178, 127, .05) 100%), rgba(26, 23, 22, .42); }
+.g.warm::before { background: linear-gradient(135deg, rgba(255, 196, 160, .8) 0%, rgba(255, 140, 100, .2) 24%, rgba(255, 255, 255, .02) 50%, rgba(255, 255, 255, .08) 76%, rgba(255, 210, 180, .36) 100%); }
+.g.coolbad::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 111, 134, .12), transparent 55%); }
 /* never glass on glass: a card inside a card is a quiet inset, not another pane */
 .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi) { background: rgba(255, 255, 255, .05); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .05); }
 .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::before, .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::after { display: none; }
 .g .vis.g { background: transparent; box-shadow: none; padding: 0; }
 .g.thin { border-radius: var(--r-md); }
 .g.pill { border-radius: var(--r-pill); }
-.g.warm::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 90, 54, .16), transparent 55%), linear-gradient(165deg, rgba(255, 255, 255, .08), transparent 30%); }
-.g.coolbad::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 111, 134, .14), transparent 55%); }
 .pad { padding: 34px 40px; }
 .port .pad { padding: 26px 28px; }
 
 /* ---------- type ---------- */
-.lead { font-size: 28px; line-height: 1.3; font-weight: 520; color: var(--mist); max-width: 1300px; text-shadow: 0 1px 2px rgba(0, 0, 0, .85), 0 0 18px rgba(0, 0, 0, .7); }
-.head .eyebrow, .s-title .subtitle, .s-title .kicker, .bridge .world, .s-statement > .lead { text-shadow: 0 1px 2px rgba(0, 0, 0, .85), 0 0 18px rgba(0, 0, 0, .7); }
-.lead .lw { color: var(--amber); font-weight: 680; }
-.h1 { font-size: 58px; line-height: 1.08; font-weight: 680; letter-spacing: -.022em; max-width: 1420px; text-wrap: balance;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, .6); }
+.lead { font-size: 28px; line-height: 1.3; font-weight: 520; color: var(--mist); max-width: 1300px; }
+.lead .lw { color: var(--tint); font-weight: 680; }
+.h1 { font-size: 58px; line-height: 1.08; font-weight: 720; letter-spacing: -.022em; max-width: 1420px; text-wrap: balance; color: var(--accent); }
 .port .h1 { font-size: 46px; }
 .port .lead { font-size: 26px; }
-.eyebrow { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--mist); }
-.p, .pts li { font-size: 33px; line-height: 1.38; font-weight: 450; color: var(--ink); }
+.eyebrow { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--haze); }
+.p, .pts li { font-size: 32px; line-height: 1.36; font-weight: 450; color: var(--ink); }
 .port .p, .port .pts li { font-size: 30px; }
 .small { font-size: 25px; line-height: 1.4; color: var(--mist); }
 .cap { font-size: 26px; line-height: 1.38; color: var(--mist); }
-.cap::before { content: "Look: "; color: var(--amber); font-weight: 650; }
+.cap::before { content: "Look: "; color: var(--tint); font-weight: 650; }
 .mono { font-family: var(--f-mono); }
 .tex-fallback { font-family: var(--f-mono); color: var(--mist); }
+.res, .res .katex { color: var(--accent); }
 
-/* ---------- head ---------- */
+/* ---------- head and body ---------- */
 .head { display: flex; flex-direction: column; gap: 10px; flex: none; }
-.slide > .body { flex: 1; min-height: 0; display: flex; gap: 36px; align-items: stretch; }
-.body.split > .col-text { flex: 0 0 37%; display: flex; flex-direction: column; justify-content: center; gap: 22px; min-width: 0; }
+.slide > .body { flex: 1; min-height: 0; display: flex; gap: 40px; align-items: stretch; }
+/* the visual is the slide: words get a narrow column beside it */
+.body.split > .col-text { flex: 0 0 31%; display: flex; flex-direction: column; justify-content: safe center; gap: 22px; min-width: 0; }
 .body.split > .col-vis { flex: 1; min-width: 0; display: flex; }
 .body.split.vis-left { flex-direction: row-reverse; }
-.body.stack, .body.wide { flex-direction: column; }
+.body.stack, .body.wide { flex-direction: column; gap: 22px; }
 .body.stack > .col-vis, .body.wide > .col-vis { flex: 1; min-height: 0; display: flex; }
 .body.stack > .col-text, .body.wide > .col-text { flex: none; }
-.body.text-only { flex-direction: column; justify-content: center; }
+.body.text-only { flex-direction: column; justify-content: safe center; }
 .port .body.split { flex-direction: column; }
 .port .body.split > .col-text { flex: none; }
 .port .body.split > .col-vis { flex: 1; min-height: 0; }
@@ -135,9 +133,9 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 /* points */
 .pts { list-style: none; display: flex; flex-direction: column; gap: 18px; }
 .pts li { display: grid; grid-template-columns: 22px 1fr; column-gap: 16px; align-items: baseline; }
-.pts .pip { width: 14px; height: 14px; border-radius: 50%; background: var(--mist); opacity: .55; transform: translateY(-3px); transition: all .4s var(--ease); }
-.pts li.now .pip { background: var(--accent); opacity: 1; box-shadow: 0 0 0 6px rgba(255, 90, 54, .2), 0 0 18px rgba(255, 90, 54, .65); }
-.textcard { padding: 34px 40px; display: flex; flex-direction: column; gap: 22px; justify-content: center; }
+.pts .pip { width: 14px; height: 14px; border-radius: 50%; background: var(--mist); opacity: .5; transform: translateY(-3px); transition: all .4s var(--ease); }
+.pts li.now .pip { background: var(--accent); opacity: 1; box-shadow: 0 0 0 6px rgba(255, 90, 54, .18); }
+.textcard { padding: 34px 40px; display: flex; flex-direction: column; gap: 22px; justify-content: safe center; }
 .port .textcard { padding: 26px 28px; }
 
 /* build steps: materialize (blur to sharp, slight scale), like Liquid Glass objects */
@@ -150,6 +148,8 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .slide.on .enter { animation: materialize .7s var(--ease) both; }
 .slide.on .enter:nth-child(2) { animation-delay: .06s; } .slide.on .enter:nth-child(3) { animation-delay: .12s; }
 @keyframes materialize { from { opacity: 0; filter: blur(14px); transform: scale(.975); } to { opacity: 1; filter: none; transform: none; } }
+/* a slide whose content runs long is zoomed down a little (deck.js sets it); the audit reports big shrinks */
+.slide > .body, .slide > .predict, .slide > .eqwrap, .slide > .bridge, .slide > .compare, .slide > .quiz, .slide > .recap, .slide > .mapw { transform-origin: top left; }
 
 /* ---------- chrome: chapters capsule, counter, progress, nav ---------- */
 #chrome { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
@@ -157,12 +157,13 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .chapters { position: absolute; top: 36px; left: var(--pad-x); display: flex; align-items: center; gap: 4px; padding: 6px; max-width: 1180px; overflow: hidden; }
 .chapters .seg { font-size: 21px; font-weight: 600; color: var(--haze); padding: 10px 20px; border-radius: var(--r-pill); white-space: nowrap; transition: all .45s var(--ease); }
 .chapters .seg.done { color: var(--mist); }
-.chapters .seg.now { color: var(--ink); background: rgba(255, 255, 255, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 6px 18px -6px rgba(0, 0, 0, .5); }
-.chapters .seg.now::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); margin-right: 10px; transform: translateY(-2px); box-shadow: 0 0 10px rgba(255, 90, 54, .85); }
+.chapters .seg.now { color: var(--ink); background: rgba(255, 255, 255, .13); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 6px 18px -6px rgba(0, 0, 0, .5); }
+.chapters .seg.now::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); margin-right: 10px; transform: translateY(-2px); }
+.chapters .chn { display: none; font-size: 21px; color: var(--haze); padding-right: 14px; font-variant-numeric: tabular-nums; }
 .counter { position: absolute; top: 36px; right: var(--pad-x); font-size: 21px; font-weight: 600; color: var(--mist); padding: 14px 22px; font-variant-numeric: tabular-nums; }
 .progress { position: absolute; left: var(--pad-x); right: calc(var(--pad-x) + 170px); bottom: 54px; display: flex; gap: 8px; height: 6px; }
-.progress .pc { flex: 1; border-radius: 6px; background: rgba(255, 255, 255, .12); overflow: hidden; }
-.progress .pc i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, var(--amber), var(--accent)); transition: width .6s var(--ease); }
+.progress .pc { flex: 1; border-radius: 6px; background: rgba(255, 255, 255, .11); overflow: hidden; }
+.progress .pc i { display: block; height: 100%; width: 0; border-radius: 6px; background: var(--accent); transition: width .6s var(--ease); }
 .stepdots { position: absolute; left: var(--pad-x); bottom: 76px; display: flex; gap: 9px; }
 .stepdots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, .22); transition: all .35s var(--ease); }
 .stepdots i.on { background: var(--mist); }
@@ -174,33 +175,35 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .navbtns button:active:not(:disabled) { transform: scale(.94); }
 .morebtn { position: absolute; top: 36px; right: calc(var(--pad-x) + 130px); font-size: 21px; font-weight: 620; color: var(--ink); padding: 14px 24px; display: none; }
 .morebtn.show { display: block; }
-.port .chapters { left: 24px; right: 24px; top: 28px; max-width: none; }
+.port .chapters { left: 24px; top: 28px; right: auto; max-width: none; }
 .port .chapters .seg:not(.now) { display: none; }
 .port .chapters .chn { display: inline; }
-.chapters .chn { display: none; font-size: 21px; color: var(--haze); padding-right: 14px; font-variant-numeric: tabular-nums; }
+.port .chapters:not(:has(.now)) { visibility: hidden; }   /* title slide: no empty capsule */
 .port .counter { top: 28px; right: 24px; display: none; }
 .port .progress { left: 120px; right: 120px; bottom: 58px; }
 .port .stepdots { left: 50%; transform: translateX(-50%); bottom: 82px; }
 .port .navbtns { left: 24px; right: 24px; bottom: 26px; justify-content: space-between; }
 .port .navbtns button { width: 72px; height: 72px; }
 .port .morebtn { top: 28px; right: 24px; padding: 12px 20px; }
-.port .chapters { right: auto; }
 
-/* more sheet */
-.sheet { position: absolute; left: 50%; top: 110px; width: min(1100px, calc(100% - 2 * var(--pad-x))); transform: translate(-50%, 40px); opacity: 0; pointer-events: none;
-  transition: all .45s var(--spring); padding: 34px 42px; z-index: 30; }
+/* more sheet: detail the slide does not need on its face (said aloud, code, extra notes) */
+.sheet { position: absolute; left: 50%; top: 110px; width: min(1100px, calc(100% - 2 * var(--pad-x))); max-height: calc(100% - 240px); overflow: auto;
+  transform: translate(-50%, -30px); opacity: 0; pointer-events: none; transition: all .45s var(--spring); padding: 34px 42px; z-index: 30;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), rgba(20, 21, 23, .9); }
 .sheet.open { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
-.sheet { transform: translate(-50%, -30px); }
 .sheet .eyebrow { margin-bottom: 12px; }
+.sheetbody { display: flex; flex-direction: column; gap: 18px; }
+.sheetbody .say { font-style: italic; color: var(--mist); }
+.sheetbody .codebox { font-size: 25px; white-space: pre-wrap; }
 
-/* ---------- title slide ---------- */
+/* ---------- title, chapter, statement ---------- */
 .s-title { justify-content: center; gap: 34px; }
-.s-title .kicker { font-size: 24px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--amber); }
-.s-title .display { font-size: 104px; line-height: 1.0; font-weight: 720; letter-spacing: -.035em; max-width: 1300px; text-wrap: balance; text-shadow: 0 4px 40px rgba(0, 0, 0, .6); }
-.s-title .subtitle { font-size: 34px; line-height: 1.35; color: var(--ink); max-width: 1100px; }
+.s-title .kicker { font-size: 24px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--tint); }
+.s-title .display { font-size: 104px; line-height: 1.0; font-weight: 760; letter-spacing: -.035em; max-width: 1300px; text-wrap: balance; color: var(--accent); }
+.s-title .subtitle { font-size: 34px; line-height: 1.35; color: var(--mist); max-width: 1100px; }
 .s-title .question { display: flex; align-items: center; gap: 26px; padding: 28px 36px 28px 28px; max-width: 1180px; }
 .s-title .question .qmark { flex: none; width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; font-weight: 750; color: #1a0802;
-  background: radial-gradient(circle at 35% 30%, #ffd2b8, var(--accent) 58%, #c43b1c); box-shadow: 0 0 30px rgba(255, 90, 54, .5); }
+  background: radial-gradient(circle at 35% 30%, #ffd2b8, var(--accent) 58%, #c43b1c); box-shadow: 0 0 26px rgba(255, 90, 54, .35); }
 .s-title .question .qt { font-size: 34px; line-height: 1.32; font-weight: 560; }
 .s-title .chips { display: flex; flex-wrap: wrap; gap: 12px; }
 .s-title .chips span { font-size: 22px; font-weight: 600; color: var(--mist); padding: 10px 20px; }
@@ -208,11 +211,11 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .port .s-title .subtitle { font-size: 30px; }
 .port .s-title .question .qt { font-size: 30px; }
 
-/* ---------- statement ---------- */
 .s-statement { justify-content: center; align-items: center; text-align: center; }
 .s-statement .big { font-size: 72px; line-height: 1.14; font-weight: 680; letter-spacing: -.025em; max-width: 1280px; text-wrap: balance; }
 .s-statement .sub { font-size: 32px; color: var(--mist); max-width: 1000px; margin-top: 26px; }
 .s-statement .g { padding: 70px 90px; }
+.s-chapter .big { color: var(--accent); }
 .port .s-statement .big { font-size: 50px; }
 .port .s-statement .g { padding: 44px 34px; }
 
@@ -220,6 +223,19 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .vis { flex: 1; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; }
 .vis.g { padding: 26px 30px 22px; }
 .vis .cap { margin-top: 8px; flex: none; }
+.vis > .codebox { margin: auto 0; }
+.vis.vis-code { flex: none; align-self: center; width: 100%; }
+.col-vis:has(> .vis-code) { align-items: center; }
+.vhead { display: flex; align-items: center; gap: 12px 24px; flex-wrap: wrap; flex: none; margin-bottom: 6px; min-height: 40px; }
+.vhead.empty { display: none; }
+.vhead .legend { position: static; flex: 1 1 auto; }
+.vhead .controls { margin-top: 0; flex: none; }
+.vfoot { display: flex; align-items: center; gap: 18px 28px; flex-wrap: wrap; flex: none; margin-top: 10px; }
+.vfoot .cap { flex: 1 1 340px; margin-top: 0; }
+.vfoot .controls { margin-top: 0; }
+.vfoot .datatoggle { position: static; margin-left: auto; flex: none; }
+
+/* chart */
 .chart { position: relative; flex: 1; min-height: 0; }
 .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .chart text { font-family: var(--f-ui); font-variant-numeric: tabular-nums; }
@@ -228,25 +244,20 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .chart .lbl { font-size: 24px; fill: var(--ink); font-weight: 600; }
 .chart .lbl.dim { fill: var(--mist); font-weight: 520; }
 .chart .grid { stroke: var(--hair); stroke-width: 1; }
-.chart .base { stroke: rgba(232, 226, 216, .45); stroke-width: 1.6; }
+.chart .base { stroke: rgba(240, 240, 236, .42); stroke-width: 1.6; }
 .chart .mk { transition: opacity .5s var(--ease); }
 .chart .mk.off { opacity: 0; }
 .legend { position: absolute; top: 0; left: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 22px; color: var(--mist); pointer-events: none; }
-.vhead { display: flex; align-items: center; gap: 12px 24px; flex-wrap: wrap; flex: none; margin-bottom: 6px; min-height: 40px; }
-.vhead.empty { display: none; }
-.vhead .legend { position: static; flex: 1 1 auto; }
-.vhead .controls { margin-top: 0; flex: none; }
-.vfoot .datatoggle { position: static; margin-left: auto; flex: none; }
 .legend span { display: inline-flex; align-items: center; gap: 9px; }
 .legend i { display: inline-block; width: 22px; height: 6px; border-radius: 3px; }
 .legend i.dot { width: 13px; height: 13px; border-radius: 50%; }
 .legend i.bar { width: 14px; height: 18px; border-radius: 4px 4px 1px 1px; }
 .tip { position: absolute; pointer-events: none; z-index: 5; padding: 12px 16px; font-size: 22px; line-height: 1.35; color: var(--ink); opacity: 0; transition: opacity .15s;
-  border-radius: 16px; background: rgba(22, 19, 17, .88); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 12px 30px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .25); white-space: nowrap; }
+  border-radius: 16px; background: rgba(22, 23, 25, .9); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 12px 30px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .22); white-space: nowrap; }
 .tip.on { opacity: 1; }
 .tip b { font-variant-numeric: tabular-nums; }
 .datatoggle { position: absolute; top: 14px; right: 16px; z-index: 4; font-size: 21px; font-weight: 620; color: var(--mist); padding: 8px 16px; border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, .08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22); }
+  background: rgba(255, 255, 255, .08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
 .datatoggle:hover { color: var(--ink); background: rgba(255, 255, 255, .14); }
 .datatable { position: absolute; inset: 0; overflow: auto; display: none; padding: 10px 6px; }
 .vis.showdata .datatable { display: block; }
@@ -257,92 +268,105 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 
 /* controls (sliders) */
 .controls { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 10px; flex: none; }
-.ctl { display: flex; align-items: center; gap: 16px; padding: 10px 22px 10px 22px; }
+.ctl { display: flex; align-items: center; gap: 16px; padding: 10px 22px; }
 .ctl label { font-size: 23px; font-weight: 600; color: var(--mist); white-space: nowrap; }
 .ctl output { font-size: 24px; font-weight: 700; color: var(--accent); min-width: 3.4ch; font-variant-numeric: tabular-nums; }
 .ctl input[type=range] { -webkit-appearance: none; appearance: none; width: 260px; height: 34px; background: transparent; cursor: pointer; }
 .ctl input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 8px; background: linear-gradient(90deg, var(--accent) var(--fill, 50%), rgba(255, 255, 255, .16) var(--fill, 50%)); }
 .ctl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 34px; height: 34px; margin-top: -13px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #f1ebe4 60%, #cfc6bb); box-shadow: 0 4px 14px rgba(0, 0, 0, .6), inset 0 -2px 3px rgba(0, 0, 0, .15); }
+  background: radial-gradient(circle at 35% 30%, #fff, #ecebe8 60%, #c9c7c2); box-shadow: 0 4px 14px rgba(0, 0, 0, .6), inset 0 -2px 3px rgba(0, 0, 0, .15); }
 .ctl input[type=range]::-moz-range-track { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .16); }
 .ctl input[type=range]::-moz-range-progress { height: 8px; border-radius: 8px; background: var(--accent); }
-.ctl input[type=range]::-moz-range-thumb { width: 30px; height: 30px; border: 0; border-radius: 50%; background: #e8edff; }
+.ctl input[type=range]::-moz-range-thumb { width: 30px; height: 30px; border: 0; border-radius: 50%; background: #ecebe8; }
 .port .ctl input[type=range] { width: 220px; }
 
-/* stat (hero number) */
-.stat { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 12px; flex: 1; }
-.stat .num { font-size: 128px; line-height: .95; font-weight: 720; letter-spacing: -.035em; color: var(--ink); text-shadow: 0 0 2px rgba(255, 90, 54, .9), 0 0 24px rgba(255, 90, 54, .75), 0 0 60px rgba(255, 90, 54, .45); }
+/* stat: the one number of a slide, in the accent (proff's hero) */
+.stat { display: flex; flex-direction: column; justify-content: safe center; align-items: flex-start; gap: 12px; flex: 1; }
+.stat .num { font-size: 128px; line-height: .95; font-weight: 780; letter-spacing: -.035em; color: var(--accent); }
 .stat .lab { font-size: 32px; font-weight: 600; color: var(--ink); }
 .stat .sub { font-size: 26px; color: var(--mist); }
 .port .stat .num { font-size: 104px; }
 
 /* units (icon grid) */
-.units { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 22px; flex: 1; }
+.units { display: flex; flex-direction: column; justify-content: safe center; align-items: center; gap: 22px; flex: 1; }
 .units svg { width: 100%; flex: 1; min-height: 0; }
 .units .ulab { font-size: 27px; color: var(--mist); text-align: center; }
 .units .ulab b { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: .12em; text-underline-offset: .2em; }
+
+/* parts: a whole split into named pieces, one bar per row */
+.parts { position: relative; flex: 1; min-height: 0; }
+.parts svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.parts .pk { font-size: 24px; fill: var(--mist); font-weight: 560; }
+.parts .pv { font-size: 30px; fill: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.parts .pr { font-size: 24px; fill: var(--ink); font-weight: 640; }
+.parts .pt { font-size: 26px; fill: var(--mist); font-weight: 600; font-variant-numeric: tabular-nums; }
+.parts .lead-line { stroke: var(--hair-2); stroke-width: 1.5; }
+.parts [data-pstep] { transition: opacity .5s var(--ease); }
+.parts .off { opacity: 0; }
 
 /* flow */
 .flow { position: relative; flex: 1; min-height: 0; }
 .flow .node { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 16px 20px; gap: 4px; }
 .flow .node .nl { font-size: 32px; font-weight: 680; line-height: 1.2; }
 .flow .node .ns { font-size: 24px; color: var(--mist); line-height: 1.25; }
-.flow .node.focus { box-shadow: 0 0 0 3px var(--accent), 0 0 34px rgba(255, 90, 54, .4), 0 24px 60px -16px rgba(0, 0, 0, .6); }
+.flow .node.focus { box-shadow: 0 0 0 3px var(--accent), 0 0 30px rgba(255, 90, 54, .28), 0 24px 60px -16px rgba(0, 0, 0, .6); }
 .flow svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .flow .verb { font-size: 22px; fill: var(--mist); font-style: italic; }
-.flow .edge { stroke: rgba(232, 226, 216, .5); stroke-width: 2.5; fill: none; }
+.flow .edge { stroke: rgba(240, 240, 236, .45); stroke-width: 2.5; fill: none; }
 
 /* code */
 .codebox { font-family: var(--f-mono); font-size: 27px; line-height: 1.55; padding: 22px 28px; border-radius: var(--r-md); background: rgba(0, 0, 0, .42);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .06); white-space: pre; overflow: hidden; color: var(--mist); }
-.codebox .ck { color: #a9c0ff; } .codebox .cn { color: var(--amber); } .codebox .cc { color: var(--haze); font-style: italic; }
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 0 0 1px rgba(255, 255, 255, .06); white-space: pre; overflow: hidden; color: var(--mist); }
+.codebox .ck { color: #a9c0ff; } .codebox .cn { color: var(--tint); } .codebox .cc { color: var(--haze); font-style: italic; }
 .codebox .tu { color: var(--ink); text-decoration: underline; text-decoration-thickness: 4px; text-underline-offset: 7px; text-decoration-color: var(--tc); }
 .port .codebox { font-size: 22px; padding: 18px 20px; }
 
-/* ---------- equation ---------- */
-.s-equation .eqwrap { position: relative; display: flex; flex-direction: column; gap: 18px; padding: 28px 38px 26px; flex: 1; min-height: 0; }
-.eqmain { position: relative; display: flex; justify-content: center; align-items: center; padding: 6px 0 14px; font-size: 64px; }
+/* images */
+.imgbox { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.imgbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--r-md); }
+
+/* ---------- equation: the formula is the figure; each term is named right under it ---------- */
+.s-equation .eqwrap { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 34px; padding: 36px 46px 30px; flex: 1; min-height: 0; }
+.eqmain { position: relative; display: flex; justify-content: center; align-items: center; font-size: 64px; max-width: 100%; }
+.s-equation .eqmain { font-size: 78px; align-self: stretch; }   /* full width: fitEq shrinks the formula only when the row is too narrow */
 .eqmain .katex { font-size: 1em; }
-.port .eqmain { font-size: 48px; min-height: 96px; }
+.eqmain .katex-display { margin: 0; }
+.port .s-equation .eqmain { font-size: 52px; }
 .ul { position: absolute; height: 6px; border-radius: 6px; background: var(--tc); transform-origin: left center; transition: transform .5s var(--spring), opacity .4s; pointer-events: none; }
 .ul.off { transform: scaleX(0); opacity: 0; }
-.halo { position: absolute; border-radius: 14px; background: color-mix(in srgb, var(--tc) 22%, transparent); box-shadow: 0 0 30px color-mix(in srgb, var(--tc) 40%, transparent);
-  transition: all .45s var(--ease); pointer-events: none; }
+.halo { position: absolute; border-radius: 14px; background: color-mix(in srgb, var(--tc) 18%, transparent); transition: all .45s var(--ease); pointer-events: none; }
 .halo.off { opacity: 0; transform: scale(.9); }
-.terms { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 34px; }
-.port .terms { grid-template-columns: 1fr; gap: 12px; }
-.term { display: grid; grid-template-columns: 18px auto 1fr; column-gap: 16px; align-items: baseline; padding: 14px 20px; border-radius: var(--r-md); background: rgba(255, 255, 255, .05); transition: background .4s; }
-.term.now { background: rgba(255, 255, 255, .11); }
-.term .sw { width: 18px; height: 6px; border-radius: 4px; background: var(--tc); transform: translateY(-6px); }
-.term .sym { font-size: 34px; color: var(--ink); white-space: nowrap; }
-.term .says { font-size: 28px; line-height: 1.3; color: var(--ink); }
-.term .eg { grid-column: 3; font-size: 24px; color: var(--mist); margin-top: 4px; font-variant-numeric: tabular-nums; }
-.term .eg b { color: var(--ink); }
-.eqrow { position: relative; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.eqmain .katex-display { margin: 0; }
-.eqrow .tag { flex: none; font-size: 21px; letter-spacing: .12em; text-transform: uppercase; font-weight: 680; color: var(--haze); min-width: 132px; }
-.eqrow .val { font-size: 40px; position: relative; }
-.port .eqrow .val { font-size: 32px; }
-.eqrow .read { font-size: 30px; color: var(--mist); font-style: italic; }
-.res { color: var(--accent); }
-.res .katex { color: var(--accent); }
+.tlab { position: absolute; font-size: 25px; font-weight: 620; line-height: 1.2; color: var(--ink); text-align: center; max-width: 12em; width: max-content; transform: translateX(-50%);
+  transition: opacity .45s var(--ease), filter .45s var(--ease); }
+.tlab .eg { display: block; font-size: 22px; font-weight: 520; color: var(--mist); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tlab .lk { position: absolute; left: 50%; bottom: 100%; width: 2px; background: var(--hair-2); }
+.tlab.off { opacity: 0; filter: blur(6px); }
+.port .tlab { font-size: 22px; max-width: 7.6em; }
+.port .tlab .eg { font-size: 20px; }
+.eqnum { position: relative; display: flex; align-items: center; justify-content: center; gap: 26px; font-size: 44px; max-width: 100%; }
+.eqnum .tag { flex: none; font-size: 20px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--haze); }
+.port .eqnum { flex-direction: column; gap: 8px; font-size: 32px; }
+.eqso { font-size: 29px; line-height: 1.36; color: var(--mist); text-align: center; max-width: 1150px; }
+.eqso b, .eqso strong { color: var(--ink); }
+.port .eqso { font-size: 26px; }
 
-/* calc ladder */
-.calc { display: flex; flex-direction: column; gap: 16px; padding: 30px 38px; flex: 1; min-height: 0; justify-content: center; }
+/* ---------- calc: named working, one line per step ---------- */
+.calc { display: flex; flex-direction: column; gap: 16px; padding: 30px 38px; flex: 1; min-height: 0; justify-content: safe center; }
 .cline { display: grid; grid-template-columns: 54px 1fr; column-gap: 22px; row-gap: 6px; align-items: center; }
 .cline .num { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-size: 23px; font-weight: 700; color: var(--ink);
-  background: rgba(255, 255, 255, .12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
-.cline.now .num { background: var(--accent); color: #1a0802; box-shadow: 0 0 20px rgba(255, 90, 54, .55); }
+  background: rgba(255, 255, 255, .11); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28); }
+.cline.now .num { background: var(--accent); color: #1a0802; }
 .cline .say { font-size: 28px; color: var(--ink); font-weight: 520; }
-.cline .math { grid-column: 2; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 18px; font-size: 36px; padding-bottom: 30px; position: relative; }
+.cline .math { grid-column: 2; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 18px; font-size: 36px; position: relative; }
+.cline .math .part { position: relative; display: inline-block; }
 .cline .math .eqs { color: var(--haze); }
 .oplab { position: absolute; font-size: 21px; font-weight: 600; color: var(--mist); max-width: 15em; width: max-content; transform: translateX(-50%); text-align: center; line-height: 1.15; }
 .oplab::before { content: ""; position: absolute; left: 50%; top: -9px; width: 2px; height: 6px; background: var(--hair-2); }
 .port .cline .math { font-size: 28px; }
 
-/* table */
+/* ---------- table ---------- */
 .s-table .body { gap: 30px; }
-.tblwrap { flex: 1; min-width: 0; padding: 26px 30px; display: flex; flex-direction: column; justify-content: center; }
+.tblwrap { flex: 1; min-width: 0; padding: 26px 30px; display: flex; flex-direction: column; justify-content: safe center; }
 table.t { border-collapse: separate; border-spacing: 0; width: 100%; font-variant-numeric: tabular-nums; }
 table.t th { font-size: 21px; font-weight: 650; letter-spacing: .04em; color: var(--haze); text-align: right; padding: 10px 18px 14px; vertical-align: bottom; white-space: nowrap; }
 table.t th:first-child, table.t td:first-child { text-align: left; }
@@ -355,52 +379,62 @@ table.t tr.focus td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
 table.t td.der { color: var(--ink); font-weight: 600; }
 table.t td.der.pend, table.t th.der.pend { opacity: 0; }
 table.t .now { color: var(--accent) !important; }
-.recipe { flex: 0 0 36%; padding: 28px 32px; display: flex; flex-direction: column; gap: 16px; justify-content: center; position: relative; min-width: 0; }
+.recipe { flex: 0 0 36%; padding: 28px 32px; display: flex; flex-direction: column; gap: 16px; justify-content: safe center; position: relative; min-width: 0; }
 .recipe .rk { display: none; flex-direction: column; gap: 14px; }
 .recipe .rk.shown { display: flex; }
 .recipe .rname { font-size: 30px; font-weight: 680; }
 .recipe .rsays { font-size: 26px; color: var(--mist); line-height: 1.35; }
 .recipe .rf { font-size: 34px; }
 .recipe .rw { font-size: 30px; position: relative; padding-bottom: 30px; }
+/* table too wide for a side recipe: the recipe goes under it */
+.s-table .body.stacked { flex-direction: column; }
+.s-table .body.stacked .recipe { flex: none; }
+.land .s-table .body.stacked .recipe .rk.shown { display: grid; grid-template-columns: auto 1fr; column-gap: 34px; row-gap: 8px; align-items: baseline; }
+.land .s-table .body.stacked .recipe .rk .eyebrow { grid-column: 1 / -1; }
+.land .s-table .body.stacked .recipe .rw { grid-column: 1 / -1; }
 .port .s-table .body { flex-direction: column; }
 .port .recipe { flex: none; }
 .port table.t td { font-size: 25px; padding: 10px 8px; }
 .port table.t th { font-size: 21px; padding: 8px 8px 10px; white-space: normal; line-height: 1.15; }
 .port .tblwrap { padding: 18px 14px; }
 
-/* bridge */
-.bridge { flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 0; justify-content: center; }
+/* ---------- bridge ---------- */
+.bridge { flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 0; justify-content: safe center; }
 .bridge .worlds, .bridge .pair { display: grid; grid-template-columns: 1fr 86px 1fr; align-items: center; }
 .bridge .world { justify-self: stretch; text-align: center; font-size: 24px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--haze); padding: 6px 0; }
-.bridge .world.to { color: var(--accent); }
+.bridge .world.to { color: var(--tint); }
 .bridge .cell { padding: 20px 28px; font-size: 29px; line-height: 1.28; text-align: center; }
-.bridge .eqv { text-align: center; font-size: 40px; color: var(--ink); font-weight: 300; text-shadow: 0 0 14px rgba(0, 0, 0, .85); }
+.bridge .eqv { text-align: center; font-size: 40px; color: var(--ink); font-weight: 600; }
 .bridge .breaks { margin-top: 8px; display: flex; gap: 18px; align-items: flex-start; padding: 22px 30px; }
 .bridge .breaks .bi { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 800; color: #2a0f0c; background: var(--bad); margin-top: 2px; }
 .bridge .breaks .bt { font-size: 27px; line-height: 1.35; }
-.bridge .breaks .bt b { color: var(--bad); }
+.bridge .breaks .bt b { color: var(--ink); }
 .port .bridge .worlds, .port .bridge .pair { grid-template-columns: 1fr 48px 1fr; }
 .port .bridge .cell { padding: 14px 14px; font-size: 24px; }
 
-/* compare */
+/* ---------- compare ---------- */
 .compare { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 36px; min-height: 0; }
 .compare .side { padding: 30px 36px; display: flex; flex-direction: column; gap: 18px; min-height: 0; }
 .compare .tone { display: inline-flex; align-items: center; gap: 12px; font-size: 23px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink) !important; }
 .compare .tone i { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 20px; font-weight: 900; color: #04150c; }
-.compare .tone.good { color: var(--good); } .compare .tone.good i { background: var(--good); }
-.compare .tone.bad { color: var(--bad); } .compare .tone.bad i { background: var(--bad); color: #2a0f0c; }
+.compare .tone.good i { background: var(--good); }
+.compare .tone.bad i { background: var(--bad); color: #2a0f0c; }
 .compare .side h3 { font-size: 36px; font-weight: 680; letter-spacing: -.01em; }
-.compare .side .vis { min-height: 150px; }
+.compare .side .vis { flex: none; min-height: auto; }
+.compare .side .stat { flex: none; padding: 12px 22px 14px; }
+.compare .stat .num { font-size: 92px; }
 .verdict { flex: none; padding: 22px 32px; font-size: 29px; line-height: 1.35; }
 .verdict b { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: .13em; text-underline-offset: .2em; text-decoration-skip-ink: none; }
-.port .compare { grid-template-columns: 1fr; gap: 20px; }
+.port .compare { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; gap: 20px; }
+.port .compare .stat .num { font-size: 64px; }
 
-/* predict */
+/* ---------- predict ---------- */
 .predict { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; min-height: 0; }
 .predict .opts { display: flex; flex-direction: column; gap: 16px; }
 .opt { display: grid; grid-template-columns: 50px 1fr 40px; align-items: center; gap: 18px; text-align: left; padding: 18px 22px; font-size: 29px; line-height: 1.3; transition: transform .25s var(--spring), box-shadow .3s; }
 .opt:hover:not(:disabled) { transform: translateX(6px); }
-.opt .ol { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 750; background: rgba(255, 255, 255, .13); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
+.opt .ol { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 750;
+  background: rgba(0, 0, 0, .34); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .12); }
 .opt .om { font-size: 26px; font-weight: 800; text-align: center; }
 .opt.right { box-shadow: 0 0 0 3px var(--good), 0 18px 40px -14px rgba(0, 0, 0, .6); }
 .opt.right .ol { background: var(--good); color: #04150c; }
@@ -411,20 +445,20 @@ table.t .now { color: var(--accent) !important; }
 .opt:disabled { cursor: default; }
 .why { padding: 30px 36px; display: flex; flex-direction: column; gap: 14px; opacity: 0; filter: blur(12px); transform: scale(.97); transition: all .6s var(--ease); }
 .why.open { opacity: 1; filter: none; transform: none; }
-.why .eyebrow { color: var(--amber); }
+.why .eyebrow { color: var(--tint); }
 .why .p { font-size: 30px; }
 .predict .hint { font-size: 24px; color: var(--haze); padding: 4px 6px; }
 .port .predict { grid-template-columns: 1fr; gap: 20px; }
 .port .opt { font-size: 26px; padding: 14px 16px; grid-template-columns: 42px 1fr 30px; }
 
-/* quiz (flip cards) */
+/* ---------- quiz (flip cards): both faces share one grid cell, so a card is as tall as its longer face ---------- */
 .quiz { flex: 1; display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 30px; min-height: 0; max-height: 470px; align-self: stretch; }
 .flip { perspective: 1600px; cursor: pointer; }
 .flip .in { position: relative; display: grid; width: 100%; height: 100%; transition: transform .8s var(--spring); transform-style: preserve-3d; }
 .flip.on .in { transform: rotateY(180deg); }
-.flip .face { grid-area: 1 / 1; position: relative; padding: 32px 34px; display: flex; flex-direction: column; justify-content: center; gap: 16px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.flip .face { grid-area: 1 / 1; position: relative; padding: 32px 34px; display: flex; flex-direction: column; justify-content: safe center; gap: 16px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .flip .back { transform: rotateY(180deg); }
-.flip .face .tag { font-size: 21px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--ink); }
+.flip .face .tag { font-size: 21px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--haze); }
 .flip .face .q { font-size: 34px; line-height: 1.3; font-weight: 620; }
 .flip .face .a { font-size: 30px; line-height: 1.38; }
 .flip .face .hint { font-size: 22px; color: var(--mist); margin-top: 10px; }
@@ -433,120 +467,44 @@ table.t .now { color: var(--accent) !important; }
 .port .flip .face .q { font-size: 27px; }
 .port .flip .face .a { font-size: 25px; }
 
-/* recap */
-.recap { flex: 1; display: grid; grid-template-columns: 1.1fr 1fr 1fr; grid-template-rows: auto auto; align-content: center; align-items: start; gap: 26px; min-height: 0; }
-.recap .answer { grid-column: 1 / -1; padding: 30px 40px; display: flex; gap: 26px; align-items: center; }
-.recap .answer .at { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--accent); flex: none; writing-mode: horizontal-tb; }
-.recap .answer .ap { font-size: 33px; line-height: 1.35; font-weight: 560; }
+/* ---------- recap: the answer, then what to keep and where it breaks ---------- */
+.recap { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; align-content: safe center; align-items: start; gap: 26px; min-height: 0; }
+.recap .answer { grid-column: 1 / -1; padding: 32px 40px; display: flex; gap: 26px; align-items: center; }
+.recap .answer .at { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--tint); flex: none; }
+.recap .answer .ap { font-size: 36px; line-height: 1.3; font-weight: 600; }
 .recap .box { padding: 26px 30px; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
 .recap .box .eyebrow { margin-bottom: 4px; }
-.recap .box .pts li { font-size: 27px; line-height: 1.36; }
+.recap .box .pts li { font-size: 28px; line-height: 1.36; }
 .recap .box .pts { gap: 12px; }
 .port .recap { grid-template-columns: 1fr; grid-template-rows: none; }
 .port .recap .answer { flex-direction: column; align-items: flex-start; gap: 12px; }
-.port .recap .answer .ap { font-size: 28px; }
+.port .recap .answer .ap { font-size: 29px; }
 
-/* map */
+/* ---------- map ---------- */
 .mapw { position: relative; flex: 1; min-height: 0; }
 .mapw svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.mapw .mn { position: absolute; transform: translate(-50%, -50%); padding: 14px 22px; text-align: center; max-width: 340px; }
+.mapw .mn { position: absolute; transform: translate(-50%, -50%); padding: 14px 22px; text-align: center; max-width: 330px; }
 .mapw .mn .mt { font-size: 30px; font-weight: 650; line-height: 1.2; }
-.mapw .mn .mk2 { font-size: 20px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--ink); opacity: .9; margin-bottom: 4px; }
-.mapw .mn.center { padding: 24px 34px; box-shadow: 0 0 0 3px var(--accent), 0 0 40px rgba(255, 90, 54, .4), 0 24px 60px -16px rgba(0, 0, 0, .6); }
+.mapw .mn .mk2 { font-size: 20px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--haze); margin-bottom: 4px; }
+.mapw .mn .mh { font-size: 22px; color: var(--ink); line-height: 1.25; margin-top: 4px; }
+.mapw .mn.center { padding: 24px 34px; box-shadow: 0 0 0 3px var(--accent), 0 0 34px rgba(255, 90, 54, .25), 0 24px 60px -16px rgba(0, 0, 0, .6); }
 .mapw .mn.center .mt { font-size: 34px; }
-.mapw .how { font-size: 21px; fill: var(--mist); }
-.mapw .edge { stroke: rgba(232, 226, 216, .45); stroke-width: 2.5; fill: none; }
+.mapw .edge { stroke: rgba(240, 240, 236, .4); stroke-width: 2.5; fill: none; }
 .mapw .edge.analogy { stroke-dasharray: 8 9; }
-.mapw .howbox { position: absolute; transform: translate(-50%, -50%); font-size: 23px; line-height: 1.25; color: var(--mist); text-align: center; max-width: 250px;
-  padding: 6px 12px; border-radius: 12px; background: rgba(16, 14, 12, .78); }
-.maplist { display: none; flex-direction: column; gap: 14px; }
 .port .mapw .mn.center { max-width: none; }
-.maplist .mi { padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; }
-.maplist .mi .mt { font-size: 26px; font-weight: 650; }
-.maplist .mi .mh { font-size: 23px; color: var(--mist); }
-
-/* images */
-.imgbox { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
-.imgbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--r-md); }
-
-/* accessibility preferences */
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } #wall .orb, #wall .ribbons, #wall .sparks { transition: none !important; } }
-@media (prefers-reduced-transparency: reduce) { .g { background: rgba(22, 32, 92, .94) !important; } .g.plate { background: rgba(9, 15, 56, .96) !important; } }
-@media (prefers-contrast: more) { .g::before { background: rgba(255, 255, 255, .8); } :root { --mist: #e1e6ff; --haze: #c3cbee; } }
-@media print { #wall .orb { display: none; } }
-
-/* code visual sits in the middle of its column */
-.vis > .codebox { margin: auto 0; }
-/* a slide whose content runs long is zoomed down a little (deck.js sets it); the audit reports big shrinks */
-.slide > .body, .slide > .predict, .slide > .eqwrap, .slide > .bridge, .slide > .compare, .slide > .quiz, .slide > .recap, .slide > .mapw { transform-origin: top left; }
-/* equation: formula column + term column in landscape */
-.land .eqwrap.two { display: grid; grid-template-columns: 1.25fr 1fr; grid-template-rows: max-content minmax(0, 1fr); column-gap: 40px; row-gap: 20px; align-items: start; }
-.land .eqwrap.two .eqmain { grid-column: 1; grid-row: 1; }
-.land .eqwrap.two .eqleft { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; gap: 22px; }
-.land .eqwrap.two .terms { grid-column: 2; grid-row: 1 / span 2; grid-template-columns: 1fr; align-self: center; }
-.eqleft { display: flex; flex-direction: column; gap: 20px; }
-
-/* code visuals hug their content */
-.vis.vis-code { flex: none; align-self: center; width: 100%; }
-.col-vis:has(> .vis-code) { align-items: center; }
-/* visual footer: caption on the left, sliders on the right */
-.vfoot { display: flex; align-items: center; gap: 18px 28px; flex-wrap: wrap; flex: none; margin-top: 10px; }
-.vfoot .cap { flex: 1 1 340px; margin-top: 0; }
-.vfoot .controls { margin-top: 0; }
-/* calc: symbolic, substituted and result parts wrap as whole pieces; labels live inside their part */
-.cline .math .part { position: relative; display: inline-block; }
-.cline .math { padding-bottom: 0; }
-.quiz .face.front { justify-content: center; }
-
-/* table too wide for a side recipe: recipe goes under it */
-.s-table .body.stacked { flex-direction: column; }
-.s-table .body.stacked .recipe { flex: none; }
-.land .s-table .body.stacked .recipe .rk.shown { display: grid; grid-template-columns: auto 1fr; column-gap: 34px; row-gap: 8px; align-items: baseline; }
-.land .s-table .body.stacked .recipe .rk .eyebrow { grid-column: 1 / -1; }
-.land .s-table .body.stacked .recipe .rw { grid-column: 1 / -1; }
-.compare .side .vis { flex: none; min-height: auto; }
-.compare .side .stat { flex: none; }
-/* map: kind, name and how inside each node */
-.mapw .mn .mh { font-size: 22px; color: var(--mist); line-height: 1.25; margin-top: 4px; }
-.mapw .mn { max-width: 330px; }
-.port .mapw .mn:not(.center) { display: block; }
 .port .mapw svg { display: none; }
-/* compare: stats a touch smaller; on phones the sides take their own height */
-.compare .stat .num { font-size: 92px; }
-.port .compare .stat .num { font-size: 64px; }
-.port .compare { grid-template-rows: auto auto; align-content: start; }
-.bridge .breaks .bt b { color: var(--ink); }
-.bridge .eqv { font-weight: 600; }
 
-/* title slide (no chapter yet): no empty capsule on phones */
-.port .chapters:not(:has(.now)) { visibility: hidden; }
-
-/* vibrancy: text on clear glass carries a soft dark halo, so it stays legible when bright light passes behind the pane
-   (Apple deepens the glass shadow over text for the same reason). The contrast check measures it. */
-.g, .g *, .lead, .h1, .head .eyebrow { text-shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 0 14px rgba(0, 0, 0, .38); }
-.stat .num { text-shadow: 0 0 2px rgba(255, 90, 54, .9), 0 0 24px rgba(255, 90, 54, .75), 0 0 60px rgba(255, 90, 54, .45), 0 2px 4px rgba(0, 0, 0, .5); }
-.res, .res .katex { text-shadow: 0 1px 2px rgba(0, 0, 0, .55), 0 0 12px rgba(0, 0, 0, .4); }
-
+/* ---------- vibrancy: text on clear glass carries a faint dark halo, so it holds when brighter light passes behind ---------- */
+.g, .g *, .lead, .h1, .head .eyebrow { text-shadow: 0 1px 2px rgba(0, 0, 0, .4); }
 /* chips with dark text on a solid colour carry no halo (a dark halo around dark text reads as mud) */
-.g .fx, .g .cline .num, .g .opt .ol, .g .compare .tone i, .compare .tone i, .bridge .breaks .bi, .s-title .qmark, .g .term .sw, .opt.right .ol, .opt.wrong .ol { text-shadow: none; }
-.opt .ol { background: rgba(0, 0, 0, .34); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .12); }
-.bridge .world.to { color: var(--amber); }
-.recap .answer .at { color: var(--amber); }
-.mapw .mn .mh { color: var(--ink); }
-.g.warm::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 90, 54, .09), transparent 55%), linear-gradient(165deg, rgba(255, 255, 255, .08), transparent 30%); }
-.port #wall .ribbons { opacity: .72; }
+.g .fx, .g .cline .num, .g .opt .ol, .compare .tone i, .bridge .breaks .bi, .s-title .qmark, .opt.right .ol, .opt.wrong .ol { text-shadow: none; }
 
-.s-title .chips span { background: rgba(10, 8, 7, .34); }
-.cap { color: #eeeae3; }
-.flip .face .hint { color: #ece8e1; }
-.compare .stat { padding: 12px 22px 14px; }
-/* safe centring: when content runs long it overflows downward, where the fit can see it (browsers without `safe` keep plain centre) */
-.body.split > .col-text, .body.text-only, .textcard, .stat, .units, .calc, .tblwrap, .recipe, .bridge, .flip .face { justify-content: safe center; }
-/* landscape equation rows: label beside its content, so a long line wraps in its own column instead of under the label */
-.land .eqrow { display: grid; grid-template-columns: 136px minmax(0, 1fr); column-gap: 22px; align-items: baseline; }
-.land .eqrow .tag { min-width: 0; line-height: 1.25; }
-.land .eqrow .codebox { justify-self: start; }
-</style></head><body><script type="application/json" id="lucid-deck">{"title": "Counts per million", "subtitle": "Every Lucid slide type, on one small idea", "kicker": "Lucid gallery", "question": "Two samples, different depths. How do we compare a gene across them?", "answer": "Divide each count by its sample's total reads and scale to a million (CPM), then compare those rates.", "chapters": ["Raw counts", "The fix", "Check it"], "learner": {"goal": "intuition+hand", "knows": ["count", "fraction"], "anchors": ["cricket"]}, "ladder": {"depth": "sequencing depth (library size)", "share": "a gene's share of the sample", "cpm": "counts per million"}, "data": {"libA": 2000000, "libB": 1000000, "xA": 200, "xB": 100, "genes": [{"gene": "GeneA", "x": 120, "N": 1000}, {"gene": "GeneB", "x": 30, "N": 1000}, {"gene": "GeneC", "x": 850, "N": 1000}]}, "derive": {"cpmA": "xA / libA * 1e6", "cpmB": "xB / libB * 1e6"}, "symbols": {"x": {"tex": "x", "says": "reads on the gene"}, "N": {"tex": "N", "says": "reads in the whole sample"}, "p": {"tex": "p", "says": "the gene's share of all reads"}, "cpm": {"tex": "\\mathrm{CPM}", "says": "reads per million reads"}, "xA": {"tex": "x_A", "says": "reads on the gene in A"}, "libA": {"tex": "N_A", "says": "reads in sample A"}, "lam": {"tex": "\\lambda", "says": "expected reads (a rate)"}, "k": {"tex": "k", "says": "reads we actually see"}}, "abbr": {"CPM": "counts per million", "SD": "standard deviation", "FASTQ": "the raw read file format", "TMM": "trimmed mean of M-values"}, "slides": [{"type": "title"}, {"type": "predict", "q": "Sample A was sequenced twice as deep as B. A gene has 200 reads in A and 100 in B. Is it higher in A?", "options": ["Yes, about 2× higher", "No, it is the same", "Can't tell from counts alone"], "answer": 1, "why": "A has twice the reads overall, so every gene gets about twice the reads. Per million reads, both are **{{cpmA|0}}**."}, {"type": "chapter", "title": "Raw counts", "q": "Why can't we compare the counts as they are?"}, {"type": "idea", "chapter": "Raw counts", "introduces": ["depth"], "lead": "Start with what the sequencer gives us.", "title": "Deeper samples give every gene more reads", "points": ["Sample A has **{{libA/1e6|0}} million** reads, B has **{{libB/1e6|0}} million**.", "The same gene shows {{xA}} reads in A and {{xB}} in B.", "The gap comes from depth, not biology."], "visual": {"chart": {"x": {"cats": ["Sample A", "Sample B"], "label": "sample"}, "y": {"label": "reads (millions)", "min": 0, "max": 2.5}, "series": [{"name": "library size", "kind": "bars", "x": "[0, 1]", "y": "[libA/1e6, libB/1e6]", "focus": true}], "marks": [{"kind": "label", "at": [0, 2.25], "text": "2× deeper", "step": 2}]}, "caption": "Sample A's bar is twice as tall."}}, {"type": "bridge", "lead": "You have seen this problem in cricket.", "title": "Raw counts are like run totals", "from": "Cricket", "to": "Sequencing", "pairs": [["runs scored", "reads on a gene"], ["overs faced", "reads in the sample"], ["run rate", "CPM (counts per million)"]], "breaks": "A run rate is per over; CPM is per million reads. Neither tells you about one ball or one molecule."}, {"type": "chapter", "title": "The fix"}, {"type": "equation", "chapter": "The fix", "introduces": ["cpm", "share"], "lead": "So divide by the depth, then scale to a million.", "title": "CPM puts every sample on one scale", "lhs": "cpm", "expr": "x / N * 1e6", "read": "reads on the gene, out of all reads, times a million", "terms": {"x": {"value": "xA"}, "N": {"value": "libA"}}, "code": "cpm = x / N * 1e6", "note": "The same gene now reads {{cpmA|0}} in both samples."}, {"type": "calc", "lead": "Work it once by hand.", "title": "Two steps turn reads into CPM", "lines": [{"say": "Find the gene's share of the sample", "expr": "xA / libA", "name": "p"}, {"say": "Scale the share to a million reads", "expr": "p * 1e6", "name": "cpm"}]}, {"type": "table", "lead": "Every gene follows the same recipe.", "title": "Each new column is one step of the recipe", "rows": [{"gene": "GeneA", "x": 120, "N": 1000}, {"gene": "GeneB", "x": 30, "N": 1000}, {"gene": "GeneC", "x": 850, "N": 1000}], "cols": [{"key": "gene", "label": "gene"}, {"key": "x", "label": "reads"}, {"key": "N", "label": "library"}, {"key": "p", "label": "share", "expr": "x / N", "fmt": 3, "says": "the gene's share of all reads"}, {"key": "cpm", "label": "CPM", "expr": "p * 1e6", "fmt": ",", "says": "reads per million reads"}], "focus": 0}, {"type": "statement", "text": "A count means nothing until you know ==how many reads== it came from.", "sub": "Divide first, compare second."}, {"type": "idea", "chapter": "Check it", "lead": "But counts also wobble by chance.", "title": "Even a fixed rate gives counts that wobble", "points": ["Move the rate. The spread grows with it.", "The shaded tail is the chance of 30 or more reads."], "controls": [{"name": "lam", "label": "rate λ", "min": 5, "max": 40, "step": 1, "value": 20}], "derive": {"tail": "1 - poisCdf(29, lam)"}, "visual": {"chart": {"x": {"label": "reads seen (k)", "min": 0, "max": 60}, "y": {"label": "probability", "min": 0, "max": 0.2}, "series": [{"name": "Poisson", "kind": "bars", "fn": "poisPmf(x, lam)", "color": "mist"}, {"name": "normal guide", "kind": "line", "fn": "normPdf(x, lam, sqrt(lam))", "step": 2, "focus": true}], "marks": [{"kind": "vline", "x": "lam", "label": "mean {{lam}}", "step": 1}, {"kind": "span", "x": ["lam - sqrt(lam)", "lam + sqrt(lam)"], "y": 0.17, "label": "±1 SD = ±{{sqrt(lam)|1}}", "step": 3}, {"kind": "area", "fn": "normPdf(x, lam, sqrt(lam))", "x": [30, 60], "label": "P(k ≥ 30) = {{tail|%1}}", "step": 4}]}, "caption": "The spread is about the square root of the mean."}}, {"type": "compare", "lead": "So which number should you compare?", "title": "Raw counts mislead; CPM does not", "a": {"title": "Raw counts", "tone": "bad", "verdict": "misleads", "visual": {"stat": {"value": "2×", "label": "A looks higher", "sub": "{{xA}} vs {{xB}} reads"}}}, "b": {"title": "CPM", "tone": "good", "verdict": "fair", "visual": {"stat": {"value": "1×", "label": "the same level", "sub": "{{cpmA|0}} vs {{cpmB|0}} CPM"}}}, "verdict": "Compare **rates**, not raw totals, whenever the totals differ."}, {"type": "idea", "lead": "Picture one million reads.", "title": "A gene at 100 CPM owns 1 read in 10,000", "visual": {"units": {"n": 100, "hi": 1, "label": "Each dot is **10,000** reads; the lit dot is this gene"}, "caption": "One lit dot out of a hundred."}}, {"type": "idea", "lead": "Where CPM sits in the pipeline.", "title": "CPM comes after counting, before testing", "visual": {"flow": {"nodes": [{"label": "reads", "sub": "FASTQ files"}, {"label": "counts", "sub": "per gene"}, {"label": "CPM", "sub": "per million"}, {"label": "test", "sub": "groups compared"}], "verbs": ["align", "divide", "compare"], "focus": 2, "build": true}, "caption": "The lit box is this deck."}}, {"type": "idea", "title": "In code it is one line", "points": ["`x` is the gene counts; `N` is each sample total.", "Dividing by `N` handles all samples at once."], "visual": {"code": "import numpy as np\ncpm = x / N * 1e6   # every gene, every sample", "terms": {"x": "s1", "N": "s2"}}}, {"type": "equation", "title": "The chance of k reads at rate λ", "tex": "P(k) = \\dfrac{[lam]^{[k]} e^{-[lam]}}{[k]!}", "read": "rate to the power k, times e to the minus rate, over k factorial", "plug": "P(25) = \\dfrac{20^{25} e^{-20}}{25!} = {{poisPmf(25, 20)|3}}"}, {"type": "quiz", "cards": [{"q": "What does CPM divide by?", "a": "The total reads in that sample (the library size)."}, {"q": "Why multiply by a million?", "a": "So the numbers are easy to read, like \"120 per million\".", "tag": "reversed"}, {"q": "Two samples have the same CPM for a gene. Same raw counts?", "a": "Not if their depths differ. Equal CPM means an equal **share**.", "tag": "edge case"}]}, {"type": "recap", "answer": "Divide each count by its sample's total reads, then scale to a million. Compare those rates, never raw counts.", "points": ["Depth differs between samples.", "CPM removes depth.", "Counts still wobble about √mean."], "breaks": ["A few huge genes can skew CPM (composition).", "CPM does not fix gene length."], "next": ["TMM and median-ratio scaling", "Why counts get logged"]}, {"type": "map", "center": "CPM", "links": [{"to": "run rate", "how": "same idea in cricket", "kind": "analogy"}, {"to": "library size", "how": "the number we divide by", "kind": "prereq"}, {"to": "TPM", "how": "also divides by gene length", "kind": "sibling"}, {"to": "DESeq2 size factors", "how": "a robust version", "kind": "next"}]}]}</script><script>window.LUCID_ASSETS={};</script><script>/* Lucid core: formatting, markdown-lite, the expression engine (parse, evaluate, to TeX, substitute), statistics, seeded random numbers.
+/* ---------- accessibility preferences ---------- */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } #wall .orb, #wall .ribbons { transition: none !important; } }
+@media (prefers-reduced-transparency: reduce) { .g { background: rgba(26, 27, 29, .96) !important; } .g.plate { background: rgba(21, 22, 24, .97) !important; } }
+@media (prefers-contrast: more) { .g::before { background: rgba(255, 255, 255, .8); } :root { --mist: #dddbd5; --haze: #c4c2bc; } }
+@media print { #wall .orb { display: none; } }
+</style></head><body><script type="application/json" id="lucid-deck">{"title": "Counts per million", "subtitle": "Every Lucid slide type, on one small idea", "kicker": "Lucid gallery", "question": "Two samples, different depths. How do we compare a gene across them?", "answer": "Divide each count by its sample's total reads and scale to a million (CPM), then compare those rates.", "chapters": ["Raw counts", "The fix", "Check it"], "learner": {"goal": "intuition+hand", "knows": ["count", "fraction"], "anchors": ["cricket"]}, "ladder": {"depth": "sequencing depth (library size)", "share": "a gene's share of the sample", "cpm": "counts per million"}, "data": {"libA": 2000000, "libB": 1000000, "xA": 200, "xB": 100, "genes": [{"gene": "GeneA", "x": 120, "N": 1000}, {"gene": "GeneB", "x": 30, "N": 1000}, {"gene": "GeneC", "x": 850, "N": 1000}]}, "derive": {"cpmA": "xA / libA * 1e6", "cpmB": "xB / libB * 1e6"}, "symbols": {"x": {"tex": "x", "says": "reads on the gene"}, "N": {"tex": "N", "says": "reads in the whole sample"}, "p": {"tex": "p", "says": "the gene's share of all reads"}, "cpm": {"tex": "\\mathrm{CPM}", "says": "reads per million reads"}, "xA": {"tex": "x_A", "says": "reads on the gene in A"}, "libA": {"tex": "N_A", "says": "reads in sample A"}, "lam": {"tex": "\\lambda", "says": "expected reads (a rate)"}, "k": {"tex": "k", "says": "reads we actually see"}}, "abbr": {"CPM": "counts per million", "SD": "standard deviation", "FASTQ": "the raw read file format", "TMM": "trimmed mean of M-values"}, "slides": [{"type": "title"}, {"type": "predict", "q": "Sample A was sequenced twice as deep as B. A gene has 200 reads in A and 100 in B. Is it higher in A?", "options": ["Yes, about 2× higher", "No, it is the same", "Can't tell from counts alone"], "answer": 1, "why": "A has twice the reads overall, so every gene gets about twice the reads. Per million reads, both are **{{cpmA|0}}**."}, {"type": "chapter", "title": "Raw counts", "q": "Why can't we compare the counts as they are?"}, {"type": "idea", "chapter": "Raw counts", "introduces": ["depth"], "lead": "Start with what the sequencer gives us.", "title": "Deeper samples give every gene more reads", "points": ["The same gene: {{xA}} reads in A, {{xB}} in B.", "The gap comes from depth, not biology."], "visual": {"chart": {"x": {"cats": ["Sample A", "Sample B"], "label": "sample"}, "y": {"label": "reads (millions)", "min": 0, "max": 2.5}, "series": [{"name": "library size", "kind": "bars", "x": "[0, 1]", "y": "[libA/1e6, libB/1e6]", "focus": true}], "marks": [{"kind": "label", "at": [0, 2.25], "text": "2× deeper", "step": 2}]}, "caption": "Sample A's bar is twice as tall."}}, {"type": "bridge", "lead": "You have seen this problem in cricket.", "title": "Raw counts are like run totals", "from": "Cricket", "to": "Sequencing", "pairs": [["runs scored", "reads on a gene"], ["overs faced", "reads in the sample"], ["run rate", "CPM (counts per million)"]], "breaks": "A run rate is per over; CPM is per million reads. Neither tells you about one ball or one molecule."}, {"type": "chapter", "title": "The fix"}, {"type": "equation", "chapter": "The fix", "introduces": ["cpm", "share"], "lead": "So divide by the depth, then scale to a million.", "title": "CPM puts every sample on one scale", "lhs": "cpm", "expr": "x / N * 1e6", "read": "reads on the gene, out of all reads, times a million", "terms": {"x": {"value": "xA"}, "N": {"value": "libA"}}, "code": "cpm = x / N * 1e6", "note": "The same gene now reads {{cpmA|0}} in both samples."}, {"type": "calc", "lead": "Work it once by hand.", "title": "Two steps turn reads into CPM", "lines": [{"say": "Find the gene's share of the sample", "expr": "xA / libA", "name": "p"}, {"say": "Scale the share to a million reads", "expr": "p * 1e6", "name": "cpm"}]}, {"type": "idea", "lead": "A share is a slice of one sample.", "title": "Each gene owns a slice of the library", "visual": {"parts": {"items": [{"label": "GeneA", "value": 120, "focus": true}, {"label": "GeneB", "value": 30}, {"label": "GeneC", "value": 850}], "total": {"label": "library"}, "share": true}, "caption": "GeneA's slice is 12% of this small library."}}, {"type": "table", "lead": "Every gene follows the same recipe.", "title": "Each new column is one step of the recipe", "rows": [{"gene": "GeneA", "x": 120, "N": 1000}, {"gene": "GeneB", "x": 30, "N": 1000}, {"gene": "GeneC", "x": 850, "N": 1000}], "cols": [{"key": "gene", "label": "gene"}, {"key": "x", "label": "reads"}, {"key": "N", "label": "library"}, {"key": "p", "label": "share", "expr": "x / N", "fmt": 3, "says": "the gene's share of all reads"}, {"key": "cpm", "label": "CPM", "expr": "p * 1e6", "fmt": ",", "says": "reads per million reads"}], "focus": 0}, {"type": "predict", "kind": "check", "q": "GeneB has 30 reads in a library of 1,000. What is its CPM?", "options": ["30", "3,000", "30,000"], "answer": 2, "why": "30 out of 1,000 is a share of 0.03. Times a million gives **30,000**."}, {"type": "statement", "text": "A count means nothing until you know ==how many reads== it came from.", "sub": "Divide first, compare second."}, {"type": "idea", "chapter": "Check it", "lead": "But counts also wobble by chance.", "title": "Even a fixed rate gives counts that wobble", "points": ["Move the rate: the spread grows with it.", "The shaded tail: 30 or more reads."], "controls": [{"name": "lam", "label": "rate λ", "min": 5, "max": 40, "step": 1, "value": 20}], "derive": {"tail": "1 - poisCdf(29, lam)"}, "visual": {"chart": {"x": {"label": "reads seen (k)", "min": 0, "max": 60}, "y": {"label": "probability", "min": 0, "max": 0.2}, "series": [{"name": "Poisson", "kind": "bars", "fn": "poisPmf(x, lam)", "color": "mist"}, {"name": "normal guide", "kind": "line", "fn": "normPdf(x, lam, sqrt(lam))", "step": 2, "focus": true}], "marks": [{"kind": "vline", "x": "lam", "label": "mean {{lam}}", "step": 1}, {"kind": "span", "x": ["lam - sqrt(lam)", "lam + sqrt(lam)"], "y": 0.17, "label": "±1 SD = ±{{sqrt(lam)|1}}", "step": 3}, {"kind": "area", "fn": "normPdf(x, lam, sqrt(lam))", "x": [30, 60], "label": "P(k ≥ 30) = {{tail|%1}}", "step": 4}]}, "caption": "The spread is about the square root of the mean."}}, {"type": "compare", "lead": "So which number should you compare?", "title": "Raw counts mislead; CPM does not", "a": {"title": "Raw counts", "tone": "bad", "verdict": "misleads", "visual": {"stat": {"value": "2×", "label": "A looks higher", "sub": "{{xA}} vs {{xB}} reads"}}}, "b": {"title": "CPM", "tone": "good", "verdict": "fair", "visual": {"stat": {"value": "1×", "label": "the same level", "sub": "{{cpmA|0}} vs {{cpmB|0}} CPM"}}}, "verdict": "Compare **rates**, not raw totals, whenever the totals differ."}, {"type": "idea", "lead": "Picture one million reads.", "title": "A gene at 100 CPM owns 1 read in 10,000", "visual": {"units": {"n": 100, "hi": 1, "label": "Each dot is **10,000** reads; the lit dot is this gene"}, "caption": "One lit dot out of a hundred."}}, {"type": "idea", "lead": "Where CPM sits in the pipeline.", "title": "CPM comes after counting, before testing", "visual": {"flow": {"nodes": [{"label": "reads", "sub": "FASTQ files"}, {"label": "counts", "sub": "per gene"}, {"label": "CPM", "sub": "per million"}, {"label": "test", "sub": "groups compared"}], "verbs": ["align", "divide", "compare"], "focus": 2, "build": true}, "caption": "The lit box is this deck."}}, {"type": "idea", "title": "In code it is one line", "points": ["`x` is the gene counts; `N` is each sample total.", "Dividing by `N` handles all samples at once."], "visual": {"code": "import numpy as np\ncpm = x / N * 1e6   # every gene, every sample", "terms": {"x": "s1", "N": "s2"}}}, {"type": "equation", "title": "The chance of k reads at rate λ", "tex": "P(k) = \\dfrac{[lam]^{[k]} e^{-[lam]}}{[k]!}", "read": "rate to the power k, times e to the minus rate, over k factorial", "plug": "P(25) = \\dfrac{20^{25} e^{-20}}{25!} = {{poisPmf(25, 20)|3}}"}, {"type": "quiz", "cards": [{"q": "What does CPM divide by?", "a": "The total reads in that sample (the library size)."}, {"q": "Why multiply by a million?", "a": "So the numbers are easy to read, like \"120 per million\".", "tag": "reversed"}, {"q": "Two samples have the same CPM for a gene. Same raw counts?", "a": "Not if their depths differ. Equal CPM means an equal **share**.", "tag": "edge case"}]}, {"type": "recap", "answer": "Divide each count by its sample's total reads, then scale to a million. Compare those rates, never raw counts.", "points": ["Depth differs between samples.", "CPM removes depth.", "Counts still wobble about √mean."], "breaks": ["A few huge genes can skew CPM (composition).", "CPM does not fix gene length."], "next": ["TMM and median-ratio scaling", "Why counts get logged"]}, {"type": "map", "center": "CPM", "links": [{"to": "run rate", "how": "same idea in cricket", "kind": "analogy"}, {"to": "library size", "how": "the number we divide by", "kind": "prereq"}, {"to": "TPM", "how": "also divides by gene length", "kind": "sibling"}, {"to": "DESeq2 size factors", "how": "a robust version", "kind": "next"}]}]}</script><script>window.LUCID_ASSETS={};</script><script>/* Lucid core: formatting, markdown-lite, the expression engine (parse, evaluate, to TeX, substitute), statistics, seeded random numbers.
    One expression language serves derive:, table columns, calc lines, equations, chart functions and {{...}} text. */
 (function () {
   'use strict';
@@ -1051,7 +1009,7 @@ table.t .now { color: var(--accent) !important; }
         const V = x => L.val(x, scope, `mark ${mk.kind}`);
         switch (mk.kind) {
           case 'vline': { const x = sx(V(mk.x)); el('line', { x1: x, x2: x, y1: m.t + 4, y2: m.t + ph, stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8', 'stroke-linecap': 'round' }, gg);
-            segs.push([[x, m.t], [x, m.t + ph]]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: m.t + 6, pref: ['tr', 'tl', 'r', 'l'], step: mk.step, c }); break; }
+            segs.push([[x, m.t], [x, m.t + ph]]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: m.t + 6, alts: [[x, m.t + 6, 0], [x, m.t + ph * .3, .8], [x, m.t + ph * .55, 1.6]], own: segs[segs.length - 1], pref: ['tr', 'tl', 'r', 'l'], step: mk.step, c }); break; }
           case 'hline': { const y = sy(V(mk.y)); el('line', { x1: m.l, x2: m.l + pw, y1: y, y2: y, stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8' }, gg);
             segs.push([[m.l, y], [m.l + pw, y]]); if (mk.label) labels.push({ text: mk.label, ax: m.l + pw - 4, ay: y, pref: ['al', 'bl'], step: mk.step, c }); break; }
           case 'band': { if (mk.x) { const [a, b] = mk.x.map(V); const x0 = sx(Math.max(a, xdom[0])), x1 = sx(Math.min(b, xdom[1]));
@@ -1176,7 +1134,7 @@ table.t .now { color: var(--accent) !important; }
         if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - ay) > 10) el('line', { x1: ax - 4, y1: ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
         if (lb.lead && best.k !== 'c') { const [tx, ty] = leadEnd(ax, ay, best.box);
           el('line', { x1: ax, y1: ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
-        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(20,17,15,.84)', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 1.2 }, gg);
+        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(20,21,23,.86)', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 1.2 }, gg);
         if (!lb.plain) el('circle', { cx: x0 + 14, cy: (y0 + y1) / 2, r: 0 }, gg);
         const t = el('text', { x: lb.plain ? x0 + 2 : (x0 + x1) / 2, y: (y0 + y1) / 2 + 8, 'text-anchor': lb.plain ? 'start' : 'middle', class: 'lbl' + (lb.end ? ' dim' : ''), 'data-lbl': 1 }, gg);
         t.textContent = text;
@@ -1258,8 +1216,9 @@ table.t .now { color: var(--accent) !important; }
   }
 })();
 
-/* Lucid slides: one renderer per slide type, plus visuals (chart, stat, units, flow, code, image, eqn, svg).
-   A renderer returns { node, steps, show(k), layout(), audit() }. Steps reveal with data-step="k" (1-based). */
+/* Lucid slides: one renderer per slide type, plus visuals (chart, stat, units, parts, flow, code, image, eqn, svg).
+   A renderer returns { node, steps, show(k), layout(), audit(), more }. Steps reveal with data-step="k" (1-based);
+   `more` is HTML the renderer moved off the slide's face into the more sheet. */
 (function () {
   'use strict';
   const L = window.Lucid;
@@ -1366,6 +1325,56 @@ table.t .now { color: var(--accent) !important; }
           L.svgEl('circle', { cx, cy, r, fill: on ? L.colors.accent : 'none', stroke: on ? L.colors.accent : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
       };
       vis.classList.remove('plate');
+    } else if (v.parts) {
+      const p = v.parts, box = h('div', 'parts'); vis.appendChild(box); vis.classList.remove('plate');
+      const svg = L.svgEl('svg', {}); box.appendChild(svg);
+      const items = (p.items || []).map(it => typeof it === 'string' ? { label: it } : it), multi = !!p.rows;
+      if (p.build) R.steps = multi ? p.rows.length : items.length;
+      const GREYS = ['#8b8984', '#5f5e5a', '#aeaca6', '#4a4946'];
+      const fillOf = (it, i) => it.color ? (L.colors[it.color] || it.color) : it.focus ? L.colors.accent : GREYS[i % GREYS.length];
+      R.layout = () => {
+        const W = box.clientWidth, H = box.clientHeight; if (!W || !H) return;
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
+        const val = x => L.val(x, ctx.scope, `slide ${ctx.index + 1} parts`), fmt = x => L.fmt(x, p.fmt);
+        const g = st => L.svgEl('g', st ? { 'data-pstep': st } : {}, svg);
+        const text = (par, cls, x, y, t, anchor = 'middle') => { const e = L.svgEl('text', { class: cls, x, y, 'text-anchor': anchor }, par); e.textContent = t; return e; };
+        // one bar per row; each piece's width is its share of the row's total. parOf(i) is the group piece i is drawn in
+        const bar = (parOf, vals, x0, w, y, bh) => { const sum = vals.reduce((a, b) => a + b, 0) || 1; let x = x0; return vals.map((v, i) => {
+          const ww = Math.max(0, w * v / sum), r = { x, w: ww, cx: x + ww / 2, v, share: v / sum };
+          if (ww > 0.5) L.svgEl('rect', { x: x + (i ? 2 : 0), y, width: Math.max(1, ww - (i ? 2 : 0) - (i < vals.length - 1 ? 2 : 0)), height: bh, rx: Math.min(10, bh / 4), fill: fillOf(items[i] || {}, i) }, parOf(i));
+          x += ww; return r; }); };
+        if (!multi) {
+          const vals = items.map(it => val(it.value)), sum = vals.reduce((a, b) => a + b, 0);
+          const tot = p.total ? (p.total.value != null ? val(p.total.value) : sum) : null;
+          const bh = Math.min(88, H * .22), topH = tot != null ? 92 : 0, labH = 76, y0 = Math.max(0, (H - (topH + bh + 26 + labH)) / 2) + topH;
+          const last = p.build ? items.length : 0;
+          if (tot != null) { const gt = g(last); const t = L.svgEl('text', { class: 'pt', x: W / 2, y: y0 - 50, 'text-anchor': 'middle' }, gt);
+            t.innerHTML = `<tspan class="pk">${L.esc(L.plain(p.total.label || 'total', ctx.scope))}  </tspan><tspan class="pv">${L.esc(fmt(tot))}</tspan>`;
+            L.svgEl('path', { d: `M2,${y0 - 14}V${y0 - 26}H${W - 2}V${y0 - 14}M${W / 2},${y0 - 26}V${y0 - 34}`, class: 'lead-line', fill: 'none' }, gt); }
+          const gs = items.map((_, i) => g(p.build ? i + 1 : 0)), segs = bar(i => gs[i], vals, 0, W, y0, bh); segs.forEach((sg, i) => sg.g = gs[i]);
+          // labels under their piece; a narrow piece's label slides along and keeps a leader to it
+          const lab = items.map((it, i) => { const a = p.share ? L.fmt(vals[i] / (sum || 1) * 100, 0) + '%' : fmt(vals[i]), b = L.plain(it.label || '', ctx.scope);
+            return { a, b, w: Math.max(L.measure(a, 30, 700), L.measure(b, 24, 560)) + 18, x: segs[i].cx }; });
+          for (let i = 1; i < lab.length; i++) lab[i].x = Math.max(lab[i].x, lab[i - 1].x + (lab[i - 1].w + lab[i].w) / 2);
+          for (let i = lab.length - 1; i >= 0; i--) lab[i].x = Math.min(lab[i].x, i < lab.length - 1 ? lab[i + 1].x - (lab[i + 1].w + lab[i].w) / 2 : W - lab[i].w / 2);
+          lab.forEach((l, i) => { l.x = Math.max(l.w / 2, l.x); const gi = segs[i].g, yb = y0 + bh;
+            if (Math.abs(l.x - segs[i].cx) > 6) L.svgEl('path', { d: `M${segs[i].cx},${yb + 4}L${l.x},${yb + 18}`, class: 'lead-line', fill: 'none' }, gi);
+            text(gi, 'pv', l.x, yb + 52, l.a); text(gi, 'pk', l.x, yb + 84, l.b); });
+        } else {
+          const n = p.rows.length, legH = 54, rowH = Math.min(96, (H - legH) / n), bh = rowH * .58;
+          const lw = Math.max(...p.rows.map(r => L.measure(L.plain(r.label || '', ctx.scope), 24, 640))) + 26, endW = p.share ? 96 : 120, bw = Math.max(40, W - lw - endW);
+          const fi = Math.max(0, items.findIndex(it => it.focus));
+          let lx = 0; items.forEach((it, i) => { L.svgEl('rect', { x: lx, y: 10, width: 22, height: 22, rx: 5, fill: fillOf(it, i) }, svg); const t = text(svg, 'pk', lx + 32, 29, L.plain(it.label || '', ctx.scope), 'start'); lx += 32 + L.measure(t.textContent, 24, 560) + 34; });
+          const y0 = legH + Math.max(0, (H - legH - n * rowH) / 2);
+          p.rows.forEach((r, j) => { const gj = g(p.build ? j + 1 : 0), y = y0 + j * rowH + (rowH - bh) / 2, vals = (r.values || []).map(val);
+            text(gj, 'pr', 0, y + bh / 2 + 9, L.plain(r.label || '', ctx.scope), 'start');
+            const sg = bar(() => gj, vals, lw, bw, y, bh), sum = vals.reduce((a, b) => a + b, 0);
+            text(gj, 'pt', lw + bw + 14, y + bh / 2 + 9, p.share ? L.fmt(sg[fi].share * 100, 0) + '%' : fmt(sum), 'start'); });
+        }
+        R.show(ctx.k);
+      };
+      R.show = k => svg.querySelectorAll('[data-pstep]').forEach(e => e.classList.toggle('off', +e.dataset.pstep > k));
+      R.audit = () => (!multi && items.some(it => it.value == null)) ? ['every part needs a `value`'] : [];
     } else if (v.flow) {
       const f = v.flow, box = h('div', 'flow'); vis.appendChild(box); vis.classList.remove('plate');
       const nodes = (f.nodes || []).map((n, i) => { const o = typeof n === 'string' ? { label: n } : n; const e = h('div', 'node g thin' + (f.focus === i ? ' focus' : ''), `<div class="nl">${md(o.label)}</div>${o.sub ? `<div class="ns">${md(o.sub)}</div>` : ''}`);
@@ -1391,6 +1400,7 @@ table.t .now { color: var(--accent) !important; }
       R.show = k => { svg.querySelectorAll('[data-fstep]').forEach(g => { g.style.opacity = +g.dataset.fstep <= k ? 1 : 0; g.style.transition = 'opacity .5s'; }); };
     } else if (v.code) {
       vis.classList.remove('plate'); vis.classList.add('vis-code'); const pre = h('div', 'codebox', codeHTML(v.code, v.terms)); vis.appendChild(pre);
+      R.layout = () => fitCode(pre);
     } else if (v.image) {
       const box = h('div', 'imgbox'); const img = h('img'); img.src = (window.LUCID_ASSETS || {})[v.image] || v.image; img.alt = v.alt || ''; box.appendChild(img); vis.appendChild(box);
     } else if (v.eqn) {
@@ -1398,7 +1408,7 @@ table.t .now { color: var(--accent) !important; }
       R.layout = () => { L.renderTex(box, L.interp(tex, ctx.scope, true), true); fitEq(box); };
     } else if (v.svg) {
       const box = h('div', 'imgbox'); box.innerHTML = v.svg; vis.appendChild(box);
-    } else L.err(`slide ${ctx.index + 1}`, `visual needs one of chart, stat, units, flow, code, image, eqn, svg`);
+    } else L.err(`slide ${ctx.index + 1}`, `visual needs one of chart, stat, units, parts, flow, code, image, eqn, svg`);
     const tg = v.chart && ctx.charts.length && ctx.charts[ctx.charts.length - 1].toggle;
     if (v.caption || tg) { const f = h('div', 'vfoot'); if (v.caption) f.appendChild(h('div', 'cap', md(v.caption))); if (tg) f.appendChild(tg); vis.appendChild(f); }
     return R;
@@ -1420,6 +1430,12 @@ table.t .now { color: var(--accent) !important; }
     while (k.scrollWidth > box.clientWidth - 8 && fs > 26 && guard++ < 30) { fs -= 3; box.style.fontSize = fs + 'px'; }
   }
   L.fitEq = fitEq;
+  // shrink code until its longest line fits; below 20px it wraps instead, so it stays readable on a phone
+  function fitCode(box) {
+    box.style.fontSize = ''; box.style.whiteSpace = ''; let fs = parseFloat(getComputedStyle(box).fontSize), guard = 0;
+    while (box.scrollWidth > box.clientWidth + 1 && fs > 20 && guard++ < 30) { fs -= 1; box.style.fontSize = fs + 'px'; }
+    if (box.scrollWidth > box.clientWidth + 1) { box.style.whiteSpace = 'pre-wrap'; box.style.overflowWrap = 'anywhere'; }
+  }
 
   // underline overlays under \htmlClass{lt lt-<id>} spans (terms) inside a container
   function overlays(container, colorOf, cls = 'lt', halos = true) {
@@ -1465,6 +1481,30 @@ table.t .now { color: var(--accent) !important; }
     if (need > pad0) container.style.paddingBottom = need + 'px';
   }
 
+  // the name of each term, right under the formula: the formula is the figure, so its labels sit on it.
+  // Labels go under the first place a term appears; a label that would touch its neighbour drops a row and keeps a leader.
+  function termLabels(container, items) {
+    container.querySelectorAll('.tlab').forEach(e => e.remove());
+    container.style.paddingBottom = '';
+    const base = container.getBoundingClientRect(), sc = base.width / (container.offsetWidth || 1) || L.scale || 1;
+    const low = [...container.querySelectorAll('.katex .base, .ul')].reduce((m, e) => Math.max(m, e.getBoundingClientRect().bottom), base.top);
+    const top0 = (low - base.top) / sc + 14, rows = [];
+    items.forEach(it => {
+      const sp = container.querySelector(`.lt-${CSS.escape(it.id)}`); if (!sp || !it.text) return;
+      const r = sp.getBoundingClientRect(); if (!r.width) return;
+      const lab = h('div', 'tlab', `<span class="lk"></span>${L.esc(it.text)}`); lab.dataset.term = it.id; container.appendChild(lab);
+      const w = lab.offsetWidth, hh = lab.offsetHeight;
+      const cx = Math.max(w / 2, Math.min(container.offsetWidth - w / 2, (r.left + r.width / 2 - base.left) / sc));
+      let row = 0; while (rows.some(b => b.row === row && Math.abs(b.cx - cx) < (b.w + w) / 2 + 16) && row < 4) row++;
+      const y = top0 + rows.filter(b => b.row < row).reduce((m, b) => Math.max(m, b.bottom - top0 + 10), 0);
+      rows.push({ cx, w, row, bottom: y + hh });
+      lab.style.left = cx + 'px'; lab.style.top = y + 'px';
+      lab.querySelector('.lk').style.height = Math.max(0, y - top0 + 8) + 'px';
+    });
+    const need = rows.length ? Math.max(...rows.map(b => b.bottom)) - container.offsetHeight + 6 : 0;
+    if (need > 0) container.style.paddingBottom = need + 'px';
+  }
+
   // ---------- slide types ----------
   const T = {};
   L.types = T;
@@ -1480,7 +1520,7 @@ table.t .now { color: var(--accent) !important; }
   };
 
   T.chapter = (s, ctx) => {
-    const node = h('section', 'slide s-statement');
+    const node = h('section', 'slide s-statement s-chapter');
     const n = (L.chapters || []).indexOf(s.title) + 1;
     const g = h('div', 'g enter');
     g.innerHTML = `<div class="eyebrow" style="margin-bottom:22px">${n ? `Part ${n} of ${L.chapters.length}` : 'Next part'}</div><div class="big">${md(s.title)}</div>${s.q ? `<div class="sub">${md(s.q)}</div>` : ''}`;
@@ -1497,7 +1537,7 @@ table.t .now { color: var(--accent) !important; }
   T.idea = (s, ctx) => {
     const node = h('section', 'slide s-idea'); node.appendChild(head(s));
     const v = s.visual ? L.visual(s.visual, ctx) : null, pts = s.points || [];
-    const layout = s.layout || (v && pts.length ? 'split' : v ? 'wide' : 'text-only');
+    const layout = s.layout || (v && pts.length > 1 ? 'split' : v ? 'wide' : 'text-only');   // one point: above a full-width visual
     const body = h('div', 'body ' + layout + (s.layout === 'vis-left' ? ' split vis-left' : '')); node.appendChild(body);
     let nPts = 0;
     if (pts.length || s.text) {
@@ -1554,51 +1594,45 @@ table.t .now { color: var(--accent) !important; }
       main = String(s.tex).replace(/\[([A-Za-z_][\w]*)\]/g, (_, n) => { if (!ids.includes(n)) ids.push(n); return wrapT(n, sym(n)); });
     } else L.err(`slide ${ctx.index + 1}`, 'equation needs expr or tex');
     const inputs = (s.order || ids).filter(n => n !== s.lhs);
-    const order = s.lhs ? [...inputs, s.lhs] : inputs;
+    const order = s.lhs ? [s.lhs, ...inputs] : inputs;   // reading order: the result, then its parts
     const colorOf = n => n === s.lhs ? L.colors.accent : L.colors[TERMC[Math.min(Math.max(0, inputs.indexOf(n)), 3)]] || L.colors.mist;
     // the numbers a computable equation runs on: a term's `value`, else the name in scope
     const eqScope = () => { const sc = L.scope(ctx.scope, {}); inputs.forEach(n => { const t = term(n); if (t.value != null) sc[n] = L.val(t.value, ctx.scope, `term ${n}`); }); return sc; };
     const eq = h('div', 'eqmain'); wrap.appendChild(eq);
-    const left = h('div', 'eqleft'); wrap.appendChild(left);
-    const termBox = h('div', 'terms'); wrap.appendChild(termBox);
-    let step = 1;
-    if (s.read) { const r = h('div', 'eqrow'); r.dataset.step = ++step; r.innerHTML = `<span class="tag">Say it</span><span class="read">“${md(s.read)}”</span>`; left.appendChild(r); }
-    const termSteps = {};
-    const cards = order.map(n => {
-      const card = h('div', 'term'); card.style.setProperty('--tc', colorOf(n)); card.dataset.step = ++step; termSteps[n] = step;
-      card.innerHTML = `<span class="sw"></span><span class="sym"></span><span class="says">${md(term(n).says || '<i>meaning missing</i>')}</span><div class="eg"></div>`;
-      L.renderTex(card.querySelector('.sym'), sym(n), false); termBox.appendChild(card); return [n, card];
-    });
-    let plugRow = null;
-    if (s.plug !== false && (computable || s.plug)) { plugRow = h('div', 'eqrow'); plugRow.dataset.step = ++step; plugRow.innerHTML = `<span class="tag">With numbers</span><span class="val"></span>`; left.appendChild(plugRow); }
-    if (s.code) { const r = h('div', 'eqrow'); r.dataset.step = ++step; const tc = {}; order.forEach(n => tc[n] = colorOf(n)); r.innerHTML = `<span class="tag">In code</span>`; r.appendChild(h('div', 'codebox', codeHTML(s.code, tc))); left.appendChild(r); }
-    if (s.note) { const r = h('div', 'eqrow'); r.dataset.step = ++step; r.innerHTML = `<span class="tag">So</span><span class="p">${md(s.note)}</span>`; left.appendChild(r); }
-    if (!left.children.length) left.remove();
-    if (left.children.length || order.length) wrap.classList.add('two');
+    // step 1 is the bare formula; then each term gets its name (one per step, or all at once when there are many)
+    const build = s.build ?? order.length <= 4, termSteps = {};
+    let step = 1; order.forEach(n => { termSteps[n] = build ? ++step : 2; }); if (!build && order.length) step = 2;
+    let numRow = null;
+    if (s.plug !== false && (computable || s.plug)) { numRow = h('div', 'eqnum'); numRow.dataset.step = ++step; numRow.innerHTML = `<span class="tag">With our numbers</span><span class="val"></span>`; wrap.appendChild(numRow); }
+    if (s.note) { const r = h('div', 'eqso'); r.dataset.step = ++step; r.innerHTML = md(s.note); wrap.appendChild(r); }
+    // said aloud, and in code: one tap away in the more sheet, so the face stays the formula and its names
+    const tc = {}; order.forEach(n => tc[n] = colorOf(n));
+    const more = (s.read ? `<div class="eyebrow">Say it</div><div class="p say">“${md(s.read)}”</div>` : '') + (s.code ? `<div class="eyebrow">In code</div><div class="codebox">${codeHTML(s.code, tc)}</div>` : '');
     const draw = () => {
       L.renderTex(eq, L.interp(main, ctx.scope, true), true); fitEq(eq);
       const sc = computable ? eqScope() : ctx.scope;
       let result = null;
       if (computable) { result = L.try(s.expr, sc, `slide ${ctx.index + 1} equation`); if (s.lhs && s.store !== false) { ctx.scope[s.lhs] = result; sc[s.lhs] = result; } }
-      cards.forEach(([n, card]) => { const t = term(n), v = n === s.lhs ? result : t.value != null ? sc[n] : typeof sc[n] === 'number' ? sc[n] : null;
-        card.querySelector('.eg').innerHTML = v != null && !Number.isNaN(v) ? `e.g. <b>${L.esc(L.fmt(v, t.fmt))}</b>${t.eg ? ' · ' + md(t.eg) : ''}` : t.eg ? `e.g. ${md(t.eg)}` : ''; });
-      if (plugRow) {
-        const v = plugRow.querySelector('.val');
+      if (numRow) {
+        const v = numRow.querySelector('.val');
         if (computable) {
           const sub = L.tex(s.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null, wrap: (n, t) => wrapT(n, t), fmt: s.fmt });
           L.renderTex(v, `${sub} = \\htmlClass{res}{${L.numTex(result, s.fmt)}}`, false);
         } else L.renderTex(v, L.interp(String(s.plug).replace(/\[([A-Za-z_]\w*)\]/g, (_, n) => wrapT(n, sym(n))), ctx.scope, true), false);
       }
       L.fill(node, ctx.scope);
-      requestAnimationFrame(() => { overlays(eq, colorOf); if (plugRow) overlays(plugRow, colorOf, 'lt', false); R.show(ctx.k); });
+      requestAnimationFrame(() => {
+        overlays(eq, colorOf, 'lt', false); if (numRow) overlays(numRow, colorOf, 'lt', false);
+        termLabels(eq, order.map(n => ({ id: n, text: L.plain(term(n).short || term(n).says || '', ctx.scope) })));
+        R.show(ctx.k);
+      });
     };
     const R = {
-      node, steps: step,
+      node, steps: step, more,
       layout: draw,
       show: k => {
-        node.querySelectorAll('.ul').forEach(u => { const st = termSteps[u.dataset.term] ?? 1; u.classList.toggle('off', eq.contains(u) ? k < st : false); });
-        node.querySelectorAll('.halo').forEach(hh => { const st = termSteps[hh.dataset.term]; hh.classList.toggle('off', !(st && k === st && eq.contains(hh))); });
-        node.querySelectorAll('.term').forEach(t => t.classList.toggle('now', +t.dataset.step === k));
+        node.querySelectorAll('.ul').forEach(u => u.classList.toggle('off', eq.contains(u) ? k < (termSteps[u.dataset.term] ?? 1) : false));
+        eq.querySelectorAll('.tlab').forEach(t => t.classList.toggle('off', k < (termSteps[t.dataset.term] ?? 1)));
       },
       audit: () => { const out = []; const kx = eq.querySelector('.katex'); if (kx && kx.scrollWidth > eq.clientWidth + 4) out.push('formula is wider than its box');
         const miss = order.filter(n => !term(n).says); if (miss.length) out.push(`a term has no meaning: ${miss.join(', ')}`); return out; },
@@ -1726,8 +1760,9 @@ table.t .now { color: var(--accent) !important; }
     const r = h('div', 'recap enter'); node.appendChild(r);
     r.appendChild(h('div', 'answer g warm', `<div class="at">Answer</div><div class="ap">${md(s.answer || '')}</div>`));
     const box = (title, list, i) => { if (!list || !list.length) return; const b = h('div', 'box g thin'); b.dataset.step = i; b.appendChild(h('div', 'eyebrow', title)); b.appendChild(points(list, 0, false)); r.appendChild(b); };
-    box('Keep these', s.points, 1); box('Where it breaks', s.breaks, 2); box('Go next', s.next, 3);
-    return { node, steps: [s.points, s.breaks, s.next].filter(x => x && x.length).length };
+    box('Keep these', s.points, 1); box('Where it breaks', s.breaks, 2);
+    const more = s.next && s.next.length ? `<div class="eyebrow">Go next</div><ul class="pts">${s.next.map(x => `<li><span class="pip"></span><span>${md(x)}</span></li>`).join('')}</ul>` : '';
+    return { node, steps: [s.points, s.breaks].filter(x => x && x.length).length, more };
   };
 
   T.map = (s, ctx) => {
@@ -1767,33 +1802,27 @@ table.t .now { color: var(--accent) !important; }
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
-    L.colors = { accent: v('accent'), amber: v('amber'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
-    L.colors.lantern = L.colors.accent;   // older decks wrote `color: lantern`
+    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
+    L.colors.lantern = L.colors.accent; L.colors.amber = L.colors.tint;   // older decks wrote `color: lantern` / `amber`
     L.fontUI = v('f-ui');
   }
 
   function wallpaper() {
     const wall = h('div'); wall.id = 'wall';
     wall.innerHTML = '<svg class="ribbons" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"></svg><div class="orb o1"></div><div class="orb o2"></div>'
-      + '<div class="orb o3"></div><div class="orb o4"></div><div class="sparks"></div><div class="grain"></div><div class="vignette"></div>';
+      + '<div class="orb o3"></div><div class="orb o4"></div><div class="grain"></div><div class="vignette"></div>';
     document.body.prepend(wall);
-    // silk ribbons of warm light: wide soft strokes the glass can blur (a flat gradient behind glass reads as a tint, not glass)
-    const NS = 'http://www.w3.org/2000/svg', svg = wall.querySelector('.ribbons');
-    svg.innerHTML = `<defs>
-      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5a1608" stop-opacity=".0"/><stop offset=".22" stop-color="#8f2812" stop-opacity=".72"/><stop offset=".55" stop-color="#c8401f" stop-opacity=".66"/><stop offset=".82" stop-color="#e0703f" stop-opacity=".4"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e0803" stop-opacity=".92"/><stop offset=".5" stop-color="#5e1a0a" stop-opacity=".8"/><stop offset="1" stop-color="#b8401f" stop-opacity=".42"/></linearGradient>
-      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ffd2b8" stop-opacity="0"/><stop offset=".4" stop-color="#ffd9c2" stop-opacity=".6"/><stop offset=".75" stop-color="#ffb27f" stop-opacity=".38"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb27f" stop-opacity="0"/><stop offset=".6" stop-color="#ff8a50" stop-opacity=".2"/><stop offset="1" stop-color="#ff5a36" stop-opacity=".32"/></linearGradient>
+    // grey silk: wide soft folds of light the glass can blur (a flat black behind glass reads as nothing, not glass)
+    wall.querySelector('.ribbons').innerHTML = `<defs>
+      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".25" stop-color="#fff" stop-opacity=".07"/><stop offset=".55" stop-color="#fff" stop-opacity=".1"/><stop offset=".82" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".012"/><stop offset=".5" stop-color="#fff" stop-opacity=".03"/><stop offset="1" stop-color="#fff" stop-opacity=".055"/></linearGradient>
+      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".4" stop-color="#fff" stop-opacity=".24"/><stop offset=".75" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff" stop-opacity=".025"/><stop offset="1" stop-color="#fff" stop-opacity=".045"/></linearGradient>
       <filter id="soft" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>
       <path filter="url(#soft)" fill="url(#fd)" d="M 820 -40 C 1060 70, 1260 40, 1660 170 L 1660 -40 Z"/>
       <path filter="url(#soft)" fill="url(#fb)" d="M -120 860 C 320 720, 700 940, 1080 800 S 1540 600, 1740 660 L 1740 1120 L -120 1120 Z"/>
       <path filter="url(#soft)" fill="url(#fa)" d="M -120 740 C 300 590, 600 840, 960 640 S 1480 300, 1740 360 L 1740 520 C 1500 500, 1260 760, 980 850 S 380 960, -120 990 Z"/>
       <path fill="url(#fc)" d="M -120 738 C 300 588, 600 838, 960 638 S 1480 298, 1740 358 L 1740 368 C 1480 312, 1000 660, 962 662 C 600 862, 300 610, -120 760 Z"/>`;
-    // sparks: a few warm embers, more of them low down, near the glow
-    const sp = wall.querySelector('.sparks'), r = L.rng(17);
-    for (let i = 0; i < 38; i++) { const d = 2 + Math.pow(r(), 3) * 7, y = 100 - Math.pow(r(), 1.7) * 100, a = .25 + r() * .55, c = r() < .7 ? '255,138,80' : '255,214,186';
-      const e = document.createElement('i'); Object.assign(e.style, { left: (r() * 100) + '%', top: y + '%', width: d + 'px', height: d + 'px',
-        background: `rgba(${c},${a})`, boxShadow: `0 0 ${d * 3}px ${d * .8}px rgba(${c},${a * .55})` }); sp.appendChild(e); }
     // film grain: inside the glass it is blurred away, outside it stays crisp, so the glass reads as a smoother material
     const cv = document.createElement('canvas'); cv.width = cv.height = 220; const c = cv.getContext('2d'), im = c.createImageData(220, 220), rg = L.rng(3);
     for (let i = 0; i < im.data.length; i += 4) { const v = rg() * 255 | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
@@ -1807,9 +1836,8 @@ table.t .now { color: var(--accent) !important; }
     L.wall.querySelector('.o2').style.transform = `translate(${m(12)}vmax, ${m(12)}vmax)`;
     L.wall.querySelector('.o3').style.transform = `translate(${m(10)}vmax, ${m(6)}vmax)`;
     L.wall.querySelector('.o4').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
-    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the bright folds lower
+    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the folds low, away from the title
     L.wall.querySelector('.ribbons').style.transform = `translate(${m(5)}%, ${m(4) + low}%) rotate(${m(6)}deg)`;
-    L.wall.querySelector('.sparks').style.transform = `translate(${m(3)}vmax, ${m(2)}vmax)`;
   }
 
   // ---------- layout ----------
@@ -1924,8 +1952,9 @@ table.t .now { color: var(--accent) !important; }
     chrome.querySelector('.prev').disabled = L.i === 0 && sl.k <= minStep(sl);
     chrome.querySelector('.next').disabled = L.i === L.slides.length - 1 && sl.k >= sl.steps;
     const more = chrome.querySelector('.morebtn'), sheet = chrome.querySelector('.sheet');
-    more.classList.toggle('show', !!sl.s.more); sheet.classList.remove('open');
-    if (sl.s.more) { chrome.querySelector('.sheetbody').innerHTML = L.md(sl.s.more); L.fill(sheet, sl.ctx.scope); }
+    const extra = sl.r.more || '';   // what a renderer moved off the slide's face (said aloud, code, next steps)
+    more.classList.toggle('show', !!(sl.s.more || extra)); sheet.classList.remove('open');
+    if (sl.s.more || extra) { chrome.querySelector('.sheetbody').innerHTML = extra + (sl.s.more ? `<div>${L.md(sl.s.more)}</div>` : ''); L.fill(sheet, sl.ctx.scope); }
   }
 
   const minStep = sl => sl.steps > 0 ? 1 : 0;
@@ -2017,6 +2046,7 @@ table.t .now { color: var(--accent) !important; }
     node.querySelectorAll('.katex-error').forEach(e => out.push(`formula error: ${e.title || e.textContent.slice(0, 40)}`));
     node.querySelectorAll('.iv.bad').forEach(e => out.push(`could not compute {{${e.dataset.x}}}`));
     node.querySelectorAll('.vis .chart').forEach(c => { if (!c.querySelector('svg')) out.push('a chart did not draw (no room, or bad data)'); });
+    node.querySelectorAll('.codebox').forEach(c => { if (c.scrollWidth > c.clientWidth + 2) out.push(`code runs off its box: "${c.textContent.split('\n').sort((a, b) => b.length - a.length)[0].slice(0, 40)}"`); });
     if (sl.r.audit) try { out.push(...sl.r.audit()); } catch (e) { out.push('audit failed: ' + e.message); }
     return [...new Set(out)];
   };

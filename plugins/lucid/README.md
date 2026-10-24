@@ -1,6 +1,6 @@
 # Lucid: learning decks that explain, not just show
 
-A Claude Code plugin that turns "teach me X" into a slide deck you can follow from the basics to the advanced part, in an ember Liquid Glass style (clear glass over a black-to-orange glow) that works on a laptop and a phone.
+A Claude Code plugin that turns "teach me X" into a slide deck you can follow from the basics to the advanced part, in the proff black-and-orange Liquid Glass style (grey glass on black, orange headlines) that works on a laptop and a phone.
 
 It was built from three problems with long generated lessons:
 1. **Style drift.** Long outputs forget the template. In Lucid the model never writes HTML, CSS or SVG. It writes content in `deck.yaml`, and one fixed kit draws every slide, so the look cannot drift.
@@ -24,13 +24,16 @@ Other agent harnesses (Codex, Cursor, Gemini CLI): link `plugins/lucid/skills/de
 5. **Remember.** What you know and which analogies work for you go into `~/.lucid/learner.yaml`, so the next deck asks less.
 
 ## Slide types
-`title` · `chapter` · `predict` (guess, then reveal why) · `idea` (claim + points + visual) · `statement` · `equation` (term by term, said aloud, run with numbers, shown in code) · `calc` (named arithmetic steps; aggregates show their recipe, e.g. x̄ = (1/n)Σxᵢ = (8+34+…)/6) · `table` (formula columns revealed one by one, with the worked row) · `bridge` (analogy mapping + where it breaks) · `compare` · `quiz` (flip cards) · `recap` (answer, keep, breaks, next) · `map` (how it connects).
-Visuals: charts (line, area, bars, histogram, dots, lollipop, step; marks for lines, bands, spans, points, tail areas, arrows; sliders), stat, unit grids, flows, code, formulas, images.
+`title` · `chapter` · `predict` (guess, then reveal why) · `idea` (claim + points + visual) · `statement` · `equation` (each term named on the formula, run with numbers; said aloud and in code under + more) · `calc` (named arithmetic steps; aggregates show their recipe, e.g. x̄ = (1/n)Σxᵢ = (8+34+…)/6) · `table` (formula columns revealed one by one, with the worked row) · `bridge` (analogy mapping + where it breaks) · `compare` · `quiz` (flip cards) · `recap` (answer, keep, breaks, next) · `map` (how it connects).
+Visuals: charts (line, area, bars, histogram, dots, lollipop, step; marks for lines, bands, spans, points, tail areas, arrows; sliders), parts bars, stat, unit grids, flows, code, formulas, images.
 
 ## The look
-Black at the top and an ember-orange glow rising from the bottom, with soft silk folds, a few sparks and film grain: the gradient idea of an iPhone wallpaper, in the black-and-orange palette of proff-viz. There is no moon. Cards are clear glass: light blur, a bright rim from the top left, a warm rim from the bottom right and a top sheen, so the glow shows through. Charts and tables sit on smoked "plates" (more blur and a 46% warm-black tint), the way Apple dims clear glass over busy content. Text carries a faint dark halo so it stays readable where the glass is bright; the browser check measures this on the real pixels.
+The palette is proff-viz v5 "mono": a near-black page, grey glass, and orange (`#ff5a36`) only for the slide headline and the one thing that matters now. No orange background. Cards are clear glass over soft grey silk: light blur, a bright rim from the top left and a top sheen, so the glass reads as glass even on black. Charts and tables sit on smoked "plates", the way Apple dims clear glass over busy content. One card per slide may carry an orange tint: the answer.
 
-One accent, ember orange `#ff5a36`, marks what matters now, and amber `#ffb27f` marks labels. The series colours (teal `#22aa8a`, sky `#4992f2`, violet `#9353b7`) pass a colour-blind check on the plate for all pairs (CVD ΔE 10.5, normal-vision ΔE 18.0, at least 3:1), and adding the accent does not lower the worst pair, so a series never looks like the accent. Build steps "materialize" from blur instead of fading.
+Grey carries context. The series colours are proff's blue `#7fb0ff` and teal `#5fdcc4`, plus pink `#cb85ae`; they pass a colour-blind check against each other and against the orange (see `docs/design.md`). Build steps "materialize" from blur instead of fading.
+
+## Visual first
+The visual tells the story; words point at it. Each content slide has one visual that proves its title: a chart with labelled marks, a `parts` bar (a whole split into named pieces), a unit grid, a flow, a hero number, or the formula itself with each term named under it. The linter counts the words on every slide (about 40 on an idea slide, at most 2 short points beside a visual) and warns on an idea slide with no visual. Detail that the slide does not need, like the formula said aloud or its code, sits one tap away under "+ more".
 
 ## Files
 ```
@@ -46,7 +49,7 @@ plugins/lucid/
     scripts/build.py    yaml -> html, with the story lint
     scripts/check.py    desktop + phone browser audit, contrast, contact sheets
     examples/gallery/            one of every slide type (regression test)
-    examples/negative-binomial/  a full 21-slide deck (puzzle arc)
+    examples/negative-binomial/  a full 22-slide deck (puzzle arc)
   docs/design.md        why it is built this way, sources, backlog
 ```
 

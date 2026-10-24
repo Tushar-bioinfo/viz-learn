@@ -20,22 +20,23 @@ ladder:
 beats:
   - title · the question
   - predict · what spread should counting alone give? (pretest)
-  - idea · a fixed rate still wobbles, by about √mean
+  - idea · a fixed rate still wobbles (chart)
   - equation · SD = √μ, run on our gene
-  - idea · but our 6 replicates spread 2.7 times wider
+  - idea · but our 6 replicates land outside the counting band (chart)
   - statement · name it, overdispersion
-  - idea · so, is it one gene? no, almost every gene sits above the line
+  - idea · so, is it one gene? no, almost every gene sits above the line (chart)
   - bridge · cricket form, a rate that changes from day to day
-  - idea · so the noise comes in two stages
+  - idea · so the noise comes in two stages (flow)
   - predict · same true level, how far apart? (check)
-  - idea (slider) · raise α and watch the counts spread
+  - idea (slider) · raise α and watch the counts spread (chart)
   - equation · variance = μ + αμ²
   - calc · where α comes from, worked on 6 numbers
-  - table · busy genes are ruled by the wobble
-  - predict · which part rules a gene at 1,000 reads? (check)
+  - idea · busy genes are ruled by the wobble (parts)
+  - predict · which part rules a gene at 1,000 reads? (check, parts in the reveal)
   - compare · same data, two verdicts
   - calc · against counting noise, z = 2.5
   - calc · but against the real noise, z = 0.9
+  - idea · the same gap on one yardstick (chart)
   - recap · the answer
   - map · how it connects
   - quiz · recall
@@ -70,7 +71,7 @@ symbols:
   m: {tex: '\bar{x}', says: the average of the replicates}
   v: {tex: 's^2', says: the spread of the replicates (variance)}
   mu: {tex: '\mu', says: the gene's average count}
-  sd_p: {tex: '\mathrm{SD}_{\text{count}}', says: the spread counting alone would give}
+  sd_p: {tex: '\mathrm{SD}_{\text{count}}', says: the spread counting alone gives}
   alpha: {tex: '\alpha', says: how much the true level wobbles, short: the wobble}
   alpha_hat: {tex: '\hat{\alpha}', says: 'α estimated from our six replicates'}
   v_nb: {tex: '\sigma^2', says: the variance of the counts}
@@ -84,8 +85,6 @@ symbols:
   se_nb: {tex: '\mathrm{SE}_{\text{NB}}', says: noise in the gap (with wobble)}
   z_p: {tex: 'z_{\text{Pois}}', says: the gap in noise units (counting only)}
   z_nb: {tex: 'z_{\text{NB}}', says: the gap in noise units (with wobble)}
-  pois: {tex: '\mu', says: the counting part of the variance}
-  wob: {tex: '\alpha\mu^2', says: the wobble part}
 abbr: {NB: negative binomial, SD: standard deviation, SE: standard error, DESeq2: a differential-expression tool, MAGeCK: a CRISPR-screen analysis tool, RNA: ribonucleic acid}
 
 slides:
@@ -93,24 +92,22 @@ slides:
 
   - type: predict
     kind: pretest
-    q: One gene, six replicate samples, about 22 reads each on average. If counting were the only noise, how far would a typical sample sit from the average?
+    q: Six replicates average about 22 reads. If counting were the only noise, how far would a typical sample sit from 22?
     options:
       - about 5 reads
       - about 22 reads
       - about 50 reads
       - not sure
     answer: 0
-    why: Counting noise has a spread (SD) of about √mean, and √22.5 ≈ **{{sdp|1}}** reads. Our real replicates spread **{{s|1}}** reads, almost three times more. This deck is about that gap.
+    why: Counting noise spreads about √mean, so √22.5 ≈ **{{sdp|1}}** reads. Our replicates spread **{{s|1}}**, almost three times more. This deck is about that gap.
 
   - type: idea
     chapter: Counting noise
     introduces: [count, poisson]
-    lead: Start with the simplest case, where the true level never changes.
+    lead: Start simple. The true level never changes.
     title: Even a fixed rate gives counts that wobble
     points:
-      - Each read lands on our gene by chance, out of millions.
-      - With a fixed rate of {{m|1}} reads, counts still land anywhere from about 13 to 32.
-      - This counting noise is called **Poisson** noise.
+      - Each read lands on our gene by chance. That is **Poisson** noise.
     visual:
       chart:
         x: {label: reads in one sample, min: 0, max: 50}
@@ -120,11 +117,11 @@ slides:
         marks:
           - {kind: vline, x: m, label: 'mean {{m|1}}', step: 1}
           - {kind: span, x: ['m - sdp', 'm + sdp'], y: 0.093, label: '±1 SD = ±{{sdp|1}}', step: 2}
-      caption: Most of the bars sit within about ±5 reads of the mean.
+      caption: Most bars sit within about ±5 reads of the mean.
 
   - type: equation
     uses: [poisson]
-    lead: So how big is counting noise? There is a one-line rule.
+    lead: So how big is counting noise?
     title: Counting noise grows like the square root
     lhs: sd_p
     expr: sqrt(mu)
@@ -137,12 +134,8 @@ slides:
   - type: idea
     chapter: Too much spread
     introduces: [overdispersion]
-    lead: But our real replicates do not follow that rule.
-    title: Six replicates spread far wider than counting allows
-    points:
-      - Counting alone keeps 95% of samples between **{{lo95|0}}** and **{{hi95|0}}** reads.
-      - '**{{nout}} of our 6** replicates land outside that range.'
-      - Their SD is {{s|1}}, against {{sdp|1}} from counting.
+    lead: But our real replicates break that rule.
+    title: Our replicates land outside the counting band
     visual:
       chart:
         x: {label: reads in one sample, min: 0, max: 50}
@@ -152,19 +145,16 @@ slides:
           - {name: our 6 replicates, kind: dots, x: reps, y: 0.006, focus: true, step: 2}
         marks:
           - {kind: band, x: [lo95, hi95], label: where counting puts 95%, step: 1}
-      caption: The bright dots sit outside the shaded range.
+          - {kind: label, at: [44, 0.03], text: '{{nout}} of 6 outside', place: c, step: 3}
+      caption: 'Their SD is {{s|1}} reads, not the {{sdp|1}} that counting allows.'
 
   - type: statement
     text: When replicates spread more than counting allows, the counts are ==overdispersed==.
-    sub: 'Here the variance is {{v/m|1}} times the mean. Counting alone would give 1 time.'
+    sub: 'Here the variance is {{v/m|1}} times the mean. Counting alone gives 1.'
 
   - type: idea
-    lead: Is it only this gene? Look at 400 of them.
+    lead: Is it only this gene? Look at 400.
     title: Almost every gene sits above the counting line
-    points:
-      - Each dot is one gene (simulated, 4 replicates each).
-      - '**{{above|%0}}** of genes spread more than counting allows.'
-      - The gap grows with the mean, so busy genes are the worst.
     visual:
       chart:
         x: {label: average count (log scale), min: 3, max: 10000, log: true}
@@ -175,28 +165,23 @@ slides:
           - {kind: fn, fn: 'x', label: 'counting alone: variance = mean', step: 1, color: s1, labelAt: 0.92}
           - {kind: fn, fn: 'x + 0.1 * x^2', label: 'with wobble: μ + 0.1μ²', step: 2, color: accent, labelAt: 0.55}
           - {kind: point, x: m, y: v, label: our gene, step: 3}
-      caption: The dashed counting line runs below the cloud of genes.
+      caption: '{{above|%0}} of 400 simulated genes sit above the counting line.'
 
   - type: bridge
     introduces: [mixture]
     lead: Why would the true level move? Think of a batter.
-    title: A batter's form changes from match to match
+    title: A batter's form changes every match
     from: Cricket
     to: Sequencing
     pairs:
-      - [one match, one sample]
-      - [boundaries hit in that match, reads counted in that sample]
-      - ["the batter's form on the day", "the sample's true level"]
+      - [boundaries in one match, reads in one sample]
+      - [form on the day, "the sample's true level"]
       - [career average, the gene's average μ]
-    breaks: Form drifts slowly through a season. Replicate samples are independent, so their wobble has no order.
+    breaks: Form drifts through a season. Replicate samples are independent.
 
   - type: idea
     lead: So the noise comes in two stages.
-    title: Each sample draws its own level, then counting adds noise
-    points:
-      - '**Stage 1:** biology and handling move the true level $\lambda$ from sample to sample.'
-      - '**Stage 2:** counting adds about $\sqrt{\lambda}$ of noise on top.'
-      - The two stages stack, so the spread is bigger than either one alone.
+    title: Each sample wobbles, then counting adds noise
     visual:
       flow:
         nodes:
@@ -206,28 +191,26 @@ slides:
         verbs: [wobbles, counted]
         focus: 1
         build: true
-      caption: The lit box is the stage counting alone leaves out.
+      caption: The lit stage is the one counting alone leaves out.
 
   - type: predict
     kind: check
     uses: [mixture]
-    q: Two samples have exactly the same true level, λ = 22.5. How far apart are their counts likely to be?
+    q: Two samples share the same true level, λ = 22.5. How far apart will their counts be?
     options:
       - about ±5 reads
       - about ±13 reads, like our replicates
       - exactly equal
     answer: 0
-    why: 'Same level means only stage 2 is left: counting noise, SD ≈ √22.5 = **{{sdp|1}}**. The extra spread in our replicates came from stage 1: **levels that differ**.'
+    why: 'Same level leaves only counting noise: SD ≈ √22.5 = **{{sdp|1}}**. Our extra spread came from **levels that differ**.'
 
   - type: idea
     introduces: [nb, alpha]
     uses: [mixture]
-    lead: Now put the two stages together and turn the wobble up.
+    lead: Now stack both stages and turn up the wobble.
     title: More wobble, wider counts
     points:
-      - At α = 0, the two curves match. That is counting alone.
-      - Raise α and the counts spread out, while the mean stays at {{m|1}}.
-      - 'This two-stage curve is the **negative binomial** (NB).'
+      - This two-stage curve is the **negative binomial** (NB).
     controls:
       - {name: alpha, label: 'wobble α', min: 0, max: 1, step: 0.05, value: 0.3}
     derive:
@@ -240,11 +223,11 @@ slides:
           - {name: 'simulated samples', kind: hist, values: 'rnb(6000, m, alpha, 11)', density: true, color: s3, opacity: 0.55}
           - {name: counting alone, kind: line, fn: 'poisPmf(x, m)', discrete: true, color: mist, dash: true}
           - {name: negative binomial, kind: line, fn: 'nbPmf(x, m, alpha)', discrete: true, focus: true}
-      caption: 'Variance now {{v_now|0}}, against {{m|1}} from counting alone.'
+      caption: 'At α = 0 the curves match. Variance now {{v_now|0}}, against {{m|1}}.'
 
   - type: equation
     uses: [nb]
-    lead: The two stages give one formula for the spread.
+    lead: The two stages give one formula.
     title: Variance = counting part + wobble part
     lhs: v_nb
     expr: mu + alpha * mu^2
@@ -253,33 +236,35 @@ slides:
       alpha: {value: alpha_hat}
     read: spread equals the mean, plus the wobble times the mean squared
     code: var = mu + alpha * mu**2
-    note: 'The first part is counting noise. The second grows with $\mu^2$, so it takes over for busy genes.'
-    more: 'Papers write $K \sim \mathrm{NB}(\mu, \alpha)$ with $\mathrm{Var}(K) = \mu + \alpha\mu^2$. Some use the size $r = 1/\alpha$ instead. Here $\alpha$ is estimated from our six replicates: see the next slide.'
+    note: 'The wobble part grows with $\mu^2$, so it rules busy genes.'
+    more: 'Papers write $K \sim \mathrm{NB}(\mu, \alpha)$ with $\mathrm{Var}(K) = \mu + \alpha\mu^2$. Some use the size $r = 1/\alpha$ instead.'
 
   - type: calc
     uses: [alpha]
-    lead: Where does α come from? Work it out from the six numbers.
+    lead: Where does α come from? Six numbers.
     title: Our replicates give α by subtraction
     given: 'Replicates: {{reps}}'
     lines:
       - {say: Average the replicates, expr: mean(reps), name: m}
-      - {say: Measure their spread (variance), expr: var(reps), name: v}
-      - {say: Take away the counting part and divide by the mean squared, expr: (v - m) / m^2, name: alpha_hat}
+      - {say: Measure their spread, expr: var(reps), name: v}
+      - {say: 'Remove counting, divide by μ²', expr: (v - m) / m^2, name: alpha_hat}
 
-  - type: table
-    lead: So which part matters more? It depends on how busy the gene is.
+  - type: idea
+    lead: So which part matters more? It depends on the mean.
     title: Busy genes are ruled by the wobble
-    rows:
-      - {mu: 5}
-      - {mu: 22.5}
-      - {mu: 500}
-      - {mu: 5000}
-    cols:
-      - {key: mu, label: 'mean μ', fmt: ','}
-      - {key: pois, label: counting part, expr: mu, fmt: ',', says: 'the counting part (Poisson), equal to μ'}
-      - {key: wob, label: wobble part, expr: alpha_hat * mu^2, fmt: ',', says: the wobble part}
-      - {key: share, label: from wobble, expr: wob / (pois + wob), fmt: '%0', says: the share of the spread that comes from the wobble}
-    focus: 1
+    visual:
+      parts:
+        items:
+          - {label: 'counting part μ'}
+          - {label: 'wobble part αμ²', focus: true}
+        rows:
+          - {label: 'μ = 5', values: [5, 'alpha_hat * 5^2']}
+          - {label: 'μ = 22.5', values: [m, 'alpha_hat * m^2']}
+          - {label: 'μ = 500', values: [500, 'alpha_hat * 500^2']}
+          - {label: 'μ = 5,000', values: [5000, 'alpha_hat * 5000^2']}
+        share: true
+        build: true
+      caption: The wobble's share grows with the mean, toward all of the variance.
 
   - type: predict
     kind: check
@@ -289,52 +274,73 @@ slides:
       - the wobble part
       - about equal
     answer: 1
-    why: 'Counting gives 1,000. The wobble gives 0.28 × 1,000² = **{{0.28 * 1000^2|,}}**, about 280 times more. This is why even very busy genes stay noisy.'
+    why: 'Counting gives 1,000. The wobble gives **{{0.28 * 1000^2|,}}**. Even very busy genes stay noisy.'
+    visual:
+      parts:
+        items:
+          - {label: counting, value: 1000}
+          - {label: wobble, value: '0.28 * 1000^2', focus: true}
+        fmt: ','
 
   - type: compare
     chapter: Why it matters
-    lead: But why should a test care? Compare treated and control.
+    lead: But why should a test care?
     title: Same data, two verdicts
     a:
       title: Poisson test
       tone: bad
       verdict: fooled
-      text: 'Treat {{m|1}} vs {{muB}} reads as counting noise only.'
+      text: Counting noise only.
       visual: {stat: {value: 'p = {{p_p|s2}}', label: '"a real change"'}}
     b:
       title: NB test
       tone: good
       verdict: honest
-      text: Include the wobble that replicates showed.
+      text: Includes the wobble.
       visual: {stat: {value: 'p = {{p_nb|2}}', label: '"could be noise"'}}
-    verdict: 'Underestimate the noise and **every** gene looks significant. That is a flood of false positives.'
+    verdict: 'Underestimate the noise and **every** gene looks significant.'
 
   - type: calc
-    lead: Where does the first verdict come from? Measure the gap against counting noise.
+    lead: Where does the first verdict come from?
     title: Against counting noise, the gap looks big
     lines:
-      - {say: The gap between the group averages, expr: muB - m, name: diff}
-      - {say: The noise in that gap if counting were all there is, expr: sqrt(m / n + muB / n), name: se_p}
+      - {say: The gap between the groups, expr: muB - m, name: diff}
+      - {say: 'Noise in the gap, counting only', expr: sqrt(m / n + muB / n), name: se_p}
       - {say: The gap in noise units, expr: diff / se_p, name: z_p, fmt: 2}
 
   - type: calc
-    lead: But the replicates told us the real noise is bigger.
-    title: Against the real noise, the same gap shrinks
+    lead: But the replicates showed bigger noise.
+    title: Against the real noise, the gap shrinks
     given: 'Variances from μ + αμ²: control **{{vA|0}}**, treated **{{vB|0}}**.'
     lines:
-      - {say: The noise in the gap with the wobble included, expr: sqrt(vA / n + vB / n), name: se_nb}
+      - {say: 'Noise in the gap, with wobble', expr: sqrt(vA / n + vB / n), name: se_nb}
       - {say: The same gap in noise units, expr: diff / se_nb, name: z_nb, fmt: 2}
 
+  - type: idea
+    lead: Put both on one yardstick.
+    title: One gap, two yardsticks
+    visual:
+      chart:
+        x: {label: the gap in noise units (z), min: -4, max: 4}
+        y: {label: chance under pure noise, min: 0, max: 0.45, fmt: 1}
+        series:
+          - {name: pure noise, kind: line, fn: 'normPdf(x)', color: mist}
+        marks:
+          - {kind: area, fn: 'normPdf(x)', x: [1.96, 4], color: mist, label: 'rarest 5%', step: 1}
+          - {kind: area, fn: 'normPdf(x)', x: [-4, -1.96], color: mist, step: 1}
+          - {kind: vline, x: z_p, label: 'counting only: {{z_p|2}}', color: s1, step: 2}
+          - {kind: vline, x: z_nb, label: 'with wobble: {{z_nb|2}}', color: accent, step: 3}
+      caption: Against counting noise the gap looks rare; against the real noise it is ordinary.
+
   - type: recap
-    answer: 'Replicates spread more than counting allows, because each sample''s true level wobbles. The negative binomial adds that wobble (variance = μ + αμ²), so tests stop calling noise a signal.'
+    answer: 'Each sample''s true level wobbles, so replicates spread more than counting allows. The negative binomial adds that wobble: variance = μ + αμ².'
     points:
       - Counting alone gives SD ≈ √mean.
       - Real replicates spread more (overdispersion).
-      - 'Variance = μ + αμ²: the wobble part rules busy genes.'
+      - The wobble part αμ² rules busy genes.
     breaks:
-      - 'α from 6 samples is shaky: DESeq2 shrinks each gene''s α toward a trend.'
+      - 'α from 6 samples is shaky: DESeq2 shrinks it toward a trend.'
       - Depth differences still need normalizing first.
-      - Extra zeros or outliers need other models.
     next:
       - DESeq2 dispersion shrinkage
       - The MAGeCK mean–variance model
@@ -345,8 +351,8 @@ slides:
     links:
       - {to: Poisson, how: 'α = 0 gives counting alone', kind: special}
       - {to: 'gamma distribution', how: how the true level wobbles, kind: prereq}
-      - {to: DESeq2, how: one α per gene, shrunk to a trend, kind: uses}
-      - {to: MAGeCK, how: guide counts against a mean–variance fit, kind: uses}
+      - {to: DESeq2, how: one α per gene, shrunk, kind: uses}
+      - {to: MAGeCK, how: fits variance against the mean, kind: uses}
       - {to: a batter's form, how: a rate that changes daily, kind: analogy}
       - {to: log counts, how: 'tame the μ² growth', kind: sibling}
 
@@ -354,4 +360,4 @@ slides:
     cards:
       - {q: 'A gene averages 100 reads. What SD does counting alone give?', a: '√100 = **10** reads.'}
       - {q: 'What does α measure?', a: "How much each sample's true level wobbles around the gene's average.", tag: meaning}
-      - {q: 'Why do Poisson tests give too many hits?', a: They miss the wobble, so the noise looks small and ordinary gaps look significant., tag: reversed}
+      - {q: 'Why do Poisson tests give too many hits?', a: They miss the wobble, so ordinary gaps look significant., tag: reversed}

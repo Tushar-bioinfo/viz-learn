@@ -11,33 +11,27 @@
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
-    L.colors = { accent: v('accent'), amber: v('amber'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
-    L.colors.lantern = L.colors.accent;   // older decks wrote `color: lantern`
+    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
+    L.colors.lantern = L.colors.accent; L.colors.amber = L.colors.tint;   // older decks wrote `color: lantern` / `amber`
     L.fontUI = v('f-ui');
   }
 
   function wallpaper() {
     const wall = h('div'); wall.id = 'wall';
     wall.innerHTML = '<svg class="ribbons" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"></svg><div class="orb o1"></div><div class="orb o2"></div>'
-      + '<div class="orb o3"></div><div class="orb o4"></div><div class="sparks"></div><div class="grain"></div><div class="vignette"></div>';
+      + '<div class="orb o3"></div><div class="orb o4"></div><div class="grain"></div><div class="vignette"></div>';
     document.body.prepend(wall);
-    // silk ribbons of warm light: wide soft strokes the glass can blur (a flat gradient behind glass reads as a tint, not glass)
-    const NS = 'http://www.w3.org/2000/svg', svg = wall.querySelector('.ribbons');
-    svg.innerHTML = `<defs>
-      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5a1608" stop-opacity=".0"/><stop offset=".22" stop-color="#8f2812" stop-opacity=".72"/><stop offset=".55" stop-color="#c8401f" stop-opacity=".66"/><stop offset=".82" stop-color="#e0703f" stop-opacity=".4"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e0803" stop-opacity=".92"/><stop offset=".5" stop-color="#5e1a0a" stop-opacity=".8"/><stop offset="1" stop-color="#b8401f" stop-opacity=".42"/></linearGradient>
-      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ffd2b8" stop-opacity="0"/><stop offset=".4" stop-color="#ffd9c2" stop-opacity=".6"/><stop offset=".75" stop-color="#ffb27f" stop-opacity=".38"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb27f" stop-opacity="0"/><stop offset=".6" stop-color="#ff8a50" stop-opacity=".2"/><stop offset="1" stop-color="#ff5a36" stop-opacity=".32"/></linearGradient>
+    // grey silk: wide soft folds of light the glass can blur (a flat black behind glass reads as nothing, not glass)
+    wall.querySelector('.ribbons').innerHTML = `<defs>
+      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".25" stop-color="#fff" stop-opacity=".07"/><stop offset=".55" stop-color="#fff" stop-opacity=".1"/><stop offset=".82" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".012"/><stop offset=".5" stop-color="#fff" stop-opacity=".03"/><stop offset="1" stop-color="#fff" stop-opacity=".055"/></linearGradient>
+      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".4" stop-color="#fff" stop-opacity=".24"/><stop offset=".75" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff" stop-opacity=".025"/><stop offset="1" stop-color="#fff" stop-opacity=".045"/></linearGradient>
       <filter id="soft" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>
       <path filter="url(#soft)" fill="url(#fd)" d="M 820 -40 C 1060 70, 1260 40, 1660 170 L 1660 -40 Z"/>
       <path filter="url(#soft)" fill="url(#fb)" d="M -120 860 C 320 720, 700 940, 1080 800 S 1540 600, 1740 660 L 1740 1120 L -120 1120 Z"/>
       <path filter="url(#soft)" fill="url(#fa)" d="M -120 740 C 300 590, 600 840, 960 640 S 1480 300, 1740 360 L 1740 520 C 1500 500, 1260 760, 980 850 S 380 960, -120 990 Z"/>
       <path fill="url(#fc)" d="M -120 738 C 300 588, 600 838, 960 638 S 1480 298, 1740 358 L 1740 368 C 1480 312, 1000 660, 962 662 C 600 862, 300 610, -120 760 Z"/>`;
-    // sparks: a few warm embers, more of them low down, near the glow
-    const sp = wall.querySelector('.sparks'), r = L.rng(17);
-    for (let i = 0; i < 38; i++) { const d = 2 + Math.pow(r(), 3) * 7, y = 100 - Math.pow(r(), 1.7) * 100, a = .25 + r() * .55, c = r() < .7 ? '255,138,80' : '255,214,186';
-      const e = document.createElement('i'); Object.assign(e.style, { left: (r() * 100) + '%', top: y + '%', width: d + 'px', height: d + 'px',
-        background: `rgba(${c},${a})`, boxShadow: `0 0 ${d * 3}px ${d * .8}px rgba(${c},${a * .55})` }); sp.appendChild(e); }
     // film grain: inside the glass it is blurred away, outside it stays crisp, so the glass reads as a smoother material
     const cv = document.createElement('canvas'); cv.width = cv.height = 220; const c = cv.getContext('2d'), im = c.createImageData(220, 220), rg = L.rng(3);
     for (let i = 0; i < im.data.length; i += 4) { const v = rg() * 255 | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
@@ -51,9 +45,8 @@
     L.wall.querySelector('.o2').style.transform = `translate(${m(12)}vmax, ${m(12)}vmax)`;
     L.wall.querySelector('.o3').style.transform = `translate(${m(10)}vmax, ${m(6)}vmax)`;
     L.wall.querySelector('.o4').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
-    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the bright folds lower
+    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the folds low, away from the title
     L.wall.querySelector('.ribbons').style.transform = `translate(${m(5)}%, ${m(4) + low}%) rotate(${m(6)}deg)`;
-    L.wall.querySelector('.sparks').style.transform = `translate(${m(3)}vmax, ${m(2)}vmax)`;
   }
 
   // ---------- layout ----------
@@ -168,8 +161,9 @@
     chrome.querySelector('.prev').disabled = L.i === 0 && sl.k <= minStep(sl);
     chrome.querySelector('.next').disabled = L.i === L.slides.length - 1 && sl.k >= sl.steps;
     const more = chrome.querySelector('.morebtn'), sheet = chrome.querySelector('.sheet');
-    more.classList.toggle('show', !!sl.s.more); sheet.classList.remove('open');
-    if (sl.s.more) { chrome.querySelector('.sheetbody').innerHTML = L.md(sl.s.more); L.fill(sheet, sl.ctx.scope); }
+    const extra = sl.r.more || '';   // what a renderer moved off the slide's face (said aloud, code, next steps)
+    more.classList.toggle('show', !!(sl.s.more || extra)); sheet.classList.remove('open');
+    if (sl.s.more || extra) { chrome.querySelector('.sheetbody').innerHTML = extra + (sl.s.more ? `<div>${L.md(sl.s.more)}</div>` : ''); L.fill(sheet, sl.ctx.scope); }
   }
 
   const minStep = sl => sl.steps > 0 ? 1 : 0;
@@ -261,6 +255,7 @@
     node.querySelectorAll('.katex-error').forEach(e => out.push(`formula error: ${e.title || e.textContent.slice(0, 40)}`));
     node.querySelectorAll('.iv.bad').forEach(e => out.push(`could not compute {{${e.dataset.x}}}`));
     node.querySelectorAll('.vis .chart').forEach(c => { if (!c.querySelector('svg')) out.push('a chart did not draw (no room, or bad data)'); });
+    node.querySelectorAll('.codebox').forEach(c => { if (c.scrollWidth > c.clientWidth + 2) out.push(`code runs off its box: "${c.textContent.split('\n').sort((a, b) => b.length - a.length)[0].slice(0, 40)}"`); });
     if (sl.r.audit) try { out.push(...sl.r.audit()); } catch (e) { out.push('audit failed: ' + e.message); }
     return [...new Set(out)];
   };

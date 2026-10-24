@@ -166,7 +166,7 @@
         const V = x => L.val(x, scope, `mark ${mk.kind}`);
         switch (mk.kind) {
           case 'vline': { const x = sx(V(mk.x)); el('line', { x1: x, x2: x, y1: m.t + 4, y2: m.t + ph, stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8', 'stroke-linecap': 'round' }, gg);
-            segs.push([[x, m.t], [x, m.t + ph]]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: m.t + 6, pref: ['tr', 'tl', 'r', 'l'], step: mk.step, c }); break; }
+            segs.push([[x, m.t], [x, m.t + ph]]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: m.t + 6, alts: [[x, m.t + 6, 0], [x, m.t + ph * .3, .8], [x, m.t + ph * .55, 1.6]], own: segs[segs.length - 1], pref: ['tr', 'tl', 'r', 'l'], step: mk.step, c }); break; }
           case 'hline': { const y = sy(V(mk.y)); el('line', { x1: m.l, x2: m.l + pw, y1: y, y2: y, stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8' }, gg);
             segs.push([[m.l, y], [m.l + pw, y]]); if (mk.label) labels.push({ text: mk.label, ax: m.l + pw - 4, ay: y, pref: ['al', 'bl'], step: mk.step, c }); break; }
           case 'band': { if (mk.x) { const [a, b] = mk.x.map(V); const x0 = sx(Math.max(a, xdom[0])), x1 = sx(Math.min(b, xdom[1]));
@@ -291,7 +291,7 @@
         if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - ay) > 10) el('line', { x1: ax - 4, y1: ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
         if (lb.lead && best.k !== 'c') { const [tx, ty] = leadEnd(ax, ay, best.box);
           el('line', { x1: ax, y1: ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
-        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(20,17,15,.84)', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 1.2 }, gg);
+        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(20,21,23,.86)', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 1.2 }, gg);
         if (!lb.plain) el('circle', { cx: x0 + 14, cy: (y0 + y1) / 2, r: 0 }, gg);
         const t = el('text', { x: lb.plain ? x0 + 2 : (x0 + x1) / 2, y: (y0 + y1) / 2 + 8, 'text-anchor': lb.plain ? 'start' : 'middle', class: 'lbl' + (lb.end ? ' dim' : ''), 'data-lbl': 1 }, gg);
         t.textContent = text;
