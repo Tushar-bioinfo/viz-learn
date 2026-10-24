@@ -173,7 +173,7 @@ slides:
           - {name: genes, kind: dots, x: gm, y: gv, color: mist}
         marks:
           - {kind: fn, fn: 'x', label: 'counting alone: variance = mean', step: 1, color: s1, labelAt: 0.92}
-          - {kind: fn, fn: 'x + 0.1 * x^2', label: 'with wobble: μ + 0.1μ²', step: 2, color: lantern, labelAt: 0.55}
+          - {kind: fn, fn: 'x + 0.1 * x^2', label: 'with wobble: μ + 0.1μ²', step: 2, color: accent, labelAt: 0.55}
           - {kind: point, x: m, y: v, label: our gene, step: 3}
       caption: The dashed counting line runs below the cloud of genes.
 

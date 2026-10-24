@@ -1,7 +1,7 @@
 {
   "name": "lucid",
   "version": "0.1.0",
-  "description": "Learning decks in a moonlit Liquid Glass style: asks what you know, then builds a story from the ground up, with every equation explained term by term and run with real numbers, every table column showing its formula, interactive charts, analogies from your world, and checkpoints. Lint plus a desktop-and-phone browser check keep long decks on-style.",
+  "description": "Learning decks in an ember Liquid Glass style (clear glass over a black-to-orange glow): asks what you know, then builds a story from the ground up, with every equation explained term by term and run with real numbers, every table column showing its formula, interactive charts, analogies from your world, and checkpoints. Lint plus a desktop-and-phone browser check keep long decks on-style.",
   "author": {
     "name": "Tushar Singh"
   },

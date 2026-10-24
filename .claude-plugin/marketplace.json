@@ -8,7 +8,7 @@
     {
       "name": "lucid",
       "source": "./plugins/lucid",
-      "description": "Learning decks in a moonlit Liquid Glass style: probe what you know, build the story from the ground up, explain every equation and table, check on desktop and phone."
+      "description": "Learning decks in an ember Liquid Glass style: probe what you know, build the story from the ground up, explain every equation and table, check on desktop and phone."
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: deck
-description: Lucid learning decks. Builds a slide deck that teaches one topic from the ground up, in a moonlit Liquid Glass style, for desktop and phone. Every equation is explained term by term and run with real numbers, every table column shows the formula that made it, charts are annotated and interactive, new ideas are bridged from things the learner already knows, and checkpoints make the learner predict before reading on. Asks 3-5 quick questions first to find what the learner knows. Use for "make a deck", "teach me X visually", "lucid", "learning slides", "explain X as slides", "glass deck", "walk me through this method", or any request to understand a method, equation, statistic or pipeline step by step.
+description: Lucid learning decks. Builds a slide deck that teaches one topic from the ground up, in an ember Liquid Glass style (clear glass over a black-to-orange glow), for desktop and phone. Every equation is explained term by term and run with real numbers, every table column shows the formula that made it, charts are annotated and interactive, new ideas are bridged from things the learner already knows, and checkpoints make the learner predict before reading on. Asks 3-5 quick questions first to find what the learner knows. Use for "make a deck", "teach me X visually", "lucid", "learning slides", "explain X as slides", "glass deck", "walk me through this method", or any request to understand a method, equation, statistic or pipeline step by step.
 ---
 
 # Lucid: decks that explain, not just show

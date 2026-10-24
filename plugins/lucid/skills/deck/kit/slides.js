@@ -103,7 +103,7 @@
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
         const ox = (W - cols * cell) / 2, oy = (H - rows * cell) / 2;
         for (let i = 0; i < n; i++) { const cx = ox + (i % cols + .5) * cell, cy = oy + (Math.floor(i / cols) + .5) * cell, on = i < hi;
-          L.svgEl('circle', { cx, cy, r, fill: on ? L.colors.lantern : 'none', stroke: on ? L.colors.lantern : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
+          L.svgEl('circle', { cx, cy, r, fill: on ? L.colors.accent : 'none', stroke: on ? L.colors.accent : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
       };
       vis.classList.remove('plate');
     } else if (v.flow) {
@@ -199,8 +199,10 @@
       rows.push({ cx, w, row, bottom: y + hh });
       lab.style.left = cx + 'px'; lab.style.top = y + 'px';
     });
-    const need = rows.length ? Math.max(...rows.map(b => b.bottom)) - container.offsetHeight + 8 : 0;   // reserve room under the part itself
-    if (need > 0) container.style.paddingBottom = need + 'px';
+    // reserve room under the content itself; CSS padding already there counts toward it
+    const pad0 = parseFloat(getComputedStyle(container).paddingBottom) || 0;
+    const need = rows.length ? Math.max(...rows.map(b => b.bottom)) - (container.offsetHeight - pad0) + 8 : 0;
+    if (need > pad0) container.style.paddingBottom = need + 'px';
   }
 
   // ---------- slide types ----------
@@ -293,7 +295,7 @@
     } else L.err(`slide ${ctx.index + 1}`, 'equation needs expr or tex');
     const inputs = (s.order || ids).filter(n => n !== s.lhs);
     const order = s.lhs ? [...inputs, s.lhs] : inputs;
-    const colorOf = n => n === s.lhs ? L.colors.lantern : L.colors[TERMC[Math.min(Math.max(0, inputs.indexOf(n)), 3)]] || L.colors.mist;
+    const colorOf = n => n === s.lhs ? L.colors.accent : L.colors[TERMC[Math.min(Math.max(0, inputs.indexOf(n)), 3)]] || L.colors.mist;
     // the numbers a computable equation runs on: a term's `value`, else the name in scope
     const eqScope = () => { const sc = L.scope(ctx.scope, {}); inputs.forEach(n => { const t = term(n); if (t.value != null) sc[n] = L.val(t.value, ctx.scope, `term ${n}`); }); return sc; };
     const eq = h('div', 'eqmain'); wrap.appendChild(eq);

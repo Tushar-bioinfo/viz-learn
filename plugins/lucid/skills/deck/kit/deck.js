@@ -11,34 +11,49 @@
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
-    L.colors = { lantern: v('lantern'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
+    L.colors = { accent: v('accent'), amber: v('amber'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
+    L.colors.lantern = L.colors.accent;   // older decks wrote `color: lantern`
     L.fontUI = v('f-ui');
   }
 
   function wallpaper() {
     const wall = h('div'); wall.id = 'wall';
-    wall.innerHTML = '<div class="stars"></div><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="moon"></div><div class="bokeh"></div><div class="lake"></div>';
-    // soft lights (moonlight, blossom, lantern) for the glass to blur: without them glass reads as a flat tint
-    const bk = wall.querySelector('.bokeh'), rb = L.rng(5), tints = ['228,235,250', '153,130,201', '184,92,188', '94,109,228', '255,196,107'];
-    for (let i = 0; i < 34; i++) { const d = 8 + Math.pow(rb(), 2.2) * 120, t = tints[i % 9 === 0 ? 4 : Math.floor(rb() * 4)];
-      const e = document.createElement('i'); Object.assign(e.style, { left: (rb() * 100) + '%', top: (rb() * 100) + '%', width: d + 'px', height: d + 'px',
-        background: `radial-gradient(circle, rgba(${t},${.22 + rb() * .4}) 0%, rgba(${t},${.08 + rb() * .12}) 60%, transparent 72%)` }); bk.appendChild(e); }
+    wall.innerHTML = '<svg class="ribbons" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"></svg><div class="orb o1"></div><div class="orb o2"></div>'
+      + '<div class="orb o3"></div><div class="orb o4"></div><div class="sparks"></div><div class="grain"></div><div class="vignette"></div>';
     document.body.prepend(wall);
-    // star field: seeded, drawn once
-    const cv = document.createElement('canvas'), W = 1600, H = 1000; cv.width = W; cv.height = H; const c = cv.getContext('2d'), r = L.rng(11);
-    for (let i = 0; i < 260; i++) { const x = r() * W, y = Math.pow(r(), 1.6) * H * .8, s = r() < .08 ? 1.6 : r() * .9 + .3, a = .25 + r() * .6;
-      c.fillStyle = `rgba(${235 + r() * 20 | 0},${238 + r() * 17 | 0},255,${a})`; c.beginPath(); c.arc(x, y, s, 0, 7); c.fill(); }
-    wall.querySelector('.stars').style.backgroundImage = `url(${cv.toDataURL()})`;
+    // silk ribbons of warm light: wide soft strokes the glass can blur (a flat gradient behind glass reads as a tint, not glass)
+    const NS = 'http://www.w3.org/2000/svg', svg = wall.querySelector('.ribbons');
+    svg.innerHTML = `<defs>
+      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5a1608" stop-opacity=".0"/><stop offset=".22" stop-color="#8f2812" stop-opacity=".72"/><stop offset=".55" stop-color="#c8401f" stop-opacity=".66"/><stop offset=".82" stop-color="#e0703f" stop-opacity=".4"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e0803" stop-opacity=".92"/><stop offset=".5" stop-color="#5e1a0a" stop-opacity=".8"/><stop offset="1" stop-color="#b8401f" stop-opacity=".42"/></linearGradient>
+      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ffd2b8" stop-opacity="0"/><stop offset=".4" stop-color="#ffd9c2" stop-opacity=".6"/><stop offset=".75" stop-color="#ffb27f" stop-opacity=".38"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb27f" stop-opacity="0"/><stop offset=".6" stop-color="#ff8a50" stop-opacity=".2"/><stop offset="1" stop-color="#ff5a36" stop-opacity=".32"/></linearGradient>
+      <filter id="soft" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>
+      <path filter="url(#soft)" fill="url(#fd)" d="M 820 -40 C 1060 70, 1260 40, 1660 170 L 1660 -40 Z"/>
+      <path filter="url(#soft)" fill="url(#fb)" d="M -120 860 C 320 720, 700 940, 1080 800 S 1540 600, 1740 660 L 1740 1120 L -120 1120 Z"/>
+      <path filter="url(#soft)" fill="url(#fa)" d="M -120 740 C 300 590, 600 840, 960 640 S 1480 300, 1740 360 L 1740 520 C 1500 500, 1260 760, 980 850 S 380 960, -120 990 Z"/>
+      <path fill="url(#fc)" d="M -120 738 C 300 588, 600 838, 960 638 S 1480 298, 1740 358 L 1740 368 C 1480 312, 1000 660, 962 662 C 600 862, 300 610, -120 760 Z"/>`;
+    // sparks: a few warm embers, more of them low down, near the glow
+    const sp = wall.querySelector('.sparks'), r = L.rng(17);
+    for (let i = 0; i < 38; i++) { const d = 2 + Math.pow(r(), 3) * 7, y = 100 - Math.pow(r(), 1.7) * 100, a = .25 + r() * .55, c = r() < .7 ? '255,138,80' : '255,214,186';
+      const e = document.createElement('i'); Object.assign(e.style, { left: (r() * 100) + '%', top: y + '%', width: d + 'px', height: d + 'px',
+        background: `rgba(${c},${a})`, boxShadow: `0 0 ${d * 3}px ${d * .8}px rgba(${c},${a * .55})` }); sp.appendChild(e); }
+    // film grain: inside the glass it is blurred away, outside it stays crisp, so the glass reads as a smoother material
+    const cv = document.createElement('canvas'); cv.width = cv.height = 220; const c = cv.getContext('2d'), im = c.createImageData(220, 220), rg = L.rng(3);
+    for (let i = 0; i < im.data.length; i += 4) { const v = rg() * 255 | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+    c.putImageData(im, 0, 0); wall.querySelector('.grain').style.backgroundImage = `url(${cv.toDataURL()})`;
     L.wall = wall;
   }
-  // orbs drift a little with every slide, so the glass always has light moving behind it
+  // the light moves a little with every slide, so the glass always has something shifting behind it
   function drift(i) {
     if (!L.wall) return; const r = L.rng(1000 + i * 7), m = (a) => (r() - .5) * a;
-    L.wall.querySelector('.o1').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
-    L.wall.querySelector('.o2').style.transform = `translate(${m(14)}vmax, ${m(10)}vmax)`;
-    L.wall.querySelector('.o3').style.transform = `translate(${m(18)}vmax, ${m(8)}vmax)`;
-    L.wall.querySelector('.moon').style.transform = `translate(${m(6)}vmin, ${m(4)}vmin)`;
-    L.wall.querySelector('.bokeh').style.transform = `translate(${m(4)}vmax, ${m(3)}vmax)`;
+    L.wall.querySelector('.o1').style.transform = `translate(${m(14)}vmax, ${m(10)}vmax)`;
+    L.wall.querySelector('.o2').style.transform = `translate(${m(12)}vmax, ${m(12)}vmax)`;
+    L.wall.querySelector('.o3').style.transform = `translate(${m(10)}vmax, ${m(6)}vmax)`;
+    L.wall.querySelector('.o4').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
+    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the bright folds lower
+    L.wall.querySelector('.ribbons').style.transform = `translate(${m(5)}%, ${m(4) + low}%) rotate(${m(6)}deg)`;
+    L.wall.querySelector('.sparks').style.transform = `translate(${m(3)}vmax, ${m(2)}vmax)`;
   }
 
   // ---------- layout ----------
@@ -75,12 +90,22 @@
     main.forEach(e => e.style.zoom = '');
     const limit = node.clientHeight - parseFloat(getComputedStyle(node).paddingBottom);
     // under zoom, offsetTop and heights come back in the element's own (zoomed) units
-    const over = z => { main.forEach(e => e.style.zoom = z === 1 ? '' : z); return Math.max(...main.map(e => (e.offsetTop + Math.max(e.scrollHeight, e.offsetHeight)) * z)) - limit; };
-    const TOL = 12;   // steps not yet shown sit 8px low; that is not overflow
-    if (over(1) <= TOL) return;
-    let lo = .7, hi = 1;
-    for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (over(mid) <= TOL) lo = mid; else hi = mid; }
-    over(lo); sl.zoom = lo;
+    const offTop = el => { let t = 0; for (let n = el; n && n !== node; n = n.offsetParent) t += n.offsetTop; return t; };
+    // how far a box's in-flow content runs past its content edge, into its bottom padding or beyond
+    // (Chrome's scrollHeight misses this for grid and flex items that stick out, so measure the children)
+    const spill = c => { const kids = [...c.children].filter(k => k.offsetParent && getComputedStyle(k).position !== 'absolute'); if (!kids.length) return -1e9;
+      return Math.max(...kids.map(k => offTop(k) + k.offsetHeight)) - (offTop(c) + c.offsetHeight - (parseFloat(getComputedStyle(c).paddingBottom) || 0)); };
+    const boxes = main.flatMap(e => [e, ...e.querySelectorAll('.g')]);
+    const over = z => { main.forEach(e => e.style.zoom = z === 1 ? '' : z);
+      return Math.max(Math.max(...main.map(e => offTop(e) + Math.max(e.scrollHeight, e.offsetHeight))) * z - limit, ...boxes.map(c => spill(c) * z)); };
+    const TOL = 2;   // .fitting drops the entry offset of hidden steps, so this is rounding only
+    node.classList.add('fitting');
+    if (over(1) > TOL) {
+      let lo = .7, hi = 1;
+      for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (over(mid) <= TOL) lo = mid; else hi = mid; }
+      over(lo); sl.zoom = lo;
+    }
+    node.classList.remove('fitting');
   }
 
   // ---------- slides ----------
@@ -220,7 +245,11 @@
       const fs = parseFloat(getComputedStyle(e).fontSize) * s;
       if (fs < (orient === 'port' ? 10.5 : 12) && s > .3) out.push(`${name(e)} renders at ${fs.toFixed(1)}px on screen (too small)`);
       if (e.nodeType === 1 && !e.closest('svg')) { const cs = getComputedStyle(e);
-        if (['block', 'flex', 'grid', 'list-item'].includes(cs.display) && cs.overflow === 'visible' && e.clientWidth && (e.scrollWidth > e.clientWidth + 3)) out.push(`${name(e)} is wider than its box`); }
+        if (['block', 'flex', 'grid', 'list-item'].includes(cs.display) && cs.overflow === 'visible' && e.clientWidth && (e.scrollWidth > e.clientWidth + 3)) out.push(`${name(e)} is wider than its box`);
+        // text must stay inside its glass card, clear of the rim
+        const card = e.parentElement && e.parentElement.closest('.g');
+        if (card && node.contains(card) && getComputedStyle(card).overflow === 'visible') { const c = toStage(card.getBoundingClientRect());
+          if (b.y1 > c.y1 - 6 || b.x1 > c.x1 - 4 || b.y0 < c.y0 + 2 || b.x0 < c.x0 + 2) out.push(`${name(e)} spills out of its card`); } }
     }
     for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
       const a = items[i], b = items[j]; if (a.e.contains(b.e) || b.e.contains(a.e)) continue;

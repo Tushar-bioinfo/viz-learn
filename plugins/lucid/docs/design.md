@@ -12,13 +12,14 @@ For people working on the plugin. The skill files never point here: rules an age
 | Numbers in worked lines carry their names underneath, once per slide | Anonymous numbers ("0.05152 − 0.009313") were the core complaint about earlier calc pages. Labelling once per slide keeps the clutter down. | `opLabels` in `slides.js` |
 | Probe before building: goal, pretest, prerequisites, anchors, length | Prior knowledge decides the entry rung (expertise reversal); a pretest helps memory of the questioned material; anchors make the bridges personal. | `probe.md` |
 | A `lead` line on each slide ("But…", "So…") | It makes the causal chain visible and catches "and then" gaps. The lint warns when fewer than half the slides have one. | `story.md` §4 |
-| Glass for cards, darker plates for data, one warm accent | Apple keeps Liquid Glass for the control layer and dims clear glass over busy content. Learning content needs legibility first, so data sits on plates, and the lantern accent marks only what matters now. | `lucid.css` |
+| Glass for cards, darker plates for data, one warm accent | Apple keeps Liquid Glass for the control layer and dims clear glass over busy content. Learning content needs legibility first, so data sits on plates, and the orange accent marks only what matters now. | `lucid.css` |
 | No SVG refraction filter | `backdrop-filter: url(#svg)` works in Chromium and Firefox but not Safari (WebKit bug 245510), and the user views decks on an iPhone. Blur, rim light, sheen and depth carry the look everywhere. | `lucid.css` |
 | Two stages: 1600×900 landscape and 720×1280 portrait | Phones are a main viewing device. One scaled 16:9 stage makes text about 7px on a phone; a portrait stage keeps body text at 16px or more. | `deck.js`, `lucid.css` |
-| Content that runs long is zoomed down (never below 70%) and the audit reports below 80% | Robust to slightly-too-long slides without hiding the problem. | `fitSlide` in `deck.js` |
+| Content that runs long is zoomed down (never below 70%) and the audit reports below 80% | Robust to slightly-too-long slides without hiding the problem. The fit measures each glass card's content against the card's own padding, because a grid or flex child can stick out of its card without changing the card's `scrollHeight`; the audit flags any text that spills out of its card. | `fitSlide`, `L.audit` in `deck.js` |
 | Contrast is measured on pixels, against a screenshot with the text hidden | Glass over a moving wallpaper is exactly where legibility fails (Apple's own Liquid Glass backlash). Per-line fragments avoid false readings from chips beside the text. | `scripts/check.py` |
 | YAML 1.2 booleans (`No` stays text) and one-line YAML errors with a fix hint | Both were hit while writing the example deck: `[Yes, about 2×, No, …]` split on commas, `No` became `false`, and a `?` broke a flow map. | `build.py`, `spec.md` |
-| Categorical palette chosen by search and judged by the dataviz validator | Teal/blossom/periwinkle pass all-pairs on the plate surface (CVD ΔE 8.8, normal ΔE 18.4, ≥ 3:1). The lantern accent and mist are not categorical slots. | `lucid.css`, chart defaults |
+| Categorical palette chosen by search and judged by the dataviz validator | Teal `#22aa8a`, sky `#4992f2` and violet `#9353b7` pass all pairs on the plate surface `#141312` (CVD ΔE 10.5, normal ΔE 18.0, ≥ 3:1). Judged together with the accent `#ff5a36`, the worst pair is unchanged, so no series can be mistaken for the accent. The accent is brighter than the categorical lightness band on purpose (OKLCH L 0.68), so it and mist are not categorical slots. | `lucid.css`, chart defaults |
+| Ember wallpaper, no moon, clear glass | The user's call after the first (moonlit) version: keep the wallpaper gradient idea, drop the moon, use proff-viz's black and orange, and make the glass more transparent. Clear glass over a bright glow is where legibility fails, so text carries a faint dark halo (Apple's vibrancy idea), emphasis is an underline rather than orange text, and the pixel contrast check guards every line. | `lucid.css`, `deck.js` |
 
 ## Evidence behind the story rules
 Sources were checked by web search this session; effect sizes are as reported by those sources.
@@ -27,7 +28,7 @@ Sources were checked by web search this session; effect sizes are as reported by
 - **Concrete to abstract.** Fyfe, McNeil, Son & Goldstone (2014), *Educational Psychology Review* 26: start concrete, fade to abstract. A 2020 review questions how far this carries into advanced science (*Educational Psychology Review*, 10.1007/s10648-020-09581-7). Hence numbers before symbols, without dropping the general form.
 - **Prior knowledge.** Expertise reversal effect: Kalyuga, Ayres, Chandler & Sweller (2003), *Educational Psychologist* 38. Hence the probe sets the entry rung and skips known rungs.
 - **Names first.** Mayer's pre-training principle: learning improves when the names and characteristics of key concepts come first. Hence the `name` move and `symbols` with meanings.
-- **Signalling.** Schneider, Beege, Nebel & Rey (2018), *Educational Research Review* 23 (103 studies): signalling helps retention and transfer, more for low prior knowledge. Hence colour-linked terms, the lantern accent and the "Look:" captions.
+- **Signalling.** Schneider, Beege, Nebel & Rey (2018), *Educational Research Review* 23 (103 studies): signalling helps retention and transfer, more for low prior knowledge. Hence colour-linked terms, the orange accent and the "Look:" captions.
 - **Narrative.** Dahlstrom (2014), *PNAS* 111 (Suppl. 4): narrative raises comprehension and engagement for non-experts. Hence the spine and the but/so chain.
 Uncertainty: these are lab and classroom effects on average; none tested Lucid itself. The honest test is whether decks built with the probe and bridges beat decks without them for this learner, with the same topics.
 
@@ -35,7 +36,7 @@ Uncertainty: these are lab and classroom effects on average; none tested Lucid i
 `SKILL.md` ≈ 1.4k tokens (every time) · `probe.md` ≈ 1.1k (first turn) · `story.md` + `spec.md` ≈ 5k (build turn) · the example deck ≈ 4.1k tokens of YAML for 21 slides. The kit (≈ 190 KB) is never read by the agent. Build and check print one line per problem.
 
 ## Backlog
-- Light ("dawn") theme and a `dusk` tint: tokens are ready, but each needs a palette validation and a full check run.
+- A light theme: it needs its own series palette, validated on a light plate, and a full check run on both examples.
 - Animated transitions between two states of the same chart (morphing marks), not just fades.
 - Speaker notes / narration export, and an Obsidian companion note writer (the user's vault has an ingest script).
 - Calc steps that follow sliders already recompute; tables do not yet take slider-driven rows.

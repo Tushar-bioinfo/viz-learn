@@ -6,7 +6,7 @@ figures, synthetic bioinformatics examples, and export-ready outputs.
 
 ## Lucid: learning decks (Claude Code plugin)
 
-`plugins/lucid` is a plugin that builds visual learning decks in a moonlit Liquid Glass style. It asks what you know first, builds the story from the ground up, explains every equation and table column, and checks each deck on desktop and phone.
+`plugins/lucid` is a plugin that builds visual learning decks in an ember Liquid Glass style (clear glass over a black-to-orange glow). It asks what you know first, builds the story from the ground up, explains every equation and table column, and checks each deck on desktop and phone.
 
 ```bash
 claude plugin marketplace add Tushar-bioinfo/viz-learn

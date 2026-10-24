@@ -1,28 +1,26 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#091450"><title>Why counts need the negative binomial</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css"><script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script><style>/* Lucid: moonlit Liquid Glass theme for learning decks.
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#091450"><title>Why counts need the negative binomial</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css"><script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script><style>/* Lucid: Liquid Glass theme for learning decks. Ember on black: the proff black-and-orange palette, lit from below.
    Every colour is a token. Authors never edit this file: decks only carry content.
    Stage: 1600 x 900 (landscape) or 720 x 1280 (portrait), scaled to the screen. Sizes below are stage px. */
 
 :root {
-  /* night sky (sampled from the reference wallpaper) */
-  --night-0: #030722; --night-1: #060c36; --night-2: #0a154d; --night-3: #101f67;
-  --night-4: #162a80; --night-5: #203699; --cobalt: #3245ae; --peri: #5e6de4;
-  --lav: #8994cb; --blossom-haze: #866cb4; --moonlight: #e4ebfa;
+  /* the wall: black, warmed by ember light from below */
+  --black: #050505; --coal: #0c0b0a; --char: #161412;
+  --ember: #ff5a36; --flare: #ff7a3d; --glow: #ffb27f; --deep: #a8301a;
 
-  /* text tokens: ink on glass >= 7:1, mist >= 4.5:1, haze for ticks and eyebrows only */
-  --ink: #f4f7ff; --mist: #c8d0f0; --haze: #a7b2e0;
+  /* text (warm greys): ink on glass >= 7:1, mist >= 4.5:1, haze for ticks and eyebrows */
+  --ink: #f7f5f1; --mist: #d6d1c8; --haze: #b4afa6;
 
-  /* emphasis: one warm accent for "what matters now" (the answer, the active term, the hero number) */
-  --lantern: #ffc46b; --lantern-2: #ffdca3; --lantern-wash: rgba(255, 196, 107, .16);
+  /* one accent for "what matters now" (the proff orange), and its soft tint */
+  --accent: #ff5a36; --amber: #ffb27f; --accent-wash: rgba(255, 90, 54, .14);
 
-  /* categorical series, validated all-pairs on the plate (CVD dE 8.8, normal dE 18.4, >= 3:1) */
-  --s1: #1ba995; --s2: #b85cbc; --s3: #568ef9;
+  /* categorical series under the accent: validated all-pairs WITH the accent on the plate (CVD dE 10.5, normal dE 18, >= 3:1) */
+  --s1: #22aa8a; --s2: #4992f2; --s3: #9353b7;
   /* status: always with an icon and a word */
-  --good: #6fdc9a; --bad: #ff8a80;
+  --good: #7ad9a0; --bad: #ff6f86;
 
   /* materials */
-  --plate-0: rgba(9, 15, 56, .64); --plate-1: rgba(6, 10, 42, .72);
-  --hair: rgba(195, 203, 238, .14); --hair-2: rgba(195, 203, 238, .26);
-  --plate-solid: #0d1748;   /* dot rings and gaps inside charts */
+  --hair: rgba(240, 232, 220, .12); --hair-2: rgba(240, 232, 220, .24);
+  --plate-solid: #141312;   /* dot rings and gaps inside charts */
 
   --r-xl: 44px; --r-lg: 32px; --r-md: 24px; --r-sm: 16px; --r-pill: 999px;
   --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
@@ -33,7 +31,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; background: var(--night-1); }
+html, body { height: 100%; overflow: hidden; background: var(--black); }
 body {
   font-family: var(--f-ui); color: var(--ink); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "kern"; text-rendering: optimizeLegibility; user-select: none; -webkit-tap-highlight-color: transparent;
@@ -42,36 +40,24 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 b, strong { font-weight: 680; color: var(--ink); }
 i, em { font-style: italic; }
 code { font-family: var(--f-mono); font-size: .86em; padding: .06em .32em; border-radius: 8px; background: rgba(255, 255, 255, .09); }
-mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255, 196, 107, .42) 58%, rgba(255, 196, 107, .42) 92%, transparent 92%); padding: 0 .08em; }
+mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: .13em; text-underline-offset: .2em; text-decoration-skip-ink: none; }
 
-/* ---------- wallpaper: night sky, moon, blossom haze, drifting orbs ---------- */
+/* ---------- wallpaper: black sky, an ember horizon, silk ribbons of warm light, orbs, sparks, film grain ---------- */
 #wall { position: fixed; inset: 0; overflow: hidden; z-index: 0;
   background:
-    radial-gradient(70% 55% at 50% 108%, rgba(94, 109, 228, .42), transparent 62%),
-    radial-gradient(48% 40% at -4% 96%, rgba(134, 108, 180, .46), transparent 70%),
-    radial-gradient(44% 38% at 104% 86%, rgba(153, 130, 201, .36), transparent 70%),
-    radial-gradient(60% 46% at 74% 14%, rgba(214, 226, 252, .16), transparent 60%),
-    linear-gradient(180deg, #040a2f 0%, #091450 34%, #12267f 70%, #0a1650 100%);
-}
-#wall .stars { position: absolute; inset: 0; opacity: .8; background-repeat: no-repeat; background-size: cover; }
-#wall .moon { position: absolute; width: 34vmin; height: 34vmin; left: 63%; top: 34%; border-radius: 50%; opacity: .42;
-  background:
-    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, .55) 0 7%, transparent 22%),
-    radial-gradient(circle at 62% 58%, rgba(170, 185, 235, .40) 0 8%, transparent 16%),
-    radial-gradient(circle at 40% 66%, rgba(170, 185, 235, .30) 0 6%, transparent 12%),
-    radial-gradient(circle at 70% 32%, rgba(170, 185, 235, .30) 0 5%, transparent 10%),
-    radial-gradient(circle at 46% 44%, #f7f9ff 0%, #e2e9fb 42%, #c4cff3 64%, rgba(196, 207, 243, 0) 71%);
-  filter: blur(.6px); box-shadow: 0 0 140px 60px rgba(196, 210, 255, .16);
-  transition: transform 1.6s var(--ease), left 1.6s var(--ease), top 1.6s var(--ease); }
-#wall .orb { position: absolute; border-radius: 50%; filter: blur(70px); transition: transform 1.8s var(--ease); will-change: transform; }
-#wall .o1 { width: 46vmax; height: 46vmax; left: -12vmax; top: 18vmax; background: radial-gradient(circle, rgba(94, 109, 228, .55), transparent 68%); }
-#wall .o2 { width: 40vmax; height: 40vmax; right: -10vmax; top: -6vmax; background: radial-gradient(circle, rgba(134, 108, 180, .45), transparent 68%); }
-#wall .o3 { width: 34vmax; height: 34vmax; left: 38vmax; bottom: -18vmax; background: radial-gradient(circle, rgba(50, 69, 174, .65), transparent 68%); }
-#wall .bokeh { position: absolute; inset: 0; transition: transform 1.8s var(--ease); }
-#wall .bokeh i { position: absolute; border-radius: 50%; filter: blur(1.5px); opacity: .85; }
-.port #wall .moon { left: 46%; top: 56%; width: 50vmin; height: 50vmin; }
-#wall .lake { position: absolute; left: 0; right: 0; bottom: 0; height: 26%;
-  background: linear-gradient(180deg, transparent, rgba(10, 20, 74, .55) 60%, rgba(4, 8, 40, .8)); }
+    radial-gradient(140% 70% at 50% 118%, rgba(255, 90, 54, .30) 0%, rgba(168, 48, 26, .18) 34%, transparent 64%),
+    radial-gradient(90% 60% at 50% -10%, rgba(255, 178, 127, .05), transparent 60%),
+    linear-gradient(180deg, #050505 0%, #080706 38%, #120805 72%, #1c0b05 100%); }
+#wall .ribbons { position: absolute; inset: -8%; width: 116%; height: 116%; opacity: .95; transition: transform 2s var(--ease); will-change: transform; }
+#wall .orb { position: absolute; border-radius: 50%; transition: transform 2s var(--ease); will-change: transform; }
+#wall .o1 { width: 52vmax; height: 52vmax; left: -16vmax; bottom: -20vmax; background: radial-gradient(circle, rgba(255, 90, 54, .55) 0%, rgba(255, 90, 54, .22) 38%, transparent 66%); }
+#wall .o2 { width: 40vmax; height: 40vmax; right: -12vmax; top: 18vmax; background: radial-gradient(circle, rgba(255, 122, 61, .42) 0%, rgba(168, 48, 26, .2) 42%, transparent 68%); }
+#wall .o3 { width: 150vmax; height: 34vmax; left: -10vmax; top: -24vmax; background: radial-gradient(closest-side, rgba(255, 150, 100, .075), transparent); }
+#wall .o4 { width: 20vmax; height: 20vmax; left: 34vmax; top: 30vmax; background: radial-gradient(circle, rgba(255, 140, 80, .18) 0%, transparent 66%); }
+#wall .sparks { position: absolute; inset: 0; transition: transform 2s var(--ease); }
+#wall .sparks i { position: absolute; border-radius: 50%; }
+#wall .grain { position: absolute; inset: 0; opacity: .1; mix-blend-mode: overlay; background-repeat: repeat; background-size: 220px 220px; pointer-events: none; }
+#wall .vignette { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(0, 0, 0, .55) 100%); }
 
 /* ---------- stage ---------- */
 #viewport { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
@@ -81,37 +67,46 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .slide.on { display: flex; }
 .port .slide { --pad-x: 40px; --pad-top: 116px; --pad-bot: 132px; gap: 24px; }
 
-/* ---------- glass ---------- */
+/* ---------- glass: clear, lit at the rim, thick at the edge ----------
+   Liquid Glass reads as glass because of its edge: a bright specular line where light enters (top left), a warm one
+   where it leaves (bottom right), light caught inside the rim, and the world behind showing through, only softened. */
 .g { position: relative; border-radius: var(--r-lg); isolation: isolate;
-  background: linear-gradient(155deg, rgba(232, 238, 255, .16) 0%, rgba(214, 224, 255, .07) 34%, rgba(170, 184, 240, .05) 64%, rgba(222, 230, 255, .10) 100%), rgba(8, 14, 54, .40);
-  -webkit-backdrop-filter: blur(30px) saturate(125%) brightness(.96); backdrop-filter: blur(30px) saturate(125%) brightness(.96);
-  box-shadow: 0 34px 80px -18px rgba(1, 4, 26, .62), 0 10px 26px -8px rgba(1, 4, 26, .5),
-    inset 0 1.5px 0 rgba(255, 255, 255, .34), inset 0 -1px 1px rgba(255, 255, 255, .06); }
-.g::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none; z-index: 2;
-  background: linear-gradient(142deg, rgba(255, 255, 255, .72), rgba(255, 255, 255, .12) 24%, rgba(255, 255, 255, 0) 50%, rgba(178, 196, 255, .16) 76%, rgba(255, 255, 255, .42));
+  background: linear-gradient(135deg, rgba(255, 255, 255, .13) 0%, rgba(255, 255, 255, .045) 36%, rgba(255, 255, 255, .02) 62%, rgba(255, 255, 255, .07) 100%),
+    rgba(12, 10, 9, .2);
+  -webkit-backdrop-filter: blur(16px) saturate(185%) brightness(1.05); backdrop-filter: blur(16px) saturate(185%) brightness(1.05);
+  box-shadow:
+    inset 1.5px 1.5px 1px -.5px rgba(255, 255, 255, .72),
+    inset -1.5px -1.5px 1px -.5px rgba(255, 190, 150, .38),
+    inset 0 0 0 1px rgba(255, 255, 255, .09),
+    inset 0 16px 30px -18px rgba(255, 255, 255, .24),
+    inset 0 -18px 32px -20px rgba(255, 140, 90, .30),
+    0 22px 60px -14px rgba(0, 0, 0, .7), 0 6px 16px -6px rgba(0, 0, 0, .5); }
+.g::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .88) 0%, rgba(255, 255, 255, .2) 20%, rgba(255, 255, 255, .02) 46%, rgba(255, 160, 110, .2) 74%, rgba(255, 220, 190, .62) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
 .g::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
-  background: radial-gradient(120% 70% at 18% -12%, rgba(255, 255, 255, .15), transparent 52%); }
-/* plate: dimmed glass under data (charts, tables, formulas), as Apple does for clear glass over busy content */
-.g.plate { background: linear-gradient(180deg, var(--plate-0), var(--plate-1));
-  -webkit-backdrop-filter: blur(30px) saturate(120%); backdrop-filter: blur(30px) saturate(120%); }
+  background: linear-gradient(165deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .03) 18%, transparent 34%),
+    radial-gradient(90% 60% at 12% -8%, rgba(255, 255, 255, .12), transparent 55%); }
+/* plate: the same glass, smoked, under data (charts, tables, formulas) so lines and numbers stay crisp */
+.g.plate { background: linear-gradient(160deg, rgba(255, 255, 255, .07) 0%, rgba(255, 255, 255, .015) 40%, rgba(255, 255, 255, .03) 100%), rgba(10, 9, 8, .46);
+  -webkit-backdrop-filter: blur(22px) saturate(160%) brightness(.92); backdrop-filter: blur(22px) saturate(160%) brightness(.92); }
 /* never glass on glass: a card inside a card is a quiet inset, not another pane */
-.g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi) { background: rgba(255, 255, 255, .055); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
+.g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi) { background: rgba(255, 255, 255, .05); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .05); }
 .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::before, .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::after { display: none; }
 .g .vis.g { background: transparent; box-shadow: none; padding: 0; }
-.g.thin { border-radius: var(--r-md); box-shadow: 0 14px 34px -12px rgba(1, 4, 26, .55), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.g.thin { border-radius: var(--r-md); }
 .g.pill { border-radius: var(--r-pill); }
-.g.warm::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 196, 107, .16), transparent 55%); }
-.g.coolbad::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 138, 128, .14), transparent 55%); }
+.g.warm::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 90, 54, .16), transparent 55%), linear-gradient(165deg, rgba(255, 255, 255, .08), transparent 30%); }
+.g.coolbad::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 111, 134, .14), transparent 55%); }
 .pad { padding: 34px 40px; }
 .port .pad { padding: 26px 28px; }
 
 /* ---------- type ---------- */
-.lead { font-size: 28px; line-height: 1.3; font-weight: 520; color: var(--mist); max-width: 1300px; text-shadow: 0 1px 2px rgba(2, 6, 34, .9), 0 0 18px rgba(2, 6, 34, .85); }
-.head .eyebrow, .s-title .subtitle, .s-title .kicker, .bridge .world, .s-statement > .lead { text-shadow: 0 1px 2px rgba(2, 6, 34, .9), 0 0 18px rgba(2, 6, 34, .85); }
-.lead .lw { color: var(--lantern); font-weight: 680; }
+.lead { font-size: 28px; line-height: 1.3; font-weight: 520; color: var(--mist); max-width: 1300px; text-shadow: 0 1px 2px rgba(0, 0, 0, .85), 0 0 18px rgba(0, 0, 0, .7); }
+.head .eyebrow, .s-title .subtitle, .s-title .kicker, .bridge .world, .s-statement > .lead { text-shadow: 0 1px 2px rgba(0, 0, 0, .85), 0 0 18px rgba(0, 0, 0, .7); }
+.lead .lw { color: var(--amber); font-weight: 680; }
 .h1 { font-size: 58px; line-height: 1.08; font-weight: 680; letter-spacing: -.022em; max-width: 1420px; text-wrap: balance;
-  text-shadow: 0 2px 24px rgba(2, 6, 34, .55); }
+  text-shadow: 0 2px 24px rgba(0, 0, 0, .6); }
 .port .h1 { font-size: 46px; }
 .port .lead { font-size: 26px; }
 .eyebrow { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--mist); }
@@ -119,7 +114,7 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .port .p, .port .pts li { font-size: 30px; }
 .small { font-size: 25px; line-height: 1.4; color: var(--mist); }
 .cap { font-size: 26px; line-height: 1.38; color: var(--mist); }
-.cap::before { content: "Look: "; color: var(--lantern); font-weight: 650; }
+.cap::before { content: "Look: "; color: var(--amber); font-weight: 650; }
 .mono { font-family: var(--f-mono); }
 .tex-fallback { font-family: var(--f-mono); color: var(--mist); }
 
@@ -141,13 +136,14 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .pts { list-style: none; display: flex; flex-direction: column; gap: 18px; }
 .pts li { display: grid; grid-template-columns: 22px 1fr; column-gap: 16px; align-items: baseline; }
 .pts .pip { width: 14px; height: 14px; border-radius: 50%; background: var(--mist); opacity: .55; transform: translateY(-3px); transition: all .4s var(--ease); }
-.pts li.now .pip { background: var(--lantern); opacity: 1; box-shadow: 0 0 0 6px rgba(255, 196, 107, .18), 0 0 18px rgba(255, 196, 107, .6); }
+.pts li.now .pip { background: var(--accent); opacity: 1; box-shadow: 0 0 0 6px rgba(255, 90, 54, .2), 0 0 18px rgba(255, 90, 54, .65); }
 .textcard { padding: 34px 40px; display: flex; flex-direction: column; gap: 22px; justify-content: center; }
 .port .textcard { padding: 26px 28px; }
 
 /* build steps: materialize (blur to sharp, slight scale), like Liquid Glass objects */
 [data-step] { opacity: 0; filter: blur(10px); transform: translateY(8px) scale(.985); transition: opacity .5s var(--ease), filter .5s var(--ease), transform .55s var(--spring); }
 [data-step].shown { opacity: 1; filter: none; transform: none; }
+.fitting [data-step] { transform: none !important; transition: none !important; }   /* measure the real layout, not the 8px entry offset */
 [data-only] { display: none; }
 [data-only].shown { display: block; }
 .no-anim *, .no-anim *::before, .no-anim *::after { transition: none !important; animation: none !important; }
@@ -161,16 +157,16 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .chapters { position: absolute; top: 36px; left: var(--pad-x); display: flex; align-items: center; gap: 4px; padding: 6px; max-width: 1180px; overflow: hidden; }
 .chapters .seg { font-size: 21px; font-weight: 600; color: var(--haze); padding: 10px 20px; border-radius: var(--r-pill); white-space: nowrap; transition: all .45s var(--ease); }
 .chapters .seg.done { color: var(--mist); }
-.chapters .seg.now { color: var(--ink); background: rgba(255, 255, 255, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 6px 18px -6px rgba(1, 4, 26, .5); }
-.chapters .seg.now::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--lantern); margin-right: 10px; transform: translateY(-2px); box-shadow: 0 0 10px rgba(255, 196, 107, .8); }
+.chapters .seg.now { color: var(--ink); background: rgba(255, 255, 255, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 6px 18px -6px rgba(0, 0, 0, .5); }
+.chapters .seg.now::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); margin-right: 10px; transform: translateY(-2px); box-shadow: 0 0 10px rgba(255, 90, 54, .85); }
 .counter { position: absolute; top: 36px; right: var(--pad-x); font-size: 21px; font-weight: 600; color: var(--mist); padding: 14px 22px; font-variant-numeric: tabular-nums; }
 .progress { position: absolute; left: var(--pad-x); right: calc(var(--pad-x) + 170px); bottom: 54px; display: flex; gap: 8px; height: 6px; }
 .progress .pc { flex: 1; border-radius: 6px; background: rgba(255, 255, 255, .12); overflow: hidden; }
-.progress .pc i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, var(--lantern-2), var(--lantern)); transition: width .6s var(--ease); }
+.progress .pc i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, var(--amber), var(--accent)); transition: width .6s var(--ease); }
 .stepdots { position: absolute; left: var(--pad-x); bottom: 76px; display: flex; gap: 9px; }
 .stepdots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, .22); transition: all .35s var(--ease); }
 .stepdots i.on { background: var(--mist); }
-.stepdots i.now { background: var(--lantern); width: 26px; border-radius: 6px; }
+.stepdots i.now { background: var(--accent); width: 26px; border-radius: 6px; }
 .navbtns { position: absolute; right: var(--pad-x); bottom: 30px; display: flex; gap: 14px; }
 .navbtns button { width: 66px; height: 66px; display: grid; place-items: center; }
 .navbtns svg { width: 28px; height: 28px; stroke: var(--ink); stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -199,12 +195,12 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 
 /* ---------- title slide ---------- */
 .s-title { justify-content: center; gap: 34px; }
-.s-title .kicker { font-size: 24px; letter-spacing: .16em; text-transform: uppercase; font-weight: 680; color: var(--lantern); }
-.s-title .display { font-size: 104px; line-height: 1.0; font-weight: 720; letter-spacing: -.035em; max-width: 1300px; text-wrap: balance; text-shadow: 0 4px 40px rgba(2, 6, 34, .6); }
+.s-title .kicker { font-size: 24px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--amber); }
+.s-title .display { font-size: 104px; line-height: 1.0; font-weight: 720; letter-spacing: -.035em; max-width: 1300px; text-wrap: balance; text-shadow: 0 4px 40px rgba(0, 0, 0, .6); }
 .s-title .subtitle { font-size: 34px; line-height: 1.35; color: var(--ink); max-width: 1100px; }
 .s-title .question { display: flex; align-items: center; gap: 26px; padding: 28px 36px 28px 28px; max-width: 1180px; }
-.s-title .question .qmark { flex: none; width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; font-weight: 750; color: #1c1405;
-  background: radial-gradient(circle at 35% 30%, #ffe6bb, var(--lantern) 60%, #e9a443); box-shadow: 0 0 30px rgba(255, 196, 107, .45); }
+.s-title .question .qmark { flex: none; width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; font-weight: 750; color: #1a0802;
+  background: radial-gradient(circle at 35% 30%, #ffd2b8, var(--accent) 58%, #c43b1c); box-shadow: 0 0 30px rgba(255, 90, 54, .5); }
 .s-title .question .qt { font-size: 34px; line-height: 1.32; font-weight: 560; }
 .s-title .chips { display: flex; flex-wrap: wrap; gap: 12px; }
 .s-title .chips span { font-size: 22px; font-weight: 600; color: var(--mist); padding: 10px 20px; }
@@ -232,7 +228,7 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .chart .lbl { font-size: 24px; fill: var(--ink); font-weight: 600; }
 .chart .lbl.dim { fill: var(--mist); font-weight: 520; }
 .chart .grid { stroke: var(--hair); stroke-width: 1; }
-.chart .base { stroke: rgba(195, 203, 238, .5); stroke-width: 1.6; }
+.chart .base { stroke: rgba(232, 226, 216, .45); stroke-width: 1.6; }
 .chart .mk { transition: opacity .5s var(--ease); }
 .chart .mk.off { opacity: 0; }
 .legend { position: absolute; top: 0; left: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 22px; color: var(--mist); pointer-events: none; }
@@ -246,7 +242,7 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .legend i.dot { width: 13px; height: 13px; border-radius: 50%; }
 .legend i.bar { width: 14px; height: 18px; border-radius: 4px 4px 1px 1px; }
 .tip { position: absolute; pointer-events: none; z-index: 5; padding: 12px 16px; font-size: 22px; line-height: 1.35; color: var(--ink); opacity: 0; transition: opacity .15s;
-  border-radius: 16px; background: rgba(14, 22, 72, .86); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 12px 30px rgba(1, 4, 26, .55), inset 0 1px 0 rgba(255, 255, 255, .25); white-space: nowrap; }
+  border-radius: 16px; background: rgba(22, 19, 17, .88); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 12px 30px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .25); white-space: nowrap; }
 .tip.on { opacity: 1; }
 .tip b { font-variant-numeric: tabular-nums; }
 .datatoggle { position: absolute; top: 14px; right: 16px; z-index: 4; font-size: 21px; font-weight: 620; color: var(--mist); padding: 8px 16px; border-radius: var(--r-pill);
@@ -263,19 +259,19 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .controls { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 10px; flex: none; }
 .ctl { display: flex; align-items: center; gap: 16px; padding: 10px 22px 10px 22px; }
 .ctl label { font-size: 23px; font-weight: 600; color: var(--mist); white-space: nowrap; }
-.ctl output { font-size: 24px; font-weight: 700; color: var(--lantern); min-width: 3.4ch; font-variant-numeric: tabular-nums; }
+.ctl output { font-size: 24px; font-weight: 700; color: var(--accent); min-width: 3.4ch; font-variant-numeric: tabular-nums; }
 .ctl input[type=range] { -webkit-appearance: none; appearance: none; width: 260px; height: 34px; background: transparent; cursor: pointer; }
-.ctl input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 8px; background: linear-gradient(90deg, var(--lantern) var(--fill, 50%), rgba(255, 255, 255, .16) var(--fill, 50%)); }
+.ctl input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 8px; background: linear-gradient(90deg, var(--accent) var(--fill, 50%), rgba(255, 255, 255, .16) var(--fill, 50%)); }
 .ctl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 34px; height: 34px; margin-top: -13px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #dfe6ff 60%, #b9c4ee); box-shadow: 0 4px 14px rgba(1, 4, 26, .6), inset 0 -2px 3px rgba(0, 0, 0, .15); }
+  background: radial-gradient(circle at 35% 30%, #fff, #f1ebe4 60%, #cfc6bb); box-shadow: 0 4px 14px rgba(0, 0, 0, .6), inset 0 -2px 3px rgba(0, 0, 0, .15); }
 .ctl input[type=range]::-moz-range-track { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .16); }
-.ctl input[type=range]::-moz-range-progress { height: 8px; border-radius: 8px; background: var(--lantern); }
+.ctl input[type=range]::-moz-range-progress { height: 8px; border-radius: 8px; background: var(--accent); }
 .ctl input[type=range]::-moz-range-thumb { width: 30px; height: 30px; border: 0; border-radius: 50%; background: #e8edff; }
 .port .ctl input[type=range] { width: 220px; }
 
 /* stat (hero number) */
 .stat { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 12px; flex: 1; }
-.stat .num { font-size: 128px; line-height: .95; font-weight: 720; letter-spacing: -.035em; color: var(--lantern); text-shadow: 0 0 40px rgba(255, 196, 107, .35); }
+.stat .num { font-size: 128px; line-height: .95; font-weight: 720; letter-spacing: -.035em; color: var(--ink); text-shadow: 0 0 2px rgba(255, 90, 54, .9), 0 0 24px rgba(255, 90, 54, .75), 0 0 60px rgba(255, 90, 54, .45); }
 .stat .lab { font-size: 32px; font-weight: 600; color: var(--ink); }
 .stat .sub { font-size: 26px; color: var(--mist); }
 .port .stat .num { font-size: 104px; }
@@ -284,22 +280,22 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .units { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 22px; flex: 1; }
 .units svg { width: 100%; flex: 1; min-height: 0; }
 .units .ulab { font-size: 27px; color: var(--mist); text-align: center; }
-.units .ulab b { color: var(--lantern); }
+.units .ulab b { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: .12em; text-underline-offset: .2em; }
 
 /* flow */
 .flow { position: relative; flex: 1; min-height: 0; }
 .flow .node { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 16px 20px; gap: 4px; }
 .flow .node .nl { font-size: 32px; font-weight: 680; line-height: 1.2; }
 .flow .node .ns { font-size: 24px; color: var(--mist); line-height: 1.25; }
-.flow .node.focus { box-shadow: 0 0 0 3px var(--lantern), 0 0 34px rgba(255, 196, 107, .35), 0 24px 60px -16px rgba(1, 4, 26, .6); }
+.flow .node.focus { box-shadow: 0 0 0 3px var(--accent), 0 0 34px rgba(255, 90, 54, .4), 0 24px 60px -16px rgba(0, 0, 0, .6); }
 .flow svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .flow .verb { font-size: 22px; fill: var(--mist); font-style: italic; }
-.flow .edge { stroke: rgba(195, 203, 238, .55); stroke-width: 2.5; fill: none; }
+.flow .edge { stroke: rgba(232, 226, 216, .5); stroke-width: 2.5; fill: none; }
 
 /* code */
-.codebox { font-family: var(--f-mono); font-size: 27px; line-height: 1.55; padding: 22px 28px; border-radius: var(--r-md); background: rgba(3, 6, 30, .55);
+.codebox { font-family: var(--f-mono); font-size: 27px; line-height: 1.55; padding: 22px 28px; border-radius: var(--r-md); background: rgba(0, 0, 0, .42);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .06); white-space: pre; overflow: hidden; color: var(--mist); }
-.codebox .ck { color: #a9c0ff; } .codebox .cn { color: var(--lantern-2); } .codebox .cc { color: var(--haze); font-style: italic; }
+.codebox .ck { color: #a9c0ff; } .codebox .cn { color: var(--amber); } .codebox .cc { color: var(--haze); font-style: italic; }
 .codebox .tu { color: var(--ink); text-decoration: underline; text-decoration-thickness: 4px; text-underline-offset: 7px; text-decoration-color: var(--tc); }
 .port .codebox { font-size: 22px; padding: 18px 20px; }
 
@@ -328,15 +324,15 @@ mark.hi { color: inherit; background: linear-gradient(transparent 58%, rgba(255,
 .eqrow .val { font-size: 40px; position: relative; }
 .port .eqrow .val { font-size: 32px; }
 .eqrow .read { font-size: 30px; color: var(--mist); font-style: italic; }
-.res { color: var(--lantern); }
-.res .katex { color: var(--lantern); }
+.res { color: var(--accent); }
+.res .katex { color: var(--accent); }
 
 /* calc ladder */
 .calc { display: flex; flex-direction: column; gap: 16px; padding: 30px 38px; flex: 1; min-height: 0; justify-content: center; }
 .cline { display: grid; grid-template-columns: 54px 1fr; column-gap: 22px; row-gap: 6px; align-items: center; }
 .cline .num { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-size: 23px; font-weight: 700; color: var(--ink);
   background: rgba(255, 255, 255, .12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
-.cline.now .num { background: var(--lantern); color: #1d1405; box-shadow: 0 0 20px rgba(255, 196, 107, .55); }
+.cline.now .num { background: var(--accent); color: #1a0802; box-shadow: 0 0 20px rgba(255, 90, 54, .55); }
 .cline .say { font-size: 28px; color: var(--ink); font-weight: 520; }
 .cline .math { grid-column: 2; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 18px; font-size: 36px; padding-bottom: 30px; position: relative; }
 .cline .math .eqs { color: var(--haze); }
@@ -351,14 +347,14 @@ table.t { border-collapse: separate; border-spacing: 0; width: 100%; font-varian
 table.t th { font-size: 21px; font-weight: 650; letter-spacing: .04em; color: var(--haze); text-align: right; padding: 10px 18px 14px; vertical-align: bottom; white-space: nowrap; }
 table.t th:first-child, table.t td:first-child { text-align: left; }
 table.t th .fx { display: inline-grid; place-items: center; width: 32px; height: 32px; margin-right: 8px; border-radius: 9px; font-size: 22px; font-style: italic; font-weight: 700;
-  color: #1d1405; background: var(--lantern); transform: translateY(-2px); }
+  color: #1a0802; background: var(--accent); transform: translateY(-2px); }
 table.t th.der { color: var(--ink); cursor: pointer; }
 table.t td { font-size: 28px; padding: 13px 18px; text-align: right; color: var(--ink); border-top: 1px solid var(--hair); }
-table.t tr.focus td { background: var(--lantern-wash); }
-table.t tr.focus td:first-child { box-shadow: inset 4px 0 0 var(--lantern); }
+table.t tr.focus td { background: var(--accent-wash); }
+table.t tr.focus td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
 table.t td.der { color: var(--ink); font-weight: 600; }
 table.t td.der.pend, table.t th.der.pend { opacity: 0; }
-table.t .now { color: var(--lantern) !important; }
+table.t .now { color: var(--accent) !important; }
 .recipe { flex: 0 0 36%; padding: 28px 32px; display: flex; flex-direction: column; gap: 16px; justify-content: center; position: relative; min-width: 0; }
 .recipe .rk { display: none; flex-direction: column; gap: 14px; }
 .recipe .rk.shown { display: flex; }
@@ -376,9 +372,9 @@ table.t .now { color: var(--lantern) !important; }
 .bridge { flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 0; justify-content: center; }
 .bridge .worlds, .bridge .pair { display: grid; grid-template-columns: 1fr 86px 1fr; align-items: center; }
 .bridge .world { justify-self: stretch; text-align: center; font-size: 24px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--haze); padding: 6px 0; }
-.bridge .world.to { color: var(--lantern); }
+.bridge .world.to { color: var(--accent); }
 .bridge .cell { padding: 20px 28px; font-size: 29px; line-height: 1.28; text-align: center; }
-.bridge .eqv { text-align: center; font-size: 40px; color: var(--ink); font-weight: 300; text-shadow: 0 0 14px rgba(2, 6, 34, .9); }
+.bridge .eqv { text-align: center; font-size: 40px; color: var(--ink); font-weight: 300; text-shadow: 0 0 14px rgba(0, 0, 0, .85); }
 .bridge .breaks { margin-top: 8px; display: flex; gap: 18px; align-items: flex-start; padding: 22px 30px; }
 .bridge .breaks .bi { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 800; color: #2a0f0c; background: var(--bad); margin-top: 2px; }
 .bridge .breaks .bt { font-size: 27px; line-height: 1.35; }
@@ -396,7 +392,7 @@ table.t .now { color: var(--lantern) !important; }
 .compare .side h3 { font-size: 36px; font-weight: 680; letter-spacing: -.01em; }
 .compare .side .vis { min-height: 150px; }
 .verdict { flex: none; padding: 22px 32px; font-size: 29px; line-height: 1.35; }
-.verdict b { color: var(--lantern); }
+.verdict b { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: .13em; text-underline-offset: .2em; text-decoration-skip-ink: none; }
 .port .compare { grid-template-columns: 1fr; gap: 20px; }
 
 /* predict */
@@ -406,7 +402,7 @@ table.t .now { color: var(--lantern) !important; }
 .opt:hover:not(:disabled) { transform: translateX(6px); }
 .opt .ol { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 750; background: rgba(255, 255, 255, .13); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
 .opt .om { font-size: 26px; font-weight: 800; text-align: center; }
-.opt.right { box-shadow: 0 0 0 3px var(--good), 0 18px 40px -14px rgba(1, 4, 26, .6); }
+.opt.right { box-shadow: 0 0 0 3px var(--good), 0 18px 40px -14px rgba(0, 0, 0, .6); }
 .opt.right .ol { background: var(--good); color: #04150c; }
 .opt.right .om { color: var(--good); }
 .opt.wrong { box-shadow: 0 0 0 3px var(--bad); }
@@ -415,7 +411,7 @@ table.t .now { color: var(--lantern) !important; }
 .opt:disabled { cursor: default; }
 .why { padding: 30px 36px; display: flex; flex-direction: column; gap: 14px; opacity: 0; filter: blur(12px); transform: scale(.97); transition: all .6s var(--ease); }
 .why.open { opacity: 1; filter: none; transform: none; }
-.why .eyebrow { color: var(--lantern); }
+.why .eyebrow { color: var(--amber); }
 .why .p { font-size: 30px; }
 .predict .hint { font-size: 24px; color: var(--haze); padding: 4px 6px; }
 .port .predict { grid-template-columns: 1fr; gap: 20px; }
@@ -423,23 +419,24 @@ table.t .now { color: var(--lantern) !important; }
 
 /* quiz (flip cards) */
 .quiz { flex: 1; display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 30px; min-height: 0; max-height: 470px; align-self: stretch; }
-.flip { perspective: 1600px; cursor: pointer; min-height: 0; }
-.flip .in { position: relative; width: 100%; height: 100%; transition: transform .8s var(--spring); transform-style: preserve-3d; }
+.flip { perspective: 1600px; cursor: pointer; }
+.flip .in { position: relative; display: grid; width: 100%; height: 100%; transition: transform .8s var(--spring); transform-style: preserve-3d; }
 .flip.on .in { transform: rotateY(180deg); }
-.flip .face { position: absolute; inset: 0; padding: 32px 34px; display: flex; flex-direction: column; justify-content: center; gap: 16px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.flip .face { grid-area: 1 / 1; position: relative; padding: 32px 34px; display: flex; flex-direction: column; justify-content: center; gap: 16px; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .flip .back { transform: rotateY(180deg); }
 .flip .face .tag { font-size: 21px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--ink); }
 .flip .face .q { font-size: 34px; line-height: 1.3; font-weight: 620; }
 .flip .face .a { font-size: 30px; line-height: 1.38; }
 .flip .face .hint { font-size: 22px; color: var(--mist); margin-top: 10px; }
-.port .quiz { grid-template-columns: 1fr; }
+.port .quiz { grid-template-columns: 1fr; max-height: none; gap: 20px; align-content: start; grid-auto-rows: minmax(190px, auto); }
+.port .flip .face { padding: 24px 26px; gap: 10px; }
 .port .flip .face .q { font-size: 27px; }
 .port .flip .face .a { font-size: 25px; }
 
 /* recap */
 .recap { flex: 1; display: grid; grid-template-columns: 1.1fr 1fr 1fr; grid-template-rows: auto auto; align-content: center; align-items: start; gap: 26px; min-height: 0; }
 .recap .answer { grid-column: 1 / -1; padding: 30px 40px; display: flex; gap: 26px; align-items: center; }
-.recap .answer .at { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--lantern); flex: none; writing-mode: horizontal-tb; }
+.recap .answer .at { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--accent); flex: none; writing-mode: horizontal-tb; }
 .recap .answer .ap { font-size: 33px; line-height: 1.35; font-weight: 560; }
 .recap .box { padding: 26px 30px; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
 .recap .box .eyebrow { margin-bottom: 4px; }
@@ -455,13 +452,13 @@ table.t .now { color: var(--lantern) !important; }
 .mapw .mn { position: absolute; transform: translate(-50%, -50%); padding: 14px 22px; text-align: center; max-width: 340px; }
 .mapw .mn .mt { font-size: 30px; font-weight: 650; line-height: 1.2; }
 .mapw .mn .mk2 { font-size: 20px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--ink); opacity: .9; margin-bottom: 4px; }
-.mapw .mn.center { padding: 24px 34px; box-shadow: 0 0 0 3px var(--lantern), 0 0 40px rgba(255, 196, 107, .35), 0 24px 60px -16px rgba(1, 4, 26, .6); }
+.mapw .mn.center { padding: 24px 34px; box-shadow: 0 0 0 3px var(--accent), 0 0 40px rgba(255, 90, 54, .4), 0 24px 60px -16px rgba(0, 0, 0, .6); }
 .mapw .mn.center .mt { font-size: 34px; }
 .mapw .how { font-size: 21px; fill: var(--mist); }
-.mapw .edge { stroke: rgba(195, 203, 238, .5); stroke-width: 2.5; fill: none; }
+.mapw .edge { stroke: rgba(232, 226, 216, .45); stroke-width: 2.5; fill: none; }
 .mapw .edge.analogy { stroke-dasharray: 8 9; }
 .mapw .howbox { position: absolute; transform: translate(-50%, -50%); font-size: 23px; line-height: 1.25; color: var(--mist); text-align: center; max-width: 250px;
-  padding: 6px 12px; border-radius: 12px; background: rgba(9, 15, 56, .72); }
+  padding: 6px 12px; border-radius: 12px; background: rgba(16, 14, 12, .78); }
 .maplist { display: none; flex-direction: column; gap: 14px; }
 .port .mapw .mn.center { max-width: none; }
 .maplist .mi { padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; }
@@ -473,7 +470,7 @@ table.t .now { color: var(--lantern) !important; }
 .imgbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--r-md); }
 
 /* accessibility preferences */
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } #wall .orb, #wall .moon { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } #wall .orb, #wall .ribbons, #wall .sparks { transition: none !important; } }
 @media (prefers-reduced-transparency: reduce) { .g { background: rgba(22, 32, 92, .94) !important; } .g.plate { background: rgba(9, 15, 56, .96) !important; } }
 @media (prefers-contrast: more) { .g::before { background: rgba(255, 255, 255, .8); } :root { --mist: #e1e6ff; --haze: #c3cbee; } }
 @media print { #wall .orb { display: none; } }
@@ -523,7 +520,33 @@ table.t .now { color: var(--lantern) !important; }
 
 /* title slide (no chapter yet): no empty capsule on phones */
 .port .chapters:not(:has(.now)) { visibility: hidden; }
-</style></head><body><script type="application/json" id="lucid-deck">{"title": "Why counts need the negative binomial", "subtitle": "From one gene's replicates to the noise model inside DESeq2 and MAGeCK", "kicker": "Counts and noise", "question": "Why do DESeq2 and MAGeCK model read counts with a negative binomial instead of a Poisson?", "answer": "Replicates spread far more than counting noise allows, because each sample's true level wobbles. The negative binomial adds that wobble (variance = μ + αμ²), so a test stops calling noise a signal.", "arc": "puzzle", "learner": {"goal": "intuition+hand", "knows": ["mean", "variance"], "anchors": ["cricket", "lab work"]}, "ladder": {"count": "a read count is a tally of molecules", "poisson": "counting noise alone (variance = mean)", "overdispersion": "variance bigger than the mean", "mixture": "each sample has its own true level", "nb": "negative binomial (variance = μ + αμ²)", "alpha": "dispersion α, the size of the wobble"}, "beats": ["title · the question", "predict · what spread should counting alone give? (pretest)", "idea · a fixed rate still wobbles, by about √mean", "equation · SD = √μ, run on our gene", "idea · but our 6 replicates spread 2.7 times wider", "statement · name it, overdispersion", "idea · so, is it one gene? no, almost every gene sits above the line", "bridge · cricket form, a rate that changes from day to day", "idea · so the noise comes in two stages", "predict · same true level, how far apart? (check)", "idea (slider) · raise α and watch the counts spread", "equation · variance = μ + αμ²", "calc · where α comes from, worked on 6 numbers", "table · busy genes are ruled by the wobble", "predict · which part rules a gene at 1,000 reads? (check)", "compare · same data, two verdicts", "calc · against counting noise, z = 2.5", "calc · but against the real noise, z = 0.9", "recap · the answer", "map · how it connects", "quiz · recall"], "chapters": ["Counting noise", "Too much spread", "Why it matters"], "data": {"reps": [8, 34, 12, 41, 17, 23], "muB": 30, "n": 6}, "derive": {"m": "mean(reps)", "v": "var(reps)", "s": "sd(reps)", "sdp": "sqrt(m)", "alpha_hat": "(v - m) / m^2", "lo95": "m - 2 * sqrt(m)", "hi95": "m + 2 * sqrt(m)", "nout": "sum((reps < lo95) + (reps > hi95))", "vA": "m + alpha_hat * m^2", "vB": "muB + alpha_hat * muB^2", "diff": "muB - m", "se_p": "sqrt(m / n + muB / n)", "z_p": "diff / se_p", "p_p": "2 * (1 - normCdf(z_p))", "se_nb": "sqrt(vA / n + vB / n)", "z_nb": "diff / se_nb", "p_nb": "2 * (1 - normCdf(z_nb))"}, "symbols": {"reps": {"tex": "x", "says": "the six replicate counts"}, "m": {"tex": "\\bar{x}", "says": "the average of the replicates"}, "v": {"tex": "s^2", "says": "the spread of the replicates (variance)"}, "mu": {"tex": "\\mu", "says": "the gene's average count"}, "sd_p": {"tex": "\\mathrm{SD}_{\\text{count}}", "says": "the spread counting alone would give"}, "alpha": {"tex": "\\alpha", "says": "how much the true level wobbles", "short": "the wobble"}, "alpha_hat": {"tex": "\\hat{\\alpha}", "says": "α estimated from our six replicates"}, "v_nb": {"tex": "\\sigma^2", "says": "the variance of the counts"}, "lam": {"tex": "\\lambda", "says": "a sample's true level (its own rate)"}, "muB": {"tex": "\\mu_B", "says": "average count in the treated group"}, "n": {"tex": "n", "says": "samples per group"}, "vA": {"tex": "\\sigma^2_A", "says": "variance in the control group"}, "vB": {"tex": "\\sigma^2_B", "says": "variance in the treated group"}, "diff": {"tex": "\\Delta", "says": "the gap between the group averages"}, "se_p": {"tex": "\\mathrm{SE}_{\\text{Pois}}", "says": "noise in the gap (counting only)"}, "se_nb": {"tex": "\\mathrm{SE}_{\\text{NB}}", "says": "noise in the gap (with wobble)"}, "z_p": {"tex": "z_{\\text{Pois}}", "says": "the gap in noise units (counting only)"}, "z_nb": {"tex": "z_{\\text{NB}}", "says": "the gap in noise units (with wobble)"}, "pois": {"tex": "\\mu", "says": "the counting part of the variance"}, "wob": {"tex": "\\alpha\\mu^2", "says": "the wobble part"}}, "abbr": {"NB": "negative binomial", "SD": "standard deviation", "SE": "standard error", "DESeq2": "a differential-expression tool", "MAGeCK": "a CRISPR-screen analysis tool", "RNA": "ribonucleic acid"}, "slides": [{"type": "title"}, {"type": "predict", "kind": "pretest", "q": "One gene, six replicate samples, about 22 reads each on average. If counting were the only noise, how far would a typical sample sit from the average?", "options": ["about 5 reads", "about 22 reads", "about 50 reads", "not sure"], "answer": 0, "why": "Counting noise has a spread (SD) of about √mean, and √22.5 ≈ **{{sdp|1}}** reads. Our real replicates spread **{{s|1}}** reads, almost three times more. This deck is about that gap."}, {"type": "idea", "chapter": "Counting noise", "introduces": ["count", "poisson"], "lead": "Start with the simplest case, where the true level never changes.", "title": "Even a fixed rate gives counts that wobble", "points": ["Each read lands on our gene by chance, out of millions.", "With a fixed rate of {{m|1}} reads, counts still land anywhere from about 13 to 32.", "This counting noise is called **Poisson** noise."], "visual": {"chart": {"x": {"label": "reads in one sample", "min": 0, "max": 50}, "y": {"label": "chance of each count", "min": 0, "max": 0.1, "fmt": 2}, "series": [{"name": "counting alone (Poisson)", "kind": "bars", "fn": "poisPmf(x, m)", "focus": true}], "marks": [{"kind": "vline", "x": "m", "label": "mean {{m|1}}", "step": 1}, {"kind": "span", "x": ["m - sdp", "m + sdp"], "y": 0.093, "label": "±1 SD = ±{{sdp|1}}", "step": 2}]}, "caption": "Most of the bars sit within about ±5 reads of the mean."}}, {"type": "equation", "uses": ["poisson"], "lead": "So how big is counting noise? There is a one-line rule.", "title": "Counting noise grows like the square root", "lhs": "sd_p", "expr": "sqrt(mu)", "terms": {"mu": {"value": "m"}}, "read": "the spread from counting is the square root of the average", "code": "sd = np.sqrt(mu)", "note": "For our gene that is **{{sdp|1}}** reads. Keep this number.", "more": "Poisson noise has variance equal to its mean, $\\sigma^2 = \\mu$. The SD is the square root of the variance, so $\\mathrm{SD} = \\sqrt{\\mu}$."}, {"type": "idea", "chapter": "Too much spread", "introduces": ["overdispersion"], "lead": "But our real replicates do not follow that rule.", "title": "Six replicates spread far wider than counting allows", "points": ["Counting alone keeps 95% of samples between **{{lo95|0}}** and **{{hi95|0}}** reads.", "**{{nout}} of our 6** replicates land outside that range.", "Their SD is {{s|1}}, against {{sdp|1}} from counting."], "visual": {"chart": {"x": {"label": "reads in one sample", "min": 0, "max": 50}, "y": {"label": "chance of each count", "min": 0, "max": 0.1, "fmt": 2}, "series": [{"name": "counting alone (Poisson)", "kind": "bars", "fn": "poisPmf(x, m)", "color": "mist"}, {"name": "our 6 replicates", "kind": "dots", "x": "reps", "y": 0.006, "focus": true, "step": 2}], "marks": [{"kind": "band", "x": ["lo95", "hi95"], "label": "where counting puts 95%", "step": 1}]}, "caption": "The bright dots sit outside the shaded range."}}, {"type": "statement", "text": "When replicates spread more than counting allows, the counts are ==overdispersed==.", "sub": "Here the variance is {{v/m|1}} times the mean. Counting alone would give 1 time."}, {"type": "idea", "lead": "Is it only this gene? Look at 400 of them.", "title": "Almost every gene sits above the counting line", "points": ["Each dot is one gene (simulated, 4 replicates each).", "**{{above|%0}}** of genes spread more than counting allows.", "The gap grows with the mean, so busy genes are the worst."], "visual": {"chart": {"x": {"label": "average count (log scale)", "min": 3, "max": 10000, "log": true}, "y": {"label": "variance (log scale)", "min": 1, "max": 10000000, "log": true}, "series": [{"name": "genes", "kind": "dots", "x": "gm", "y": "gv", "color": "mist"}], "marks": [{"kind": "fn", "fn": "x", "label": "counting alone: variance = mean", "step": 1, "color": "s1", "labelAt": 0.92}, {"kind": "fn", "fn": "x + 0.1 * x^2", "label": "with wobble: μ + 0.1μ²", "step": 2, "color": "lantern", "labelAt": 0.55}, {"kind": "point", "x": "m", "y": "v", "label": "our gene", "step": 3}]}, "caption": "The dashed counting line runs below the cloud of genes."}}, {"type": "bridge", "introduces": ["mixture"], "lead": "Why would the true level move? Think of a batter.", "title": "A batter's form changes from match to match", "from": "Cricket", "to": "Sequencing", "pairs": [["one match", "one sample"], ["boundaries hit in that match", "reads counted in that sample"], ["the batter's form on the day", "the sample's true level"], ["career average", "the gene's average μ"]], "breaks": "Form drifts slowly through a season. Replicate samples are independent, so their wobble has no order."}, {"type": "idea", "lead": "So the noise comes in two stages.", "title": "Each sample draws its own level, then counting adds noise", "points": ["**Stage 1:** biology and handling move the true level $\\lambda$ from sample to sample.", "**Stage 2:** counting adds about $\\sqrt{\\lambda}$ of noise on top.", "The two stages stack, so the spread is bigger than either one alone."], "visual": {"flow": {"nodes": [{"label": "gene average μ", "sub": "{{m|1}} reads"}, {"label": "this sample's level λ", "sub": "wobbles by α"}, {"label": "reads counted", "sub": "Poisson around λ"}], "verbs": ["wobbles", "counted"], "focus": 1, "build": true}, "caption": "The lit box is the stage counting alone leaves out."}}, {"type": "predict", "kind": "check", "uses": ["mixture"], "q": "Two samples have exactly the same true level, λ = 22.5. How far apart are their counts likely to be?", "options": ["about ±5 reads", "about ±13 reads, like our replicates", "exactly equal"], "answer": 0, "why": "Same level means only stage 2 is left: counting noise, SD ≈ √22.5 = **{{sdp|1}}**. The extra spread in our replicates came from stage 1: **levels that differ**."}, {"type": "idea", "introduces": ["nb", "alpha"], "uses": ["mixture"], "lead": "Now put the two stages together and turn the wobble up.", "title": "More wobble, wider counts", "points": ["At α = 0, the two curves match. That is counting alone.", "Raise α and the counts spread out, while the mean stays at {{m|1}}.", "This two-stage curve is the **negative binomial** (NB)."], "controls": [{"name": "alpha", "label": "wobble α", "min": 0, "max": 1, "step": 0.05, "value": 0.3}], "derive": {"v_now": "m + alpha * m^2"}, "visual": {"chart": {"x": {"label": "reads in one sample", "min": 0, "max": 90}, "y": {"label": "chance of each count", "min": 0, "max": 0.09, "fmt": 2}, "series": [{"name": "simulated samples", "kind": "hist", "values": "rnb(6000, m, alpha, 11)", "density": true, "color": "s3", "opacity": 0.55}, {"name": "counting alone", "kind": "line", "fn": "poisPmf(x, m)", "discrete": true, "color": "mist", "dash": true}, {"name": "negative binomial", "kind": "line", "fn": "nbPmf(x, m, alpha)", "discrete": true, "focus": true}]}, "caption": "Variance now {{v_now|0}}, against {{m|1}} from counting alone."}}, {"type": "equation", "uses": ["nb"], "lead": "The two stages give one formula for the spread.", "title": "Variance = counting part + wobble part", "lhs": "v_nb", "expr": "mu + alpha * mu^2", "terms": {"mu": {"value": "m"}, "alpha": {"value": "alpha_hat"}}, "read": "spread equals the mean, plus the wobble times the mean squared", "code": "var = mu + alpha * mu**2", "note": "The first part is counting noise. The second grows with $\\mu^2$, so it takes over for busy genes.", "more": "Papers write $K \\sim \\mathrm{NB}(\\mu, \\alpha)$ with $\\mathrm{Var}(K) = \\mu + \\alpha\\mu^2$. Some use the size $r = 1/\\alpha$ instead. Here $\\alpha$ is estimated from our six replicates: see the next slide."}, {"type": "calc", "uses": ["alpha"], "lead": "Where does α come from? Work it out from the six numbers.", "title": "Our replicates give α by subtraction", "given": "Replicates: {{reps}}", "lines": [{"say": "Average the replicates", "expr": "mean(reps)", "name": "m"}, {"say": "Measure their spread (variance)", "expr": "var(reps)", "name": "v"}, {"say": "Take away the counting part and divide by the mean squared", "expr": "(v - m) / m^2", "name": "alpha_hat"}]}, {"type": "table", "lead": "So which part matters more? It depends on how busy the gene is.", "title": "Busy genes are ruled by the wobble", "rows": [{"mu": 5}, {"mu": 22.5}, {"mu": 500}, {"mu": 5000}], "cols": [{"key": "mu", "label": "mean μ", "fmt": ","}, {"key": "pois", "label": "counting part", "expr": "mu", "fmt": ",", "says": "the counting part (Poisson), equal to μ"}, {"key": "wob", "label": "wobble part", "expr": "alpha_hat * mu^2", "fmt": ",", "says": "the wobble part"}, {"key": "share", "label": "from wobble", "expr": "wob / (pois + wob)", "fmt": "%0", "says": "the share of the spread that comes from the wobble"}], "focus": 1}, {"type": "predict", "kind": "check", "q": "A gene averages 1,000 reads with α = 0.28. Which part rules its variance?", "options": ["the counting part", "the wobble part", "about equal"], "answer": 1, "why": "Counting gives 1,000. The wobble gives 0.28 × 1,000² = **{{0.28 * 1000^2|,}}**, about 280 times more. This is why even very busy genes stay noisy."}, {"type": "compare", "chapter": "Why it matters", "lead": "But why should a test care? Compare treated and control.", "title": "Same data, two verdicts", "a": {"title": "Poisson test", "tone": "bad", "verdict": "fooled", "text": "Treat {{m|1}} vs {{muB}} reads as counting noise only.", "visual": {"stat": {"value": "p = {{p_p|s2}}", "label": "\"a real change\""}}}, "b": {"title": "NB test", "tone": "good", "verdict": "honest", "text": "Include the wobble that replicates showed.", "visual": {"stat": {"value": "p = {{p_nb|2}}", "label": "\"could be noise\""}}}, "verdict": "Underestimate the noise and **every** gene looks significant. That is a flood of false positives."}, {"type": "calc", "lead": "Where does the first verdict come from? Measure the gap against counting noise.", "title": "Against counting noise, the gap looks big", "lines": [{"say": "The gap between the group averages", "expr": "muB - m", "name": "diff"}, {"say": "The noise in that gap if counting were all there is", "expr": "sqrt(m / n + muB / n)", "name": "se_p"}, {"say": "The gap in noise units", "expr": "diff / se_p", "name": "z_p", "fmt": 2}]}, {"type": "calc", "lead": "But the replicates told us the real noise is bigger.", "title": "Against the real noise, the same gap shrinks", "given": "Variances from μ + αμ²: control **{{vA|0}}**, treated **{{vB|0}}**.", "lines": [{"say": "The noise in the gap with the wobble included", "expr": "sqrt(vA / n + vB / n)", "name": "se_nb"}, {"say": "The same gap in noise units", "expr": "diff / se_nb", "name": "z_nb", "fmt": 2}]}, {"type": "recap", "answer": "Replicates spread more than counting allows, because each sample's true level wobbles. The negative binomial adds that wobble (variance = μ + αμ²), so tests stop calling noise a signal.", "points": ["Counting alone gives SD ≈ √mean.", "Real replicates spread more (overdispersion).", "Variance = μ + αμ²: the wobble part rules busy genes."], "breaks": ["α from 6 samples is shaky: DESeq2 shrinks each gene's α toward a trend.", "Depth differences still need normalizing first.", "Extra zeros or outliers need other models."], "next": ["DESeq2 dispersion shrinkage", "The MAGeCK mean–variance model", "Why counts get logged"]}, {"type": "map", "center": "negative binomial", "links": [{"to": "Poisson", "how": "α = 0 gives counting alone", "kind": "special"}, {"to": "gamma distribution", "how": "how the true level wobbles", "kind": "prereq"}, {"to": "DESeq2", "how": "one α per gene", "shrunk to a trend": null, "kind": "uses"}, {"to": "MAGeCK", "how": "guide counts against a mean–variance fit", "kind": "uses"}, {"to": "a batter's form", "how": "a rate that changes daily", "kind": "analogy"}, {"to": "log counts", "how": "tame the μ² growth", "kind": "sibling"}]}, {"type": "quiz", "cards": [{"q": "A gene averages 100 reads. What SD does counting alone give?", "a": "√100 = **10** reads."}, {"q": "What does α measure?", "a": "How much each sample's true level wobbles around the gene's average.", "tag": "meaning"}, {"q": "Why do Poisson tests give too many hits?", "a": "They miss the wobble", "so the noise looks small and ordinary gaps look significant.": null, "tag": "reversed"}]}]}</script><script>window.LUCID_ASSETS={};window.LUCID_DATA={"gm": [388.5, 278.0, 183.25, 36.25, 6735.25, 2852.25, 293.5, 3163.75, 1767.0, 6.5, 582.75, 201.0, 8.25, 1117.25, 11.5, 1634.25, 22.75, 6063.5, 213.25, 105.25, 134.5, 62.0, 225.25, 448.0, 32.75, 675.5, 3507.5, 521.25, 18.75, 1033.25, 13.75, 34.25, 5.0, 13.5, 385.75, 1087.75, 6.0, 1220.75, 1797.25, 2563.25, 7.0, 96.0, 852.0, 4.75, 227.75, 4181.75, 559.5, 130.25, 740.5, 1620.25, 61.5, 189.75, 1751.0, 168.25, 2375.75, 716.5, 827.75, 13.25, 8.25, 8.5, 56.5, 328.75, 29.5, 61.75, 101.0, 97.5, 12.25, 613.0, 81.0, 5.5, 175.0, 583.5, 237.25, 1626.5, 596.25, 3728.0, 2554.5, 2589.25, 37.5, 2947.5, 6.0, 324.0, 3221.25, 1816.5, 4044.75, 1177.75, 49.5, 1478.75, 247.25, 20.0, 1847.75, 479.75, 380.5, 53.5, 4763.0, 327.25, 11.0, 398.5, 21.5, 10.0, 7.5, 9.25, 557.5, 1820.5, 1899.25, 51.75, 1544.0, 240.25, 18.5, 23.0, 14.5, 71.75, 18.75, 54.25, 946.75, 17.5, 2542.0, 6.5, 368.25, 4898.75, 31.0, 1503.5, 12.75, 19.75, 27.5, 7.0, 407.5, 910.0, 78.0, 242.5, 2787.75, 2469.5, 130.0, 3745.25, 209.5, 535.5, 1698.25, 604.0, 2636.0, 93.5, 52.0, 142.25, 119.25, 209.25, 271.5, 6.25, 12.25, 4911.5, 28.0, 118.5, 11.0, 187.0, 491.5, 12.0, 9.25, 106.25, 44.25, 3444.0, 6.0, 1908.5, 8.75, 376.0, 1419.25, 39.25, 2643.25, 39.5, 9.0, 1659.0, 46.75, 559.25, 163.75, 9.0, 12.25, 2583.0, 38.0, 5.5, 1875.5, 69.75, 12.0, 4.5, 9.0, 61.25, 156.25, 126.25, 22.0, 93.5, 19.0, 85.75, 395.25, 10.75, 89.25, 732.5, 1564.25, 20.5, 129.75, 31.75, 12.0, 5918.0, 28.5, 4337.25, 1643.0, 142.75, 429.5, 7.5, 26.5, 3.5, 6.75, 425.0, 404.25, 358.75, 195.0, 47.5, 647.0, 140.75, 22.75, 11.5, 7.75, 9.75, 7.25, 10.5, 796.0, 3090.25, 2833.0, 18.25, 119.0, 1769.5, 38.75, 101.5, 1887.5, 188.0, 798.0, 75.75, 7.75, 730.5, 3343.0, 47.0, 747.25, 24.5, 1530.75, 639.25, 29.75, 16.75, 631.75, 52.5, 791.0, 40.5, 113.25, 880.5, 79.0, 123.25, 702.0, 112.5, 3896.25, 222.75, 155.0, 185.0, 932.5, 15.25, 694.25, 1949.5, 38.0, 223.25, 338.0, 2.0, 231.5, 842.75, 12.75, 1206.5, 1729.75, 34.75, 4.5, 44.25, 35.75, 23.25, 1412.0, 22.5, 15.75, 63.25, 16.75, 977.75, 313.25, 72.0, 16.25, 19.75, 17.5, 3049.25, 81.25, 39.75, 3090.75, 4628.75, 6.0, 487.0, 8.75, 31.75, 318.5, 19.25, 114.0, 40.5, 76.0, 176.0, 70.0, 563.5, 125.75, 244.75, 74.0, 60.25, 494.25, 223.0, 265.0, 75.0, 249.75, 6.5, 510.25, 1726.0, 492.5, 20.75, 11.75, 257.25, 22.0, 216.75, 9.0, 259.0, 28.25, 798.5, 3820.25, 8.5, 56.75, 1541.25, 200.75, 915.0, 605.25, 278.75, 198.75, 2295.0, 584.25, 73.25, 131.0, 769.0, 178.25, 2.75, 1192.5, 68.5, 134.0, 613.75, 174.0, 2721.75, 346.0, 7.0, 197.25, 1237.5, 150.5, 290.5, 1525.0, 5.0, 365.75, 25.75, 212.75, 2000.75, 35.25, 784.5, 46.5, 9.75, 33.0, 60.0, 2228.75, 862.5, 36.75, 554.25, 15.75, 3962.75, 188.25, 1663.0, 147.5, 24.0, 132.25, 29.5, 155.75, 319.5, 17.0, 44.5, 124.75, 523.0, 4.75, 1138.25, 3570.25, 1314.0, 1646.5, 54.0, 421.5, 3474.25, 57.0, 339.0, 23.75, 261.5, 111.75, 281.25, 100.0, 1547.75, 3432.0, 590.5], "gv": [2851.67, 9273.33, 9898.92, 18.92, 1173754.92, 945346.25, 14505.67, 1494279.58, 34168.67, 35.0, 21486.25, 1622.0, 30.92, 83900.25, 69.67, 111637.58, 82.25, 2442967.0, 1940.92, 678.92, 1424.33, 474.67, 4046.92, 21328.67, 314.25, 28293.67, 410585.0, 29674.25, 18.92, 83544.92, 34.92, 94.92, 11.33, 48.33, 23670.92, 186936.25, 20.67, 44907.58, 50294.25, 191830.92, 36.67, 88.0, 87926.0, 4.25, 424.92, 551455.58, 17331.67, 844.25, 7888.33, 443628.92, 749.67, 4581.58, 72724.67, 2134.92, 145116.92, 15493.67, 52044.92, 149.58, 18.92, 8.33, 649.67, 1528.92, 129.67, 958.92, 504.67, 852.33, 10.25, 36292.67, 456.67, 1.67, 2221.33, 32535.0, 4490.92, 54745.0, 10898.25, 1430992.67, 606153.0, 1673395.58, 153.67, 390289.67, 18.67, 25470.0, 756286.25, 396723.0, 2403244.25, 234488.92, 600.33, 159629.58, 1538.25, 242.0, 147898.25, 49002.25, 17349.67, 407.0, 1544562.0, 4879.58, 26.67, 14867.67, 20.33, 10.0, 25.0, 14.25, 47079.0, 712713.67, 272764.92, 412.92, 38845.33, 5262.25, 107.0, 82.0, 27.0, 150.92, 25.58, 8.92, 49726.92, 13.67, 340603.33, 3.67, 5037.58, 2092268.25, 108.0, 36171.0, 29.58, 114.25, 337.0, 8.67, 18783.0, 22258.0, 115.33, 4820.33, 1993144.92, 115249.67, 67.33, 896958.25, 1205.67, 47289.67, 151697.58, 15678.0, 640922.67, 1821.67, 90.0, 781.58, 827.58, 1986.25, 10012.33, 1.58, 20.92, 630231.0, 178.0, 1705.67, 6.0, 4376.67, 8733.67, 93.33, 10.92, 1660.92, 241.58, 892843.33, 16.67, 157625.0, 47.58, 712.67, 49664.25, 214.25, 40546.25, 189.67, 18.0, 350060.67, 77.58, 43434.25, 3771.58, 12.0, 59.58, 198106.0, 118.0, 7.0, 91285.67, 188.92, 14.67, 25.67, 56.0, 254.25, 3350.25, 640.92, 107.33, 483.67, 107.33, 1698.92, 30972.92, 38.25, 512.92, 46325.67, 215508.25, 99.0, 3184.92, 98.25, 39.33, 3314378.0, 95.0, 2575622.25, 283406.0, 4317.58, 26048.33, 27.67, 3.0, 3.0, 7.58, 13122.0, 3277.58, 2876.92, 1336.0, 443.0, 73926.67, 5090.92, 18.25, 21.67, 31.58, 12.92, 10.92, 5.67, 53942.0, 209952.25, 773004.67, 10.92, 240.67, 128040.33, 182.92, 332.33, 1655481.67, 4710.0, 124038.67, 256.92, 8.92, 26051.67, 658228.67, 1261.33, 9013.58, 147.0, 189128.25, 21868.92, 47.58, 6.92, 7548.25, 1061.67, 28708.67, 209.67, 1756.92, 136215.0, 801.33, 991.58, 46504.0, 951.0, 993630.92, 673.58, 2296.0, 3684.67, 191757.67, 8.25, 29296.92, 326421.67, 248.67, 5644.25, 1378.0, 1.33, 5857.67, 201260.25, 74.25, 80341.67, 89303.58, 119.58, 11.0, 224.92, 338.25, 226.25, 21092.67, 315.67, 132.92, 166.92, 101.58, 15674.92, 5110.92, 523.33, 50.92, 90.92, 75.67, 395244.92, 828.92, 213.58, 858060.92, 513878.92, 12.0, 24248.67, 92.25, 220.92, 6173.67, 132.92, 2411.33, 520.33, 814.67, 1104.67, 296.67, 11443.0, 1057.58, 7676.92, 226.67, 394.92, 2032.92, 1512.67, 520.67, 388.67, 3480.92, 13.67, 11431.58, 396896.67, 6534.33, 44.92, 43.58, 5159.58, 71.33, 2468.92, 24.67, 7846.67, 90.92, 176013.67, 810834.92, 24.33, 614.25, 91772.25, 1756.92, 41288.67, 12853.58, 9416.92, 6206.92, 1046637.33, 13656.92, 258.25, 2402.0, 3570.0, 1620.92, 6.25, 79085.67, 375.0, 820.67, 44534.92, 1900.67, 347122.92, 6768.67, 12.67, 3970.25, 54387.0, 2136.33, 5209.67, 85656.67, 3.33, 11552.92, 32.25, 3772.92, 585174.92, 356.25, 66856.33, 103.0, 14.25, 80.67, 252.67, 294256.25, 25973.67, 68.92, 37754.92, 10.92, 1962326.92, 4212.92, 92886.67, 2140.33, 152.67, 806.92, 60.33, 4082.92, 2113.0, 64.67, 295.0, 3009.58, 10506.67, 10.92, 65052.25, 1140512.25, 10715.33, 199719.0, 176.0, 26397.67, 71601.58, 156.0, 4410.0, 97.58, 6253.67, 702.92, 23700.25, 838.67, 432744.25, 1529728.67, 14681.0], "above": 0.94, "ngenes": 400};</script><script>/* Lucid core: formatting, markdown-lite, the expression engine (parse, evaluate, to TeX, substitute), statistics, seeded random numbers.
+
+/* vibrancy: text on clear glass carries a soft dark halo, so it stays legible when bright light passes behind the pane
+   (Apple deepens the glass shadow over text for the same reason). The contrast check measures it. */
+.g, .g *, .lead, .h1, .head .eyebrow { text-shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 0 14px rgba(0, 0, 0, .38); }
+.stat .num { text-shadow: 0 0 2px rgba(255, 90, 54, .9), 0 0 24px rgba(255, 90, 54, .75), 0 0 60px rgba(255, 90, 54, .45), 0 2px 4px rgba(0, 0, 0, .5); }
+.res, .res .katex { text-shadow: 0 1px 2px rgba(0, 0, 0, .55), 0 0 12px rgba(0, 0, 0, .4); }
+
+/* chips with dark text on a solid colour carry no halo (a dark halo around dark text reads as mud) */
+.g .fx, .g .cline .num, .g .opt .ol, .g .compare .tone i, .compare .tone i, .bridge .breaks .bi, .s-title .qmark, .g .term .sw, .opt.right .ol, .opt.wrong .ol { text-shadow: none; }
+.opt .ol { background: rgba(0, 0, 0, .34); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.bridge .world.to { color: var(--amber); }
+.recap .answer .at { color: var(--amber); }
+.mapw .mn .mh { color: var(--ink); }
+.g.warm::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 90, 54, .09), transparent 55%), linear-gradient(165deg, rgba(255, 255, 255, .08), transparent 30%); }
+.port #wall .ribbons { opacity: .72; }
+
+.s-title .chips span { background: rgba(10, 8, 7, .34); }
+.cap { color: #eeeae3; }
+.flip .face .hint { color: #ece8e1; }
+.compare .stat { padding: 12px 22px 14px; }
+/* safe centring: when content runs long it overflows downward, where the fit can see it (browsers without `safe` keep plain centre) */
+.body.split > .col-text, .body.text-only, .textcard, .stat, .units, .calc, .tblwrap, .recipe, .bridge, .flip .face { justify-content: safe center; }
+/* landscape equation rows: label beside its content, so a long line wraps in its own column instead of under the label */
+.land .eqrow { display: grid; grid-template-columns: 136px minmax(0, 1fr); column-gap: 22px; align-items: baseline; }
+.land .eqrow .tag { min-width: 0; line-height: 1.25; }
+.land .eqrow .codebox { justify-self: start; }
+</style></head><body><script type="application/json" id="lucid-deck">{"title": "Why counts need the negative binomial", "subtitle": "From one gene's replicates to the noise model inside DESeq2 and MAGeCK", "kicker": "Counts and noise", "question": "Why do DESeq2 and MAGeCK model read counts with a negative binomial instead of a Poisson?", "answer": "Replicates spread far more than counting noise allows, because each sample's true level wobbles. The negative binomial adds that wobble (variance = μ + αμ²), so a test stops calling noise a signal.", "arc": "puzzle", "learner": {"goal": "intuition+hand", "knows": ["mean", "variance"], "anchors": ["cricket", "lab work"]}, "ladder": {"count": "a read count is a tally of molecules", "poisson": "counting noise alone (variance = mean)", "overdispersion": "variance bigger than the mean", "mixture": "each sample has its own true level", "nb": "negative binomial (variance = μ + αμ²)", "alpha": "dispersion α, the size of the wobble"}, "beats": ["title · the question", "predict · what spread should counting alone give? (pretest)", "idea · a fixed rate still wobbles, by about √mean", "equation · SD = √μ, run on our gene", "idea · but our 6 replicates spread 2.7 times wider", "statement · name it, overdispersion", "idea · so, is it one gene? no, almost every gene sits above the line", "bridge · cricket form, a rate that changes from day to day", "idea · so the noise comes in two stages", "predict · same true level, how far apart? (check)", "idea (slider) · raise α and watch the counts spread", "equation · variance = μ + αμ²", "calc · where α comes from, worked on 6 numbers", "table · busy genes are ruled by the wobble", "predict · which part rules a gene at 1,000 reads? (check)", "compare · same data, two verdicts", "calc · against counting noise, z = 2.5", "calc · but against the real noise, z = 0.9", "recap · the answer", "map · how it connects", "quiz · recall"], "chapters": ["Counting noise", "Too much spread", "Why it matters"], "data": {"reps": [8, 34, 12, 41, 17, 23], "muB": 30, "n": 6}, "derive": {"m": "mean(reps)", "v": "var(reps)", "s": "sd(reps)", "sdp": "sqrt(m)", "alpha_hat": "(v - m) / m^2", "lo95": "m - 2 * sqrt(m)", "hi95": "m + 2 * sqrt(m)", "nout": "sum((reps < lo95) + (reps > hi95))", "vA": "m + alpha_hat * m^2", "vB": "muB + alpha_hat * muB^2", "diff": "muB - m", "se_p": "sqrt(m / n + muB / n)", "z_p": "diff / se_p", "p_p": "2 * (1 - normCdf(z_p))", "se_nb": "sqrt(vA / n + vB / n)", "z_nb": "diff / se_nb", "p_nb": "2 * (1 - normCdf(z_nb))"}, "symbols": {"reps": {"tex": "x", "says": "the six replicate counts"}, "m": {"tex": "\\bar{x}", "says": "the average of the replicates"}, "v": {"tex": "s^2", "says": "the spread of the replicates (variance)"}, "mu": {"tex": "\\mu", "says": "the gene's average count"}, "sd_p": {"tex": "\\mathrm{SD}_{\\text{count}}", "says": "the spread counting alone would give"}, "alpha": {"tex": "\\alpha", "says": "how much the true level wobbles", "short": "the wobble"}, "alpha_hat": {"tex": "\\hat{\\alpha}", "says": "α estimated from our six replicates"}, "v_nb": {"tex": "\\sigma^2", "says": "the variance of the counts"}, "lam": {"tex": "\\lambda", "says": "a sample's true level (its own rate)"}, "muB": {"tex": "\\mu_B", "says": "average count in the treated group"}, "n": {"tex": "n", "says": "samples per group"}, "vA": {"tex": "\\sigma^2_A", "says": "variance in the control group"}, "vB": {"tex": "\\sigma^2_B", "says": "variance in the treated group"}, "diff": {"tex": "\\Delta", "says": "the gap between the group averages"}, "se_p": {"tex": "\\mathrm{SE}_{\\text{Pois}}", "says": "noise in the gap (counting only)"}, "se_nb": {"tex": "\\mathrm{SE}_{\\text{NB}}", "says": "noise in the gap (with wobble)"}, "z_p": {"tex": "z_{\\text{Pois}}", "says": "the gap in noise units (counting only)"}, "z_nb": {"tex": "z_{\\text{NB}}", "says": "the gap in noise units (with wobble)"}, "pois": {"tex": "\\mu", "says": "the counting part of the variance"}, "wob": {"tex": "\\alpha\\mu^2", "says": "the wobble part"}}, "abbr": {"NB": "negative binomial", "SD": "standard deviation", "SE": "standard error", "DESeq2": "a differential-expression tool", "MAGeCK": "a CRISPR-screen analysis tool", "RNA": "ribonucleic acid"}, "slides": [{"type": "title"}, {"type": "predict", "kind": "pretest", "q": "One gene, six replicate samples, about 22 reads each on average. If counting were the only noise, how far would a typical sample sit from the average?", "options": ["about 5 reads", "about 22 reads", "about 50 reads", "not sure"], "answer": 0, "why": "Counting noise has a spread (SD) of about √mean, and √22.5 ≈ **{{sdp|1}}** reads. Our real replicates spread **{{s|1}}** reads, almost three times more. This deck is about that gap."}, {"type": "idea", "chapter": "Counting noise", "introduces": ["count", "poisson"], "lead": "Start with the simplest case, where the true level never changes.", "title": "Even a fixed rate gives counts that wobble", "points": ["Each read lands on our gene by chance, out of millions.", "With a fixed rate of {{m|1}} reads, counts still land anywhere from about 13 to 32.", "This counting noise is called **Poisson** noise."], "visual": {"chart": {"x": {"label": "reads in one sample", "min": 0, "max": 50}, "y": {"label": "chance of each count", "min": 0, "max": 0.1, "fmt": 2}, "series": [{"name": "counting alone (Poisson)", "kind": "bars", "fn": "poisPmf(x, m)", "focus": true}], "marks": [{"kind": "vline", "x": "m", "label": "mean {{m|1}}", "step": 1}, {"kind": "span", "x": ["m - sdp", "m + sdp"], "y": 0.093, "label": "±1 SD = ±{{sdp|1}}", "step": 2}]}, "caption": "Most of the bars sit within about ±5 reads of the mean."}}, {"type": "equation", "uses": ["poisson"], "lead": "So how big is counting noise? There is a one-line rule.", "title": "Counting noise grows like the square root", "lhs": "sd_p", "expr": "sqrt(mu)", "terms": {"mu": {"value": "m"}}, "read": "the spread from counting is the square root of the average", "code": "sd = np.sqrt(mu)", "note": "For our gene that is **{{sdp|1}}** reads. Keep this number.", "more": "Poisson noise has variance equal to its mean, $\\sigma^2 = \\mu$. The SD is the square root of the variance, so $\\mathrm{SD} = \\sqrt{\\mu}$."}, {"type": "idea", "chapter": "Too much spread", "introduces": ["overdispersion"], "lead": "But our real replicates do not follow that rule.", "title": "Six replicates spread far wider than counting allows", "points": ["Counting alone keeps 95% of samples between **{{lo95|0}}** and **{{hi95|0}}** reads.", "**{{nout}} of our 6** replicates land outside that range.", "Their SD is {{s|1}}, against {{sdp|1}} from counting."], "visual": {"chart": {"x": {"label": "reads in one sample", "min": 0, "max": 50}, "y": {"label": "chance of each count", "min": 0, "max": 0.1, "fmt": 2}, "series": [{"name": "counting alone (Poisson)", "kind": "bars", "fn": "poisPmf(x, m)", "color": "mist"}, {"name": "our 6 replicates", "kind": "dots", "x": "reps", "y": 0.006, "focus": true, "step": 2}], "marks": [{"kind": "band", "x": ["lo95", "hi95"], "label": "where counting puts 95%", "step": 1}]}, "caption": "The bright dots sit outside the shaded range."}}, {"type": "statement", "text": "When replicates spread more than counting allows, the counts are ==overdispersed==.", "sub": "Here the variance is {{v/m|1}} times the mean. Counting alone would give 1 time."}, {"type": "idea", "lead": "Is it only this gene? Look at 400 of them.", "title": "Almost every gene sits above the counting line", "points": ["Each dot is one gene (simulated, 4 replicates each).", "**{{above|%0}}** of genes spread more than counting allows.", "The gap grows with the mean, so busy genes are the worst."], "visual": {"chart": {"x": {"label": "average count (log scale)", "min": 3, "max": 10000, "log": true}, "y": {"label": "variance (log scale)", "min": 1, "max": 10000000, "log": true}, "series": [{"name": "genes", "kind": "dots", "x": "gm", "y": "gv", "color": "mist"}], "marks": [{"kind": "fn", "fn": "x", "label": "counting alone: variance = mean", "step": 1, "color": "s1", "labelAt": 0.92}, {"kind": "fn", "fn": "x + 0.1 * x^2", "label": "with wobble: μ + 0.1μ²", "step": 2, "color": "accent", "labelAt": 0.55}, {"kind": "point", "x": "m", "y": "v", "label": "our gene", "step": 3}]}, "caption": "The dashed counting line runs below the cloud of genes."}}, {"type": "bridge", "introduces": ["mixture"], "lead": "Why would the true level move? Think of a batter.", "title": "A batter's form changes from match to match", "from": "Cricket", "to": "Sequencing", "pairs": [["one match", "one sample"], ["boundaries hit in that match", "reads counted in that sample"], ["the batter's form on the day", "the sample's true level"], ["career average", "the gene's average μ"]], "breaks": "Form drifts slowly through a season. Replicate samples are independent, so their wobble has no order."}, {"type": "idea", "lead": "So the noise comes in two stages.", "title": "Each sample draws its own level, then counting adds noise", "points": ["**Stage 1:** biology and handling move the true level $\\lambda$ from sample to sample.", "**Stage 2:** counting adds about $\\sqrt{\\lambda}$ of noise on top.", "The two stages stack, so the spread is bigger than either one alone."], "visual": {"flow": {"nodes": [{"label": "gene average μ", "sub": "{{m|1}} reads"}, {"label": "this sample's level λ", "sub": "wobbles by α"}, {"label": "reads counted", "sub": "Poisson around λ"}], "verbs": ["wobbles", "counted"], "focus": 1, "build": true}, "caption": "The lit box is the stage counting alone leaves out."}}, {"type": "predict", "kind": "check", "uses": ["mixture"], "q": "Two samples have exactly the same true level, λ = 22.5. How far apart are their counts likely to be?", "options": ["about ±5 reads", "about ±13 reads, like our replicates", "exactly equal"], "answer": 0, "why": "Same level means only stage 2 is left: counting noise, SD ≈ √22.5 = **{{sdp|1}}**. The extra spread in our replicates came from stage 1: **levels that differ**."}, {"type": "idea", "introduces": ["nb", "alpha"], "uses": ["mixture"], "lead": "Now put the two stages together and turn the wobble up.", "title": "More wobble, wider counts", "points": ["At α = 0, the two curves match. That is counting alone.", "Raise α and the counts spread out, while the mean stays at {{m|1}}.", "This two-stage curve is the **negative binomial** (NB)."], "controls": [{"name": "alpha", "label": "wobble α", "min": 0, "max": 1, "step": 0.05, "value": 0.3}], "derive": {"v_now": "m + alpha * m^2"}, "visual": {"chart": {"x": {"label": "reads in one sample", "min": 0, "max": 90}, "y": {"label": "chance of each count", "min": 0, "max": 0.09, "fmt": 2}, "series": [{"name": "simulated samples", "kind": "hist", "values": "rnb(6000, m, alpha, 11)", "density": true, "color": "s3", "opacity": 0.55}, {"name": "counting alone", "kind": "line", "fn": "poisPmf(x, m)", "discrete": true, "color": "mist", "dash": true}, {"name": "negative binomial", "kind": "line", "fn": "nbPmf(x, m, alpha)", "discrete": true, "focus": true}]}, "caption": "Variance now {{v_now|0}}, against {{m|1}} from counting alone."}}, {"type": "equation", "uses": ["nb"], "lead": "The two stages give one formula for the spread.", "title": "Variance = counting part + wobble part", "lhs": "v_nb", "expr": "mu + alpha * mu^2", "terms": {"mu": {"value": "m"}, "alpha": {"value": "alpha_hat"}}, "read": "spread equals the mean, plus the wobble times the mean squared", "code": "var = mu + alpha * mu**2", "note": "The first part is counting noise. The second grows with $\\mu^2$, so it takes over for busy genes.", "more": "Papers write $K \\sim \\mathrm{NB}(\\mu, \\alpha)$ with $\\mathrm{Var}(K) = \\mu + \\alpha\\mu^2$. Some use the size $r = 1/\\alpha$ instead. Here $\\alpha$ is estimated from our six replicates: see the next slide."}, {"type": "calc", "uses": ["alpha"], "lead": "Where does α come from? Work it out from the six numbers.", "title": "Our replicates give α by subtraction", "given": "Replicates: {{reps}}", "lines": [{"say": "Average the replicates", "expr": "mean(reps)", "name": "m"}, {"say": "Measure their spread (variance)", "expr": "var(reps)", "name": "v"}, {"say": "Take away the counting part and divide by the mean squared", "expr": "(v - m) / m^2", "name": "alpha_hat"}]}, {"type": "table", "lead": "So which part matters more? It depends on how busy the gene is.", "title": "Busy genes are ruled by the wobble", "rows": [{"mu": 5}, {"mu": 22.5}, {"mu": 500}, {"mu": 5000}], "cols": [{"key": "mu", "label": "mean μ", "fmt": ","}, {"key": "pois", "label": "counting part", "expr": "mu", "fmt": ",", "says": "the counting part (Poisson), equal to μ"}, {"key": "wob", "label": "wobble part", "expr": "alpha_hat * mu^2", "fmt": ",", "says": "the wobble part"}, {"key": "share", "label": "from wobble", "expr": "wob / (pois + wob)", "fmt": "%0", "says": "the share of the spread that comes from the wobble"}], "focus": 1}, {"type": "predict", "kind": "check", "q": "A gene averages 1,000 reads with α = 0.28. Which part rules its variance?", "options": ["the counting part", "the wobble part", "about equal"], "answer": 1, "why": "Counting gives 1,000. The wobble gives 0.28 × 1,000² = **{{0.28 * 1000^2|,}}**, about 280 times more. This is why even very busy genes stay noisy."}, {"type": "compare", "chapter": "Why it matters", "lead": "But why should a test care? Compare treated and control.", "title": "Same data, two verdicts", "a": {"title": "Poisson test", "tone": "bad", "verdict": "fooled", "text": "Treat {{m|1}} vs {{muB}} reads as counting noise only.", "visual": {"stat": {"value": "p = {{p_p|s2}}", "label": "\"a real change\""}}}, "b": {"title": "NB test", "tone": "good", "verdict": "honest", "text": "Include the wobble that replicates showed.", "visual": {"stat": {"value": "p = {{p_nb|2}}", "label": "\"could be noise\""}}}, "verdict": "Underestimate the noise and **every** gene looks significant. That is a flood of false positives."}, {"type": "calc", "lead": "Where does the first verdict come from? Measure the gap against counting noise.", "title": "Against counting noise, the gap looks big", "lines": [{"say": "The gap between the group averages", "expr": "muB - m", "name": "diff"}, {"say": "The noise in that gap if counting were all there is", "expr": "sqrt(m / n + muB / n)", "name": "se_p"}, {"say": "The gap in noise units", "expr": "diff / se_p", "name": "z_p", "fmt": 2}]}, {"type": "calc", "lead": "But the replicates told us the real noise is bigger.", "title": "Against the real noise, the same gap shrinks", "given": "Variances from μ + αμ²: control **{{vA|0}}**, treated **{{vB|0}}**.", "lines": [{"say": "The noise in the gap with the wobble included", "expr": "sqrt(vA / n + vB / n)", "name": "se_nb"}, {"say": "The same gap in noise units", "expr": "diff / se_nb", "name": "z_nb", "fmt": 2}]}, {"type": "recap", "answer": "Replicates spread more than counting allows, because each sample's true level wobbles. The negative binomial adds that wobble (variance = μ + αμ²), so tests stop calling noise a signal.", "points": ["Counting alone gives SD ≈ √mean.", "Real replicates spread more (overdispersion).", "Variance = μ + αμ²: the wobble part rules busy genes."], "breaks": ["α from 6 samples is shaky: DESeq2 shrinks each gene's α toward a trend.", "Depth differences still need normalizing first.", "Extra zeros or outliers need other models."], "next": ["DESeq2 dispersion shrinkage", "The MAGeCK mean–variance model", "Why counts get logged"]}, {"type": "map", "center": "negative binomial", "links": [{"to": "Poisson", "how": "α = 0 gives counting alone", "kind": "special"}, {"to": "gamma distribution", "how": "how the true level wobbles", "kind": "prereq"}, {"to": "DESeq2", "how": "one α per gene", "shrunk to a trend": null, "kind": "uses"}, {"to": "MAGeCK", "how": "guide counts against a mean–variance fit", "kind": "uses"}, {"to": "a batter's form", "how": "a rate that changes daily", "kind": "analogy"}, {"to": "log counts", "how": "tame the μ² growth", "kind": "sibling"}]}, {"type": "quiz", "cards": [{"q": "A gene averages 100 reads. What SD does counting alone give?", "a": "√100 = **10** reads."}, {"q": "What does α measure?", "a": "How much each sample's true level wobbles around the gene's average.", "tag": "meaning"}, {"q": "Why do Poisson tests give too many hits?", "a": "They miss the wobble", "so the noise looks small and ordinary gaps look significant.": null, "tag": "reversed"}]}]}</script><script>window.LUCID_ASSETS={};window.LUCID_DATA={"gm": [388.5, 278.0, 183.25, 36.25, 6735.25, 2852.25, 293.5, 3163.75, 1767.0, 6.5, 582.75, 201.0, 8.25, 1117.25, 11.5, 1634.25, 22.75, 6063.5, 213.25, 105.25, 134.5, 62.0, 225.25, 448.0, 32.75, 675.5, 3507.5, 521.25, 18.75, 1033.25, 13.75, 34.25, 5.0, 13.5, 385.75, 1087.75, 6.0, 1220.75, 1797.25, 2563.25, 7.0, 96.0, 852.0, 4.75, 227.75, 4181.75, 559.5, 130.25, 740.5, 1620.25, 61.5, 189.75, 1751.0, 168.25, 2375.75, 716.5, 827.75, 13.25, 8.25, 8.5, 56.5, 328.75, 29.5, 61.75, 101.0, 97.5, 12.25, 613.0, 81.0, 5.5, 175.0, 583.5, 237.25, 1626.5, 596.25, 3728.0, 2554.5, 2589.25, 37.5, 2947.5, 6.0, 324.0, 3221.25, 1816.5, 4044.75, 1177.75, 49.5, 1478.75, 247.25, 20.0, 1847.75, 479.75, 380.5, 53.5, 4763.0, 327.25, 11.0, 398.5, 21.5, 10.0, 7.5, 9.25, 557.5, 1820.5, 1899.25, 51.75, 1544.0, 240.25, 18.5, 23.0, 14.5, 71.75, 18.75, 54.25, 946.75, 17.5, 2542.0, 6.5, 368.25, 4898.75, 31.0, 1503.5, 12.75, 19.75, 27.5, 7.0, 407.5, 910.0, 78.0, 242.5, 2787.75, 2469.5, 130.0, 3745.25, 209.5, 535.5, 1698.25, 604.0, 2636.0, 93.5, 52.0, 142.25, 119.25, 209.25, 271.5, 6.25, 12.25, 4911.5, 28.0, 118.5, 11.0, 187.0, 491.5, 12.0, 9.25, 106.25, 44.25, 3444.0, 6.0, 1908.5, 8.75, 376.0, 1419.25, 39.25, 2643.25, 39.5, 9.0, 1659.0, 46.75, 559.25, 163.75, 9.0, 12.25, 2583.0, 38.0, 5.5, 1875.5, 69.75, 12.0, 4.5, 9.0, 61.25, 156.25, 126.25, 22.0, 93.5, 19.0, 85.75, 395.25, 10.75, 89.25, 732.5, 1564.25, 20.5, 129.75, 31.75, 12.0, 5918.0, 28.5, 4337.25, 1643.0, 142.75, 429.5, 7.5, 26.5, 3.5, 6.75, 425.0, 404.25, 358.75, 195.0, 47.5, 647.0, 140.75, 22.75, 11.5, 7.75, 9.75, 7.25, 10.5, 796.0, 3090.25, 2833.0, 18.25, 119.0, 1769.5, 38.75, 101.5, 1887.5, 188.0, 798.0, 75.75, 7.75, 730.5, 3343.0, 47.0, 747.25, 24.5, 1530.75, 639.25, 29.75, 16.75, 631.75, 52.5, 791.0, 40.5, 113.25, 880.5, 79.0, 123.25, 702.0, 112.5, 3896.25, 222.75, 155.0, 185.0, 932.5, 15.25, 694.25, 1949.5, 38.0, 223.25, 338.0, 2.0, 231.5, 842.75, 12.75, 1206.5, 1729.75, 34.75, 4.5, 44.25, 35.75, 23.25, 1412.0, 22.5, 15.75, 63.25, 16.75, 977.75, 313.25, 72.0, 16.25, 19.75, 17.5, 3049.25, 81.25, 39.75, 3090.75, 4628.75, 6.0, 487.0, 8.75, 31.75, 318.5, 19.25, 114.0, 40.5, 76.0, 176.0, 70.0, 563.5, 125.75, 244.75, 74.0, 60.25, 494.25, 223.0, 265.0, 75.0, 249.75, 6.5, 510.25, 1726.0, 492.5, 20.75, 11.75, 257.25, 22.0, 216.75, 9.0, 259.0, 28.25, 798.5, 3820.25, 8.5, 56.75, 1541.25, 200.75, 915.0, 605.25, 278.75, 198.75, 2295.0, 584.25, 73.25, 131.0, 769.0, 178.25, 2.75, 1192.5, 68.5, 134.0, 613.75, 174.0, 2721.75, 346.0, 7.0, 197.25, 1237.5, 150.5, 290.5, 1525.0, 5.0, 365.75, 25.75, 212.75, 2000.75, 35.25, 784.5, 46.5, 9.75, 33.0, 60.0, 2228.75, 862.5, 36.75, 554.25, 15.75, 3962.75, 188.25, 1663.0, 147.5, 24.0, 132.25, 29.5, 155.75, 319.5, 17.0, 44.5, 124.75, 523.0, 4.75, 1138.25, 3570.25, 1314.0, 1646.5, 54.0, 421.5, 3474.25, 57.0, 339.0, 23.75, 261.5, 111.75, 281.25, 100.0, 1547.75, 3432.0, 590.5], "gv": [2851.67, 9273.33, 9898.92, 18.92, 1173754.92, 945346.25, 14505.67, 1494279.58, 34168.67, 35.0, 21486.25, 1622.0, 30.92, 83900.25, 69.67, 111637.58, 82.25, 2442967.0, 1940.92, 678.92, 1424.33, 474.67, 4046.92, 21328.67, 314.25, 28293.67, 410585.0, 29674.25, 18.92, 83544.92, 34.92, 94.92, 11.33, 48.33, 23670.92, 186936.25, 20.67, 44907.58, 50294.25, 191830.92, 36.67, 88.0, 87926.0, 4.25, 424.92, 551455.58, 17331.67, 844.25, 7888.33, 443628.92, 749.67, 4581.58, 72724.67, 2134.92, 145116.92, 15493.67, 52044.92, 149.58, 18.92, 8.33, 649.67, 1528.92, 129.67, 958.92, 504.67, 852.33, 10.25, 36292.67, 456.67, 1.67, 2221.33, 32535.0, 4490.92, 54745.0, 10898.25, 1430992.67, 606153.0, 1673395.58, 153.67, 390289.67, 18.67, 25470.0, 756286.25, 396723.0, 2403244.25, 234488.92, 600.33, 159629.58, 1538.25, 242.0, 147898.25, 49002.25, 17349.67, 407.0, 1544562.0, 4879.58, 26.67, 14867.67, 20.33, 10.0, 25.0, 14.25, 47079.0, 712713.67, 272764.92, 412.92, 38845.33, 5262.25, 107.0, 82.0, 27.0, 150.92, 25.58, 8.92, 49726.92, 13.67, 340603.33, 3.67, 5037.58, 2092268.25, 108.0, 36171.0, 29.58, 114.25, 337.0, 8.67, 18783.0, 22258.0, 115.33, 4820.33, 1993144.92, 115249.67, 67.33, 896958.25, 1205.67, 47289.67, 151697.58, 15678.0, 640922.67, 1821.67, 90.0, 781.58, 827.58, 1986.25, 10012.33, 1.58, 20.92, 630231.0, 178.0, 1705.67, 6.0, 4376.67, 8733.67, 93.33, 10.92, 1660.92, 241.58, 892843.33, 16.67, 157625.0, 47.58, 712.67, 49664.25, 214.25, 40546.25, 189.67, 18.0, 350060.67, 77.58, 43434.25, 3771.58, 12.0, 59.58, 198106.0, 118.0, 7.0, 91285.67, 188.92, 14.67, 25.67, 56.0, 254.25, 3350.25, 640.92, 107.33, 483.67, 107.33, 1698.92, 30972.92, 38.25, 512.92, 46325.67, 215508.25, 99.0, 3184.92, 98.25, 39.33, 3314378.0, 95.0, 2575622.25, 283406.0, 4317.58, 26048.33, 27.67, 3.0, 3.0, 7.58, 13122.0, 3277.58, 2876.92, 1336.0, 443.0, 73926.67, 5090.92, 18.25, 21.67, 31.58, 12.92, 10.92, 5.67, 53942.0, 209952.25, 773004.67, 10.92, 240.67, 128040.33, 182.92, 332.33, 1655481.67, 4710.0, 124038.67, 256.92, 8.92, 26051.67, 658228.67, 1261.33, 9013.58, 147.0, 189128.25, 21868.92, 47.58, 6.92, 7548.25, 1061.67, 28708.67, 209.67, 1756.92, 136215.0, 801.33, 991.58, 46504.0, 951.0, 993630.92, 673.58, 2296.0, 3684.67, 191757.67, 8.25, 29296.92, 326421.67, 248.67, 5644.25, 1378.0, 1.33, 5857.67, 201260.25, 74.25, 80341.67, 89303.58, 119.58, 11.0, 224.92, 338.25, 226.25, 21092.67, 315.67, 132.92, 166.92, 101.58, 15674.92, 5110.92, 523.33, 50.92, 90.92, 75.67, 395244.92, 828.92, 213.58, 858060.92, 513878.92, 12.0, 24248.67, 92.25, 220.92, 6173.67, 132.92, 2411.33, 520.33, 814.67, 1104.67, 296.67, 11443.0, 1057.58, 7676.92, 226.67, 394.92, 2032.92, 1512.67, 520.67, 388.67, 3480.92, 13.67, 11431.58, 396896.67, 6534.33, 44.92, 43.58, 5159.58, 71.33, 2468.92, 24.67, 7846.67, 90.92, 176013.67, 810834.92, 24.33, 614.25, 91772.25, 1756.92, 41288.67, 12853.58, 9416.92, 6206.92, 1046637.33, 13656.92, 258.25, 2402.0, 3570.0, 1620.92, 6.25, 79085.67, 375.0, 820.67, 44534.92, 1900.67, 347122.92, 6768.67, 12.67, 3970.25, 54387.0, 2136.33, 5209.67, 85656.67, 3.33, 11552.92, 32.25, 3772.92, 585174.92, 356.25, 66856.33, 103.0, 14.25, 80.67, 252.67, 294256.25, 25973.67, 68.92, 37754.92, 10.92, 1962326.92, 4212.92, 92886.67, 2140.33, 152.67, 806.92, 60.33, 4082.92, 2113.0, 64.67, 295.0, 3009.58, 10506.67, 10.92, 65052.25, 1140512.25, 10715.33, 199719.0, 176.0, 26397.67, 71601.58, 156.0, 4410.0, 97.58, 6253.67, 702.92, 23700.25, 838.67, 432744.25, 1529728.67, 14681.0], "above": 0.94, "ngenes": 400};</script><script>/* Lucid core: formatting, markdown-lite, the expression engine (parse, evaluate, to TeX, substitute), statistics, seeded random numbers.
    One expression language serves derive:, table columns, calc lines, equations, chart functions and {{...}} text. */
 (function () {
   'use strict';
@@ -882,7 +905,8 @@ table.t .now { color: var(--lantern) !important; }
     for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + st * 1e-9; v += st) out.push(+v.toFixed(10));
     return out;
   }
-  function logTicks(a, b) { const out = []; for (let e = Math.ceil(Math.log10(a) - 1e-9); e <= Math.floor(Math.log10(b) + 1e-9); e++) out.push(10 ** e);
+  function logTicks(a, b, room = 99) { const out = []; const e0 = Math.ceil(Math.log10(a) - 1e-9), e1 = Math.floor(Math.log10(b) + 1e-9), st = Math.max(1, Math.ceil((e1 - e0 + 1) / room));
+    for (let e = e0; e <= e1; e += st) out.push(10 ** e);
     if (out.length < 3) { const more = []; for (let e = Math.floor(Math.log10(a)); e <= Math.ceil(Math.log10(b)); e++) for (const m of [1, 2, 5]) { const v = m * 10 ** e; if (v >= a * .999 && v <= b * 1.001) more.push(v); } return more; }
     return out; }
   const logFmt = v => { const e = Math.round(Math.log10(v)); return Math.abs(Math.log10(v) - e) < 1e-9 && (e >= 5 || e <= -3) ? `10${String(e).split('').map(c => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(c)]).join('')}` : L.fmt(v); };
@@ -921,9 +945,9 @@ table.t .now { color: var(--lantern) !important; }
     const series = (spec.series || []).map((s, i) => ({ ...s, i }));
     const marks = (spec.marks || []).map((m, i) => ({ ...m, i }));
     C.steps = Math.max(0, ...series.map(s => s.step || 0), ...marks.map(m => m.step || 0));
-    // colours: focus -> lantern, then s1, s2, s3 in order; extra series fall back to mist (lint warns)
+    // colours: focus -> accent, then s1, s2, s3 in order; extra series fall back to mist (lint warns)
     let slot = 0; const SL = ['s1', 's2', 's3'];
-    series.forEach(s => { s.c = s.color ? s.color : s.focus ? 'lantern' : SL[slot++] || 'mist'; });
+    series.forEach(s => { s.c = s.color ? s.color : s.focus ? 'accent' : SL[slot++] || 'mist'; });
 
     // head row: legend on the left, sliders and the data toggle on the right (the plot keeps the height)
     const vhead = opts.vis ? document.createElement('div') : null;
@@ -980,7 +1004,7 @@ table.t .now { color: var(--lantern) !important; }
       const fT = 22, fA = 24;
       const yfmt = v => ys.log ? logFmt(v) : L.fmt(v, ys.fmt);
       const xfmt = v => xs.log ? logFmt(v) : L.fmt(v, xs.fmt);
-      const yt = ys.ticks && Array.isArray(ys.ticks) ? ys.ticks : ys.log ? logTicks(ydom[0], ydom[1]) : nice(ydom[0], ydom[1], ys.ticks || Math.max(3, Math.round(H / 110)));
+      const yt = ys.ticks && Array.isArray(ys.ticks) ? ys.ticks : ys.log ? logTicks(ydom[0], ydom[1], Math.max(3, Math.round(H / 70))) : nice(ydom[0], ydom[1], ys.ticks || Math.max(3, Math.round(H / 110)));
       const ytw = Math.max(...yt.map(v => L.measure(yfmt(v), fT, 500)), 10);
       const hasLegend = series.filter(s => s.name && s.legend !== false).length >= 2 && spec.legend !== false;
       legend.innerHTML = hasLegend ? series.filter(s => s.name && s.legend !== false).map(s =>
@@ -1005,7 +1029,7 @@ table.t .now { color: var(--lantern) !important; }
         const t = el('text', { x: m.l - 14, y: y + 7, 'text-anchor': 'end', class: 'tick' }, g); t.textContent = yfmt(v); });
       el('line', { x1: m.l, x2: m.l + pw, y1: m.t + ph, y2: m.t + ph, class: 'base' }, g);
       if (cats) cats.forEach((c, i) => { const t = el('text', { x: sx(i + .5), y: m.t + ph + 32, 'text-anchor': 'middle', class: 'tick' }, g); t.textContent = c; });
-      else { const xt = xs.ticks && Array.isArray(xs.ticks) ? xs.ticks : xs.log ? logTicks(xdom[0], xdom[1]) : nice(xdom[0], xdom[1], xs.ticks || Math.max(3, Math.round(pw / (port ? 120 : 150))));
+      else { const xt = xs.ticks && Array.isArray(xs.ticks) ? xs.ticks : xs.log ? logTicks(xdom[0], xdom[1], Math.max(3, Math.round(pw / 120))) : nice(xdom[0], xdom[1], xs.ticks || Math.max(3, Math.round(pw / (port ? 120 : 150))));
         xt.forEach(v => { const x = sx(v); if (x < m.l - 1 || x > m.l + pw + 1) return; el('line', { x1: x, x2: x, y1: m.t + ph, y2: m.t + ph + 7, class: 'base' }, g);
           const t = el('text', { x, y: m.t + ph + 32, 'text-anchor': 'middle', class: 'tick' }, g); t.textContent = xfmt(v); }); }
       if (ys.label) { const t = el('text', { x: m.l - ytw - 14 > 0 ? m.l - ytw - 6 : 0, y: m.t - 22, class: 'axt' }, g); t.innerHTML = ''; t.textContent = ys.label; }
@@ -1013,6 +1037,7 @@ table.t .now { color: var(--lantern) !important; }
 
       const obstacles = []; // boxes labels must avoid: [x0,y0,x1,y1]
       const segs = [];      // drawn polylines (for the audit and label placement)
+      const dense = [];     // dots too many to avoid one by one: labels avoid the cloud as a whole
       const layerS = el('g', {}, svg), layerM = el('g', {}, svg), layerL = el('g', {}, svg);
       const markG = (step, parent) => { const gg = el('g', { class: 'mk', 'data-mstep': step || 0 }, parent); return gg; };
 
@@ -1022,7 +1047,7 @@ table.t .now { color: var(--lantern) !important; }
       const labels = []; // {text, ax, ay, pref, color, step, kind}
       const drawMark = (mk, parent) => { const n0 = labels.length; drawMark1(mk, parent); if (mk.place) labels.slice(n0).forEach(lb => lb.pref = [mk.place]); };
       const drawMark1 = (mk, parent) => {
-        const gg = markG(mk.step, parent), c = col(mk.color || (['point', 'area', 'arrow'].includes(mk.kind) ? 'lantern' : 'mist'));
+        const gg = markG(mk.step, parent), c = col(mk.color || (['point', 'area', 'arrow'].includes(mk.kind) ? 'accent' : 'mist'));
         const V = x => L.val(x, scope, `mark ${mk.kind}`);
         switch (mk.kind) {
           case 'vline': { const x = sx(V(mk.x)); el('line', { x1: x, x2: x, y1: m.t + 4, y2: m.t + ph, stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8', 'stroke-linecap': 'round' }, gg);
@@ -1046,9 +1071,11 @@ table.t .now { color: var(--lantern) !important; }
             else pts = [mk.from, mk.to].map(p => [sx(V(p[0])), sy(V(p[1]))]);
             if (pts.length < 2) break;
             el('path', { d: 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L'), fill: 'none', stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8', 'stroke-linecap': 'round' }, gg);
-            segs.push(pts); if (mk.label) { const p = pts[Math.round(pts.length * (mk.labelAt ?? .82)) - 1] || pts[pts.length - 1]; labels.push({ text: mk.label, ax: p[0], ay: p[1], pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
+            segs.push(pts); if (mk.label) { const at = f => pts[Math.max(0, Math.min(pts.length - 1, Math.round(pts.length * f) - 1))], f0 = mk.labelAt ?? .82, p = at(f0);
+              const alts = pts.length < 3 ? null : [f0, .15, .25, .35, .45, .55, .65, .75, .85, .95].filter((f, i) => !i || Math.abs(f - f0) > .04).map(f => [...at(f), Math.abs(f - f0) * 2]);
+              labels.push({ text: mk.label, ax: p[0], ay: p[1], alts, own: pts, pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
           case 'point': { const at = mk.at || [mk.x, mk.y], x = sx(V(at[0])), y = sy(V(at[1]));
-            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3, filter: c === col('lantern') ? `url(#${id}-glow)` : null }, gg);
+            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3, filter: c === col('accent') ? `url(#${id}-glow)` : null }, gg);
             obstacles.push([x - 12, y - 12, x + 12, y + 12]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: y, pref: mk.place ? [mk.place] : ['tr', 'tl', 'br', 'bl', 'r', 'l', 't'], step: mk.step, c, lead: true, strong: true }); break; }
           case 'label': { const at = mk.at; labels.push({ text: mk.text || mk.label, ax: sx(V(at[0])), ay: sy(V(at[1])), pref: mk.place ? [mk.place] : ['c'], step: mk.step, c, plain: true }); break; }
           case 'arrow': { const [x1, y1] = [sx(V(mk.from[0])), sy(V(mk.from[1]))], [x2, y2] = [sx(V(mk.to[0])), sy(V(mk.to[1]))];
@@ -1095,7 +1122,7 @@ table.t .now { color: var(--lantern) !important; }
               el('path', { d: `M${x},${y0}V${y1 + r}Q${x},${y1} ${x + r},${y1}H${x + bw - r}Q${x + bw},${y1} ${x + bw},${y1 + r}V${y0}Z`, fill: `url(#${gid})`, opacity: s.opacity ?? (s.focus ? 1 : .92) }, gg); }
             obstacles.push([cx - bw / 2, y1, cx + bw / 2, y0]); });
           if (s.highlight != null) { const hv = L.val(s.highlight, scope); const hi = d.find(p => p[0] === hv); if (hi) { const cx = cats ? sx(hi[0] + .5) : sx(hi[0]); const y1 = sy(hi[1]);
-            el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, rx: 8, fill: 'none', stroke: col('lantern'), 'stroke-width': 3 }, gg); } }
+            el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, rx: 8, fill: 'none', stroke: col('accent'), 'stroke-width': 3 }, gg); } }
         } else if (kind === 'hist') {
           const gid = `${id}-hg${si}`, lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
           el('stop', { offset: '0%', 'stop-color': c, 'stop-opacity': .95 }, lg); el('stop', { offset: '100%', 'stop-color': c, 'stop-opacity': .55 }, lg);
@@ -1105,7 +1132,7 @@ table.t .now { color: var(--lantern) !important; }
         } else if (kind === 'dots') {
           const many = d.length > 300, r = s.r || (many ? 4.5 : 8);
           d.forEach(p => { const x = sx(p[0]), y = sy(p[1]); if (x < m.l - 2 || x > m.l + pw + 2 || y < m.t - 2 || y > m.t + ph + 2) return;
-            el('circle', { cx: x, cy: y, r, fill: c, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); });
+            el('circle', { cx: x, cy: y, r, fill: c, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); else dense.push([x, y]); });
         }
       });
       over.forEach(mk => drawMark(mk, layerM));
@@ -1119,30 +1146,37 @@ table.t .now { color: var(--lantern) !important; }
       labels.sort((a, b) => (b.end ? 1 : 0) - (a.end ? 1 : 0));
       const hitSeg = (b) => segs.some(pts => pts.some((p, i) => i && segBox(pts[i - 1], p, b)));
       const over2 = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+      const leadEnd = (ax, ay, [x0, y0, x1, y1]) => [Math.max(x0, Math.min(x1, ax)), ay < y0 ? y0 : ay > y1 ? y1 : (y0 + y1) / 2];   // where a leader meets its label
+      const cuts = (a, b, own) => segs.some(pts => pts !== own && pts.some((p, i) => i && crossSeg(a, b, pts[i - 1], p)));
       labels.forEach(lb => {
         const text = L.plain(lb.text, scope), w = L.measure(text, 23, lb.strong ? 650 : 600) + (lb.plain ? 4 : 26), h = lb.plain ? 28 : 40, gap = lb.lead ? 26 : 12;
-        const cand = { tr: [lb.ax + gap, lb.ay - gap - h], tl: [lb.ax - gap - w, lb.ay - gap - h], br: [lb.ax + gap, lb.ay + gap], bl: [lb.ax - gap - w, lb.ay + gap],
-          r: [lb.ax + gap, lb.ay - h / 2], l: [lb.ax - gap - w, lb.ay - h / 2], t: [lb.ax - w / 2, lb.ay - gap - h], b: [lb.ax - w / 2, lb.ay + gap], c: [lb.ax - w / 2, lb.ay - h / 2],
-          bc: [lb.ax - w / 2, lb.ay + 8], al: [lb.ax - w, lb.ay - h - 8] };
-        if (lb.end) { for (let dy = 0; dy < 140; dy += 8) for (const sgn of [1, -1]) { const y = lb.ay - h / 2 + sgn * dy; cand['r' + sgn * dy] = [lb.ax + gap, y]; } }
-        const order = lb.end ? Object.keys(cand).filter(k => /^r-?\d/.test(k)) : [...lb.pref, ...['tr', 'tl', 'r', 'l', 't', 'b', 'br', 'bl'].filter(k => !lb.pref.includes(k))];
         let best = null, bestScore = Infinity;
-        for (const k of order) {
-          const [x, y] = cand[k] || cand.tr, box = [x, y, x + w, y + h];
-          let score = lb.end ? order.indexOf(k) * .05 : order.indexOf(k) * .5;
-          if (box[0] < plotBox[0] - (lb.end ? 0 : 2) || box[2] > W - 2 || box[1] < 2 || box[3] > m.t + ph + (lb.end ? 4 : 0)) score += 100;
-          if (placed.some(p => over2(p, box))) score += 60;
-          if (obstacles.some(o => over2(o, box))) score += 14;
-          if (hitSeg(box)) score += 10;
-          if (score < bestScore) { bestScore = score; best = { box, k }; }
-          if (score < 1) break;
-        }
-        const [x0, y0, x1, y1] = best.box; placed.push(best.box);
+        (lb.alts || [[lb.ax, lb.ay, 0]]).forEach(([ax, ay, away]) => {   // away: cost of sliding off the preferred anchor
+          if (bestScore < 1) return;
+          const cand = { tr: [ax + gap, ay - gap - h], tl: [ax - gap - w, ay - gap - h], br: [ax + gap, ay + gap], bl: [ax - gap - w, ay + gap],
+            r: [ax + gap, ay - h / 2], l: [ax - gap - w, ay - h / 2], t: [ax - w / 2, ay - gap - h], b: [ax - w / 2, ay + gap], c: [ax - w / 2, ay - h / 2],
+            bc: [ax - w / 2, ay + 8], al: [ax - w, ay - h - 8] };
+          if (lb.end) { for (let dy = 0; dy < 140; dy += 8) for (const sgn of [1, -1]) { const y = ay - h / 2 + sgn * dy; cand['r' + sgn * dy] = [ax + gap, y]; } }
+          const order = lb.end ? Object.keys(cand).filter(k => /^r-?\d/.test(k)) : [...lb.pref, ...['tr', 'tl', 'r', 'l', 't', 'b', 'br', 'bl'].filter(k => !lb.pref.includes(k))];
+          for (const k of order) {
+            const [x, y] = cand[k] || cand.tr, box = [x, y, x + w, y + h];
+            let score = (lb.end ? order.indexOf(k) * .05 : order.indexOf(k) * .5) + away;
+            if (box[0] < plotBox[0] - (lb.end ? 0 : 2) || box[2] > W - 2 || box[1] < 2 || box[3] > m.t + ph + (lb.end ? 4 : 0)) score += 100;
+            if (placed.some(p => over2(p, box))) score += 60;
+            if (obstacles.some(o => over2(o, box))) score += 14;
+            if (hitSeg(box)) score += 10;
+            if (dense.length) { let n = 0; for (const p of dense) if (p[0] > box[0] && p[0] < box[2] && p[1] > box[1] && p[1] < box[3]) n++; score += Math.min(16, n * .5); }
+            if (lb.lead && k !== 'c' && cuts([ax, ay], leadEnd(ax, ay, box), lb.own)) score += 8;
+            if (score < bestScore) { bestScore = score; best = { box, k, ax, ay }; }
+            if (score < 1) break;
+          }
+        });
+        const [x0, y0, x1, y1] = best.box, { ax, ay } = best; placed.push(best.box);
         const gg = markG(lb.step, layerL);
-        if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - lb.ay) > 10) el('line', { x1: lb.ax - 4, y1: lb.ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
-        if (lb.lead && best.k !== 'c') { const tx = Math.max(x0, Math.min(x1, lb.ax)), ty = lb.ay < y0 ? y0 : lb.ay > y1 ? y1 : (y0 + y1) / 2;
-          el('line', { x1: lb.ax, y1: lb.ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
-        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(14,22,72,.82)', stroke: 'rgba(255,255,255,.22)', 'stroke-width': 1.2 }, gg);
+        if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - ay) > 10) el('line', { x1: ax - 4, y1: ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
+        if (lb.lead && best.k !== 'c') { const [tx, ty] = leadEnd(ax, ay, best.box);
+          el('line', { x1: ax, y1: ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
+        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(20,17,15,.84)', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 1.2 }, gg);
         if (!lb.plain) el('circle', { cx: x0 + 14, cy: (y0 + y1) / 2, r: 0 }, gg);
         const t = el('text', { x: lb.plain ? x0 + 2 : (x0 + x1) / 2, y: (y0 + y1) / 2 + 8, 'text-anchor': lb.plain ? 'start' : 'middle', class: 'lbl' + (lb.end ? ' dim' : ''), 'data-lbl': 1 }, gg);
         t.textContent = text;
@@ -1213,13 +1247,14 @@ table.t .now { color: var(--lantern) !important; }
   };
 
   // segment-box intersection
+  // do segments a–b and c–d cross?
+  function crossSeg(a, bb, c, d) { const den = (bb[0] - a[0]) * (d[1] - c[1]) - (bb[1] - a[1]) * (d[0] - c[0]); if (!den) return false;
+    const u = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den, v = ((c[0] - a[0]) * (bb[1] - a[1]) - (c[1] - a[1]) * (bb[0] - a[0])) / den; return u > 0 && u < 1 && v > 0 && v < 1; }
   function segBox(p, q, b) {
     const [x0, y0, x1, y1] = b, inside = (x, y) => x > x0 && x < x1 && y > y0 && y < y1;
     if (inside(p[0], p[1]) || inside(q[0], q[1])) return true;
-    const cr = (a, bb, c, d) => { const den = (bb[0] - a[0]) * (d[1] - c[1]) - (bb[1] - a[1]) * (d[0] - c[0]); if (!den) return false;
-      const u = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den, v = ((c[0] - a[0]) * (bb[1] - a[1]) - (c[1] - a[1]) * (bb[0] - a[0])) / den; return u > 0 && u < 1 && v > 0 && v < 1; };
     const c = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-    return [0, 1, 2, 3].some(i => cr(p, q, c[i], c[(i + 1) % 4]));
+    return [0, 1, 2, 3].some(i => crossSeg(p, q, c[i], c[(i + 1) % 4]));
   }
 })();
 
@@ -1328,7 +1363,7 @@ table.t .now { color: var(--lantern) !important; }
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
         const ox = (W - cols * cell) / 2, oy = (H - rows * cell) / 2;
         for (let i = 0; i < n; i++) { const cx = ox + (i % cols + .5) * cell, cy = oy + (Math.floor(i / cols) + .5) * cell, on = i < hi;
-          L.svgEl('circle', { cx, cy, r, fill: on ? L.colors.lantern : 'none', stroke: on ? L.colors.lantern : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
+          L.svgEl('circle', { cx, cy, r, fill: on ? L.colors.accent : 'none', stroke: on ? L.colors.accent : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
       };
       vis.classList.remove('plate');
     } else if (v.flow) {
@@ -1424,8 +1459,10 @@ table.t .now { color: var(--lantern) !important; }
       rows.push({ cx, w, row, bottom: y + hh });
       lab.style.left = cx + 'px'; lab.style.top = y + 'px';
     });
-    const need = rows.length ? Math.max(...rows.map(b => b.bottom)) - container.offsetHeight + 8 : 0;   // reserve room under the part itself
-    if (need > 0) container.style.paddingBottom = need + 'px';
+    // reserve room under the content itself; CSS padding already there counts toward it
+    const pad0 = parseFloat(getComputedStyle(container).paddingBottom) || 0;
+    const need = rows.length ? Math.max(...rows.map(b => b.bottom)) - (container.offsetHeight - pad0) + 8 : 0;
+    if (need > pad0) container.style.paddingBottom = need + 'px';
   }
 
   // ---------- slide types ----------
@@ -1518,7 +1555,7 @@ table.t .now { color: var(--lantern) !important; }
     } else L.err(`slide ${ctx.index + 1}`, 'equation needs expr or tex');
     const inputs = (s.order || ids).filter(n => n !== s.lhs);
     const order = s.lhs ? [...inputs, s.lhs] : inputs;
-    const colorOf = n => n === s.lhs ? L.colors.lantern : L.colors[TERMC[Math.min(Math.max(0, inputs.indexOf(n)), 3)]] || L.colors.mist;
+    const colorOf = n => n === s.lhs ? L.colors.accent : L.colors[TERMC[Math.min(Math.max(0, inputs.indexOf(n)), 3)]] || L.colors.mist;
     // the numbers a computable equation runs on: a term's `value`, else the name in scope
     const eqScope = () => { const sc = L.scope(ctx.scope, {}); inputs.forEach(n => { const t = term(n); if (t.value != null) sc[n] = L.val(t.value, ctx.scope, `term ${n}`); }); return sc; };
     const eq = h('div', 'eqmain'); wrap.appendChild(eq);
@@ -1730,34 +1767,49 @@ table.t .now { color: var(--lantern) !important; }
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
-    L.colors = { lantern: v('lantern'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
+    L.colors = { accent: v('accent'), amber: v('amber'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
+    L.colors.lantern = L.colors.accent;   // older decks wrote `color: lantern`
     L.fontUI = v('f-ui');
   }
 
   function wallpaper() {
     const wall = h('div'); wall.id = 'wall';
-    wall.innerHTML = '<div class="stars"></div><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="moon"></div><div class="bokeh"></div><div class="lake"></div>';
-    // soft lights (moonlight, blossom, lantern) for the glass to blur: without them glass reads as a flat tint
-    const bk = wall.querySelector('.bokeh'), rb = L.rng(5), tints = ['228,235,250', '153,130,201', '184,92,188', '94,109,228', '255,196,107'];
-    for (let i = 0; i < 34; i++) { const d = 8 + Math.pow(rb(), 2.2) * 120, t = tints[i % 9 === 0 ? 4 : Math.floor(rb() * 4)];
-      const e = document.createElement('i'); Object.assign(e.style, { left: (rb() * 100) + '%', top: (rb() * 100) + '%', width: d + 'px', height: d + 'px',
-        background: `radial-gradient(circle, rgba(${t},${.22 + rb() * .4}) 0%, rgba(${t},${.08 + rb() * .12}) 60%, transparent 72%)` }); bk.appendChild(e); }
+    wall.innerHTML = '<svg class="ribbons" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"></svg><div class="orb o1"></div><div class="orb o2"></div>'
+      + '<div class="orb o3"></div><div class="orb o4"></div><div class="sparks"></div><div class="grain"></div><div class="vignette"></div>';
     document.body.prepend(wall);
-    // star field: seeded, drawn once
-    const cv = document.createElement('canvas'), W = 1600, H = 1000; cv.width = W; cv.height = H; const c = cv.getContext('2d'), r = L.rng(11);
-    for (let i = 0; i < 260; i++) { const x = r() * W, y = Math.pow(r(), 1.6) * H * .8, s = r() < .08 ? 1.6 : r() * .9 + .3, a = .25 + r() * .6;
-      c.fillStyle = `rgba(${235 + r() * 20 | 0},${238 + r() * 17 | 0},255,${a})`; c.beginPath(); c.arc(x, y, s, 0, 7); c.fill(); }
-    wall.querySelector('.stars').style.backgroundImage = `url(${cv.toDataURL()})`;
+    // silk ribbons of warm light: wide soft strokes the glass can blur (a flat gradient behind glass reads as a tint, not glass)
+    const NS = 'http://www.w3.org/2000/svg', svg = wall.querySelector('.ribbons');
+    svg.innerHTML = `<defs>
+      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5a1608" stop-opacity=".0"/><stop offset=".22" stop-color="#8f2812" stop-opacity=".72"/><stop offset=".55" stop-color="#c8401f" stop-opacity=".66"/><stop offset=".82" stop-color="#e0703f" stop-opacity=".4"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e0803" stop-opacity=".92"/><stop offset=".5" stop-color="#5e1a0a" stop-opacity=".8"/><stop offset="1" stop-color="#b8401f" stop-opacity=".42"/></linearGradient>
+      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ffd2b8" stop-opacity="0"/><stop offset=".4" stop-color="#ffd9c2" stop-opacity=".6"/><stop offset=".75" stop-color="#ffb27f" stop-opacity=".38"/><stop offset="1" stop-color="#ffb27f" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb27f" stop-opacity="0"/><stop offset=".6" stop-color="#ff8a50" stop-opacity=".2"/><stop offset="1" stop-color="#ff5a36" stop-opacity=".32"/></linearGradient>
+      <filter id="soft" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>
+      <path filter="url(#soft)" fill="url(#fd)" d="M 820 -40 C 1060 70, 1260 40, 1660 170 L 1660 -40 Z"/>
+      <path filter="url(#soft)" fill="url(#fb)" d="M -120 860 C 320 720, 700 940, 1080 800 S 1540 600, 1740 660 L 1740 1120 L -120 1120 Z"/>
+      <path filter="url(#soft)" fill="url(#fa)" d="M -120 740 C 300 590, 600 840, 960 640 S 1480 300, 1740 360 L 1740 520 C 1500 500, 1260 760, 980 850 S 380 960, -120 990 Z"/>
+      <path fill="url(#fc)" d="M -120 738 C 300 588, 600 838, 960 638 S 1480 298, 1740 358 L 1740 368 C 1480 312, 1000 660, 962 662 C 600 862, 300 610, -120 760 Z"/>`;
+    // sparks: a few warm embers, more of them low down, near the glow
+    const sp = wall.querySelector('.sparks'), r = L.rng(17);
+    for (let i = 0; i < 38; i++) { const d = 2 + Math.pow(r(), 3) * 7, y = 100 - Math.pow(r(), 1.7) * 100, a = .25 + r() * .55, c = r() < .7 ? '255,138,80' : '255,214,186';
+      const e = document.createElement('i'); Object.assign(e.style, { left: (r() * 100) + '%', top: y + '%', width: d + 'px', height: d + 'px',
+        background: `rgba(${c},${a})`, boxShadow: `0 0 ${d * 3}px ${d * .8}px rgba(${c},${a * .55})` }); sp.appendChild(e); }
+    // film grain: inside the glass it is blurred away, outside it stays crisp, so the glass reads as a smoother material
+    const cv = document.createElement('canvas'); cv.width = cv.height = 220; const c = cv.getContext('2d'), im = c.createImageData(220, 220), rg = L.rng(3);
+    for (let i = 0; i < im.data.length; i += 4) { const v = rg() * 255 | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+    c.putImageData(im, 0, 0); wall.querySelector('.grain').style.backgroundImage = `url(${cv.toDataURL()})`;
     L.wall = wall;
   }
-  // orbs drift a little with every slide, so the glass always has light moving behind it
+  // the light moves a little with every slide, so the glass always has something shifting behind it
   function drift(i) {
     if (!L.wall) return; const r = L.rng(1000 + i * 7), m = (a) => (r() - .5) * a;
-    L.wall.querySelector('.o1').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
-    L.wall.querySelector('.o2').style.transform = `translate(${m(14)}vmax, ${m(10)}vmax)`;
-    L.wall.querySelector('.o3').style.transform = `translate(${m(18)}vmax, ${m(8)}vmax)`;
-    L.wall.querySelector('.moon').style.transform = `translate(${m(6)}vmin, ${m(4)}vmin)`;
-    L.wall.querySelector('.bokeh').style.transform = `translate(${m(4)}vmax, ${m(3)}vmax)`;
+    L.wall.querySelector('.o1').style.transform = `translate(${m(14)}vmax, ${m(10)}vmax)`;
+    L.wall.querySelector('.o2').style.transform = `translate(${m(12)}vmax, ${m(12)}vmax)`;
+    L.wall.querySelector('.o3').style.transform = `translate(${m(10)}vmax, ${m(6)}vmax)`;
+    L.wall.querySelector('.o4').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
+    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the bright folds lower
+    L.wall.querySelector('.ribbons').style.transform = `translate(${m(5)}%, ${m(4) + low}%) rotate(${m(6)}deg)`;
+    L.wall.querySelector('.sparks').style.transform = `translate(${m(3)}vmax, ${m(2)}vmax)`;
   }
 
   // ---------- layout ----------
@@ -1794,12 +1846,22 @@ table.t .now { color: var(--lantern) !important; }
     main.forEach(e => e.style.zoom = '');
     const limit = node.clientHeight - parseFloat(getComputedStyle(node).paddingBottom);
     // under zoom, offsetTop and heights come back in the element's own (zoomed) units
-    const over = z => { main.forEach(e => e.style.zoom = z === 1 ? '' : z); return Math.max(...main.map(e => (e.offsetTop + Math.max(e.scrollHeight, e.offsetHeight)) * z)) - limit; };
-    const TOL = 12;   // steps not yet shown sit 8px low; that is not overflow
-    if (over(1) <= TOL) return;
-    let lo = .7, hi = 1;
-    for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (over(mid) <= TOL) lo = mid; else hi = mid; }
-    over(lo); sl.zoom = lo;
+    const offTop = el => { let t = 0; for (let n = el; n && n !== node; n = n.offsetParent) t += n.offsetTop; return t; };
+    // how far a box's in-flow content runs past its content edge, into its bottom padding or beyond
+    // (Chrome's scrollHeight misses this for grid and flex items that stick out, so measure the children)
+    const spill = c => { const kids = [...c.children].filter(k => k.offsetParent && getComputedStyle(k).position !== 'absolute'); if (!kids.length) return -1e9;
+      return Math.max(...kids.map(k => offTop(k) + k.offsetHeight)) - (offTop(c) + c.offsetHeight - (parseFloat(getComputedStyle(c).paddingBottom) || 0)); };
+    const boxes = main.flatMap(e => [e, ...e.querySelectorAll('.g')]);
+    const over = z => { main.forEach(e => e.style.zoom = z === 1 ? '' : z);
+      return Math.max(Math.max(...main.map(e => offTop(e) + Math.max(e.scrollHeight, e.offsetHeight))) * z - limit, ...boxes.map(c => spill(c) * z)); };
+    const TOL = 2;   // .fitting drops the entry offset of hidden steps, so this is rounding only
+    node.classList.add('fitting');
+    if (over(1) > TOL) {
+      let lo = .7, hi = 1;
+      for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (over(mid) <= TOL) lo = mid; else hi = mid; }
+      over(lo); sl.zoom = lo;
+    }
+    node.classList.remove('fitting');
   }
 
   // ---------- slides ----------
@@ -1939,7 +2001,11 @@ table.t .now { color: var(--lantern) !important; }
       const fs = parseFloat(getComputedStyle(e).fontSize) * s;
       if (fs < (orient === 'port' ? 10.5 : 12) && s > .3) out.push(`${name(e)} renders at ${fs.toFixed(1)}px on screen (too small)`);
       if (e.nodeType === 1 && !e.closest('svg')) { const cs = getComputedStyle(e);
-        if (['block', 'flex', 'grid', 'list-item'].includes(cs.display) && cs.overflow === 'visible' && e.clientWidth && (e.scrollWidth > e.clientWidth + 3)) out.push(`${name(e)} is wider than its box`); }
+        if (['block', 'flex', 'grid', 'list-item'].includes(cs.display) && cs.overflow === 'visible' && e.clientWidth && (e.scrollWidth > e.clientWidth + 3)) out.push(`${name(e)} is wider than its box`);
+        // text must stay inside its glass card, clear of the rim
+        const card = e.parentElement && e.parentElement.closest('.g');
+        if (card && node.contains(card) && getComputedStyle(card).overflow === 'visible') { const c = toStage(card.getBoundingClientRect());
+          if (b.y1 > c.y1 - 6 || b.x1 > c.x1 - 4 || b.y0 < c.y0 + 2 || b.x0 < c.x0 + 2) out.push(`${name(e)} spills out of its card`); } }
     }
     for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
       const a = items[i], b = items[j]; if (a.e.contains(b.e) || b.e.contains(a.e)) continue;

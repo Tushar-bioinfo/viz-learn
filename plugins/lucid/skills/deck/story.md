@@ -71,7 +71,7 @@ This is where decks usually fail: a table of numbers with no formula, an equatio
 
 ## 8. Charts that teach
 - One chart, one claim. The slide title is the claim, the chart proves it, and the `caption` says where to look ("The open dots sit far above the line.").
-- Mark the thing the claim is about: a `point`, `vline`, `band` or `area` mark, with its value in the label. The lantern colour (`focus: true`) is for the one thing that matters now; context series are `color: mist`.
+- Mark the thing the claim is about: a `point`, `vline`, `band` or `area` mark, with its value in the label. The orange accent (`focus: true`) is for the one thing that matters now; context series are `color: mist`.
 - Use at most 3 coloured series. More than that means you need two charts or a grey context.
 - Fix the axes so slider extremes still fit (`x.min/max`, `y.min/max`), and set a `step` on each mark so the chart builds one layer per click.
 - Add a slider (`controls`) when moving one parameter **is** the lesson ("raise α and watch the spread grow"). Say what to try in the slide's points.
@@ -81,7 +81,7 @@ Open both contact sheets and answer in your notes:
 1. Read only the titles, in order. Do they tell the story by themselves? Is each one linked by a "but" or "so"?
 2. Could a learner say where every number on every slide came from?
 3. Is each new symbol named before or on the slide where it first appears?
-4. Does each chart's lit mark (lantern) show what its title claims?
+4. Does each chart's lit mark (the orange one) show what its title claims?
 5. Does the deck answer the opening question in the learner's words, and say where the idea breaks?
 6. Is there anything on a slide that the learner does not need for the answer? Cut it, or move it to `more:`.
 Fix what fails, rebuild, recheck. Report `check: 0 warnings · sheets viewed 2/2 · arc <name>`.

@@ -20,7 +20,8 @@
     for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + st * 1e-9; v += st) out.push(+v.toFixed(10));
     return out;
   }
-  function logTicks(a, b) { const out = []; for (let e = Math.ceil(Math.log10(a) - 1e-9); e <= Math.floor(Math.log10(b) + 1e-9); e++) out.push(10 ** e);
+  function logTicks(a, b, room = 99) { const out = []; const e0 = Math.ceil(Math.log10(a) - 1e-9), e1 = Math.floor(Math.log10(b) + 1e-9), st = Math.max(1, Math.ceil((e1 - e0 + 1) / room));
+    for (let e = e0; e <= e1; e += st) out.push(10 ** e);
     if (out.length < 3) { const more = []; for (let e = Math.floor(Math.log10(a)); e <= Math.ceil(Math.log10(b)); e++) for (const m of [1, 2, 5]) { const v = m * 10 ** e; if (v >= a * .999 && v <= b * 1.001) more.push(v); } return more; }
     return out; }
   const logFmt = v => { const e = Math.round(Math.log10(v)); return Math.abs(Math.log10(v) - e) < 1e-9 && (e >= 5 || e <= -3) ? `10${String(e).split('').map(c => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(c)]).join('')}` : L.fmt(v); };
@@ -59,9 +60,9 @@
     const series = (spec.series || []).map((s, i) => ({ ...s, i }));
     const marks = (spec.marks || []).map((m, i) => ({ ...m, i }));
     C.steps = Math.max(0, ...series.map(s => s.step || 0), ...marks.map(m => m.step || 0));
-    // colours: focus -> lantern, then s1, s2, s3 in order; extra series fall back to mist (lint warns)
+    // colours: focus -> accent, then s1, s2, s3 in order; extra series fall back to mist (lint warns)
     let slot = 0; const SL = ['s1', 's2', 's3'];
-    series.forEach(s => { s.c = s.color ? s.color : s.focus ? 'lantern' : SL[slot++] || 'mist'; });
+    series.forEach(s => { s.c = s.color ? s.color : s.focus ? 'accent' : SL[slot++] || 'mist'; });
 
     // head row: legend on the left, sliders and the data toggle on the right (the plot keeps the height)
     const vhead = opts.vis ? document.createElement('div') : null;
@@ -118,7 +119,7 @@
       const fT = 22, fA = 24;
       const yfmt = v => ys.log ? logFmt(v) : L.fmt(v, ys.fmt);
       const xfmt = v => xs.log ? logFmt(v) : L.fmt(v, xs.fmt);
-      const yt = ys.ticks && Array.isArray(ys.ticks) ? ys.ticks : ys.log ? logTicks(ydom[0], ydom[1]) : nice(ydom[0], ydom[1], ys.ticks || Math.max(3, Math.round(H / 110)));
+      const yt = ys.ticks && Array.isArray(ys.ticks) ? ys.ticks : ys.log ? logTicks(ydom[0], ydom[1], Math.max(3, Math.round(H / 70))) : nice(ydom[0], ydom[1], ys.ticks || Math.max(3, Math.round(H / 110)));
       const ytw = Math.max(...yt.map(v => L.measure(yfmt(v), fT, 500)), 10);
       const hasLegend = series.filter(s => s.name && s.legend !== false).length >= 2 && spec.legend !== false;
       legend.innerHTML = hasLegend ? series.filter(s => s.name && s.legend !== false).map(s =>
@@ -143,7 +144,7 @@
         const t = el('text', { x: m.l - 14, y: y + 7, 'text-anchor': 'end', class: 'tick' }, g); t.textContent = yfmt(v); });
       el('line', { x1: m.l, x2: m.l + pw, y1: m.t + ph, y2: m.t + ph, class: 'base' }, g);
       if (cats) cats.forEach((c, i) => { const t = el('text', { x: sx(i + .5), y: m.t + ph + 32, 'text-anchor': 'middle', class: 'tick' }, g); t.textContent = c; });
-      else { const xt = xs.ticks && Array.isArray(xs.ticks) ? xs.ticks : xs.log ? logTicks(xdom[0], xdom[1]) : nice(xdom[0], xdom[1], xs.ticks || Math.max(3, Math.round(pw / (port ? 120 : 150))));
+      else { const xt = xs.ticks && Array.isArray(xs.ticks) ? xs.ticks : xs.log ? logTicks(xdom[0], xdom[1], Math.max(3, Math.round(pw / 120))) : nice(xdom[0], xdom[1], xs.ticks || Math.max(3, Math.round(pw / (port ? 120 : 150))));
         xt.forEach(v => { const x = sx(v); if (x < m.l - 1 || x > m.l + pw + 1) return; el('line', { x1: x, x2: x, y1: m.t + ph, y2: m.t + ph + 7, class: 'base' }, g);
           const t = el('text', { x, y: m.t + ph + 32, 'text-anchor': 'middle', class: 'tick' }, g); t.textContent = xfmt(v); }); }
       if (ys.label) { const t = el('text', { x: m.l - ytw - 14 > 0 ? m.l - ytw - 6 : 0, y: m.t - 22, class: 'axt' }, g); t.innerHTML = ''; t.textContent = ys.label; }
@@ -151,6 +152,7 @@
 
       const obstacles = []; // boxes labels must avoid: [x0,y0,x1,y1]
       const segs = [];      // drawn polylines (for the audit and label placement)
+      const dense = [];     // dots too many to avoid one by one: labels avoid the cloud as a whole
       const layerS = el('g', {}, svg), layerM = el('g', {}, svg), layerL = el('g', {}, svg);
       const markG = (step, parent) => { const gg = el('g', { class: 'mk', 'data-mstep': step || 0 }, parent); return gg; };
 
@@ -160,7 +162,7 @@
       const labels = []; // {text, ax, ay, pref, color, step, kind}
       const drawMark = (mk, parent) => { const n0 = labels.length; drawMark1(mk, parent); if (mk.place) labels.slice(n0).forEach(lb => lb.pref = [mk.place]); };
       const drawMark1 = (mk, parent) => {
-        const gg = markG(mk.step, parent), c = col(mk.color || (['point', 'area', 'arrow'].includes(mk.kind) ? 'lantern' : 'mist'));
+        const gg = markG(mk.step, parent), c = col(mk.color || (['point', 'area', 'arrow'].includes(mk.kind) ? 'accent' : 'mist'));
         const V = x => L.val(x, scope, `mark ${mk.kind}`);
         switch (mk.kind) {
           case 'vline': { const x = sx(V(mk.x)); el('line', { x1: x, x2: x, y1: m.t + 4, y2: m.t + ph, stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8', 'stroke-linecap': 'round' }, gg);
@@ -184,9 +186,11 @@
             else pts = [mk.from, mk.to].map(p => [sx(V(p[0])), sy(V(p[1]))]);
             if (pts.length < 2) break;
             el('path', { d: 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L'), fill: 'none', stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8', 'stroke-linecap': 'round' }, gg);
-            segs.push(pts); if (mk.label) { const p = pts[Math.round(pts.length * (mk.labelAt ?? .82)) - 1] || pts[pts.length - 1]; labels.push({ text: mk.label, ax: p[0], ay: p[1], pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
+            segs.push(pts); if (mk.label) { const at = f => pts[Math.max(0, Math.min(pts.length - 1, Math.round(pts.length * f) - 1))], f0 = mk.labelAt ?? .82, p = at(f0);
+              const alts = pts.length < 3 ? null : [f0, .15, .25, .35, .45, .55, .65, .75, .85, .95].filter((f, i) => !i || Math.abs(f - f0) > .04).map(f => [...at(f), Math.abs(f - f0) * 2]);
+              labels.push({ text: mk.label, ax: p[0], ay: p[1], alts, own: pts, pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
           case 'point': { const at = mk.at || [mk.x, mk.y], x = sx(V(at[0])), y = sy(V(at[1]));
-            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3, filter: c === col('lantern') ? `url(#${id}-glow)` : null }, gg);
+            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3, filter: c === col('accent') ? `url(#${id}-glow)` : null }, gg);
             obstacles.push([x - 12, y - 12, x + 12, y + 12]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: y, pref: mk.place ? [mk.place] : ['tr', 'tl', 'br', 'bl', 'r', 'l', 't'], step: mk.step, c, lead: true, strong: true }); break; }
           case 'label': { const at = mk.at; labels.push({ text: mk.text || mk.label, ax: sx(V(at[0])), ay: sy(V(at[1])), pref: mk.place ? [mk.place] : ['c'], step: mk.step, c, plain: true }); break; }
           case 'arrow': { const [x1, y1] = [sx(V(mk.from[0])), sy(V(mk.from[1]))], [x2, y2] = [sx(V(mk.to[0])), sy(V(mk.to[1]))];
@@ -233,7 +237,7 @@
               el('path', { d: `M${x},${y0}V${y1 + r}Q${x},${y1} ${x + r},${y1}H${x + bw - r}Q${x + bw},${y1} ${x + bw},${y1 + r}V${y0}Z`, fill: `url(#${gid})`, opacity: s.opacity ?? (s.focus ? 1 : .92) }, gg); }
             obstacles.push([cx - bw / 2, y1, cx + bw / 2, y0]); });
           if (s.highlight != null) { const hv = L.val(s.highlight, scope); const hi = d.find(p => p[0] === hv); if (hi) { const cx = cats ? sx(hi[0] + .5) : sx(hi[0]); const y1 = sy(hi[1]);
-            el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, rx: 8, fill: 'none', stroke: col('lantern'), 'stroke-width': 3 }, gg); } }
+            el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, rx: 8, fill: 'none', stroke: col('accent'), 'stroke-width': 3 }, gg); } }
         } else if (kind === 'hist') {
           const gid = `${id}-hg${si}`, lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
           el('stop', { offset: '0%', 'stop-color': c, 'stop-opacity': .95 }, lg); el('stop', { offset: '100%', 'stop-color': c, 'stop-opacity': .55 }, lg);
@@ -243,7 +247,7 @@
         } else if (kind === 'dots') {
           const many = d.length > 300, r = s.r || (many ? 4.5 : 8);
           d.forEach(p => { const x = sx(p[0]), y = sy(p[1]); if (x < m.l - 2 || x > m.l + pw + 2 || y < m.t - 2 || y > m.t + ph + 2) return;
-            el('circle', { cx: x, cy: y, r, fill: c, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); });
+            el('circle', { cx: x, cy: y, r, fill: c, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); else dense.push([x, y]); });
         }
       });
       over.forEach(mk => drawMark(mk, layerM));
@@ -257,30 +261,37 @@
       labels.sort((a, b) => (b.end ? 1 : 0) - (a.end ? 1 : 0));
       const hitSeg = (b) => segs.some(pts => pts.some((p, i) => i && segBox(pts[i - 1], p, b)));
       const over2 = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+      const leadEnd = (ax, ay, [x0, y0, x1, y1]) => [Math.max(x0, Math.min(x1, ax)), ay < y0 ? y0 : ay > y1 ? y1 : (y0 + y1) / 2];   // where a leader meets its label
+      const cuts = (a, b, own) => segs.some(pts => pts !== own && pts.some((p, i) => i && crossSeg(a, b, pts[i - 1], p)));
       labels.forEach(lb => {
         const text = L.plain(lb.text, scope), w = L.measure(text, 23, lb.strong ? 650 : 600) + (lb.plain ? 4 : 26), h = lb.plain ? 28 : 40, gap = lb.lead ? 26 : 12;
-        const cand = { tr: [lb.ax + gap, lb.ay - gap - h], tl: [lb.ax - gap - w, lb.ay - gap - h], br: [lb.ax + gap, lb.ay + gap], bl: [lb.ax - gap - w, lb.ay + gap],
-          r: [lb.ax + gap, lb.ay - h / 2], l: [lb.ax - gap - w, lb.ay - h / 2], t: [lb.ax - w / 2, lb.ay - gap - h], b: [lb.ax - w / 2, lb.ay + gap], c: [lb.ax - w / 2, lb.ay - h / 2],
-          bc: [lb.ax - w / 2, lb.ay + 8], al: [lb.ax - w, lb.ay - h - 8] };
-        if (lb.end) { for (let dy = 0; dy < 140; dy += 8) for (const sgn of [1, -1]) { const y = lb.ay - h / 2 + sgn * dy; cand['r' + sgn * dy] = [lb.ax + gap, y]; } }
-        const order = lb.end ? Object.keys(cand).filter(k => /^r-?\d/.test(k)) : [...lb.pref, ...['tr', 'tl', 'r', 'l', 't', 'b', 'br', 'bl'].filter(k => !lb.pref.includes(k))];
         let best = null, bestScore = Infinity;
-        for (const k of order) {
-          const [x, y] = cand[k] || cand.tr, box = [x, y, x + w, y + h];
-          let score = lb.end ? order.indexOf(k) * .05 : order.indexOf(k) * .5;
-          if (box[0] < plotBox[0] - (lb.end ? 0 : 2) || box[2] > W - 2 || box[1] < 2 || box[3] > m.t + ph + (lb.end ? 4 : 0)) score += 100;
-          if (placed.some(p => over2(p, box))) score += 60;
-          if (obstacles.some(o => over2(o, box))) score += 14;
-          if (hitSeg(box)) score += 10;
-          if (score < bestScore) { bestScore = score; best = { box, k }; }
-          if (score < 1) break;
-        }
-        const [x0, y0, x1, y1] = best.box; placed.push(best.box);
+        (lb.alts || [[lb.ax, lb.ay, 0]]).forEach(([ax, ay, away]) => {   // away: cost of sliding off the preferred anchor
+          if (bestScore < 1) return;
+          const cand = { tr: [ax + gap, ay - gap - h], tl: [ax - gap - w, ay - gap - h], br: [ax + gap, ay + gap], bl: [ax - gap - w, ay + gap],
+            r: [ax + gap, ay - h / 2], l: [ax - gap - w, ay - h / 2], t: [ax - w / 2, ay - gap - h], b: [ax - w / 2, ay + gap], c: [ax - w / 2, ay - h / 2],
+            bc: [ax - w / 2, ay + 8], al: [ax - w, ay - h - 8] };
+          if (lb.end) { for (let dy = 0; dy < 140; dy += 8) for (const sgn of [1, -1]) { const y = ay - h / 2 + sgn * dy; cand['r' + sgn * dy] = [ax + gap, y]; } }
+          const order = lb.end ? Object.keys(cand).filter(k => /^r-?\d/.test(k)) : [...lb.pref, ...['tr', 'tl', 'r', 'l', 't', 'b', 'br', 'bl'].filter(k => !lb.pref.includes(k))];
+          for (const k of order) {
+            const [x, y] = cand[k] || cand.tr, box = [x, y, x + w, y + h];
+            let score = (lb.end ? order.indexOf(k) * .05 : order.indexOf(k) * .5) + away;
+            if (box[0] < plotBox[0] - (lb.end ? 0 : 2) || box[2] > W - 2 || box[1] < 2 || box[3] > m.t + ph + (lb.end ? 4 : 0)) score += 100;
+            if (placed.some(p => over2(p, box))) score += 60;
+            if (obstacles.some(o => over2(o, box))) score += 14;
+            if (hitSeg(box)) score += 10;
+            if (dense.length) { let n = 0; for (const p of dense) if (p[0] > box[0] && p[0] < box[2] && p[1] > box[1] && p[1] < box[3]) n++; score += Math.min(16, n * .5); }
+            if (lb.lead && k !== 'c' && cuts([ax, ay], leadEnd(ax, ay, box), lb.own)) score += 8;
+            if (score < bestScore) { bestScore = score; best = { box, k, ax, ay }; }
+            if (score < 1) break;
+          }
+        });
+        const [x0, y0, x1, y1] = best.box, { ax, ay } = best; placed.push(best.box);
         const gg = markG(lb.step, layerL);
-        if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - lb.ay) > 10) el('line', { x1: lb.ax - 4, y1: lb.ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
-        if (lb.lead && best.k !== 'c') { const tx = Math.max(x0, Math.min(x1, lb.ax)), ty = lb.ay < y0 ? y0 : lb.ay > y1 ? y1 : (y0 + y1) / 2;
-          el('line', { x1: lb.ax, y1: lb.ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
-        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(14,22,72,.82)', stroke: 'rgba(255,255,255,.22)', 'stroke-width': 1.2 }, gg);
+        if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - ay) > 10) el('line', { x1: ax - 4, y1: ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
+        if (lb.lead && best.k !== 'c') { const [tx, ty] = leadEnd(ax, ay, best.box);
+          el('line', { x1: ax, y1: ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
+        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(20,17,15,.84)', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 1.2 }, gg);
         if (!lb.plain) el('circle', { cx: x0 + 14, cy: (y0 + y1) / 2, r: 0 }, gg);
         const t = el('text', { x: lb.plain ? x0 + 2 : (x0 + x1) / 2, y: (y0 + y1) / 2 + 8, 'text-anchor': lb.plain ? 'start' : 'middle', class: 'lbl' + (lb.end ? ' dim' : ''), 'data-lbl': 1 }, gg);
         t.textContent = text;
@@ -351,12 +362,13 @@
   };
 
   // segment-box intersection
+  // do segments a–b and c–d cross?
+  function crossSeg(a, bb, c, d) { const den = (bb[0] - a[0]) * (d[1] - c[1]) - (bb[1] - a[1]) * (d[0] - c[0]); if (!den) return false;
+    const u = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den, v = ((c[0] - a[0]) * (bb[1] - a[1]) - (c[1] - a[1]) * (bb[0] - a[0])) / den; return u > 0 && u < 1 && v > 0 && v < 1; }
   function segBox(p, q, b) {
     const [x0, y0, x1, y1] = b, inside = (x, y) => x > x0 && x < x1 && y > y0 && y < y1;
     if (inside(p[0], p[1]) || inside(q[0], q[1])) return true;
-    const cr = (a, bb, c, d) => { const den = (bb[0] - a[0]) * (d[1] - c[1]) - (bb[1] - a[1]) * (d[0] - c[0]); if (!den) return false;
-      const u = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den, v = ((c[0] - a[0]) * (bb[1] - a[1]) - (c[1] - a[1]) * (bb[0] - a[0])) / den; return u > 0 && u < 1 && v > 0 && v < 1; };
     const c = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-    return [0, 1, 2, 3].some(i => cr(p, q, c[i], c[(i + 1) % 4]));
+    return [0, 1, 2, 3].some(i => crossSeg(p, q, c[i], c[(i + 1) % 4]));
   }
 })();

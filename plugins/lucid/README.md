@@ -1,6 +1,6 @@
 # Lucid: learning decks that explain, not just show
 
-A Claude Code plugin that turns "teach me X" into a slide deck you can follow from the basics to the advanced part, in a moonlit Liquid Glass style that works on a laptop and a phone.
+A Claude Code plugin that turns "teach me X" into a slide deck you can follow from the basics to the advanced part, in an ember Liquid Glass style (clear glass over a black-to-orange glow) that works on a laptop and a phone.
 
 It was built from three problems with long generated lessons:
 1. **Style drift.** Long outputs forget the template. In Lucid the model never writes HTML, CSS or SVG. It writes content in `deck.yaml`, and one fixed kit draws every slide, so the look cannot drift.
@@ -28,7 +28,9 @@ Other agent harnesses (Codex, Cursor, Gemini CLI): link `plugins/lucid/skills/de
 Visuals: charts (line, area, bars, histogram, dots, lollipop, step; marks for lines, bands, spans, points, tail areas, arrows; sliders), stat, unit grids, flows, code, formulas, images.
 
 ## The look
-Sampled from a night-sky wallpaper: navy `#060c36` to royal indigo `#203699`, periwinkle, moonlight `#e4ebfa`, blossom violet, and one warm lantern amber (`#ffc46b`) kept for "what matters now". Cards are glass: blur, a rim highlight, a top sheen and soft depth, over a drifting moon and soft bokeh. Data sits on darker "plates", the way Apple dims clear glass over busy content. The series colours (teal `#1ba995`, blossom `#b85cbc`, periwinkle `#568ef9`) pass a colour-blind check on the plate (CVD ΔE 8.8, normal-vision ΔE 18.4, all pairs). Build steps "materialize" from blur instead of fading.
+Black at the top and an ember-orange glow rising from the bottom, with soft silk folds, a few sparks and film grain: the gradient idea of an iPhone wallpaper, in the black-and-orange palette of proff-viz. There is no moon. Cards are clear glass: light blur, a bright rim from the top left, a warm rim from the bottom right and a top sheen, so the glow shows through. Charts and tables sit on smoked "plates" (more blur and a 46% warm-black tint), the way Apple dims clear glass over busy content. Text carries a faint dark halo so it stays readable where the glass is bright; the browser check measures this on the real pixels.
+
+One accent, ember orange `#ff5a36`, marks what matters now, and amber `#ffb27f` marks labels. The series colours (teal `#22aa8a`, sky `#4992f2`, violet `#9353b7`) pass a colour-blind check on the plate for all pairs (CVD ΔE 10.5, normal-vision ΔE 18.0, at least 3:1), and adding the accent does not lower the worst pair, so a series never looks like the accent. Build steps "materialize" from blur instead of fading.
 
 ## Files
 ```

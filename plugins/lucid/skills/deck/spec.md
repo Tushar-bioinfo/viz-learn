@@ -128,7 +128,7 @@ chart:
 controls:                                                  # on the slide; names become variables
   - {name: alpha, label: 'wobble α', min: 0, max: 1, step: 0.05, value: 0.4}
 ```
-Series kinds are `line`, `area`, `bars`, `hist`, `dots`, `lollipop` and `step`. Colours are given by `focus: true` (lantern: the thing that matters now), by order (`s1` teal, `s2` blossom, `s3` periwinkle), or by `color: mist` for context. Every series and mark can have `step`. Readers get a `data` button (a table view) and a hover readout without you adding anything.
+Series kinds are `line`, `area`, `bars`, `hist`, `dots`, `lollipop` and `step`. Colours are given by `focus: true` (the orange accent: the thing that matters now), by order (`s1` teal, `s2` sky blue, `s3` violet), or by `color: mist` for context. Every series and mark can have `step`. Readers get a `data` button (a table view) and a hover readout without you adding anything.
 
 ## Expressions (in derive, expr, fn, marks, {{…}})
 Operators `+ - * / ^`, comparisons give 1/0, `[a, b]` lists, and maths on lists works element by element.
@@ -155,5 +155,6 @@ Operators `+ - * / ^`, comparisons give 1/0, `[a, b]` lists, and maths on lists 
 | `content was shrunk to N%` | cut words, drop a point, or split the slide |
 | `text overlaps` / `chart labels overlap` | shorten labels, change a mark's `step`, or set `place: tl/tr/bl/br/t/b/l/r` on the mark |
 | `runs into the navigation bar` | too much content: same fix as shrunk |
+| `spills out of its card` | too much for the card: same fix as shrunk; a long name label under a number counts too, so give that symbol a `short:` |
 | `low contrast` | usually text over a bright spot: move it onto a card, or cut it |
 | `could not compute {{…}}` / `unknown name` | define the name in `data`, `derive`, `symbols` (with a value) or `controls` |
