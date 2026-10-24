@@ -1,0 +1,22 @@
+# Learner profile for Lucid decks. Copy to ~/.lucid/learner.yaml (or $LUCID_HOME/learner.yaml) and edit.
+# The skill reads it before the probe, so it never asks what this file already answers, and adds to it after each deck.
+
+style: simple English, short sentences, define each term once
+goal: intuition+hand            # default goal: intuition | intuition+hand | papers | code
+length: standard                # quick | standard | deep
+
+anchors:                        # worlds to borrow analogies from, strongest first
+  - a sport you follow (averages, form, rates)
+  - your own lab or coding work
+  - money (prices, returns)
+
+knows:                          # concept: 0 new · 1 heard of it · 2 can use it · 3 can teach it
+  mean: 3
+  variance: 2
+  p-value: 1
+
+confusions:                     # what tripped you up before; decks steer around these
+  - tables full of numbers with no formula
+  - symbols used before they are explained
+
+history: []                     # one line per deck: {date, topic, probe, note}

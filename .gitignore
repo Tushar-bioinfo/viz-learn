@@ -1,2 +1,4 @@
 outputs/*
 data/*
+**/snaps/
+__pycache__/

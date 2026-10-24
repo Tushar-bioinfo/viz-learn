@@ -1,0 +1,224 @@
+# Gallery: one of every slide type and visual. It is the regression test for the kit, not a lesson to copy.
+title: Counts per million
+subtitle: Every Lucid slide type, on one small idea
+kicker: Lucid gallery
+question: Two samples, different depths. How do we compare a gene across them?
+answer: Divide each count by its sample's total reads and scale to a million (CPM), then compare those rates.
+chapters: [Raw counts, The fix, Check it]
+
+learner:
+  goal: intuition+hand
+  knows: [count, fraction]
+  anchors: [cricket]
+
+ladder:
+  depth: sequencing depth (library size)
+  share: a gene's share of the sample
+  cpm: counts per million
+
+data:
+  libA: 2000000
+  libB: 1000000
+  xA: 200
+  xB: 100
+  genes:
+    - {gene: GeneA, x: 120, N: 1000}
+    - {gene: GeneB, x: 30, N: 1000}
+    - {gene: GeneC, x: 850, N: 1000}
+
+derive:
+  cpmA: xA / libA * 1e6
+  cpmB: xB / libB * 1e6
+
+symbols:
+  x: {tex: x, says: reads on the gene}
+  N: {tex: N, says: reads in the whole sample}
+  p: {tex: p, says: the gene's share of all reads}
+  cpm: {tex: '\mathrm{CPM}', says: reads per million reads}
+  xA: {tex: 'x_A', says: reads on the gene in A}
+  libA: {tex: 'N_A', says: reads in sample A}
+  lam: {tex: '\lambda', says: expected reads (a rate)}
+  k: {tex: k, says: reads we actually see}
+
+abbr: {CPM: counts per million, SD: standard deviation, FASTQ: the raw read file format, TMM: trimmed mean of M-values}
+
+slides:
+  - type: title
+
+  - type: predict
+    q: Sample A was sequenced twice as deep as B. A gene has 200 reads in A and 100 in B. Is it higher in A?
+    options:
+      - Yes, about 2× higher
+      - No, it is the same
+      - Can't tell from counts alone
+    answer: 1
+    why: A has twice the reads overall, so every gene gets about twice the reads. Per million reads, both are **{{cpmA|0}}**.
+
+  - type: chapter
+    title: Raw counts
+    q: Why can't we compare the counts as they are?
+
+  - type: idea
+    chapter: Raw counts
+    introduces: [depth]
+    lead: Start with what the sequencer gives us.
+    title: Deeper samples give every gene more reads
+    points:
+      - Sample A has **{{libA/1e6|0}} million** reads, B has **{{libB/1e6|0}} million**.
+      - The same gene shows {{xA}} reads in A and {{xB}} in B.
+      - The gap comes from depth, not biology.
+    visual:
+      chart:
+        x: {cats: [Sample A, Sample B], label: sample}
+        y: {label: reads (millions), min: 0, max: 2.5}
+        series:
+          - {name: library size, kind: bars, x: '[0, 1]', y: '[libA/1e6, libB/1e6]', focus: true}
+        marks:
+          - {kind: label, at: [0, 2.25], text: '2× deeper', step: 2}
+      caption: Sample A's bar is twice as tall.
+
+  - type: bridge
+    lead: You have seen this problem in cricket.
+    title: Raw counts are like run totals
+    from: Cricket
+    to: Sequencing
+    pairs:
+      - [runs scored, reads on a gene]
+      - [overs faced, reads in the sample]
+      - [run rate, CPM (counts per million)]
+    breaks: A run rate is per over; CPM is per million reads. Neither tells you about one ball or one molecule.
+
+  - type: chapter
+    title: The fix
+
+  - type: equation
+    chapter: The fix
+    introduces: [cpm, share]
+    lead: So divide by the depth, then scale to a million.
+    title: CPM puts every sample on one scale
+    lhs: cpm
+    expr: x / N * 1e6
+    read: reads on the gene, out of all reads, times a million
+    terms:
+      x: {value: xA}
+      N: {value: libA}
+    code: cpm = x / N * 1e6
+    note: The same gene now reads {{cpmA|0}} in both samples.
+
+  - type: calc
+    lead: Work it once by hand.
+    title: Two steps turn reads into CPM
+    lines:
+      - {say: Find the gene's share of the sample, expr: xA / libA, name: p}
+      - {say: Scale the share to a million reads, expr: p * 1e6, name: cpm}
+
+  - type: table
+    lead: Every gene follows the same recipe.
+    title: Each new column is one step of the recipe
+    rows:
+      - {gene: GeneA, x: 120, N: 1000}
+      - {gene: GeneB, x: 30, N: 1000}
+      - {gene: GeneC, x: 850, N: 1000}
+    cols:
+      - {key: gene, label: gene}
+      - {key: x, label: reads}
+      - {key: N, label: library}
+      - {key: p, label: share, expr: x / N, fmt: 3, says: the gene's share of all reads}
+      - {key: cpm, label: CPM, expr: p * 1e6, fmt: ',', says: reads per million reads}
+    focus: 0
+
+  - type: statement
+    text: A count means nothing until you know ==how many reads== it came from.
+    sub: Divide first, compare second.
+
+  - type: idea
+    chapter: Check it
+    lead: But counts also wobble by chance.
+    title: Even a fixed rate gives counts that wobble
+    points:
+      - Move the rate. The spread grows with it.
+      - The shaded tail is the chance of 30 or more reads.
+    controls:
+      - {name: lam, label: 'rate λ', min: 5, max: 40, step: 1, value: 20}
+    derive:
+      tail: 1 - poisCdf(29, lam)
+    visual:
+      chart:
+        x: {label: reads seen (k), min: 0, max: 60}
+        y: {label: probability, min: 0, max: 0.2}
+        series:
+          - {name: Poisson, kind: bars, fn: 'poisPmf(x, lam)', color: mist}
+          - {name: normal guide, kind: line, fn: 'normPdf(x, lam, sqrt(lam))', step: 2, focus: true}
+        marks:
+          - {kind: vline, x: lam, label: 'mean {{lam}}', step: 1}
+          - {kind: span, x: ['lam - sqrt(lam)', 'lam + sqrt(lam)'], y: 0.17, label: '±1 SD = ±{{sqrt(lam)|1}}', step: 3}
+          - {kind: area, fn: 'normPdf(x, lam, sqrt(lam))', x: [30, 60], label: 'P(k ≥ 30) = {{tail|%1}}', step: 4}
+      caption: The spread is about the square root of the mean.
+
+  - type: compare
+    lead: So which number should you compare?
+    title: Raw counts mislead; CPM does not
+    a:
+      title: Raw counts
+      tone: bad
+      verdict: misleads
+      visual: {stat: {value: '2×', label: 'A looks higher', sub: '{{xA}} vs {{xB}} reads'}}
+    b:
+      title: CPM
+      tone: good
+      verdict: fair
+      visual: {stat: {value: '1×', label: 'the same level', sub: '{{cpmA|0}} vs {{cpmB|0}} CPM'}}
+    verdict: Compare **rates**, not raw totals, whenever the totals differ.
+
+  - type: idea
+    lead: Picture one million reads.
+    title: A gene at 100 CPM owns 1 read in 10,000
+    visual:
+      units: {n: 100, hi: 1, label: 'Each dot is **10,000** reads; the lit dot is this gene'}
+      caption: One lit dot out of a hundred.
+
+  - type: idea
+    lead: Where CPM sits in the pipeline.
+    title: CPM comes after counting, before testing
+    visual:
+      flow:
+        nodes: [{label: reads, sub: FASTQ files}, {label: counts, sub: per gene}, {label: CPM, sub: per million}, {label: test, sub: groups compared}]
+        verbs: [align, divide, compare]
+        focus: 2
+        build: true
+      caption: The lit box is this deck.
+
+  - type: idea
+    title: In code it is one line
+    points:
+      - '`x` is the gene counts; `N` is each sample total.'
+      - Dividing by `N` handles all samples at once.
+    visual:
+      code: "import numpy as np\ncpm = x / N * 1e6   # every gene, every sample"
+      terms: {x: s1, N: s2}
+
+  - type: equation
+    title: The chance of k reads at rate λ
+    tex: 'P(k) = \dfrac{[lam]^{[k]} e^{-[lam]}}{[k]!}'
+    read: rate to the power k, times e to the minus rate, over k factorial
+    plug: 'P(25) = \dfrac{20^{25} e^{-20}}{25!} = {{poisPmf(25, 20)|3}}'
+
+  - type: quiz
+    cards:
+      - {q: 'What does CPM divide by?', a: 'The total reads in that sample (the library size).'}
+      - {q: 'Why multiply by a million?', a: 'So the numbers are easy to read, like "120 per million".', tag: reversed}
+      - {q: 'Two samples have the same CPM for a gene. Same raw counts?', a: 'Not if their depths differ. Equal CPM means an equal **share**.', tag: edge case}
+
+  - type: recap
+    answer: Divide each count by its sample's total reads, then scale to a million. Compare those rates, never raw counts.
+    points: [Depth differs between samples., CPM removes depth., Counts still wobble about √mean.]
+    breaks: [A few huge genes can skew CPM (composition)., CPM does not fix gene length.]
+    next: [TMM and median-ratio scaling, Why counts get logged]
+
+  - type: map
+    center: CPM
+    links:
+      - {to: run rate, how: same idea in cricket, kind: analogy}
+      - {to: library size, how: the number we divide by, kind: prereq}
+      - {to: TPM, how: also divides by gene length, kind: sibling}
+      - {to: DESeq2 size factors, how: a robust version, kind: next}
