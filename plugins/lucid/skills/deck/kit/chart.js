@@ -89,8 +89,6 @@
       svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': spec.alt || spec.title || 'chart' });
       wrap.insertBefore(svg, tip);
       const defs = el('defs', {}, svg);
-      const glow = el('filter', { id: `${id}-glow`, x: '-20%', y: '-40%', width: '140%', height: '180%' }, defs);
-      el('feGaussianBlur', { stdDeviation: 5, result: 'b' }, glow); const fm = el('feMerge', {}, glow); el('feMergeNode', { in: 'b' }, fm); el('feMergeNode', { in: 'SourceGraphic' }, fm);
 
       // domains
       const xs = spec.x || {}, ys = spec.y || {};
@@ -190,7 +188,7 @@
               const alts = pts.length < 3 ? null : [f0, .15, .25, .35, .45, .55, .65, .75, .85, .95].filter((f, i) => !i || Math.abs(f - f0) > .04).map(f => [...at(f), Math.abs(f - f0) * 2]);
               labels.push({ text: mk.label, ax: p[0], ay: p[1], alts, own: pts, pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
           case 'point': { const at = mk.at || [mk.x, mk.y], x = sx(V(at[0])), y = sy(V(at[1]));
-            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3, filter: c === col('accent') ? `url(#${id}-glow)` : null }, gg);
+            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3 }, gg);
             obstacles.push([x - 12, y - 12, x + 12, y + 12]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: y, pref: mk.place ? [mk.place] : ['tr', 'tl', 'br', 'bl', 'r', 'l', 't'], step: mk.step, c, lead: true, strong: true }); break; }
           case 'label': { const at = mk.at; labels.push({ text: mk.text || mk.label, ax: sx(V(at[0])), ay: sy(V(at[1])), pref: mk.place ? [mk.place] : ['c'], step: mk.step, c, plain: true }); break; }
           case 'arrow': { const [x1, y1] = [sx(V(mk.from[0])), sy(V(mk.from[1]))], [x2, y2] = [sx(V(mk.to[0])), sy(V(mk.to[1]))];
@@ -222,7 +220,7 @@
             el('stop', { offset: '0%', 'stop-color': c, 'stop-opacity': .34 }, lg); el('stop', { offset: '100%', 'stop-color': c, 'stop-opacity': .03 }, lg);
             el('path', { d: path + `L${clipped[clipped.length - 1][0]},${m.t + ph}L${clipped[0][0]},${m.t + ph}Z`, fill: `url(#${gid})` }, gg);
           }
-          el('path', { d: path, fill: 'none', stroke: c, 'stroke-width': s.width || (s.focus ? 4 : 3.5), 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': s.dash ? '10 9' : null, filter: s.focus ? `url(#${id}-glow)` : null, opacity: s.opacity }, gg);
+          el('path', { d: path, fill: 'none', stroke: c, 'stroke-width': s.width || (s.focus ? 4 : 3.5), 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': s.dash ? '10 9' : null, opacity: s.opacity }, gg);
           segs.push(clipped);
           if (endLabels.includes(s) && clipped.length) { const p = clipped[clipped.length - 1]; labels.push({ text: s.label || s.name, ax: p[0] + 6, ay: p[1], pref: ['r'], step: s.step, c, end: true, plain: true }); }
         } else if (kind === 'bars' || kind === 'lollipop') {

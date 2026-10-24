@@ -28,7 +28,7 @@ Other agent harnesses (Codex, Cursor, Gemini CLI): link `plugins/lucid/skills/de
 Visuals: charts (line, area, bars, histogram, dots, lollipop, step; marks for lines, bands, spans, points, tail areas, arrows; sliders), parts bars, stat, unit grids, flows, code, formulas, images.
 
 ## The look
-The palette is proff-viz v5 "mono": a near-black page, grey glass, and orange (`#ff5a36`) only for the slide headline and the one thing that matters now. No orange background. Cards are clear glass over soft grey silk: light blur, a bright rim from the top left and a top sheen, so the glass reads as glass even on black. Charts and tables sit on smoked "plates", the way Apple dims clear glass over busy content. One card per slide may carry an orange tint: the answer.
+The palette is proff-viz v5 "mono", and the page is plain black: no wallpaper, glow or grain behind the content, and nothing moves between slides, so the eye stays on what you are studying. Cards are grey glass panes with a lit rim (bright at the top left) and a soft sheen; charts and tables sit on slightly darker "plates". Orange (`#ff5a36`) marks only the slide headline and the one thing that matters now, and one card per slide may carry an orange tint: the answer.
 
 Grey carries context. The series colours are proff's blue `#7fb0ff` and teal `#5fdcc4`, plus pink `#cb85ae`; they pass a colour-blind check against each other and against the orange (see `docs/design.md`). Build steps "materialize" from blur instead of fading.
 

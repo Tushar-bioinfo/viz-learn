@@ -6,7 +6,7 @@ Usage: check.py deck.html [--out DIR] [--only desktop|phone] [--slides 3,5-7] [-
 For every slide and every build step it reports text that overlaps, leaves the slide, hides under the
 navigation, renders too small, or overflows its box; formula and expression errors; charts that did not draw.
 It moves every slider to both ends, opens every predict answer, and measures text contrast on the real
-pixels (glass over a moving wallpaper is where legibility fails). Contact sheets: <out>/desktop.png, <out>/phone.png.
+pixels (tinted glass and chart labels are where legibility fails). Contact sheets: <out>/desktop.png, <out>/phone.png.
 Exit 0 = clean, 1 = warnings, 2 = could not run (say "not checked").
 --vendor DIR serves cdnjs and Google Fonts files from DIR (offline machines): DIR/katex/katex.min.js etc.
 """

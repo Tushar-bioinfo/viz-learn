@@ -1,5 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#091450"><title>Counts per million</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css"><script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script><style>/* Lucid: Liquid Glass theme for learning decks, in the proff-viz mono palette.
-   Black and greys carry everything; orange marks the slide headline and what matters now, never the background.
+   A plain black page with nothing behind the content; grey glass panes carry it. Orange marks the slide headline
+   and what matters now, never the background.
    Every colour is a token. Authors never edit this file: decks only carry content.
    Stage: 1600 x 900 (landscape) or 720 x 1280 (portrait), scaled to the screen. Sizes below are stage px. */
 
@@ -43,19 +44,6 @@ i, em { font-style: italic; }
 code { font-family: var(--f-mono); font-size: .86em; padding: .06em .32em; border-radius: 8px; background: rgba(255, 255, 255, .09); }
 mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: .13em; text-underline-offset: .2em; text-decoration-skip-ink: none; }
 
-/* ---------- wallpaper: black, with soft grey silk for the glass to catch. No colour: orange belongs to the content ---------- */
-#wall { position: fixed; inset: 0; overflow: hidden; z-index: 0;
-  background: radial-gradient(120% 70% at 50% -12%, rgba(255, 255, 255, .045), transparent 62%),
-    linear-gradient(180deg, #0e0f11 0%, #0b0c0e 48%, #08090a 100%); }
-#wall .ribbons { position: absolute; inset: -8%; width: 116%; height: 116%; transition: transform 2s var(--ease); will-change: transform; }
-#wall .orb { position: absolute; border-radius: 50%; transition: transform 2s var(--ease); will-change: transform; }
-#wall .o1 { width: 60vmax; height: 60vmax; left: -18vmax; bottom: -26vmax; background: radial-gradient(circle, rgba(255, 255, 255, .055) 0%, transparent 62%); }
-#wall .o2 { width: 44vmax; height: 44vmax; right: -14vmax; top: 14vmax; background: radial-gradient(circle, rgba(255, 255, 255, .04) 0%, transparent 64%); }
-#wall .o3 { width: 150vmax; height: 34vmax; left: -10vmax; top: -24vmax; background: radial-gradient(closest-side, rgba(255, 255, 255, .035), transparent); }
-#wall .o4 { width: 24vmax; height: 24vmax; left: 34vmax; top: 30vmax; background: radial-gradient(circle, rgba(255, 255, 255, .03) 0%, transparent 66%); }
-#wall .grain { position: absolute; inset: 0; opacity: .08; mix-blend-mode: overlay; background-repeat: repeat; background-size: 220px 220px; pointer-events: none; }
-#wall .vignette { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 40%, transparent 55%, rgba(0, 0, 0, .6) 100%); }
-
 /* ---------- stage ---------- */
 #viewport { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
 #stage { position: absolute; left: 50%; top: 50%; width: 1600px; height: 900px; transform-origin: center center; transform: translate(-50%, -50%); }
@@ -64,19 +52,17 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .slide.on { display: flex; }
 .port .slide { --pad-x: 40px; --pad-top: 116px; --pad-bot: 132px; gap: 24px; }
 
-/* ---------- glass: clear, lit at the rim ----------
-   Liquid Glass reads as glass because of its edge: a bright specular line where light enters (top left), a fainter one
-   where it leaves (bottom right), light caught inside the rim, and the world behind showing through, only softened. */
+/* ---------- glass: grey panes on a plain black page, lit at the rim ----------
+   Nothing moves behind the content, so the panes are solid; the glass is in the edge: a bright specular line where
+   light enters (top left), a fainter one where it leaves (bottom right) and a soft sheen at the top. */
 .g { position: relative; border-radius: var(--r-lg); isolation: isolate;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .10) 0%, rgba(255, 255, 255, .035) 38%, rgba(255, 255, 255, .015) 62%, rgba(255, 255, 255, .05) 100%),
-    rgba(24, 25, 27, .34);
-  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .075) 0%, rgba(255, 255, 255, .025) 38%, rgba(255, 255, 255, .01) 62%, rgba(255, 255, 255, .035) 100%), #141517;
   box-shadow:
-    inset 1.5px 1.5px 1px -.5px rgba(255, 255, 255, .55),
-    inset -1.5px -1.5px 1px -.5px rgba(255, 255, 255, .16),
-    inset 0 0 0 1px rgba(255, 255, 255, .07),
-    inset 0 16px 30px -18px rgba(255, 255, 255, .14),
-    0 22px 60px -14px rgba(0, 0, 0, .75), 0 6px 16px -6px rgba(0, 0, 0, .55); }
+    inset 1.5px 1.5px 1px -.5px rgba(255, 255, 255, .45),
+    inset -1.5px -1.5px 1px -.5px rgba(255, 255, 255, .12),
+    inset 0 0 0 1px rgba(255, 255, 255, .06),
+    inset 0 16px 30px -18px rgba(255, 255, 255, .1),
+    0 20px 50px -16px rgba(0, 0, 0, .8); }
 .g::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
   background: linear-gradient(135deg, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .16) 22%, rgba(255, 255, 255, .02) 48%, rgba(255, 255, 255, .08) 76%, rgba(255, 255, 255, .34) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
@@ -84,14 +70,13 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
   background: linear-gradient(165deg, rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, .02) 18%, transparent 34%),
     radial-gradient(90% 60% at 12% -8%, rgba(255, 255, 255, .09), transparent 55%); }
 /* plate: the same glass, smoked, under data (charts, tables, formulas) so lines and numbers stay crisp */
-.g.plate { background: linear-gradient(160deg, rgba(255, 255, 255, .06) 0%, rgba(255, 255, 255, .012) 40%, rgba(255, 255, 255, .025) 100%), rgba(20, 21, 23, .58);
-  -webkit-backdrop-filter: blur(24px) saturate(130%); backdrop-filter: blur(24px) saturate(130%); }
+.g.plate { background: linear-gradient(160deg, rgba(255, 255, 255, .05) 0%, rgba(255, 255, 255, .01) 40%, rgba(255, 255, 255, .02) 100%), #121315; }
 /* warm: glass with an orange tint, for the one card that holds the answer */
-.g.warm { background: linear-gradient(135deg, rgba(255, 90, 54, .14) 0%, rgba(255, 90, 54, .045) 45%, rgba(255, 178, 127, .05) 100%), rgba(26, 23, 22, .42); }
+.g.warm { background: linear-gradient(135deg, rgba(255, 90, 54, .13) 0%, rgba(255, 90, 54, .04) 45%, rgba(255, 178, 127, .04) 100%), #161413; }
 .g.warm::before { background: linear-gradient(135deg, rgba(255, 196, 160, .8) 0%, rgba(255, 140, 100, .2) 24%, rgba(255, 255, 255, .02) 50%, rgba(255, 255, 255, .08) 76%, rgba(255, 210, 180, .36) 100%); }
 .g.coolbad::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 111, 134, .12), transparent 55%); }
 /* never glass on glass: a card inside a card is a quiet inset, not another pane */
-.g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi) { background: rgba(255, 255, 255, .05); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .05); }
+.g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi) { background: rgba(255, 255, 255, .05); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .05); }
 .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::before, .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::after { display: none; }
 .g .vis.g { background: transparent; box-shadow: none; padding: 0; }
 .g.thin { border-radius: var(--r-md); }
@@ -189,7 +174,8 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 /* more sheet: detail the slide does not need on its face (said aloud, code, extra notes) */
 .sheet { position: absolute; left: 50%; top: 110px; width: min(1100px, calc(100% - 2 * var(--pad-x))); max-height: calc(100% - 240px); overflow: auto;
   transform: translate(-50%, -30px); opacity: 0; pointer-events: none; transition: all .45s var(--spring); padding: 34px 42px; z-index: 30;
-  background: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), rgba(20, 21, 23, .9); }
+  background: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), rgba(20, 21, 23, .9);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
 .sheet.open { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
 .sheet .eyebrow { margin-bottom: 12px; }
 .sheetbody { display: flex; flex-direction: column; gap: 18px; }
@@ -494,16 +480,9 @@ table.t .now { color: var(--accent) !important; }
 .port .mapw .mn.center { max-width: none; }
 .port .mapw svg { display: none; }
 
-/* ---------- vibrancy: text on clear glass carries a faint dark halo, so it holds when brighter light passes behind ---------- */
-.g, .g *, .lead, .h1, .head .eyebrow { text-shadow: 0 1px 2px rgba(0, 0, 0, .4); }
-/* chips with dark text on a solid colour carry no halo (a dark halo around dark text reads as mud) */
-.g .fx, .g .cline .num, .g .opt .ol, .compare .tone i, .bridge .breaks .bi, .s-title .qmark, .opt.right .ol, .opt.wrong .ol { text-shadow: none; }
-
 /* ---------- accessibility preferences ---------- */
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } #wall .orb, #wall .ribbons { transition: none !important; } }
-@media (prefers-reduced-transparency: reduce) { .g { background: rgba(26, 27, 29, .96) !important; } .g.plate { background: rgba(21, 22, 24, .97) !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 @media (prefers-contrast: more) { .g::before { background: rgba(255, 255, 255, .8); } :root { --mist: #dddbd5; --haze: #c4c2bc; } }
-@media print { #wall .orb { display: none; } }
 </style></head><body><script type="application/json" id="lucid-deck">{"title": "Counts per million", "subtitle": "Every Lucid slide type, on one small idea", "kicker": "Lucid gallery", "question": "Two samples, different depths. How do we compare a gene across them?", "answer": "Divide each count by its sample's total reads and scale to a million (CPM), then compare those rates.", "chapters": ["Raw counts", "The fix", "Check it"], "learner": {"goal": "intuition+hand", "knows": ["count", "fraction"], "anchors": ["cricket"]}, "ladder": {"depth": "sequencing depth (library size)", "share": "a gene's share of the sample", "cpm": "counts per million"}, "data": {"libA": 2000000, "libB": 1000000, "xA": 200, "xB": 100, "genes": [{"gene": "GeneA", "x": 120, "N": 1000}, {"gene": "GeneB", "x": 30, "N": 1000}, {"gene": "GeneC", "x": 850, "N": 1000}]}, "derive": {"cpmA": "xA / libA * 1e6", "cpmB": "xB / libB * 1e6"}, "symbols": {"x": {"tex": "x", "says": "reads on the gene"}, "N": {"tex": "N", "says": "reads in the whole sample"}, "p": {"tex": "p", "says": "the gene's share of all reads"}, "cpm": {"tex": "\\mathrm{CPM}", "says": "reads per million reads"}, "xA": {"tex": "x_A", "says": "reads on the gene in A"}, "libA": {"tex": "N_A", "says": "reads in sample A"}, "lam": {"tex": "\\lambda", "says": "expected reads (a rate)"}, "k": {"tex": "k", "says": "reads we actually see"}}, "abbr": {"CPM": "counts per million", "SD": "standard deviation", "FASTQ": "the raw read file format", "TMM": "trimmed mean of M-values"}, "slides": [{"type": "title"}, {"type": "predict", "q": "Sample A was sequenced twice as deep as B. A gene has 200 reads in A and 100 in B. Is it higher in A?", "options": ["Yes, about 2× higher", "No, it is the same", "Can't tell from counts alone"], "answer": 1, "why": "A has twice the reads overall, so every gene gets about twice the reads. Per million reads, both are **{{cpmA|0}}**."}, {"type": "chapter", "title": "Raw counts", "q": "Why can't we compare the counts as they are?"}, {"type": "idea", "chapter": "Raw counts", "introduces": ["depth"], "lead": "Start with what the sequencer gives us.", "title": "Deeper samples give every gene more reads", "points": ["The same gene: {{xA}} reads in A, {{xB}} in B.", "The gap comes from depth, not biology."], "visual": {"chart": {"x": {"cats": ["Sample A", "Sample B"], "label": "sample"}, "y": {"label": "reads (millions)", "min": 0, "max": 2.5}, "series": [{"name": "library size", "kind": "bars", "x": "[0, 1]", "y": "[libA/1e6, libB/1e6]", "focus": true}], "marks": [{"kind": "label", "at": [0, 2.25], "text": "2× deeper", "step": 2}]}, "caption": "Sample A's bar is twice as tall."}}, {"type": "bridge", "lead": "You have seen this problem in cricket.", "title": "Raw counts are like run totals", "from": "Cricket", "to": "Sequencing", "pairs": [["runs scored", "reads on a gene"], ["overs faced", "reads in the sample"], ["run rate", "CPM (counts per million)"]], "breaks": "A run rate is per over; CPM is per million reads. Neither tells you about one ball or one molecule."}, {"type": "chapter", "title": "The fix"}, {"type": "equation", "chapter": "The fix", "introduces": ["cpm", "share"], "lead": "So divide by the depth, then scale to a million.", "title": "CPM puts every sample on one scale", "lhs": "cpm", "expr": "x / N * 1e6", "read": "reads on the gene, out of all reads, times a million", "terms": {"x": {"value": "xA"}, "N": {"value": "libA"}}, "code": "cpm = x / N * 1e6", "note": "The same gene now reads {{cpmA|0}} in both samples."}, {"type": "calc", "lead": "Work it once by hand.", "title": "Two steps turn reads into CPM", "lines": [{"say": "Find the gene's share of the sample", "expr": "xA / libA", "name": "p"}, {"say": "Scale the share to a million reads", "expr": "p * 1e6", "name": "cpm"}]}, {"type": "idea", "lead": "A share is a slice of one sample.", "title": "Each gene owns a slice of the library", "visual": {"parts": {"items": [{"label": "GeneA", "value": 120, "focus": true}, {"label": "GeneB", "value": 30}, {"label": "GeneC", "value": 850}], "total": {"label": "library"}, "share": true}, "caption": "GeneA's slice is 12% of this small library."}}, {"type": "table", "lead": "Every gene follows the same recipe.", "title": "Each new column is one step of the recipe", "rows": [{"gene": "GeneA", "x": 120, "N": 1000}, {"gene": "GeneB", "x": 30, "N": 1000}, {"gene": "GeneC", "x": 850, "N": 1000}], "cols": [{"key": "gene", "label": "gene"}, {"key": "x", "label": "reads"}, {"key": "N", "label": "library"}, {"key": "p", "label": "share", "expr": "x / N", "fmt": 3, "says": "the gene's share of all reads"}, {"key": "cpm", "label": "CPM", "expr": "p * 1e6", "fmt": ",", "says": "reads per million reads"}], "focus": 0}, {"type": "predict", "kind": "check", "q": "GeneB has 30 reads in a library of 1,000. What is its CPM?", "options": ["30", "3,000", "30,000"], "answer": 2, "why": "30 out of 1,000 is a share of 0.03. Times a million gives **30,000**."}, {"type": "statement", "text": "A count means nothing until you know ==how many reads== it came from.", "sub": "Divide first, compare second."}, {"type": "idea", "chapter": "Check it", "lead": "But counts also wobble by chance.", "title": "Even a fixed rate gives counts that wobble", "points": ["Move the rate: the spread grows with it.", "The shaded tail: 30 or more reads."], "controls": [{"name": "lam", "label": "rate λ", "min": 5, "max": 40, "step": 1, "value": 20}], "derive": {"tail": "1 - poisCdf(29, lam)"}, "visual": {"chart": {"x": {"label": "reads seen (k)", "min": 0, "max": 60}, "y": {"label": "probability", "min": 0, "max": 0.2}, "series": [{"name": "Poisson", "kind": "bars", "fn": "poisPmf(x, lam)", "color": "mist"}, {"name": "normal guide", "kind": "line", "fn": "normPdf(x, lam, sqrt(lam))", "step": 2, "focus": true}], "marks": [{"kind": "vline", "x": "lam", "label": "mean {{lam}}", "step": 1}, {"kind": "span", "x": ["lam - sqrt(lam)", "lam + sqrt(lam)"], "y": 0.17, "label": "±1 SD = ±{{sqrt(lam)|1}}", "step": 3}, {"kind": "area", "fn": "normPdf(x, lam, sqrt(lam))", "x": [30, 60], "label": "P(k ≥ 30) = {{tail|%1}}", "step": 4}]}, "caption": "The spread is about the square root of the mean."}}, {"type": "compare", "lead": "So which number should you compare?", "title": "Raw counts mislead; CPM does not", "a": {"title": "Raw counts", "tone": "bad", "verdict": "misleads", "visual": {"stat": {"value": "2×", "label": "A looks higher", "sub": "{{xA}} vs {{xB}} reads"}}}, "b": {"title": "CPM", "tone": "good", "verdict": "fair", "visual": {"stat": {"value": "1×", "label": "the same level", "sub": "{{cpmA|0}} vs {{cpmB|0}} CPM"}}}, "verdict": "Compare **rates**, not raw totals, whenever the totals differ."}, {"type": "idea", "lead": "Picture one million reads.", "title": "A gene at 100 CPM owns 1 read in 10,000", "visual": {"units": {"n": 100, "hi": 1, "label": "Each dot is **10,000** reads; the lit dot is this gene"}, "caption": "One lit dot out of a hundred."}}, {"type": "idea", "lead": "Where CPM sits in the pipeline.", "title": "CPM comes after counting, before testing", "visual": {"flow": {"nodes": [{"label": "reads", "sub": "FASTQ files"}, {"label": "counts", "sub": "per gene"}, {"label": "CPM", "sub": "per million"}, {"label": "test", "sub": "groups compared"}], "verbs": ["align", "divide", "compare"], "focus": 2, "build": true}, "caption": "The lit box is this deck."}}, {"type": "idea", "title": "In code it is one line", "points": ["`x` is the gene counts; `N` is each sample total.", "Dividing by `N` handles all samples at once."], "visual": {"code": "import numpy as np\ncpm = x / N * 1e6   # every gene, every sample", "terms": {"x": "s1", "N": "s2"}}}, {"type": "equation", "title": "The chance of k reads at rate λ", "tex": "P(k) = \\dfrac{[lam]^{[k]} e^{-[lam]}}{[k]!}", "read": "rate to the power k, times e to the minus rate, over k factorial", "plug": "P(25) = \\dfrac{20^{25} e^{-20}}{25!} = {{poisPmf(25, 20)|3}}"}, {"type": "quiz", "cards": [{"q": "What does CPM divide by?", "a": "The total reads in that sample (the library size)."}, {"q": "Why multiply by a million?", "a": "So the numbers are easy to read, like \"120 per million\".", "tag": "reversed"}, {"q": "Two samples have the same CPM for a gene. Same raw counts?", "a": "Not if their depths differ. Equal CPM means an equal **share**.", "tag": "edge case"}]}, {"type": "recap", "answer": "Divide each count by its sample's total reads, then scale to a million. Compare those rates, never raw counts.", "points": ["Depth differs between samples.", "CPM removes depth.", "Counts still wobble about √mean."], "breaks": ["A few huge genes can skew CPM (composition).", "CPM does not fix gene length."], "next": ["TMM and median-ratio scaling", "Why counts get logged"]}, {"type": "map", "center": "CPM", "links": [{"to": "run rate", "how": "same idea in cricket", "kind": "analogy"}, {"to": "library size", "how": "the number we divide by", "kind": "prereq"}, {"to": "TPM", "how": "also divides by gene length", "kind": "sibling"}, {"to": "DESeq2 size factors", "how": "a robust version", "kind": "next"}]}]}</script><script>window.LUCID_ASSETS={};</script><script>/* Lucid core: formatting, markdown-lite, the expression engine (parse, evaluate, to TeX, substitute), statistics, seeded random numbers.
    One expression language serves derive:, table columns, calc lines, equations, chart functions and {{...}} text. */
 (function () {
@@ -932,8 +911,6 @@ table.t .now { color: var(--accent) !important; }
       svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': spec.alt || spec.title || 'chart' });
       wrap.insertBefore(svg, tip);
       const defs = el('defs', {}, svg);
-      const glow = el('filter', { id: `${id}-glow`, x: '-20%', y: '-40%', width: '140%', height: '180%' }, defs);
-      el('feGaussianBlur', { stdDeviation: 5, result: 'b' }, glow); const fm = el('feMerge', {}, glow); el('feMergeNode', { in: 'b' }, fm); el('feMergeNode', { in: 'SourceGraphic' }, fm);
 
       // domains
       const xs = spec.x || {}, ys = spec.y || {};
@@ -1033,7 +1010,7 @@ table.t .now { color: var(--accent) !important; }
               const alts = pts.length < 3 ? null : [f0, .15, .25, .35, .45, .55, .65, .75, .85, .95].filter((f, i) => !i || Math.abs(f - f0) > .04).map(f => [...at(f), Math.abs(f - f0) * 2]);
               labels.push({ text: mk.label, ax: p[0], ay: p[1], alts, own: pts, pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
           case 'point': { const at = mk.at || [mk.x, mk.y], x = sx(V(at[0])), y = sy(V(at[1]));
-            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3, filter: c === col('accent') ? `url(#${id}-glow)` : null }, gg);
+            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3 }, gg);
             obstacles.push([x - 12, y - 12, x + 12, y + 12]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: y, pref: mk.place ? [mk.place] : ['tr', 'tl', 'br', 'bl', 'r', 'l', 't'], step: mk.step, c, lead: true, strong: true }); break; }
           case 'label': { const at = mk.at; labels.push({ text: mk.text || mk.label, ax: sx(V(at[0])), ay: sy(V(at[1])), pref: mk.place ? [mk.place] : ['c'], step: mk.step, c, plain: true }); break; }
           case 'arrow': { const [x1, y1] = [sx(V(mk.from[0])), sy(V(mk.from[1]))], [x2, y2] = [sx(V(mk.to[0])), sy(V(mk.to[1]))];
@@ -1065,7 +1042,7 @@ table.t .now { color: var(--accent) !important; }
             el('stop', { offset: '0%', 'stop-color': c, 'stop-opacity': .34 }, lg); el('stop', { offset: '100%', 'stop-color': c, 'stop-opacity': .03 }, lg);
             el('path', { d: path + `L${clipped[clipped.length - 1][0]},${m.t + ph}L${clipped[0][0]},${m.t + ph}Z`, fill: `url(#${gid})` }, gg);
           }
-          el('path', { d: path, fill: 'none', stroke: c, 'stroke-width': s.width || (s.focus ? 4 : 3.5), 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': s.dash ? '10 9' : null, filter: s.focus ? `url(#${id}-glow)` : null, opacity: s.opacity }, gg);
+          el('path', { d: path, fill: 'none', stroke: c, 'stroke-width': s.width || (s.focus ? 4 : 3.5), 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': s.dash ? '10 9' : null, opacity: s.opacity }, gg);
           segs.push(clipped);
           if (endLabels.includes(s) && clipped.length) { const p = clipped[clipped.length - 1]; labels.push({ text: s.label || s.name, ax: p[0] + 6, ay: p[1], pref: ['r'], step: s.step, c, end: true, plain: true }); }
         } else if (kind === 'bars' || kind === 'lollipop') {
@@ -1789,7 +1766,7 @@ table.t .now { color: var(--accent) !important; }
   };
 })();
 
-/* Lucid deck runtime: boot, stage scaling (landscape 1600x900, portrait 720x1280), navigation, chrome, wallpaper, audit.
+/* Lucid deck runtime: boot, stage scaling (landscape 1600x900, portrait 720x1280), navigation, chrome, audit.
    Keys: → space next step · ← back · ↑↓ slide · Home End · m more · d data. Touch: swipe, or tap right/left third. */
 (function () {
   'use strict';
@@ -1805,39 +1782,6 @@ table.t .now { color: var(--accent) !important; }
     L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
     L.colors.lantern = L.colors.accent; L.colors.amber = L.colors.tint;   // older decks wrote `color: lantern` / `amber`
     L.fontUI = v('f-ui');
-  }
-
-  function wallpaper() {
-    const wall = h('div'); wall.id = 'wall';
-    wall.innerHTML = '<svg class="ribbons" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"></svg><div class="orb o1"></div><div class="orb o2"></div>'
-      + '<div class="orb o3"></div><div class="orb o4"></div><div class="grain"></div><div class="vignette"></div>';
-    document.body.prepend(wall);
-    // grey silk: wide soft folds of light the glass can blur (a flat black behind glass reads as nothing, not glass)
-    wall.querySelector('.ribbons').innerHTML = `<defs>
-      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".25" stop-color="#fff" stop-opacity=".07"/><stop offset=".55" stop-color="#fff" stop-opacity=".1"/><stop offset=".82" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".012"/><stop offset=".5" stop-color="#fff" stop-opacity=".03"/><stop offset="1" stop-color="#fff" stop-opacity=".055"/></linearGradient>
-      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".4" stop-color="#fff" stop-opacity=".24"/><stop offset=".75" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff" stop-opacity=".025"/><stop offset="1" stop-color="#fff" stop-opacity=".045"/></linearGradient>
-      <filter id="soft" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>
-      <path filter="url(#soft)" fill="url(#fd)" d="M 820 -40 C 1060 70, 1260 40, 1660 170 L 1660 -40 Z"/>
-      <path filter="url(#soft)" fill="url(#fb)" d="M -120 860 C 320 720, 700 940, 1080 800 S 1540 600, 1740 660 L 1740 1120 L -120 1120 Z"/>
-      <path filter="url(#soft)" fill="url(#fa)" d="M -120 740 C 300 590, 600 840, 960 640 S 1480 300, 1740 360 L 1740 520 C 1500 500, 1260 760, 980 850 S 380 960, -120 990 Z"/>
-      <path fill="url(#fc)" d="M -120 738 C 300 588, 600 838, 960 638 S 1480 298, 1740 358 L 1740 368 C 1480 312, 1000 660, 962 662 C 600 862, 300 610, -120 760 Z"/>`;
-    // film grain: inside the glass it is blurred away, outside it stays crisp, so the glass reads as a smoother material
-    const cv = document.createElement('canvas'); cv.width = cv.height = 220; const c = cv.getContext('2d'), im = c.createImageData(220, 220), rg = L.rng(3);
-    for (let i = 0; i < im.data.length; i += 4) { const v = rg() * 255 | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
-    c.putImageData(im, 0, 0); wall.querySelector('.grain').style.backgroundImage = `url(${cv.toDataURL()})`;
-    L.wall = wall;
-  }
-  // the light moves a little with every slide, so the glass always has something shifting behind it
-  function drift(i) {
-    if (!L.wall) return; const r = L.rng(1000 + i * 7), m = (a) => (r() - .5) * a;
-    L.wall.querySelector('.o1').style.transform = `translate(${m(14)}vmax, ${m(10)}vmax)`;
-    L.wall.querySelector('.o2').style.transform = `translate(${m(12)}vmax, ${m(12)}vmax)`;
-    L.wall.querySelector('.o3').style.transform = `translate(${m(10)}vmax, ${m(6)}vmax)`;
-    L.wall.querySelector('.o4').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
-    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the folds low, away from the title
-    L.wall.querySelector('.ribbons').style.transform = `translate(${m(5)}%, ${m(4) + low}%) rotate(${m(6)}deg)`;
   }
 
   // ---------- layout ----------
@@ -1971,7 +1915,7 @@ table.t .now { color: var(--accent) !important; }
     L.i = i; const sl = L.slides[i];
     sl.k = k == null ? minStep(sl) : k < 0 ? sl.steps : Math.max(minStep(sl), Math.min(sl.steps, k));
     sl.r.node.classList.add('on');
-    layoutCurrent(); apply(sl); chromeUpdate(); drift(i);
+    layoutCurrent(); apply(sl); chromeUpdate();
     if (!CHECK) history.replaceState(null, '', `#${i + 1}${sl.k > 1 ? '.' + sl.k : ''}`);
   };
   function fwd() { const sl = L.slides[L.i]; if (sl.k < sl.steps) { sl.k++; apply(sl); chromeUpdate(); } else if (L.i < L.slides.length - 1) L.go(L.i + 1); }
@@ -2075,7 +2019,7 @@ table.t .now { color: var(--accent) !important; }
     const src = document.getElementById('lucid-deck');
     const deck = JSON.parse(src.textContent);
     if (CHECK) document.body.classList.add('no-anim');
-    readColors(); wallpaper();
+    readColors();
     const vp = h('div'); vp.id = 'viewport'; stage = h('div'); stage.id = 'stage'; vp.appendChild(stage); document.body.appendChild(vp);
     document.title = deck.title || 'Lucid deck';
     fit();

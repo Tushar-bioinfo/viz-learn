@@ -1,4 +1,4 @@
-/* Lucid deck runtime: boot, stage scaling (landscape 1600x900, portrait 720x1280), navigation, chrome, wallpaper, audit.
+/* Lucid deck runtime: boot, stage scaling (landscape 1600x900, portrait 720x1280), navigation, chrome, audit.
    Keys: → space next step · ← back · ↑↓ slide · Home End · m more · d data. Touch: swipe, or tap right/left third. */
 (function () {
   'use strict';
@@ -14,39 +14,6 @@
     L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
     L.colors.lantern = L.colors.accent; L.colors.amber = L.colors.tint;   // older decks wrote `color: lantern` / `amber`
     L.fontUI = v('f-ui');
-  }
-
-  function wallpaper() {
-    const wall = h('div'); wall.id = 'wall';
-    wall.innerHTML = '<svg class="ribbons" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"></svg><div class="orb o1"></div><div class="orb o2"></div>'
-      + '<div class="orb o3"></div><div class="orb o4"></div><div class="grain"></div><div class="vignette"></div>';
-    document.body.prepend(wall);
-    // grey silk: wide soft folds of light the glass can blur (a flat black behind glass reads as nothing, not glass)
-    wall.querySelector('.ribbons').innerHTML = `<defs>
-      <linearGradient id="fa" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".25" stop-color="#fff" stop-opacity=".07"/><stop offset=".55" stop-color="#fff" stop-opacity=".1"/><stop offset=".82" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".012"/><stop offset=".5" stop-color="#fff" stop-opacity=".03"/><stop offset="1" stop-color="#fff" stop-opacity=".055"/></linearGradient>
-      <linearGradient id="fc" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".4" stop-color="#fff" stop-opacity=".24"/><stop offset=".75" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-      <linearGradient id="fd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff" stop-opacity=".025"/><stop offset="1" stop-color="#fff" stop-opacity=".045"/></linearGradient>
-      <filter id="soft" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>
-      <path filter="url(#soft)" fill="url(#fd)" d="M 820 -40 C 1060 70, 1260 40, 1660 170 L 1660 -40 Z"/>
-      <path filter="url(#soft)" fill="url(#fb)" d="M -120 860 C 320 720, 700 940, 1080 800 S 1540 600, 1740 660 L 1740 1120 L -120 1120 Z"/>
-      <path filter="url(#soft)" fill="url(#fa)" d="M -120 740 C 300 590, 600 840, 960 640 S 1480 300, 1740 360 L 1740 520 C 1500 500, 1260 760, 980 850 S 380 960, -120 990 Z"/>
-      <path fill="url(#fc)" d="M -120 738 C 300 588, 600 838, 960 638 S 1480 298, 1740 358 L 1740 368 C 1480 312, 1000 660, 962 662 C 600 862, 300 610, -120 760 Z"/>`;
-    // film grain: inside the glass it is blurred away, outside it stays crisp, so the glass reads as a smoother material
-    const cv = document.createElement('canvas'); cv.width = cv.height = 220; const c = cv.getContext('2d'), im = c.createImageData(220, 220), rg = L.rng(3);
-    for (let i = 0; i < im.data.length; i += 4) { const v = rg() * 255 | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
-    c.putImageData(im, 0, 0); wall.querySelector('.grain').style.backgroundImage = `url(${cv.toDataURL()})`;
-    L.wall = wall;
-  }
-  // the light moves a little with every slide, so the glass always has something shifting behind it
-  function drift(i) {
-    if (!L.wall) return; const r = L.rng(1000 + i * 7), m = (a) => (r() - .5) * a;
-    L.wall.querySelector('.o1').style.transform = `translate(${m(14)}vmax, ${m(10)}vmax)`;
-    L.wall.querySelector('.o2').style.transform = `translate(${m(12)}vmax, ${m(12)}vmax)`;
-    L.wall.querySelector('.o3').style.transform = `translate(${m(10)}vmax, ${m(6)}vmax)`;
-    L.wall.querySelector('.o4').style.transform = `translate(${m(16)}vmax, ${m(12)}vmax)`;
-    const low = document.body.classList.contains('port') ? 9 : 0;   // portrait crops the wall: keep the folds low, away from the title
-    L.wall.querySelector('.ribbons').style.transform = `translate(${m(5)}%, ${m(4) + low}%) rotate(${m(6)}deg)`;
   }
 
   // ---------- layout ----------
@@ -180,7 +147,7 @@
     L.i = i; const sl = L.slides[i];
     sl.k = k == null ? minStep(sl) : k < 0 ? sl.steps : Math.max(minStep(sl), Math.min(sl.steps, k));
     sl.r.node.classList.add('on');
-    layoutCurrent(); apply(sl); chromeUpdate(); drift(i);
+    layoutCurrent(); apply(sl); chromeUpdate();
     if (!CHECK) history.replaceState(null, '', `#${i + 1}${sl.k > 1 ? '.' + sl.k : ''}`);
   };
   function fwd() { const sl = L.slides[L.i]; if (sl.k < sl.steps) { sl.k++; apply(sl); chromeUpdate(); } else if (L.i < L.slides.length - 1) L.go(L.i + 1); }
@@ -284,7 +251,7 @@
     const src = document.getElementById('lucid-deck');
     const deck = JSON.parse(src.textContent);
     if (CHECK) document.body.classList.add('no-anim');
-    readColors(); wallpaper();
+    readColors();
     const vp = h('div'); vp.id = 'viewport'; stage = h('div'); stage.id = 'stage'; vp.appendChild(stage); document.body.appendChild(vp);
     document.title = deck.title || 'Lucid deck';
     fit();
