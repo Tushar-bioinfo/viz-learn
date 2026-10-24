@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check a built Lucid deck in a real browser, on a desktop and a phone screen.
+"""Check a built viz-os deck in a real browser, on a desktop and a phone screen.
 
 Usage: check.py deck.html [--out DIR] [--only desktop|phone] [--slides 3,5-7] [--vendor DIR] [--all-steps]
 
@@ -20,7 +20,7 @@ HIDE_TEXT = ("/*hide-text*/ :root body .slide.on, :root body .slide.on * { color
 
 def launch(p):
     errs = []
-    for kw in ({}, {"channel": "chrome"}, {"executable_path": os.environ.get("LUCID_CHROMIUM") or "/opt/pw-browsers/chromium"}):
+    for kw in ({}, {"channel": "chrome"}, {"executable_path": os.environ.get("VIZOS_CHROMIUM") or "/opt/pw-browsers/chromium"}):
         if "executable_path" in kw and not Path(kw["executable_path"]).exists():
             continue
         try:
@@ -47,7 +47,7 @@ def settle(page):
     """Wait until the deck has finished laying out the current slide (labels, fit, redraw)."""
     page.wait_for_timeout(40)
     try:
-        page.wait_for_function("window.Lucid && Lucid.busy === 0", timeout=3000)
+        page.wait_for_function("window.VizOS && VizOS.busy === 0", timeout=3000)
     except Exception:
         pass
     page.wait_for_timeout(30)
@@ -128,44 +128,44 @@ def run_view(br, deck, view, out, args, report):
         page.route(re.compile(r"https://cdnjs\.cloudflare\.com/.*"), vendor_route(args.vendor))
     page.goto(deck.as_uri() + "?check")
     try:
-        page.wait_for_function("window.Lucid && Lucid.ready === true", timeout=20000)
+        page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000)
     except Exception:
         report.append((view, 0, "deck did not start: " + " | ".join(console[:3])))
         return []
     page.wait_for_timeout(300)
     if not page.evaluate("!!window.katex") and page.evaluate("document.querySelectorAll('.tex-fallback').length"):
         report.append((view, 0, "KaTeX did not load: formulas show as plain text (offline? use --vendor or --katex-dir)"))
-    info = page.evaluate("Lucid.info()")
+    info = page.evaluate("VizOS.info()")
     shots = []
     for i in parse_slides(args.slides, info["n"]):
         s = info["slides"][i]
         lo = 1 if s["steps"] > 0 else 0
         steps = range(lo, s["steps"] + 1) if args.all_steps or True else [s["steps"]]
         for k in steps:
-            page.evaluate(f"Lucid.go({i},{k})")
+            page.evaluate(f"VizOS.go({i},{k})")
             settle(page)
-            for w in page.evaluate("Lucid.audit()"):
+            for w in page.evaluate("VizOS.audit()"):
                 report.append((view, i + 1, w if k == s["steps"] or s["steps"] <= 1 else f"step {k}: {w}"))
         for c in s["controls"]:
             for v in (c["min"], c["max"]):
-                page.evaluate(f"Lucid.setControl({json.dumps(c['name'])},{v})")
+                page.evaluate(f"VizOS.setControl({json.dumps(c['name'])},{v})")
                 settle(page)
-                for w in page.evaluate("Lucid.audit()"):
+                for w in page.evaluate("VizOS.audit()"):
                     report.append((view, i + 1, f"{c['name']}={v}: {w}"))
-            page.evaluate(f"Lucid.setControl({json.dumps(c['name'])},{c['value']})")
+            page.evaluate(f"VizOS.setControl({json.dumps(c['name'])},{c['value']})")
         if s["predict"]:
-            page.evaluate("Lucid.reveal()")
+            page.evaluate("VizOS.reveal()")
             page.wait_for_timeout(120)
-            for w in page.evaluate("Lucid.audit()"):
+            for w in page.evaluate("VizOS.audit()"):
                 report.append((view, i + 1, f"after the answer: {w}"))
-        page.evaluate(f"Lucid.go({i},-1)")
+        page.evaluate(f"VizOS.go({i},-1)")
         if s["predict"]:
-            page.evaluate("Lucid.reveal()")
+            page.evaluate("VizOS.reveal()")
         settle(page)
         page.wait_for_timeout(150)
         f = out / f"{view}-{i + 1:02d}.png"
         page.screenshot(path=str(f))
-        boxes = page.evaluate("Lucid.textBoxes()")
+        boxes = page.evaluate("VizOS.textBoxes()")
         bgf = out / f".bg-{view}-{i + 1:02d}.png"
         page.add_style_tag(content=HIDE_TEXT)
         page.wait_for_timeout(60)
@@ -178,7 +178,7 @@ def run_view(br, deck, view, out, args, report):
         for ratio, need, text in sorted(bad or [])[:3]:
             report.append((view, i + 1, f'low contrast {ratio:.1f}:1 (needs {need:g}) on "{text}"'))
         shots.append((f, f"{i + 1}"))
-    errs = page.evaluate("Lucid.errors")
+    errs = page.evaluate("VizOS.errors")
     for e in errs:
         report.append((view, 0, "error: " + e))
     for c in console[:5]:
@@ -197,7 +197,7 @@ def main():
     ap.add_argument("--out")
     ap.add_argument("--only", choices=list(VIEWS))
     ap.add_argument("--slides", help="e.g. 3,5-7 (1-based)")
-    ap.add_argument("--vendor", default=os.environ.get("LUCID_VENDOR"))
+    ap.add_argument("--vendor", default=os.environ.get("VIZOS_VENDOR"))
     ap.add_argument("--all-steps", action="store_true", help="also screenshot every step (slower)")
     args = ap.parse_args()
     try:

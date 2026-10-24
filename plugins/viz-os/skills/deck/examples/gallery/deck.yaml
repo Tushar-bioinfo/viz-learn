@@ -1,7 +1,7 @@
 # Gallery: one of every slide type and visual. It is the regression test for the kit, not a lesson to copy.
 title: Counts per million
-subtitle: Every Lucid slide type, on one small idea
-kicker: Lucid gallery
+subtitle: Every viz-os slide type, on one small idea
+kicker: viz-os gallery
 question: Two samples, different depths. How do we compare a gene across them?
 answer: Divide each count by its sample's total reads and scale to a million (CPM), then compare those rates.
 chapters: [Raw counts, The fix, Check it]
@@ -103,6 +103,10 @@ slides:
       N: {value: libA}
     code: cpm = x / N * 1e6
     note: The same gene now reads {{cpmA|0}} in both samples.
+    from: {name: a percentage, tex: '\dfrac{\text{part}}{\text{whole}} \times 100', move: count per million reads, not per hundred}
+    kin:
+      - {where: cricket, name: run rate, tex: '\dfrac{\text{runs}}{\text{overs}}'}
+      - {where: chemistry, name: parts per million, tex: '\dfrac{\text{solute}}{\text{solution}} \times 10^6'}
 
   - type: calc
     lead: Work it once by hand.
@@ -138,6 +142,21 @@ slides:
       - {key: p, label: share, expr: x / N, fmt: 3, says: the gene's share of all reads}
       - {key: cpm, label: CPM, expr: p * 1e6, fmt: ',', says: reads per million reads}
     focus: 0
+
+  - type: table
+    lead: Or walk it one gene at a time.
+    title: Each row is one gene's whole recipe
+    build: rows
+    given: false
+    rows:
+      - {gene: GeneA, x: 120, N: 1000}
+      - {gene: GeneB, x: 30, N: 1000}
+    cols:
+      - {key: gene, label: gene}
+      - {key: x, label: reads}
+      - {key: N, label: library}
+      - {key: p, label: share, expr: x / N, fmt: 3, says: the gene's share of all reads}
+      - {key: cpm, label: CPM, expr: p * 1e6, fmt: ',', says: reads per million reads}
 
   - type: predict
     kind: check
@@ -223,6 +242,10 @@ slides:
     title: The chance of k reads at rate λ
     tex: 'P(k) = \dfrac{[lam]^{[k]} e^{-[lam]}}{[k]!}'
     read: rate to the power k, times e to the minus rate, over k factorial
+    from: {name: binomial, tex: '\tbinom{n}{k} p^k (1-p)^{n-k}', move: 'many reads, each rarely this gene: n big, p tiny'}
+    kin:
+      - {where: football, name: goals in a match}
+      - {where: physics, name: decays per second}
     plug: 'P(25) = \dfrac{20^{25} e^{-20}}{25!} = {{poisPmf(25, 20)|3}}'
 
   - type: quiz

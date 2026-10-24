@@ -1,9 +1,9 @@
-/* Lucid charts: declarative SVG plots in the glass theme.
+/* viz-os charts: declarative SVG plots in the glass theme.
    Series: line, area, bars, hist, dots, lollipop, step. Marks: vline, hline, band, point, label, arrow, line, fn, area, span.
    Every series and mark may carry `step`; labels avoid each other and the data; a data table and a hover readout come free. */
 (function () {
   'use strict';
-  const L = window.Lucid;
+  const L = window.VizOS;
   const NS = 'http://www.w3.org/2000/svg';
   let uid = 0;
   const mctx = document.createElement('canvas').getContext('2d');
@@ -11,6 +11,9 @@
   const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
   L.svgEl = el;
   const col = c => (L.colors && L.colors[c]) || c || (L.colors && L.colors.mist);
+  // mix a hex colour toward white (t > 0) or black (t < 0); other colour forms pass through
+  L.tone = (c, t) => { const m = /^#([0-9a-f]{6})$/i.exec(c || ''); if (!m) return c; const n = parseInt(m[1], 16), to = t > 0 ? 255 : 0, k = Math.abs(t);
+    return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v + (to - v) * k).toString(16).padStart(2, '0')).join(''); };
 
   // nice ticks
   function nice(a, b, n) {
@@ -88,7 +91,15 @@
       if (svg) svg.remove();
       svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': spec.alt || spec.title || 'chart' });
       wrap.insertBefore(svg, tip);
-      const defs = el('defs', {}, svg);
+      const defs = el('defs', {}, svg), made = {};
+      // frosted fill for bars: lit at the top, clearer toward the base (like the glyphs on the iOS icons)
+      const glassFill = (c, a) => { const k = `f${c}${a}`; if (made[k]) return made[k]; const gid = made[k] = `${id}-gf${Object.keys(made).length}`;
+        const lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
+        [[0, L.tone(c, .3), a], [.5, c, a * .95], [1, c, a * .64]].forEach(([o, sc, op]) => el('stop', { offset: o, 'stop-color': sc, 'stop-opacity': op }, lg)); return gid; };
+      // a glass bead for dots: a highlight up and to the left, a little shade down and to the right
+      const bead = c => { const k = `b${c}`; if (made[k]) return made[k]; const gid = made[k] = `${id}-gb${Object.keys(made).length}`;
+        const rg = el('radialGradient', { id: gid, cx: .36, cy: .3, r: .78 }, defs);
+        [[0, L.tone(c, .55)], [.5, c], [1, L.tone(c, -.2)]].forEach(([o, sc]) => el('stop', { offset: o, 'stop-color': sc }, rg)); return gid; };
 
       // domains
       const xs = spec.x || {}, ys = spec.y || {};
@@ -188,7 +199,7 @@
               const alts = pts.length < 3 ? null : [f0, .15, .25, .35, .45, .55, .65, .75, .85, .95].filter((f, i) => !i || Math.abs(f - f0) > .04).map(f => [...at(f), Math.abs(f - f0) * 2]);
               labels.push({ text: mk.label, ax: p[0], ay: p[1], alts, own: pts, pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
           case 'point': { const at = mk.at || [mk.x, mk.y], x = sx(V(at[0])), y = sy(V(at[1]));
-            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3 }, gg);
+            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: `url(#${bead(c)})`, stroke: L.colors.plate, 'stroke-width': 3 }, gg);
             obstacles.push([x - 12, y - 12, x + 12, y + 12]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: y, pref: mk.place ? [mk.place] : ['tr', 'tl', 'br', 'bl', 'r', 'l', 't'], step: mk.step, c, lead: true, strong: true }); break; }
           case 'label': { const at = mk.at; labels.push({ text: mk.text || mk.label, ax: sx(V(at[0])), ay: sy(V(at[1])), pref: mk.place ? [mk.place] : ['c'], step: mk.step, c, plain: true }); break; }
           case 'arrow': { const [x1, y1] = [sx(V(mk.from[0])), sy(V(mk.from[1]))], [x2, y2] = [sx(V(mk.to[0])), sy(V(mk.to[1]))];
@@ -227,25 +238,24 @@
           const xsArr = d.map(p => p[0]);
           let band = cats ? pw / cats.length : xsArr.length > 1 ? Math.min(...xsArr.slice(1).map((x, i) => Math.abs(sx(x) - sx(xsArr[i])))) : pw / 8;
           const bw = Math.max(2, Math.min(band * (s.bw ?? .64), 64)), r = Math.min(6, bw / 2);
-          const gid = `${id}-bg${si}`, lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
-          el('stop', { offset: '0%', 'stop-color': c, 'stop-opacity': 1 }, lg); el('stop', { offset: '100%', 'stop-color': c, 'stop-opacity': .7 }, lg);
+          const gid = glassFill(c, 1);
           d.forEach(p => { const cx = cats ? sx(p[0] + .5) : sx(p[0]), y0 = sy(Math.max(ydom[0], ys.log ? ydom[0] : 0)), y1 = clampY(sy(p[1]));
-            if (kind === 'lollipop') { el('line', { x1: cx, x2: cx, y1: y0, y2: y1, stroke: c, 'stroke-width': 3, opacity: .9 }, gg); el('circle', { cx, cy: y1, r: Math.min(7, Math.max(4, bw / 3)), fill: c, stroke: L.colors.plate, 'stroke-width': 2 }, gg); }
+            if (kind === 'lollipop') { el('line', { x1: cx, x2: cx, y1: y0, y2: y1, stroke: c, 'stroke-width': 3, opacity: .9 }, gg); el('circle', { cx, cy: y1, r: Math.min(7, Math.max(4, bw / 3)), fill: `url(#${bead(c)})`, stroke: L.colors.plate, 'stroke-width': 2 }, gg); }
             else { const h = y0 - y1; if (h <= .5) return; const x = cx - bw / 2;
-              el('path', { d: `M${x},${y0}V${y1 + r}Q${x},${y1} ${x + r},${y1}H${x + bw - r}Q${x + bw},${y1} ${x + bw},${y1 + r}V${y0}Z`, fill: `url(#${gid})`, opacity: s.opacity ?? (s.focus ? 1 : .92) }, gg); }
+              el('path', { d: `M${x},${y0}V${y1 + r}Q${x},${y1} ${x + r},${y1}H${x + bw - r}Q${x + bw},${y1} ${x + bw},${y1 + r}V${y0}Z`, fill: `url(#${gid})`, opacity: s.opacity ?? (s.focus ? 1 : .94) }, gg);
+              if (bw > 2 * r + 6 && h > 5) el('path', { d: `M${x + r},${y1 + .9}H${x + bw - r}`, stroke: 'rgba(255,255,255,.62)', 'stroke-width': 1.4, 'stroke-linecap': 'round', opacity: s.opacity ?? 1 }, gg); }
             obstacles.push([cx - bw / 2, y1, cx + bw / 2, y0]); });
           if (s.highlight != null) { const hv = L.val(s.highlight, scope); const hi = d.find(p => p[0] === hv); if (hi) { const cx = cats ? sx(hi[0] + .5) : sx(hi[0]); const y1 = sy(hi[1]);
             el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, rx: 8, fill: 'none', stroke: col('accent'), 'stroke-width': 3 }, gg); } }
         } else if (kind === 'hist') {
-          const gid = `${id}-hg${si}`, lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
-          el('stop', { offset: '0%', 'stop-color': c, 'stop-opacity': .95 }, lg); el('stop', { offset: '100%', 'stop-color': c, 'stop-opacity': .55 }, lg);
+          const gid = glassFill(c, .9);
           d.forEach(b => { if (b.y <= 0) return; const x0 = sx(Math.max(b.x0, xdom[0])) + 1, x1 = sx(Math.min(b.x1, xdom[1])) - 1, y1 = clampY(sy(b.y)), y0 = sy(0), w = x1 - x0, r = Math.min(5, w / 2);
             if (w <= 0) return; el('path', { d: `M${x0},${y0}V${y1 + r}Q${x0},${y1} ${x0 + r},${y1}H${x1 - r}Q${x1},${y1} ${x1},${y1 + r}V${y0}Z`, fill: `url(#${gid})`, opacity: s.opacity ?? .9 }, gg);
             obstacles.push([x0, y1, x1, y0]); });
         } else if (kind === 'dots') {
           const many = d.length > 300, r = s.r || (many ? 4.5 : 8);
           d.forEach(p => { const x = sx(p[0]), y = sy(p[1]); if (x < m.l - 2 || x > m.l + pw + 2 || y < m.t - 2 || y > m.t + ph + 2) return;
-            el('circle', { cx: x, cy: y, r, fill: c, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); else dense.push([x, y]); });
+            el('circle', { cx: x, cy: y, r, fill: many ? c : `url(#${bead(c)})`, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); else dense.push([x, y]); });
         }
       });
       over.forEach(mk => drawMark(mk, layerM));
@@ -289,7 +299,7 @@
         if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - ay) > 10) el('line', { x1: ax - 4, y1: ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
         if (lb.lead && best.k !== 'c') { const [tx, ty] = leadEnd(ax, ay, best.box);
           el('line', { x1: ax, y1: ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
-        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: 'rgba(20,21,23,.86)', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 1.2 }, gg);
+        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: L.colors.pill || 'rgba(19,21,31,.92)', stroke: 'rgba(255,255,255,.22)', 'stroke-width': 1.2 }, gg);
         if (!lb.plain) el('circle', { cx: x0 + 14, cy: (y0 + y1) / 2, r: 0 }, gg);
         const t = el('text', { x: lb.plain ? x0 + 2 : (x0 + x1) / 2, y: (y0 + y1) / 2 + 8, 'text-anchor': lb.plain ? 'start' : 'middle', class: 'lbl' + (lb.end ? ' dim' : ''), 'data-lbl': 1 }, gg);
         t.textContent = text;

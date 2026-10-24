@@ -1,10 +1,10 @@
-/* Lucid core: formatting, markdown-lite, the expression engine (parse, evaluate, to TeX, substitute), statistics, seeded random numbers.
+/* viz-os core: formatting, markdown-lite, the expression engine (parse, evaluate, to TeX, substitute), statistics, seeded random numbers.
    One expression language serves derive:, table columns, calc lines, equations, chart functions and {{...}} text. */
 (function () {
   'use strict';
-  const L = window.Lucid = window.Lucid || {};
+  const L = window.VizOS = window.VizOS || {};
   L.errors = []; L.notes = [];
-  const err = (where, msg) => { const m = `${where}: ${msg}`; if (!L.errors.includes(m)) L.errors.push(m); console.warn('lucid', m); };
+  const err = (where, msg) => { const m = `${where}: ${msg}`; if (!L.errors.includes(m)) L.errors.push(m); console.warn('viz-os', m); };
   L.err = err;
 
   // ---------- numbers ----------

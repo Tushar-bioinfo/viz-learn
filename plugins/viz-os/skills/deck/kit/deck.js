@@ -1,8 +1,8 @@
-/* Lucid deck runtime: boot, stage scaling (landscape 1600x900, portrait 720x1280), navigation, chrome, audit.
+/* viz-os deck runtime: boot, stage scaling (landscape 1600x900, portrait 720x1280), navigation, chrome, audit.
    Keys: → space next step · ← back · ↑↓ slide · Home End · m more · d data. Touch: swipe, or tap right/left third. */
 (function () {
   'use strict';
-  const L = window.Lucid;
+  const L = window.VizOS;
   const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const SIZE = { land: [1600, 900], port: [720, 1280] };
   const q = new URLSearchParams(location.search);
@@ -11,7 +11,7 @@
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
-    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid') };
+    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid'), pill: v('pill') };
     L.colors.lantern = L.colors.accent; L.colors.amber = L.colors.tint;   // older decks wrote `color: lantern` / `amber`
     L.fontUI = v('f-ui');
   }
@@ -55,7 +55,7 @@
     // (Chrome's scrollHeight misses this for grid and flex items that stick out, so measure the children)
     const spill = c => { const kids = [...c.children].filter(k => k.offsetParent && getComputedStyle(k).position !== 'absolute'); if (!kids.length) return -1e9;
       return Math.max(...kids.map(k => offTop(k) + k.offsetHeight)) - (offTop(c) + c.offsetHeight - (parseFloat(getComputedStyle(c).paddingBottom) || 0)); };
-    const boxes = main.flatMap(e => [e, ...e.querySelectorAll('.g')]);
+    const boxes = main.flatMap(e => [e, ...e.querySelectorAll('.g, .family, .eqbody')]);   // a card, or a column inside one, must hold its content
     const over = z => { main.forEach(e => e.style.zoom = z === 1 ? '' : z);
       return Math.max(Math.max(...main.map(e => offTop(e) + Math.max(e.scrollHeight, e.offsetHeight))) * z - limit, ...boxes.map(c => spill(c) * z)); };
     const TOL = 2;   // .fitting drops the entry offset of hidden steps, so this is rounding only
@@ -74,7 +74,7 @@
     L.deck = deck;
     const g = L.scope(null, {});
     Object.assign(g, deck.data || {});
-    if (window.LUCID_DATA) Object.assign(g, window.LUCID_DATA);
+    if (window.VIZOS_DATA) Object.assign(g, window.VIZOS_DATA);
     L.derive(g, deck.derive, 'deck');
     L.global = g;
     // chapters: listed, or taken from slides in order
@@ -218,6 +218,8 @@
       if (ov > 40) out.push(`text overlaps: ${name(a.e)} × ${name(b.e)}`);
     }
     if (node.scrollHeight > node.clientHeight + 4) out.push(`content is taller than the slide by ${node.scrollHeight - node.clientHeight}px`);
+    node.querySelectorAll('.family > *, .family .g').forEach(e => { const c = e.closest('.family').parentElement, cb = toStage(c.getBoundingClientRect()), b = toStage(e.getBoundingClientRect());
+      if (visible(e) && (b.y1 > cb.y1 - 4 || b.y0 < cb.y0 + 2)) out.push(`${name(e)} runs past the edge of its card`); });
     if (sl.zoom && sl.zoom < .8) out.push(`content was shrunk to ${Math.round(sl.zoom * 100)}% to fit: cut words or split the slide`);
     node.querySelectorAll('.katex-error').forEach(e => out.push(`formula error: ${e.title || e.textContent.slice(0, 40)}`));
     node.querySelectorAll('.iv.bad').forEach(e => out.push(`could not compute {{${e.dataset.x}}}`));
@@ -248,15 +250,18 @@
 
   // ---------- boot ----------
   function boot() {
-    const src = document.getElementById('lucid-deck');
+    const src = document.getElementById('vizos-deck');
     const deck = JSON.parse(src.textContent);
     if (CHECK) document.body.classList.add('no-anim');
+    if ((deck.theme || {}).glass === 'clear') document.body.classList.add('glass-clear');   // neutral glass instead of the blue tint
     readColors();
     const vp = h('div'); vp.id = 'viewport'; stage = h('div'); stage.id = 'stage'; vp.appendChild(stage); document.body.appendChild(vp);
-    document.title = deck.title || 'Lucid deck';
+    document.title = deck.title || 'viz-os deck';
     fit();
     build(deck); chromeBuild(); bindInput();
     L.ready = true;
+    // the formula fonts arrive only when a formula first needs them: measure again once they have
+    if (document.fonts) document.fonts.addEventListener('loadingdone', () => { L.slides.forEach(sl => sl.laid = false); layoutCurrent(); });
     const m = /^#(\d+)(?:\.(\d+))?/.exec(location.hash);
     L.go(m ? +m[1] - 1 : 0, m && m[2] ? +m[2] : null);
   }

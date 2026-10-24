@@ -1,4 +1,4 @@
-# Example Lucid deck. Probe answers it was built from: "1b 2d 3a 4ac 5b"
+# Example viz-os deck. Probe answers it was built from: "1b 2d 3a 4ac 5b"
 # (goal: intuition + by hand · pretest: not sure · knows mean and variance · anchors: cricket, lab work · standard length)
 title: Why counts need the negative binomial
 subtitle: From one gene's replicates to the noise model inside DESeq2 and MAGeCK
@@ -129,6 +129,10 @@ slides:
     read: the spread from counting is the square root of the average
     code: sd = np.sqrt(mu)
     note: For our gene that is **{{sdp|1}}** reads. Keep this number.
+    from: {name: counting alone, tex: '\sigma^2 = \mu', move: SD is the square root of the variance}
+    kin:
+      - {where: physics, name: photon shot noise, tex: '\sqrt{N}'}
+      - {where: polls, name: margin of error, tex: '\propto 1/\sqrt{n}'}
     more: Poisson noise has variance equal to its mean, $\sigma^2 = \mu$. The SD is the square root of the variance, so $\mathrm{SD} = \sqrt{\mu}$.
 
   - type: idea
@@ -237,7 +241,13 @@ slides:
     read: spread equals the mean, plus the wobble times the mean squared
     code: var = mu + alpha * mu**2
     note: 'The wobble part grows with $\mu^2$, so it rules busy genes.'
-    more: 'Papers write $K \sim \mathrm{NB}(\mu, \alpha)$ with $\mathrm{Var}(K) = \mu + \alpha\mu^2$. Some use the size $r = 1/\alpha$ instead.'
+    from:
+      - {name: counting alone, tex: '\sigma^2 = \mu', move: 'let each sample''s true level $\lambda$ wobble'}
+      - {name: spreads add, tex: '\sigma^2 = \mu + \mathrm{Var}(\lambda)', move: 'the wobble grows with the level: $\mathrm{Var}(\lambda) = \alpha\mu^2$'}
+    kin:
+      - {where: ecology, name: Taylor's law, tex: '\sigma^2 = a\mu^b'}
+      - {where: genetics, name: beta-binomial}
+    more: 'How we get it: spreads add (the law of total variance), $\mathrm{Var}(K) = \mathrm{E}[\mathrm{Var}(K \mid \lambda)] + \mathrm{Var}(\mathrm{E}[K \mid \lambda]) = \mu + \mathrm{Var}(\lambda)$. A gamma-shaped $\lambda$ with $\mathrm{Var}(\lambda) = \alpha\mu^2$ gives $\mu + \alpha\mu^2$. Papers write $K \sim \mathrm{NB}(\mu, \alpha)$; some use the size $r = 1/\alpha$ instead.'
 
   - type: calc
     uses: [alpha]

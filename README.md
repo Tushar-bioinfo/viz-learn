@@ -4,15 +4,15 @@ A reproducible learning project for Python plotting with Matplotlib, Seaborn, an
 The project starts with beginner-friendly plotting vocabulary and grows into publication-style
 figures, synthetic bioinformatics examples, and export-ready outputs.
 
-## Lucid: learning decks (Claude Code plugin)
+## viz-os: learning decks (Claude Code plugin)
 
-`plugins/lucid` is a plugin that builds visual learning decks in the proff black-and-orange Liquid Glass style (grey glass on black, orange headlines). It asks what you know first, builds the story from the ground up, explains every equation and table column, and checks each deck on desktop and phone.
+`plugins/viz-os` (version 1.0.0) is a plugin that builds visual learning decks in an iOS Liquid Glass style on black (blue-tinted glass, orange headlines). It asks what you know and which comparisons click for you, builds the story from the ground up, shows where every formula comes from and what it is related to, works tables one step at a time, and checks each deck on desktop and phone.
 
 ```bash
 claude plugin marketplace add Tushar-bioinfo/viz-learn
-claude plugin install lucid@viz-learn
+claude plugin install viz-os@viz-learn
 ```
-See [plugins/lucid/README.md](plugins/lucid/README.md). Example decks: `plugins/lucid/skills/deck/examples/`.
+See [plugins/viz-os/README.md](plugins/viz-os/README.md). Example decks: `plugins/viz-os/skills/deck/examples/`.
 
 ## What You Get
 

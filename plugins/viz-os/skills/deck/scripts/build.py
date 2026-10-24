@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Build a Lucid deck: deck.yaml (or .json) -> one self-contained deck.html, after a lint pass.
+"""Build a viz-os deck: deck.yaml (or .json) -> one self-contained deck.html, after a lint pass.
 
 Usage: build.py path/to/deck.yaml [-o deck.html] [--katex-dir DIR] [--quiet]
 
 The lint enforces the rules that long outputs forget: every symbol in a formula has a plain meaning,
 no concept is used before it is introduced, derived table columns show their formula, text stays inside budgets.
 ERR lines must be fixed (exit 1). WARN lines are judgement calls; fix them unless you have a reason.
-The page loads Inter from Google Fonts and KaTeX 0.16.11 from cdnjs (or inlines KaTeX from --katex-dir / $LUCID_KATEX_DIR).
+The page loads Inter from Google Fonts and KaTeX 0.16.11 from cdnjs (or inlines KaTeX from --katex-dir / $VIZOS_KATEX_DIR).
 """
 import argparse, base64, json, mimetypes, os, re, sys
 from pathlib import Path
@@ -26,9 +26,9 @@ FIELDS = {
     "statement": {"text", "sub"},
     "idea": {"points", "text", "visual", "layout", "build"},
     "predict": {"q", "options", "answer", "why", "kind", "visual"},
-    "equation": {"expr", "tex", "lhs", "terms", "order", "read", "plug", "code", "note", "fmt", "store", "build"},
+    "equation": {"expr", "tex", "lhs", "terms", "order", "read", "plug", "code", "note", "fmt", "store", "build", "from", "kin"},
     "calc": {"lines", "given", "visual"},
-    "table": {"rows", "from", "cols", "focus"},
+    "table": {"rows", "from", "cols", "focus", "build", "given"},
     "bridge": {"from", "to", "pairs", "breaks"},
     "compare": {"a", "b", "verdict"},
     "quiz": {"cards"},
@@ -40,8 +40,9 @@ REQUIRED = {"predict": ["q", "options"], "equation": [], "calc": ["lines"], "tab
 VISUAL = {"chart", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg", "caption", "terms"}
 PARTS = {"items", "rows", "total", "share", "fmt", "build"}
 # words a learner reads on a slide's face, per type (the more sheet, table cells and chart internals do not count).
-# The visual carries the story; past these the slide reads as a page of text.
-FACE_LIMIT = {"idea": 40, "statement": 30, "equation": 30, "calc": 45, "table": 30, "bridge": 55, "compare": 55,
+# The visual carries the story; past these the slide reads as a page of text. An equation's budget includes the moves
+# of its `from:` chain, since where a formula comes from is part of explaining it.
+FACE_LIMIT = {"idea": 40, "statement": 30, "equation": 40, "calc": 45, "table": 30, "bridge": 55, "compare": 55,
               "predict": 70, "recap": 60, "map": 60}
 CHART = {"x", "y", "series", "marks", "legend", "table", "alt", "controls"}
 SERIES_KINDS = {"line", "area", "bars", "hist", "dots", "lollipop", "step"}
@@ -135,6 +136,9 @@ def face_words(s):
     n += sum(w(ln.get("say")) for ln in s.get("lines") or [] if isinstance(ln, dict))
     n += sum(w(a) + w(b) for pr in s.get("pairs") or [] if isinstance(pr, list) and len(pr) == 2 for a, b in [pr])
     n += sum(w(l.get("to")) + w(l.get("how")) for l in s.get("links") or [] if isinstance(l, dict))
+    if t == "equation":   # where the formula comes from: the moves are read as text; chips are labels
+        chain = s.get("from") if isinstance(s.get("from"), list) else [s.get("from")] if isinstance(s.get("from"), dict) else []
+        n += sum(w(c.get("move")) for c in chain if isinstance(c, dict))   # chip names are labels, like a chart's
     for side in (s.get("a"), s.get("b")):
         if isinstance(side, dict):
             n += sum(w(side.get(k)) for k in ("title", "text", "verdict")) + sum(w(x) for x in side.get("points") or [])
@@ -153,7 +157,7 @@ def texts_of(node):
         yield node
     elif isinstance(node, dict):
         for k, v in node.items():
-            if k in ("expr", "tex", "fn", "code", "svg", "x", "y", "values", "min", "max", "from", "rows", "at", "to", "eqn", "key", "highlight", "image", "plug"):
+            if k in ("expr", "tex", "fn", "code", "svg", "x", "y", "values", "min", "max", "from", "rows", "at", "to", "eqn", "key", "highlight", "image", "plug") and not (k == "from" and isinstance(v, (list, dict))):
                 continue
             yield from texts_of(v)
     elif isinstance(node, list):
@@ -325,6 +329,13 @@ def lint(deck, lint_extra_names=()):
                 Lx.warn(where, f"{len(cols)} columns: more than 6 will not read on a phone")
             if len(rows) > 8:
                 Lx.warn(where, f"{len(rows)} rows: show ≤ 8 and say the rest follow the same rule")
+            bmode = s.get("build", "cols")
+            if bmode not in ("cols", "rows", "cells", True, False):
+                Lx.err(where, f"table `build` is {bmode!r}: use cols (one column per step), rows, cells or false")
+            nder = sum(1 for c in cols if c.get("expr"))
+            nsteps = (nder * len(rows) if bmode == "cells" else len(rows) if bmode == "rows" else nder) + (1 if s.get("given", True) is not False and nder else 0)
+            if bmode is not False and nsteps > 15:
+                Lx.warn(where, f"the table takes {nsteps} steps: use build: cols, or fewer rows")
             for c in cols:
                 if c.get("expr"):
                     check_expr(Lx, f"{where} column {c.get('key')}", c["expr"], keys)
@@ -346,6 +357,10 @@ def lint(deck, lint_extra_names=()):
         if t == "equation" and s.get("note") and words(s["note"]) > 20:
             Lx.warn(where, f"`note` has {words(s['note'])} words (≤ 20): one line that says what the formula tells you")
         if t == "bridge":
+            fr = str((s.get("from") or {}).get("name", "") if isinstance(s.get("from"), dict) else s.get("from") or "").lower()
+            anchors = [str(a).lower() for a in learner.get("anchors") or []]
+            if anchors and fr and not any(a in fr or fr in a for a in anchors):
+                Lx.warn(where, f"the bridge comes from {fr!r}, which is not one of the learner's anchors ({', '.join(anchors)}): use the world they picked in the probe")
             if not s.get("breaks"):
                 Lx.warn(where, "a bridge needs `breaks`: say where the analogy stops working")
             if len(s.get("pairs") or []) > 3:
@@ -403,6 +418,28 @@ def lint_equation(Lx, where, s, scope, symbols):
         Lx.warn(where, f"{len(set(ids))} terms: more than 5 is a wall; split the formula into two slides")
     if not s.get("read"):
         Lx.warn(where, "add `read`: the formula said as a plain sentence (\"spread = mean + knob × mean squared\")")
+    # no formula from nowhere: say what known form it grows from and the move that changes it (story.md §7)
+    fr = s.get("from")
+    if fr is None:
+        Lx.warn(where, "this formula comes from nowhere: add `from:` with a form the learner knows ({name, tex}) and the `move` that turns it into this one (or `from: false` if an earlier slide built it)")
+    elif fr is not False:
+        chain = fr if isinstance(fr, list) else [fr]
+        if len(chain) > 3:
+            Lx.warn(where, f"`from` has {len(chain)} links: 3 or fewer sketch the idea; put a longer derivation in `more:`")
+        for j, c in enumerate(chain):
+            if not isinstance(c, dict) or not (c.get("tex") or c.get("name")):
+                Lx.err(where, f"`from` link {j + 1} needs `tex` (the known form) or `name`")
+                continue
+            if not c.get("move"):
+                Lx.warn(where, f"`from` link {j + 1} needs `move`: the one change that leads to the next form")
+            elif words(c["move"]) > 10:
+                Lx.warn(where, f"`from` link {j + 1}: `move` has {words(c['move'])} words (≤ 10)")
+    kin = s.get("kin") or []
+    if len(kin) > 3:
+        Lx.warn(where, f"{len(kin)} relatives in `kin`: keep the 1–3 the learner is most likely to know")
+    for j, c in enumerate(kin):
+        if not isinstance(c, dict) or not (c.get("tex") or c.get("name")) or not c.get("where"):
+            Lx.err(where, f"`kin` item {j + 1} needs `where` (the topic) and `tex` or `name` (the same shape there)")
 
 
 def lint_visual(Lx, where, v, scope):
@@ -485,7 +522,7 @@ def build(path, out=None, katex_dir=None, quiet=False):
     if data_file:
         d = json.loads((path.parent / data_file).read_text())
         extra_names = list(d)
-        data_js = f"window.LUCID_DATA={safe_json(d)};"
+        data_js = f"window.VIZOS_DATA={safe_json(d)};"
     lx = lint(deck, extra_names)
     assets = {}
     for img in re.findall(r'"image":\s*"([^"]+)"', json.dumps(deck)):
@@ -495,19 +532,19 @@ def build(path, out=None, katex_dir=None, quiet=False):
             assets[img] = f"data:{mt};base64," + base64.b64encode(f.read_bytes()).decode()
         else:
             lx.err("image", f"file not found: {img}")
-    css = (KIT / "lucid.css").read_text()
+    css = (KIT / "vizos.css").read_text()
     js = "\n".join((KIT / f).read_text() for f in KIT_JS)
     needs_tex = bool(re.search(r'"type":\s*"(equation|calc|table)"|\$[^$\s][^$]*\$|"eqn":', json.dumps(deck)))
     katex = ""
     if needs_tex:
-        kd = katex_dir or os.environ.get("LUCID_KATEX_DIR")
+        kd = katex_dir or os.environ.get("VIZOS_KATEX_DIR")
         katex = inline_katex(Path(kd)) if kd else KATEX_CDN
-    title = deck.get("title", "Lucid deck")
+    title = deck.get("title", "viz-os deck")
     page = (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-            f'<meta name="theme-color" content="#091450"><title>{esc(title)}</title>{FONTS}{katex}<style>{css}</style></head><body>'
-            f'<script type="application/json" id="lucid-deck">{safe_json(deck)}</script>'
-            f'<script>window.LUCID_ASSETS={safe_json(assets)};{data_js}</script>'
+            f'<meta name="theme-color" content="#000000"><title>{esc(title)}</title>{FONTS}{katex}<style>{css}</style></head><body>'
+            f'<script type="application/json" id="vizos-deck">{safe_json(deck)}</script>'
+            f'<script>window.VIZOS_ASSETS={safe_json(assets)};{data_js}</script>'
             f'<script>{js}</script></body></html>')
     out = Path(out) if out else path.with_suffix(".html")
     out.write_text(page, encoding="utf-8")

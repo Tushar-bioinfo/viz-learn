@@ -1,4 +1,4 @@
-# Story: how a Lucid deck teaches
+# Story: how a viz-os deck teaches
 
 A deck is not a list of facts. It is one question, answered in steps the learner can follow, where each slide exists because the last one left something open.
 
@@ -62,11 +62,12 @@ Small ideas can merge moves 2–3 or 4–5 into one slide. Never skip move 1 or 
 - Good sources of anchors: rates and per-unit thinking (sport averages, prices per kg), noise and averages (form, weather, daily returns), selection and filtering (scouting, screening), and the learner's own pipelines.
 
 ## 7. Maths without mystery
-This is where decks usually fail: a table of numbers with no formula, an equation with no meaning, a number from nowhere.
+This is where decks usually fail: a table of numbers with no formula, an equation with no meaning, a number from nowhere, a formula from nowhere.
+- **No formula from nowhere** (`from:` and `kin:`). Before a formula's terms are named, show where it comes from: a form the learner already knows (from `learner.knows`, an earlier slide, or school maths) and the one move that turns it into this formula. "CPM is a percentage, counted per million instead of per hundred." "The Poisson is the binomial when there are many tries and each is rare." One to three links sketch the idea; this is not a full derivation (that goes in `more:`). Then name 1–3 relatives in `kin:`, the same shape in other topics ("run rate = runs ÷ overs"), so the learner sees one family of ideas, not one more formula to memorise. Pick relatives from the learner's anchors first.
 - **Equations** (`equation`): a plain meaning for every symbol (its `short:` or `says:` is written under the term on the formula), the running example plugged in (the kit computes it when you use `expr:`), and `read:` (the formula said as a sentence). `read:` and `code:` sit one tap away in the more sheet. At most 5 terms; split a longer formula into two slides, inside first.
 - **Totals made of pieces** (variance = counting part + wobble part; a library split into genes): show a `parts` bar, so the sizes are seen, not only summed. Use `rows` when the split changes with something (the wobble's share as the mean grows).
 - **Arithmetic** (`calc`): one line per operation, each with `say:` (what this step does) and `expr:`. The kit writes the symbols, the numbers with their names underneath, and the result. Give each result a `name:`, so the next line can use it and the learner sees where it came from.
-- **Tables** (`table`): computed columns use `expr:` and `says:`. The kit shows a formula chip, reveals one column per step, and works the focus row in full. Keep the table at 8 rows or fewer and 6 columns or fewer.
+- **Tables** (`table`): computed columns use `expr:` and `says:`. The kit goes one step at a time: first the given columns and what each holds, then one new column per step (`build: rows` walks a row per step, `build: cells` one number per step). On each step the recipe card works the focus row's numbers, and the cells the formula reads are underlined in the colour their symbol wears in the formula, so the eye can follow each number from the table into the working. Keep the table at 8 rows or fewer and 6 columns or fewer.
 - **Distributions and tests:** show where a statistic falls on its distribution (a chart with an `area` mark for the tail) before saying "p-value".
 - **Notation for papers** (goal c): show the paper's notation (`tex:` with `[term]` markers), then the same thing with your symbols and numbers. Name every index and operator (`\sum_i`, `\hat{\theta}`) in `symbols`.
 
@@ -92,7 +93,7 @@ The visual is the slide; words only point at it. Pick the visual by the job:
 Open both contact sheets and answer in your notes:
 1. Read only the titles, in order. Do they tell the story by themselves? Is each one linked by a "but" or "so"?
 2. Could a learner say where every number on every slide came from?
-3. Is each new symbol named before or on the slide where it first appears?
+3. Is each new symbol named before or on the slide where it first appears? Does each formula say where it comes from?
 4. Does each chart's lit mark (the orange one) show what its title claims?
 5. Does the deck answer the opening question in the learner's words, and say where the idea breaks?
 6. Is there anything on a slide that the learner does not need for the answer? Cut it, or move it to `more:`.

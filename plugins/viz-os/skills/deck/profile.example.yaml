@@ -1,7 +1,11 @@
-# Learner profile for Lucid decks. Copy to ~/.lucid/learner.yaml (or $LUCID_HOME/learner.yaml) and edit.
+# Learner profile for viz-os decks. Copy to ~/.viz-os/learner.yaml (or $VIZOS_HOME/learner.yaml) and edit.
 # The skill reads it before the probe, so it never asks what this file already answers, and adds to it after each deck.
 
 style: simple English, short sentences, define each term once
+prefers:                        # how this learner likes things explained; every deck follows these
+  - show where each formula comes from (a form I know and the move that changes it), not the full derivation
+  - relate a new formula to the same shape in topics I know
+  - tables worked one step at a time, with each column's formula
 goal: intuition+hand            # default goal: intuition | intuition+hand | papers | code
 length: standard                # quick | standard | deep
 
@@ -10,13 +14,17 @@ anchors:                        # worlds to borrow analogies from, strongest fir
   - your own lab or coding work
   - money (prices, returns)
 
-knows:                          # concept: 0 new · 1 heard of it · 2 can use it · 3 can teach it
+knows:                          # concept or formula: 0 new · 1 heard of it · 2 can use it · 3 can teach it
   mean: 3
   variance: 2
   p-value: 1
+  percentage: 3                 # known formulas are footholds: new formulas are shown growing from them
+
+connections: []                # comparisons that clicked ("run rate ≈ CPM"): reused as bridges and relatives
 
 confusions:                     # what tripped you up before; decks steer around these
   - tables full of numbers with no formula
   - symbols used before they are explained
+  - formulas that appear out of nowhere
 
 history: []                     # one line per deck: {date, topic, probe, note}

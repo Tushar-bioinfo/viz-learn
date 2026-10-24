@@ -1,9 +1,9 @@
-/* Lucid slides: one renderer per slide type, plus visuals (chart, stat, units, parts, flow, code, image, eqn, svg).
+/* viz-os slides: one renderer per slide type, plus visuals (chart, stat, units, parts, flow, code, image, eqn, svg).
    A renderer returns { node, steps, show(k), layout(), audit(), more }. Steps reveal with data-step="k" (1-based);
    `more` is HTML the renderer moved off the slide's face into the more sheet. */
 (function () {
   'use strict';
-  const L = window.Lucid;
+  const L = window.VizOS;
   const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   L.h = h;
   const md = s => L.md(s);
@@ -102,9 +102,12 @@
         const n = Math.round(L.val(u.n, ctx.scope, 'units.n')), hi = Math.round(L.val(u.hi ?? 0, ctx.scope, 'units.hi')), W = svg.clientWidth || 600, H = svg.clientHeight || 300;
         let cols = u.cols || Math.ceil(Math.sqrt(n * W / H)); const rows = Math.ceil(n / cols), cell = Math.min(W / cols, H / rows), r = cell * .36;
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
-        const ox = (W - cols * cell) / 2, oy = (H - rows * cell) / 2;
+        const ox = (W - cols * cell) / 2, oy = (H - rows * cell) / 2, A = L.colors.accent, gid = `ub${ctx.index}`;
+        // a lit unit is a glass bead; the others are rings
+        const rg = L.svgEl('radialGradient', { id: gid, cx: .36, cy: .3, r: .78 }, L.svgEl('defs', {}, svg));
+        [[0, L.tone(A, .55)], [.5, A], [1, L.tone(A, -.2)]].forEach(([o, c]) => L.svgEl('stop', { offset: o, 'stop-color': c }, rg));
         for (let i = 0; i < n; i++) { const cx = ox + (i % cols + .5) * cell, cy = oy + (Math.floor(i / cols) + .5) * cell, on = i < hi;
-          L.svgEl('circle', { cx, cy, r, fill: on ? L.colors.accent : 'none', stroke: on ? L.colors.accent : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
+          L.svgEl('circle', { cx, cy, r, fill: on ? `url(#${gid})` : 'none', stroke: on ? 'none' : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
       };
       vis.classList.remove('plate');
     } else if (v.parts) {
@@ -112,23 +115,29 @@
       const svg = L.svgEl('svg', {}); box.appendChild(svg);
       const items = (p.items || []).map(it => typeof it === 'string' ? { label: it } : it), multi = !!p.rows;
       if (p.build) R.steps = multi ? p.rows.length : items.length;
-      const GREYS = ['#8b8984', '#5f5e5a', '#aeaca6', '#4a4946'];
-      const fillOf = (it, i) => it.color ? (L.colors[it.color] || it.color) : it.focus ? L.colors.accent : GREYS[i % GREYS.length];
+      // pieces that are not the focus are frosted white at four strengths, so the glass shows through, as on the icons' glyphs
+      const FROST = [.5, .28, .68, .2];
+      const fillOf = (it, i) => it.color ? [L.colors[it.color] || it.color, 1] : it.focus ? [L.colors.accent, 1] : ['#e4e8f6', FROST[i % FROST.length]];
       R.layout = () => {
         const W = box.clientWidth, H = box.clientHeight; if (!W || !H) return;
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
         const val = x => L.val(x, ctx.scope, `slide ${ctx.index + 1} parts`), fmt = x => L.fmt(x, p.fmt);
+        // each piece is frosted glass: lit at the top, a little clearer at the bottom
+        const defs = L.svgEl('defs', {}, svg), made = {}, glass = ([c, a]) => made[c + a] || (made[c + a] = (() => { const id = `pg${ctx.index}-${Object.keys(made).length}`, lg = L.svgEl('linearGradient', { id, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
+          [[0, L.tone(c, .28), a], [.55, c, a * .97], [1, c, a * .78]].forEach(([o, sc, op]) => L.svgEl('stop', { offset: o, 'stop-color': sc, 'stop-opacity': op }, lg)); return id; })());
         const g = st => L.svgEl('g', st ? { 'data-pstep': st } : {}, svg);
         const text = (par, cls, x, y, t, anchor = 'middle') => { const e = L.svgEl('text', { class: cls, x, y, 'text-anchor': anchor }, par); e.textContent = t; return e; };
         // one bar per row; each piece's width is its share of the row's total. parOf(i) is the group piece i is drawn in
         const bar = (parOf, vals, x0, w, y, bh) => { const sum = vals.reduce((a, b) => a + b, 0) || 1; let x = x0; return vals.map((v, i) => {
           const ww = Math.max(0, w * v / sum), r = { x, w: ww, cx: x + ww / 2, v, share: v / sum };
-          if (ww > 0.5) L.svgEl('rect', { x: x + (i ? 2 : 0), y, width: Math.max(1, ww - (i ? 2 : 0) - (i < vals.length - 1 ? 2 : 0)), height: bh, rx: Math.min(10, bh / 4), fill: fillOf(items[i] || {}, i) }, parOf(i));
+          if (ww > 0.5) { const rx = Math.min(10, bh / 4), xx = x + (i ? 2 : 0), w2 = Math.max(1, ww - (i ? 2 : 0) - (i < vals.length - 1 ? 2 : 0)), gp = parOf(i);
+            L.svgEl('rect', { x: xx, y, width: w2, height: bh, rx, fill: `url(#${glass(fillOf(items[i] || {}, i))})` }, gp);
+            if (w2 > 2 * rx + 6) L.svgEl('path', { d: `M${xx + rx},${y + .9}H${xx + w2 - rx}`, stroke: 'rgba(255,255,255,.55)', 'stroke-width': 1.4, 'stroke-linecap': 'round' }, gp); }
           x += ww; return r; }); };
         if (!multi) {
           const vals = items.map(it => val(it.value)), sum = vals.reduce((a, b) => a + b, 0);
           const tot = p.total ? (p.total.value != null ? val(p.total.value) : sum) : null;
-          const bh = Math.min(88, H * .22), topH = tot != null ? 92 : 0, labH = 76, y0 = Math.max(0, (H - (topH + bh + 26 + labH)) / 2) + topH;
+          const bh = Math.min(112, H * .26), topH = tot != null ? 92 : 0, labH = 76, y0 = Math.max(0, (H - (topH + bh + 26 + labH)) / 2) + topH;
           const last = p.build ? items.length : 0;
           if (tot != null) { const gt = g(last); const t = L.svgEl('text', { class: 'pt', x: W / 2, y: y0 - 50, 'text-anchor': 'middle' }, gt);
             t.innerHTML = `<tspan class="pk">${L.esc(L.plain(p.total.label || 'total', ctx.scope))}  </tspan><tspan class="pv">${L.esc(fmt(tot))}</tspan>`;
@@ -146,7 +155,7 @@
           const n = p.rows.length, legH = 54, rowH = Math.min(96, (H - legH) / n), bh = rowH * .58;
           const lw = Math.max(...p.rows.map(r => L.measure(L.plain(r.label || '', ctx.scope), 24, 640))) + 26, endW = p.share ? 96 : 120, bw = Math.max(40, W - lw - endW);
           const fi = Math.max(0, items.findIndex(it => it.focus));
-          let lx = 0; items.forEach((it, i) => { L.svgEl('rect', { x: lx, y: 10, width: 22, height: 22, rx: 5, fill: fillOf(it, i) }, svg); const t = text(svg, 'pk', lx + 32, 29, L.plain(it.label || '', ctx.scope), 'start'); lx += 32 + L.measure(t.textContent, 24, 560) + 34; });
+          let lx = 0; items.forEach((it, i) => { L.svgEl('rect', { x: lx, y: 10, width: 22, height: 22, rx: 5, fill: `url(#${glass(fillOf(it, i))})` }, svg); const t = text(svg, 'pk', lx + 32, 29, L.plain(it.label || '', ctx.scope), 'start'); lx += 32 + L.measure(t.textContent, 24, 560) + 34; });
           const y0 = legH + Math.max(0, (H - legH - n * rowH) / 2);
           p.rows.forEach((r, j) => { const gj = g(p.build ? j + 1 : 0), y = y0 + j * rowH + (rowH - bh) / 2, vals = (r.values || []).map(val);
             text(gj, 'pr', 0, y + bh / 2 + 9, L.plain(r.label || '', ctx.scope), 'start');
@@ -184,7 +193,7 @@
       vis.classList.remove('plate'); vis.classList.add('vis-code'); const pre = h('div', 'codebox', codeHTML(v.code, v.terms)); vis.appendChild(pre);
       R.layout = () => fitCode(pre);
     } else if (v.image) {
-      const box = h('div', 'imgbox'); const img = h('img'); img.src = (window.LUCID_ASSETS || {})[v.image] || v.image; img.alt = v.alt || ''; box.appendChild(img); vis.appendChild(box);
+      const box = h('div', 'imgbox'); const img = h('img'); img.src = (window.VIZOS_ASSETS || {})[v.image] || v.image; img.alt = v.alt || ''; box.appendChild(img); vis.appendChild(box);
     } else if (v.eqn) {
       const box = h('div', 'eqmain'); vis.appendChild(box); const tex = v.eqn;
       R.layout = () => { L.renderTex(box, L.interp(tex, ctx.scope, true), true); fitEq(box); };
@@ -263,28 +272,78 @@
     if (need > pad0) container.style.paddingBottom = need + 'px';
   }
 
-  // the name of each term, right under the formula: the formula is the figure, so its labels sit on it.
-  // Labels go under the first place a term appears; a label that would touch its neighbour drops a row and keeps a leader.
+  // the name of each term, on the formula itself: the formula is the figure, so its labels sit on it.
+  // Terms in the top half of the formula (numerators, powers) are named above it, the rest below, so a fraction's
+  // labels never stack on one leader. A label may slide sideways as long as its leader still lands inside it;
+  // only then does it drop a row, and a label already placed slides aside so a deeper leader never cuts through it.
   function termLabels(container, items) {
     container.querySelectorAll('.tlab').forEach(e => e.remove());
-    container.style.paddingBottom = '';
-    const base = container.getBoundingClientRect(), sc = base.width / (container.offsetWidth || 1) || L.scale || 1;
-    const low = [...container.querySelectorAll('.katex .base, .ul')].reduce((m, e) => Math.max(m, e.getBoundingClientRect().bottom), base.top);
-    const top0 = (low - base.top) / sc + 14, rows = [];
-    items.forEach(it => {
-      const sp = container.querySelector(`.lt-${CSS.escape(it.id)}`); if (!sp || !it.text) return;
-      const r = sp.getBoundingClientRect(); if (!r.width) return;
+    container.style.paddingTop = container.style.paddingBottom = '';
+    const sc = () => container.getBoundingClientRect().width / (container.offsetWidth || 1) || L.scale || 1, W = container.offsetWidth;
+    const bases = () => [...container.querySelectorAll('.katex .base')].map(e => e.getBoundingClientRect()).filter(r => r.height);
+    const kb = bases(); if (!kb.length) return;
+    const base0 = container.getBoundingClientRect(), s0 = sc(), top = Math.min(...kb.map(r => r.top)), bot = Math.max(...kb.map(r => r.bottom));
+    // the formula's axis is the middle of its = sign; terms clearly above it (numerators, powers) are named above
+    const rel = container.querySelector('.katex .mrel'), rr = rel && rel.getBoundingClientRect(), mid = rr && rr.height ? (rr.top + rr.bottom) / 2 : (top + bot) / 2;
+    const labs = items.map(it => {
+      const sp = container.querySelector(`.lt-${CSS.escape(it.id)}`); if (!sp || !it.text) return null;
+      const r = sp.getBoundingClientRect(); if (!r.width) return null;
       const lab = h('div', 'tlab', `<span class="lk"></span>${L.esc(it.text)}`); lab.dataset.term = it.id; container.appendChild(lab);
-      const w = lab.offsetWidth, hh = lab.offsetHeight;
-      const cx = Math.max(w / 2, Math.min(container.offsetWidth - w / 2, (r.left + r.width / 2 - base.left) / sc));
-      let row = 0; while (rows.some(b => b.row === row && Math.abs(b.cx - cx) < (b.w + w) / 2 + 16) && row < 4) row++;
-      const y = top0 + rows.filter(b => b.row < row).reduce((m, b) => Math.max(m, b.bottom - top0 + 10), 0);
-      rows.push({ cx, w, row, bottom: y + hh });
-      lab.style.left = cx + 'px'; lab.style.top = y + 'px';
-      lab.querySelector('.lk').style.height = Math.max(0, y - top0 + 8) + 'px';
-    });
-    const need = rows.length ? Math.max(...rows.map(b => b.bottom)) - container.offsetHeight + 6 : 0;
+      // a label that wraps keeps its box at the full max-width; shrink it to its longest line so neighbours fit
+      const rg = document.createRange(); rg.selectNodeContents(lab.lastChild); const lines = [...rg.getClientRects()];
+      if (lines.length > 1) lab.style.width = Math.ceil((Math.max(...lines.map(q => q.right)) - Math.min(...lines.map(q => q.left))) / s0) + 2 + 'px';
+      return { lab, tx: (r.left + r.width / 2 - base0.left) / s0, w: lab.offsetWidth, hh: lab.offsetHeight, up: (r.top + r.bottom) / 2 < mid - 8 && bot - top > 40 };
+    }).filter(Boolean);
+    const M = 12, GAP = 16; let crowded = false;
+    const place = list => {
+      const P = [], x0 = p => p.cx - p.l.w / 2, x1 = p => p.cx + p.l.w / 2;
+      const lo = l => Math.max(l.w / 2, l.tx - (l.w / 2 - M)), hi = l => Math.min(W - l.w / 2, l.tx + (l.w / 2 - M));
+      // move p left until its right edge is at most `right`, pushing its left-hand neighbours along; each keeps its leader
+      // inside it, and none may come to cover a deeper label's leader. Fills `moves` and says whether it can be done.
+      const at = (q, moves) => moves.has(q) ? moves.get(q) : q.cx;
+      const pushLeft = (p, right, moves) => {
+        const nx = Math.min(at(p, moves), right - p.l.w / 2); if (nx < lo(p.l) - .5) return false;
+        if (P.some(q => q.row > p.row && q.l.tx > nx - p.l.w / 2 - 4 && q.l.tx < nx + p.l.w / 2 + 4)) return false;
+        moves.set(p, nx);
+        const q = P.filter(q => q !== p && q.row === p.row && q.cx < p.cx).sort((u, v) => v.cx - u.cx)[0];
+        return !q || at(q, moves) + q.l.w / 2 + GAP <= nx - p.l.w / 2 || pushLeft(q, nx - p.l.w / 2 - GAP, moves);
+      };
+      [...list].sort((a, b) => a.tx - b.tx).forEach(l => {
+        for (let row = 0; row < 4; row++) {
+          let cx = Math.max(lo(l), Math.min(hi(l), l.tx));
+          P.filter(q => q.row === row).forEach(q => { if (x1(q) + GAP > cx - l.w / 2) cx = Math.max(cx, x1(q) + GAP + l.w / 2); });
+          P.filter(q => q.row > row).forEach(q => { if (q.l.tx > cx - l.w / 2 - 4 && q.l.tx < cx + l.w / 2 + 4) cx = Math.max(cx, q.l.tx + 4 + l.w / 2); });
+          const moves = new Map();
+          if (cx > hi(l) + .5) {   // no room on the right: push the labels in this row to the left, if they can go
+            const q = P.filter(q => q.row === row).sort((a, b) => b.cx - a.cx)[0];
+            if (!q || !pushLeft(q, hi(l) - l.w / 2 - GAP, moves)) continue;
+            cx = hi(l);
+          }
+          // this leader must not cut through a label nearer the formula: push that one (and its neighbours) left
+          const blockers = P.filter(q => q.row < row && l.tx > x0(q) - 4 && l.tx < x1(q) + 4);
+          if (!blockers.every(q => pushLeft(q, l.tx - 4, moves))) continue;
+          moves.forEach((nx, q) => { q.cx = nx; }); P.push({ l, row, cx }); return;
+        }
+        crowded = true; P.push({ l, row: 3, cx: Math.max(lo(l), Math.min(hi(l), l.tx)) });   // nowhere clean: the audit says so
+      });
+      return P;
+    };
+    const below = place(labs.filter(l => !l.up)), above = place(labs.filter(l => l.up));
+    const RH = Math.max(0, ...labs.map(l => l.hh)) + 10, nb = below.length ? Math.max(...below.map(p => p.row)) + 1 : 0, na = above.length ? Math.max(...above.map(p => p.row)) + 1 : 0;
+    // room above the formula for the labels that go there; then measure again, since the formula moved down
+    if (na) container.style.paddingTop = (na * RH + 14) + 'px';
+    // clear of the formula and of the underlines that go 6px under each term (6px tall)
+    const base = container.getBoundingClientRect(), s1 = sc(), kb2 = bases(), terms = [...container.querySelectorAll('.lt')].map(e => e.getBoundingClientRect()).filter(r => r.height);
+    const topA = (Math.min(...kb2.map(r => r.top), ...terms.map(r => r.top)) - base.top) / s1 - 10;
+    const top0 = (Math.max(...kb2.map(r => r.bottom), ...terms.map(r => r.bottom + 12 * s1)) - base.top) / s1 + 14;
+    const put = (p, up) => { const l = p.l, y = up ? topA - (p.row + 1) * RH + 10 : top0 + p.row * RH, lk = l.lab.querySelector('.lk');
+      Object.assign(l.lab.style, { left: p.cx + 'px', top: y + 'px' }); if (up) l.lab.classList.add('up');
+      lk.style.left = (l.tx - (p.cx - l.w / 2) - 1) + 'px'; lk.style.height = Math.max(0, up ? topA + 6 - (y + l.hh) : y - top0 + 14) + 'px';
+      return y + l.hh; };
+    const lowest = Math.max(0, ...below.map(p => put(p, false))); above.forEach(p => put(p, true));
+    const need = nb ? lowest - container.offsetHeight + 6 : 0;
     if (need > 0) container.style.paddingBottom = need + 'px';
+    container.dataset.crowded = crowded ? 1 : '';
   }
 
   // ---------- slide types ----------
@@ -380,17 +439,28 @@
     const colorOf = n => n === s.lhs ? L.colors.accent : L.colors[TERMC[Math.min(Math.max(0, inputs.indexOf(n)), 3)]] || L.colors.mist;
     // the numbers a computable equation runs on: a term's `value`, else the name in scope
     const eqScope = () => { const sc = L.scope(ctx.scope, {}); inputs.forEach(n => { const t = term(n); if (t.value != null) sc[n] = L.val(t.value, ctx.scope, `term ${n}`); }); return sc; };
-    const eq = h('div', 'eqmain'); wrap.appendChild(eq);
+    // where the formula comes from: a form the learner already knows, and the one move that turns it into this one;
+    // a chain of two or three such links sketches a derivation without doing all of it (story.md §7)
+    const chain = s.from ? (Array.isArray(s.from) ? s.from : [s.from]) : [];
+    const chip = (c, cls) => `<div class="${cls} g thin">${c.where || c.name ? `<span class="lg-name">${md([c.where, c.name].filter(Boolean).join(' · '))}</span>` : ''}${c.tex ? `<span class="lg-tex" data-tex="${L.esc(c.tex)}"></span>` : ''}</div>`;
+    // one band across the top, like a family tree: the parent form on the left, relatives in other topics on the right
+    const fam = (chain.length || (s.kin && s.kin.length)) ? h('div', 'family') : null; if (fam) { wrap.appendChild(fam); wrap.classList.add('has-fam'); }
+    if (chain.length) fam.appendChild(h('div', 'lineage', `<div class="lg-tag">Comes from</div>` + chain.map(c => chip(c, 'lg-chip') + (c.move ? `<div class="lg-move"><span class="lg-arr"></span><span class="lg-verb">${md(c.move)}</span></div>` : '')).join('')));
+    const eqb = h('div', 'eqbody'); wrap.appendChild(eqb);   // the formula, its numbers and its note; the family sits beside or above
+    const eq = h('div', 'eqmain'); eqb.appendChild(eq);
     // step 1 is the bare formula; then each term gets its name (one per step, or all at once when there are many)
     const build = s.build ?? order.length <= 4, termSteps = {};
     let step = 1; order.forEach(n => { termSteps[n] = build ? ++step : 2; }); if (!build && order.length) step = 2;
     let numRow = null;
-    if (s.plug !== false && (computable || s.plug)) { numRow = h('div', 'eqnum'); numRow.dataset.step = ++step; numRow.innerHTML = `<span class="tag">With our numbers</span><span class="val"></span>`; wrap.appendChild(numRow); }
-    if (s.note) { const r = h('div', 'eqso'); r.dataset.step = ++step; r.innerHTML = md(s.note); wrap.appendChild(r); }
+    if (s.plug !== false && (computable || s.plug)) { numRow = h('div', 'eqnum'); numRow.dataset.step = ++step; numRow.innerHTML = `<span class="tag">With our numbers</span><span class="val"></span>`; eqb.appendChild(numRow); }
+    if (s.note) { const r = h('div', 'eqso'); r.dataset.step = ++step; r.innerHTML = md(s.note); eqb.appendChild(r); }
+    // the same shape in other topics: this formula is one more member of a family the learner may know
+    if (s.kin && s.kin.length) { const k = h('div', 'kin', `<div class="lg-tag">Same shape</div>` + s.kin.map(c => chip(c, 'kin-chip')).join('')); k.dataset.step = ++step; fam.appendChild(k); }
     // said aloud, and in code: one tap away in the more sheet, so the face stays the formula and its names
     const tc = {}; order.forEach(n => tc[n] = colorOf(n));
     const more = (s.read ? `<div class="eyebrow">Say it</div><div class="p say">“${md(s.read)}”</div>` : '') + (s.code ? `<div class="eyebrow">In code</div><div class="codebox">${codeHTML(s.code, tc)}</div>` : '');
     const draw = () => {
+      wrap.querySelectorAll('.lg-tex').forEach(e => L.renderTex(e, L.interp(e.dataset.tex, ctx.scope, true).replace(/\\dfrac/g, '\\tfrac'), false));   // one line tall in a chip
       L.renderTex(eq, L.interp(main, ctx.scope, true), true); fitEq(eq);
       const sc = computable ? eqScope() : ctx.scope;
       let result = null;
@@ -401,11 +471,13 @@
           const sub = L.tex(s.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null, wrap: (n, t) => wrapT(n, t), fmt: s.fmt });
           L.renderTex(v, `${sub} = \\htmlClass{res}{${L.numTex(result, s.fmt)}}`, false);
         } else L.renderTex(v, L.interp(String(s.plug).replace(/\[([A-Za-z_]\w*)\]/g, (_, n) => wrapT(n, sym(n))), ctx.scope, true), false);
+        numRow.style.fontSize = ''; let fs = parseFloat(getComputedStyle(numRow).fontSize), guard = 0;   // one line: shrink to fit, never wrap
+        while (numRow.scrollWidth > numRow.clientWidth + 2 && fs > 24 && guard++ < 20) { fs -= 2; numRow.style.fontSize = fs + 'px'; }
       }
       L.fill(node, ctx.scope);
       requestAnimationFrame(() => {
-        overlays(eq, colorOf, 'lt', false); if (numRow) overlays(numRow, colorOf, 'lt', false);
         termLabels(eq, order.map(n => ({ id: n, text: L.plain(term(n).short || term(n).says || '', ctx.scope) })));
+        overlays(eq, colorOf, 'lt', false); if (numRow) overlays(numRow, colorOf, 'lt', false);   // after the labels: they may move the formula
         R.show(ctx.k);
       });
     };
@@ -417,6 +489,7 @@
         eq.querySelectorAll('.tlab').forEach(t => t.classList.toggle('off', k < (termSteps[t.dataset.term] ?? 1)));
       },
       audit: () => { const out = []; const kx = eq.querySelector('.katex'); if (kx && kx.scrollWidth > eq.clientWidth + 4) out.push('formula is wider than its box');
+        if (eq.dataset.crowded) out.push('term labels are crowded (a leader crosses a label): give long meanings a `short:`');
         const miss = order.filter(n => !term(n).says); if (miss.length) out.push(`a term has no meaning: ${miss.join(', ')}`); return out; },
     };
     return R;
@@ -455,6 +528,9 @@
     return { node, steps: lines.length, layout: draw, show: k => { lines.forEach(({ row }, i) => row.classList.toggle('now', i + 1 === k)); v && v.show(k); }, audit: () => v ? v.audit() : [] };
   };
 
+  // table: the given columns first, then one computed column (or row, or cell) per step. On each step the recipe card
+  // works the numbers, and the cells the formula reads light up in the colour their symbol wears in the formula.
+  // build: cols (default) | rows | cells | false. Any computed number can be tapped to see its own working.
   T.table = (s, ctx) => {
     const node = h('section', 'slide s-table'); node.appendChild(head(s));
     const body = h('div', 'body'); node.appendChild(body);
@@ -462,27 +538,61 @@
     const rec = h('div', 'recipe g plate enter'); body.appendChild(rec);
     const cols = s.cols || [];
     const rowsSrc = s.rows ? s.rows : s.from ? L.val(s.from, ctx.scope, 'table.from') : [];
-    const der = cols.filter(c => c.expr);
+    const der = cols.filter(c => c.expr), keys = new Set(cols.map(c => c.key));
     const focus = typeof s.focus === 'number' ? s.focus : Math.max(0, rowsSrc.findIndex(r => Object.values(r).includes(s.focus)));
-    const sym = n => { const c = cols.find(x => x.key === n); return c && c.tex ? c.tex : (ctx.symbols || {})[n] ? ctx.symbols[n].tex || L.autoSym(n) : c ? `\\text{${c.label || n}}` : L.autoSym(n); };
-    const says = n => { const c = cols.find(x => x.key === n); return (c && c.says) || saysOf(ctx, n) || (c && c.label) || n; };
-    const recipes = der.map((c, i) => { const r = h('div', 'rk'); r.dataset.only = i + 1; r.innerHTML = `<div class="eyebrow">Column ${cols.indexOf(c) + 1} · how it is made</div><div class="rname">${md(c.label || c.key)}</div><div class="rsays">${md(c.says || saysOf(ctx, c.key) || '')}</div><div class="rf"></div><div class="rw"></div>`; rec.appendChild(r); return r; });
+    const colOf = n => cols.find(x => x.key === n);
+    const sym = n => { const c = colOf(n); return c && c.tex ? c.tex : (ctx.symbols || {})[n] ? ctx.symbols[n].tex || L.autoSym(n) : c ? `\\text{${c.label || n}}` : L.autoSym(n); };
+    // a column shows its symbol in the header when it has one, unless the symbol only repeats the label (CPM, CPM)
+    const realSym = n => { const c = colOf(n); if (!(c && c.tex) && !(ctx.symbols || {})[n]) return false; return L.texPlain(sym(n)).toLowerCase() !== label(n).toLowerCase(); };
+    const says = n => { const c = colOf(n); return (c && c.says) || saysOf(ctx, n) || (c && c.label) || n; };
+    const label = n => { const c = colOf(n); return L.plain((c && c.label) || n, ctx.scope); };
+    // in a column's formula: the result is orange; what it reads takes s1, s2, s3 in order
+    const tcOf = (c, n) => n === c.key ? L.colors.accent : L.colors[TERMC[Math.min(3, Math.max(0, L.names(c.expr).indexOf(n)))]] || L.colors.mist;
+    const reads = c => L.names(c.expr).filter(n => keys.has(n) && n !== c.key);
+    const mode = s.build === false ? 'none' : s.build === true || s.build == null ? 'cols' : s.build;
     if (!der.length) rec.remove();
-    let computed = [];
+    // the plan: each step names the cells it fills, the row being worked and the columns worked on it
+    const plan = [];
+    if (der.length && mode !== 'none') {
+      if (s.given !== false) plan.push({ cells: [], row: focus, cols: [] });
+      if (mode === 'rows') rowsSrc.forEach((_, r) => plan.push({ cells: der.map(c => [r, c.key]), row: r, cols: der.map(c => c.key) }));
+      else if (mode === 'cells') der.forEach(c => rowsSrc.forEach((_, r) => plan.push({ cells: [[r, c.key]], row: r, cols: [c.key] })));
+      else der.forEach(c => plan.push({ cells: rowsSrc.map((_, r) => [r, c.key]), row: focus, cols: [c.key] }));
+    }
+    const nWork = plan.filter(p => p.cols.length).length;
+    let computed = [], blocks = {};
+    const rowName = r => { const c0 = cols[0], v0 = (computed[r] || {})[c0 && c0.key]; return typeof v0 === 'number' ? `${label(c0.key)} = ${L.fmt(v0, c0.fmt)}` : L.plain(String(v0 ?? `row ${r + 1}`), ctx.scope); };
+    // one line of working: symbol = formula = numbers = result, each term underlined in its colour
+    const working = (c, r, withSym = true) => {
+      const fr = computed[r] || {}, sc = L.scope(ctx.scope, fr), names = [], seen = new Set();
+      const lt = (n, t) => `\\htmlClass{lt lt-${n}}{${t}}`;
+      const f = L.tex(c.expr, { sym, wrap: (n, t) => keys.has(n) ? lt(n, t) : t });
+      const sub = L.tex(c.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null,
+        wrap: (n, t) => { if (keys.has(n)) return lt(n, t); if (seen.has(n)) return t; seen.add(n); names.push(says(n)); return `\\htmlClass{op op-${names.length - 1}}{${t}}`; } });
+      return { f: `${lt(c.key, sym(c.key))} = ${f}`, sub: `${sub} = \\htmlClass{res}{${L.numTex(fr[c.key], c.fmt)}}`, names, withSym };
+    };
+    const block = (k, html) => { const b0 = h('div', 'rk', html); b0.dataset.k = k; rec.appendChild(b0); blocks[k] = b0; return b0; };
     const draw = () => {
       computed = rowsSrc.map(r => { const sc = L.scope(ctx.scope, r); const out = { ...r }; der.forEach(c => { out[c.key] = L.try(c.expr, sc, `slide ${ctx.index + 1} column ${c.key}`); sc[c.key] = out[c.key]; }); return out; });
-      const th = cols.map(c => `<th class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}">${c.expr ? '<span class="fx">f</span>' : ''}${md(c.label || c.key)}</th>`).join('');
-      const tb = computed.map((r, i) => `<tr class="${i === focus ? 'focus' : ''}">${cols.map(c => `<td class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}">${typeof r[c.key] === 'number' ? L.fmt(r[c.key], c.fmt) : md(r[c.key])}</td>`).join('')}</tr>`).join('');
+      const th = cols.map(c => `<th class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}">${c.expr ? '<span class="fx">f</span>' : ''}${md(c.label || c.key)}${realSym(c.key) ? '<span class="sy"></span>' : ''}</th>`).join('');
+      const tb = computed.map((r, i) => `<tr data-r="${i}" style="--ri:${i}">${cols.map(c => `<td class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}" data-r="${i}">${typeof r[c.key] === 'number' ? L.fmt(r[c.key], c.fmt) : md(r[c.key])}</td>`).join('')}</tr>`).join('');
       tw.innerHTML = `<table class="t"><thead><tr>${th}</tr></thead><tbody>${tb}</tbody></table>`;
-      der.forEach((c, i) => {
-        const r = recipes[i], fr = computed[focus] || {}, sc = L.scope(ctx.scope, fr);
-        L.renderTex(r.querySelector('.rf'), `${sym(c.key)} = ${L.tex(c.expr, { sym })}`, false);
-        const names = [], seen = new Set(); const sub = L.tex(c.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null, wrap: (n, t) => { if (seen.has(n)) return t; seen.add(n); names.push(says(n)); return `\\htmlClass{op op-${names.length - 1}}{${t}}`; } });
-        const c0 = cols[0], v0 = fr[c0 && c0.key];
-        const who = typeof v0 === 'number' ? `${L.esc(L.plain(c0.label || c0.key))} = ${L.fmt(v0, c0.fmt)}` : md(String(v0 ?? 'the first row'));
-        const rw = r.querySelector('.rw'); rw.innerHTML = `<div class="small" style="margin-bottom:6px">For ${who}:</div><span></span>`;
-        L.renderTex(rw.querySelector('span'), `${sub} = \\htmlClass{res}{${L.numTex(fr[c.key], c.fmt)}}`, false); r._names = names;
-      });
+      tw.querySelectorAll('th .sy').forEach(e => L.renderTex(e, sym(e.parentElement.dataset.col), false));
+      // the recipe card holds every block in one grid cell, so it is as tall as its tallest step and never jumps
+      rec.innerHTML = ''; blocks = {};
+      if (der.length) {
+        const inputs = [...new Set(der.flatMap(reads))].filter(n => !colOf(n).expr);
+        const per = mode === 'rows' ? 'row' : mode === 'cells' ? 'number' : 'column';
+        block('given', `<div class="eyebrow">Start here</div><div class="rname">What each column holds</div>` +
+          inputs.map(n => `<div class="gl"><span class="gs" data-n="${L.esc(n)}"></span><b>${L.esc(label(n))}</b><span class="gm">${md(says(n))}</span></div>`).join('') +
+          `<div class="small">Then one new ${per} per step.</div>`);
+        rec.querySelectorAll('.gs').forEach(e => L.renderTex(e, sym(e.dataset.n), false));
+        const one = (c, r, eyebrow) => { const w = working(c, r), b0 = block(`${r}:${c.key}`, `<div class="eyebrow">${eyebrow}</div><div class="rname">${md(c.label || c.key)}</div><div class="rsays">${md(c.says || saysOf(ctx, c.key) || '')}</div><div class="rf"></div><div class="rw"><div class="small">For ${L.esc(rowName(r))}:</div><span></span></div>`);
+          L.renderTex(b0.querySelector('.rf'), w.f, false); L.renderTex(b0.querySelector('.rw span'), w.sub, false); b0._names = w.names; b0._c = c; };
+        der.forEach((c, i) => rowsSrc.forEach((_, r) => one(c, r, mode === 'cells' ? `Column ${i + 1} of ${der.length} · row ${r + 1} of ${rowsSrc.length}` : `Step ${i + 1} of ${der.length} · how it is made`)));
+        if (mode === 'rows') rowsSrc.forEach((_, r) => { const b0 = block(`${r}:*`, `<div class="eyebrow">Row ${r + 1} of ${rowsSrc.length}</div><div class="rname">${L.esc(rowName(r))}</div>` + der.map(c => `<div class="rline" data-col="${L.esc(c.key)}"><span class="rl">${md(c.label || c.key)}</span><span class="rm"></span></div>`).join(''));
+          b0.querySelectorAll('.rline').forEach(e => { const c = colOf(e.dataset.col), w = working(c, r); L.renderTex(e.querySelector('.rm'), `${w.f} = ${w.sub}`, false); }); b0._multi = true; });
+      }
       // too wide for its column: put the recipe under the table; still too wide: shrink the table to fit
       const o = document.body.classList.contains('port') ? 'port' : 'land';
       if (R.orient !== o) { R.orient = o; body.classList.remove('stacked'); }
@@ -490,17 +600,41 @@
       const need = t.scrollWidth + 60, room = body.clientWidth - (body.classList.contains('stacked') ? 0 : rec.offsetWidth + 30);
       if (need > room && der.length) body.classList.add('stacked');
       if (t.scrollWidth > tw.clientWidth - 8) t.style.zoom = Math.max(.6, (tw.clientWidth - 8) / t.scrollWidth);
-      requestAnimationFrame(() => recipes.forEach(r => opLabels(r.querySelector('.rw'), r._names || [])));
+      // a line of working stays on one line: shrink it to fit the card rather than let it wrap
+      rec.querySelectorAll('.rf, .rm, .rw > span').forEach(e => { e.style.fontSize = ''; const box = e.closest('.rk'); let fs = parseFloat(getComputedStyle(e).fontSize), guard = 0;
+        while (e.scrollWidth > box.clientWidth + 1 && fs > 20 && guard++ < 20) { fs -= 2; e.style.fontSize = fs + 'px'; } });
+      tw.querySelectorAll('td.der').forEach(td => td.addEventListener('click', e => { e.stopPropagation(); pick(+td.dataset.r, [td.dataset.col]); }));
+      tw.querySelectorAll('th.der').forEach(th0 => th0.addEventListener('click', e => { e.stopPropagation(); pick(focus, [th0.dataset.col]); }));
       R.show(ctx.k);
     };
-    const R = {
-      node, steps: der.length, layout: draw,
-      show: k => {
-        der.forEach((c, i) => tw.querySelectorAll(`[data-col="${CSS.escape(c.key)}"]`).forEach(e => { e.classList.toggle('pend', i + 1 > k); e.classList.toggle('now', i + 1 === k && e.tagName === 'TH'); }));
-        recipes.forEach((r, i) => r.classList.toggle('shown', i + 1 === Math.max(1, Math.min(k, der.length))));
-      },
+    // light the row being worked, the cells it reads (in their formula colours) and the cell it fills; show its working
+    const pick = (row, ck) => {
+      tw.querySelectorAll('.wrow, .src, .cur, .now').forEach(e => e.classList.remove('wrow', 'src', 'cur', 'now'));
+      const cell = (r, k) => tw.querySelector(`td[data-r="${r}"][data-col="${CSS.escape(k)}"]`);
+      if (ck.length || mode === 'none') tw.querySelector(`tr[data-r="${row}"]`)?.classList.add('wrow');
+      ck.forEach(k => { const c = colOf(k); tw.querySelector(`th[data-col="${CSS.escape(k)}"]`)?.classList.add('now'); cell(row, k)?.classList.add('cur');
+        reads(c).forEach(n => { const e = cell(row, n); if (e && !e.classList.contains('pend')) { e.classList.add('src'); e.style.setProperty('--tc', tcOf(c, n)); } }); });
+      const k = !ck.length ? 'given' : ck.length > 1 ? `${row}:*` : `${row}:${ck[0]}`;
+      Object.values(blocks).forEach(b0 => b0.classList.toggle('shown', b0 === blocks[k]));
+      const b0 = blocks[k]; if (!b0) return;
+      // underlines in the formula colours; a deck value (not a column) gets its name written under its number
+      const c = colOf(ck[0] || '');
+      const colorOf = n => (b0._multi ? tcOf(colOf([...b0.querySelectorAll('.rline')].find(e => e.querySelector(`.lt-${CSS.escape(n)}`))?.dataset.col || ck[0]), n) : c ? tcOf(c, n) : L.colors.mist);
+      requestAnimationFrame(() => { if (!b0.isConnected) return;
+        if (b0._multi) b0.querySelectorAll('.rline').forEach(e => { const cc = colOf(e.dataset.col); overlays(e.querySelector('.rm'), n => tcOf(cc, n), 'lt', false); });
+        else if (b0.querySelector('.rf')) { overlays(b0.querySelector('.rf'), colorOf, 'lt', false); overlays(b0.querySelector('.rw'), colorOf, 'lt', false); opLabels(b0.querySelector('.rw'), b0._names || []); } });
     };
-    tw.addEventListener('click', e => { const t = e.target.closest('th.der'); if (!t) return; e.stopPropagation(); const i = der.findIndex(c => c.key === t.dataset.col); recipes.forEach((r, j) => r.classList.toggle('shown', j === i)); requestAnimationFrame(() => recipes.forEach(r => opLabels(r.querySelector('.rw'), r._names || []))); });
+    const R = {
+      node, steps: plan.length, layout: draw,
+      show: k => {
+        const upto = mode === 'none' ? null : plan.slice(0, Math.max(0, k)), cur = plan[k - 1];
+        const shown = new Set(upto ? upto.flatMap(p => p.cells.map(([r, c]) => `${r}:${c}`)) : computed.flatMap((_, r) => der.map(c => `${r}:${c.key}`)));
+        tw.querySelectorAll('td.der').forEach(td => td.classList.toggle('pend', !shown.has(`${td.dataset.r}:${td.dataset.col}`)));
+        tw.querySelectorAll('th.der').forEach(th0 => th0.classList.toggle('pend', !der.some(c => c.key === th0.dataset.col && computed.some((_, r) => shown.has(`${r}:${c.key}`)))));
+        if (cur) pick(cur.row, cur.cols); else if (der.length) pick(focus, mode === 'none' ? [der[0].key] : []);
+      },
+      audit: () => plan.length > 15 ? [`the table takes ${plan.length} steps: use build: cols, or fewer rows`] : [],
+    };
     return R;
   };
 

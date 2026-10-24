@@ -1,0 +1,20 @@
+{
+  "name": "viz-os",
+  "version": "1.0.0",
+  "description": "Learning decks that explain, not just show, in an iOS Liquid Glass style on black (blue-tinted glass, orange headlines) for laptop and phone. Asks what you know and which comparisons click for you, then tells the story from the ground up, mostly with visuals. Every formula shows where it comes from and its relatives in other topics, with each term named on the formula and run with real numbers; tables compute one step at a time; charts are annotated and interactive; checkpoints make you predict first. Lint plus a desktop-and-phone browser check keep long decks on-style.",
+  "author": {
+    "name": "Tushar Singh"
+  },
+  "repository": "https://github.com/Tushar-bioinfo/viz-learn",
+  "keywords": [
+    "learning",
+    "teaching",
+    "slides",
+    "deck",
+    "visualisation",
+    "liquid-glass",
+    "ios",
+    "statistics",
+    "bioinformatics"
+  ]
+}

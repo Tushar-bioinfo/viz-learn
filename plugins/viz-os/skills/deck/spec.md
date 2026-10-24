@@ -22,6 +22,7 @@ symbols:                              # every name that appears in a formula
 abbr: {NB: negative binomial}         # spelled-out abbreviations (lint)
 data_file: data.json                  # optional: big data made by a script; keys join data
 include: [ch2.yaml, ch3.yaml]         # optional: more slides from other files
+theme: {glass: clear}                 # optional: neutral glass instead of the default blue-tinted glass
 slides: [ … ]
 ```
 
@@ -61,6 +62,14 @@ slides: [ … ]
   code: var = mu + alpha * mu**2      # optional, in the more sheet; names matching terms get their colour
   note: For our gene, that is {{v|0}}. # optional closing line (≤ 20 words)
   build: false                        # name all terms at once (default: one per step when there are ≤ 4)
+  from:                               # where it comes from: a form the learner knows, and the one move that turns it into this one
+    - {name: counting alone, tex: '\sigma^2 = \mu', move: "let each sample's true level wobble"}
+    - {name: spreads add, tex: '\sigma^2 = \mu + \mathrm{Var}(\lambda)', move: the wobble grows with the level}
+    # 1–3 links sketch the derivation, not all of it; the full working goes in `more:`. `from: false` only when an
+    # earlier slide built this formula step by step
+  kin:                                # the same shape in other topics (1–3), shown at the last step
+    - {where: ecology, name: Taylor's law, tex: '\sigma^2 = a\mu^b'}
+    - {where: genetics, name: beta-binomial}
   # each term's label under the formula is its symbol's `short`, else its `says`: keep them to a few words
   # display-only form for notation the expression language cannot compute:
   # tex: 'p(y \mid [theta]) = \prod_{[i]} [p_i]'   (mark every term as [name]; plug: '… {{x}} …')
@@ -69,13 +78,18 @@ slides: [ … ]
   lines:
     - {say: Find the share of all reads, expr: xA / libA, name: p}
     - {say: Scale to a million reads, expr: p * 1e6, name: cpm, fmt: 0}
-- type: table                         # computed columns show their formula; one column per step
+- type: table                         # step by step: first the given columns and what each holds, then one new column per step
   rows: [{gene: A, x: 120, N: 1000}, {gene: B, x: 30, N: 1000}]   # or from: genes (a list in data)
   cols:
     - {key: gene, label: gene}
     - {key: x, label: reads}
     - {key: p, label: share, expr: x / N, fmt: 3, says: the gene's share of all reads}
-  focus: 0                            # the row worked in full
+  focus: 0                            # the row worked in full (build: cols)
+  build: cols                         # cols: a column per step · rows: a row per step (each row's working) ·
+                                      # cells: one number per step · false: all at once
+  given: false                        # skip the first step that names the given columns
+  # on each step the cells the formula reads are underlined in the colour their symbol has in the formula, and the
+  # recipe card works the numbers; tapping any computed number shows its own working
 - type: bridge                        # analogy from the learner's world
   from: Cricket
   to: RNA-seq
@@ -134,7 +148,7 @@ chart:
 controls:                                                  # on the slide; names become variables
   - {name: alpha, label: 'wobble α', min: 0, max: 1, step: 0.05, value: 0.4}
 ```
-Series kinds are `line`, `area`, `bars`, `hist`, `dots`, `lollipop` and `step`. Colours are given by `focus: true` (the orange accent: the thing that matters now), by order (`s1` blue, `s2` teal, `s3` pink), or by `color: mist` for context. Grey carries context; give a colour only to what the claim is about. Every series and mark can have `step`. Readers get a `data` button (a table view) and a hover readout without you adding anything.
+Series kinds are `line`, `area`, `bars`, `hist`, `dots`, `lollipop` and `step`. Colours are given by `focus: true` (the orange accent: the thing that matters now), by order (`s1` blue, `s2` mint, `s3` magenta), or by `color: mist` for context. Grey carries context; give a colour only to what the claim is about. Every series and mark can have `step`. Readers get a `data` button (a table view) and a hover readout without you adding anything.
 
 ## Expressions (in derive, expr, fn, marks, {{…}})
 Operators `+ - * / ^`, comparisons give 1/0, `[a, b]` lists, and maths on lists works element by element.
@@ -165,4 +179,7 @@ Operators `+ - * / ^`, comparisons give 1/0, `[a, b]` lists, and maths on lists 
 | `runs into the navigation bar` | too much content: same fix as shrunk |
 | `spills out of its card` | too much for the card: same fix as shrunk; a long name label under a number counts too, so give that symbol a `short:` |
 | `low contrast` | usually text over a bright spot: move it onto a card, or cut it |
+| `this formula comes from nowhere` | add `from:`: the form the learner knows and the `move` that changes it (story.md §7) |
+| `term labels are crowded` | give long meanings a `short:` (2–3 words) |
+| `the table takes N steps` | use `build: cols`, or show fewer rows |
 | `could not compute {{…}}` / `unknown name` | define the name in `data`, `derive`, `symbols` (with a value) or `controls` |

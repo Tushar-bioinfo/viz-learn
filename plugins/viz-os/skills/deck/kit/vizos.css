@@ -1,36 +1,43 @@
-/* Lucid: Liquid Glass theme for learning decks, in the proff-viz mono palette.
-   A plain black page with nothing behind the content; grey glass panes carry it. Orange marks the slide headline
-   and what matters now, never the background.
-   Every colour is a token. Authors never edit this file: decks only carry content.
-   Stage: 1600 x 900 (landscape) or 720 x 1280 (portrait), scaled to the screen. Sizes below are stage px. */
+/* viz-os: Liquid Glass theme for learning decks, modelled on the iOS 26 home-screen icons, in black and orange.
+   A plain black page with nothing behind the content. The panes are glass the way the icons are: a tinted body that
+   is a little brighter at the top and bottom, a thin bright rim where light enters (top left) and leaves (bottom right),
+   and a soft glow inside the edge where the glass is thick. Marks on the glass are frosted, like the icons' glyphs.
+   Orange marks the slide headline and what matters now, never the background.
+   Every colour is a token. Authors never edit this file: decks only carry content (`theme: {glass: clear}` picks the
+   neutral glass). Stage: 1600 x 900 (landscape) or 720 x 1280 (portrait), scaled to the screen. Sizes are stage px. */
 
 :root {
-  /* proff-viz v5 mono: a near-black page under grey glass */
-  --bg: #0b0c0e; --surf: #171819;
+  --bg: #000;
 
-  /* text: ink on glass >= 7:1, mist >= 4.5:1, haze for ticks and eyebrows */
-  --ink: #f2f2f0; --mist: #c2c0b9; --haze: #adaba4;
+  /* glass: the colour the panes are tinted with (r, g, b), over the pane's own dark body.
+     tinted (default) is a cool blue, as on the reference icons; clear is a neutral smoke */
+  --glass: 124, 148, 255; --pane: #0b0d15;
+
+  /* text, as Apple's dark labels: ink on glass >= 12:1, mist >= 8:1, haze >= 5:1 */
+  --ink: #f5f5f7; --mist: #c7c7cc; --haze: #a1a1a6;
 
   /* orange: the headline and what matters now; tint for small warm labels; tint-lo for lines only, never text */
-  --accent: #ff5a36; --tint: #ffb27f; --tint-lo: #6b4631; --accent-wash: rgba(255, 90, 54, .12);
+  --accent: #ff5a36; --accent-hi: #ff8b68; --tint: #ffb27f; --tint-lo: #6b4631; --accent-wash: rgba(255, 90, 54, .14);
 
-  /* categorical series: proff c1 blue and c3 teal, plus a pink. All pairs, and each against the accent,
-     pass the colour-blind check on the plate (see docs/design.md) */
-  --s1: #7fb0ff; --s2: #5fdcc4; --s3: #cb85ae;
+  /* categorical series, near the iOS system blue, mint and purple. All pairs, and each against the accent,
+     pass the colour-blind check on the plate (worst ΔE 10.8; normal vision 19.3; see docs/design.md) */
+  --s1: #4699fe; --s2: #13c097; --s3: #c85eb4;
   /* status: always with an icon and a word */
-  --good: #7ad9a0; --bad: #ff6f86;
+  --good: #30d158; --bad: #ff6f86;
 
   /* materials */
-  --hair: rgba(255, 255, 255, .10); --hair-2: rgba(255, 255, 255, .22);
-  --plate-solid: #161718;   /* dot rings and gaps inside charts */
+  --hair: rgba(255, 255, 255, .10); --hair-2: rgba(255, 255, 255, .24);
+  --plate-solid: #131624;   /* the plate's colour: dot rings and gaps inside charts */
+  --pill: rgba(19, 22, 36, .92);   /* chart label pills */
 
   --r-xl: 44px; --r-lg: 32px; --r-md: 24px; --r-sm: 16px; --r-pill: 999px;
   --f-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
   --f-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, monospace;
   --ease: cubic-bezier(.2, .8, .2, 1);
   --spring: cubic-bezier(.34, 1.36, .64, 1);
-  --pad-x: 84px; --pad-top: 128px; --pad-bot: 118px;
+  --pad-x: 84px; --pad-top: 118px; --pad-bot: 118px;
 }
+body.glass-clear { --glass: 178, 178, 186; --pane: #0c0c0e; --plate-solid: #171719; --pill: rgba(23, 23, 25, .92); }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; background: var(--bg); }
@@ -48,35 +55,43 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 #viewport { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
 #stage { position: absolute; left: 50%; top: 50%; width: 1600px; height: 900px; transform-origin: center center; transform: translate(-50%, -50%); }
 .port #stage { width: 720px; height: 1280px; }
-.slide { position: absolute; inset: 0; padding: var(--pad-top) var(--pad-x) var(--pad-bot); display: none; flex-direction: column; gap: 30px; }
+.slide { position: absolute; inset: 0; padding: var(--pad-top) var(--pad-x) var(--pad-bot); display: none; flex-direction: column; gap: 24px; }
 .slide.on { display: flex; }
-.port .slide { --pad-x: 40px; --pad-top: 116px; --pad-bot: 132px; gap: 24px; }
+.port .slide { --pad-x: 40px; --pad-top: 112px; --pad-bot: 132px; gap: 20px; }
 
-/* ---------- glass: grey panes on a plain black page, lit at the rim ----------
-   Nothing moves behind the content, so the panes are solid; the glass is in the edge: a bright specular line where
-   light enters (top left), a fainter one where it leaves (bottom right) and a soft sheen at the top. */
+/* ---------- glass, read off the iOS icons ----------
+   Nothing moves behind the content, so the glass is in the light: the tinted body is brightest at the top, dips in the
+   middle and lifts again at the bottom, where light pools; a 1px rim is bright at the top left and bottom right; a soft
+   glow sits just inside the edge, where the glass is thickest. */
 .g { position: relative; border-radius: var(--r-lg); isolation: isolate;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .075) 0%, rgba(255, 255, 255, .025) 38%, rgba(255, 255, 255, .01) 62%, rgba(255, 255, 255, .035) 100%), #141517;
+  background:
+    radial-gradient(130% 70% at 50% 112%, rgba(var(--glass), .085), transparent 62%),
+    linear-gradient(180deg, rgba(var(--glass), .155) 0%, rgba(var(--glass), .075) 40%, rgba(var(--glass), .06) 72%, rgba(var(--glass), .085) 100%),
+    var(--pane);
   box-shadow:
-    inset 1.5px 1.5px 1px -.5px rgba(255, 255, 255, .45),
-    inset -1.5px -1.5px 1px -.5px rgba(255, 255, 255, .12),
-    inset 0 0 0 1px rgba(255, 255, 255, .06),
-    inset 0 16px 30px -18px rgba(255, 255, 255, .1),
-    0 20px 50px -16px rgba(0, 0, 0, .8); }
+    inset 0 1px 0 rgba(255, 255, 255, .24),
+    inset 0 -1px 0 rgba(255, 255, 255, .12),
+    inset 0 0 0 1px rgba(255, 255, 255, .055),
+    inset 0 0 30px -10px rgba(var(--glass), .32),
+    0 30px 60px -30px rgba(0, 0, 0, .95); }
 .g::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .16) 22%, rgba(255, 255, 255, .02) 48%, rgba(255, 255, 255, .08) 76%, rgba(255, 255, 255, .34) 100%);
+  background: linear-gradient(160deg, rgba(255, 255, 255, .64) 0%, rgba(255, 255, 255, .22) 15%, rgba(255, 255, 255, .08) 40%, rgba(255, 255, 255, .08) 62%, rgba(255, 255, 255, .2) 85%, rgba(255, 255, 255, .44) 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
 .g::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
-  background: linear-gradient(165deg, rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, .02) 18%, transparent 34%),
-    radial-gradient(90% 60% at 12% -8%, rgba(255, 255, 255, .09), transparent 55%); }
-/* plate: the same glass, smoked, under data (charts, tables, formulas) so lines and numbers stay crisp */
-.g.plate { background: linear-gradient(160deg, rgba(255, 255, 255, .05) 0%, rgba(255, 255, 255, .01) 40%, rgba(255, 255, 255, .02) 100%), #121315; }
-/* warm: glass with an orange tint, for the one card that holds the answer */
-.g.warm { background: linear-gradient(135deg, rgba(255, 90, 54, .13) 0%, rgba(255, 90, 54, .04) 45%, rgba(255, 178, 127, .04) 100%), #161413; }
-.g.warm::before { background: linear-gradient(135deg, rgba(255, 196, 160, .8) 0%, rgba(255, 140, 100, .2) 24%, rgba(255, 255, 255, .02) 50%, rgba(255, 255, 255, .08) 76%, rgba(255, 210, 180, .36) 100%); }
-.g.coolbad::after { background: radial-gradient(110% 80% at 0% 0%, rgba(255, 111, 134, .12), transparent 55%); }
-/* never glass on glass: a card inside a card is a quiet inset, not another pane */
-.g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi) { background: rgba(255, 255, 255, .05); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), inset 0 0 0 1px rgba(255, 255, 255, .05); }
+  background: radial-gradient(70% 46% at 14% 0%, rgba(255, 255, 255, .065), transparent 72%); }
+/* plate: the same glass, calmer, under data (charts, tables, formulas) so lines and numbers stay crisp */
+.g.plate { background:
+    radial-gradient(130% 60% at 50% 112%, rgba(var(--glass), .06), transparent 60%),
+    linear-gradient(180deg, rgba(var(--glass), .115) 0%, rgba(var(--glass), .05) 36%, rgba(var(--glass), .045) 100%),
+    var(--pane); }
+/* warm: the card that holds the answer is lit orange at the rim and the top-left corner, not filled (dark orange is brown);
+   coolbad: the same in rose, for what fails */
+.g.warm::before { background: linear-gradient(160deg, rgba(255, 178, 140, .9) 0%, rgba(255, 120, 84, .34) 16%, rgba(255, 255, 255, .07) 42%, rgba(255, 255, 255, .07) 62%, rgba(255, 150, 112, .22) 85%, rgba(255, 190, 160, .5) 100%); }
+.g.warm::after { background: radial-gradient(64% 58% at 8% 0%, rgba(255, 90, 54, .15), transparent 72%); }
+.g.coolbad::before { background: linear-gradient(160deg, rgba(255, 170, 186, .8) 0%, rgba(255, 111, 134, .28) 16%, rgba(255, 255, 255, .07) 42%, rgba(255, 255, 255, .07) 62%, rgba(255, 140, 160, .18) 85%, rgba(255, 180, 196, .42) 100%); }
+.g.coolbad::after { background: radial-gradient(64% 58% at 8% 0%, rgba(255, 111, 134, .12), transparent 72%); }
+/* never glass on glass: a card inside a card is a darker inset with a lit top edge, like the tiles in an icon folder */
+.g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi) { background: rgba(0, 0, 0, .26); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 0 0 1px rgba(255, 255, 255, .06); }
 .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::before, .g .g:not(.opt):not(.cell):not(.node):not(.mn):not(.mi)::after { display: none; }
 .g .vis.g { background: transparent; box-shadow: none; padding: 0; }
 .g.thin { border-radius: var(--r-md); }
@@ -85,29 +100,29 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .port .pad { padding: 26px 28px; }
 
 /* ---------- type ---------- */
-.lead { font-size: 28px; line-height: 1.3; font-weight: 520; color: var(--mist); max-width: 1300px; }
+.lead { font-size: 25px; line-height: 1.3; font-weight: 520; color: var(--mist); max-width: 1300px; }
 .lead .lw { color: var(--tint); font-weight: 680; }
-.h1 { font-size: 58px; line-height: 1.08; font-weight: 720; letter-spacing: -.022em; max-width: 1420px; text-wrap: balance; color: var(--accent); }
-.port .h1 { font-size: 46px; }
-.port .lead { font-size: 26px; }
+.h1 { font-size: 46px; line-height: 1.1; font-weight: 720; letter-spacing: -.02em; max-width: 1420px; text-wrap: balance; color: var(--accent); }
+.port .h1 { font-size: 37px; }
+.port .lead { font-size: 23px; }
 .eyebrow { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--haze); }
-.p, .pts li { font-size: 32px; line-height: 1.36; font-weight: 450; color: var(--ink); }
-.port .p, .port .pts li { font-size: 30px; }
+.p, .pts li { font-size: 30px; line-height: 1.36; font-weight: 450; color: var(--ink); }
+.port .p, .port .pts li { font-size: 28px; }
 .small { font-size: 25px; line-height: 1.4; color: var(--mist); }
-.cap { font-size: 26px; line-height: 1.38; color: var(--mist); }
+.cap { font-size: 24px; line-height: 1.38; color: var(--mist); }
 .cap::before { content: "Look: "; color: var(--tint); font-weight: 650; }
 .mono { font-family: var(--f-mono); }
 .tex-fallback { font-family: var(--f-mono); color: var(--mist); }
 .res, .res .katex { color: var(--accent); }
 
 /* ---------- head and body ---------- */
-.head { display: flex; flex-direction: column; gap: 10px; flex: none; }
-.slide > .body { flex: 1; min-height: 0; display: flex; gap: 40px; align-items: stretch; }
+.head { display: flex; flex-direction: column; gap: 8px; flex: none; }
+.slide > .body { flex: 1; min-height: 0; display: flex; gap: 30px; align-items: stretch; }
 /* the visual is the slide: words get a narrow column beside it */
-.body.split > .col-text { flex: 0 0 31%; display: flex; flex-direction: column; justify-content: safe center; gap: 22px; min-width: 0; }
+.body.split > .col-text { flex: 0 0 26%; display: flex; flex-direction: column; justify-content: safe center; gap: 22px; min-width: 0; }
 .body.split > .col-vis { flex: 1; min-width: 0; display: flex; }
 .body.split.vis-left { flex-direction: row-reverse; }
-.body.stack, .body.wide { flex-direction: column; gap: 22px; }
+.body.stack, .body.wide { flex-direction: column; gap: 18px; }
 .body.stack > .col-vis, .body.wide > .col-vis { flex: 1; min-height: 0; display: flex; }
 .body.stack > .col-text, .body.wide > .col-text { flex: none; }
 .body.text-only { flex-direction: column; justify-content: safe center; }
@@ -185,29 +200,29 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 /* ---------- title, chapter, statement ---------- */
 .s-title { justify-content: center; gap: 34px; }
 .s-title .kicker { font-size: 24px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--tint); }
-.s-title .display { font-size: 104px; line-height: 1.0; font-weight: 760; letter-spacing: -.035em; max-width: 1300px; text-wrap: balance; color: var(--accent); }
+.s-title .display { font-size: 90px; line-height: 1.0; font-weight: 760; letter-spacing: -.033em; max-width: 1300px; text-wrap: balance; color: var(--accent); }
 .s-title .subtitle { font-size: 34px; line-height: 1.35; color: var(--mist); max-width: 1100px; }
 .s-title .question { display: flex; align-items: center; gap: 26px; padding: 28px 36px 28px 28px; max-width: 1180px; }
 .s-title .question .qmark { flex: none; width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; font-weight: 750; color: #1a0802;
-  background: radial-gradient(circle at 35% 30%, #ffd2b8, var(--accent) 58%, #c43b1c); box-shadow: 0 0 26px rgba(255, 90, 54, .35); }
+  background: radial-gradient(circle at 36% 28%, #ffc7ab, var(--accent) 56%, #d6421f); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .55), inset 0 -2px 4px rgba(120, 20, 0, .35), 0 8px 20px -8px rgba(255, 90, 54, .5); }
 .s-title .question .qt { font-size: 34px; line-height: 1.32; font-weight: 560; }
 .s-title .chips { display: flex; flex-wrap: wrap; gap: 12px; }
 .s-title .chips span { font-size: 22px; font-weight: 600; color: var(--mist); padding: 10px 20px; }
-.port .s-title .display { font-size: 72px; }
+.port .s-title .display { font-size: 62px; }
 .port .s-title .subtitle { font-size: 30px; }
 .port .s-title .question .qt { font-size: 30px; }
 
 .s-statement { justify-content: center; align-items: center; text-align: center; }
-.s-statement .big { font-size: 72px; line-height: 1.14; font-weight: 680; letter-spacing: -.025em; max-width: 1280px; text-wrap: balance; }
+.s-statement .big { font-size: 62px; line-height: 1.14; font-weight: 680; letter-spacing: -.025em; max-width: 1280px; text-wrap: balance; }
 .s-statement .sub { font-size: 32px; color: var(--mist); max-width: 1000px; margin-top: 26px; }
 .s-statement .g { padding: 70px 90px; }
 .s-chapter .big { color: var(--accent); }
-.port .s-statement .big { font-size: 50px; }
+.port .s-statement .big { font-size: 44px; }
 .port .s-statement .g { padding: 44px 34px; }
 
 /* ---------- visuals ---------- */
 .vis { flex: 1; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column; }
-.vis.g { padding: 26px 30px 22px; }
+.vis.g { padding: 20px 26px 18px; }
 .vis .cap { margin-top: 8px; flex: none; }
 .vis > .codebox { margin: auto 0; }
 .vis.vis-code { flex: none; align-self: center; width: 100%; }
@@ -312,7 +327,8 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .imgbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--r-md); }
 
 /* ---------- equation: the formula is the figure; each term is named right under it ---------- */
-.s-equation .eqwrap { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 34px; padding: 36px 46px 30px; flex: 1; min-height: 0; }
+.s-equation .eqwrap { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 26px; padding: 32px 46px 28px; flex: 1; min-height: 0; }
+.eqbody { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 30px; align-self: stretch; flex: 1 1 auto; min-width: 0; min-height: 0; }
 .eqmain { position: relative; display: flex; justify-content: center; align-items: center; font-size: 64px; max-width: 100%; }
 .s-equation .eqmain { font-size: 78px; align-self: stretch; }   /* full width: fitEq shrinks the formula only when the row is too narrow */
 .eqmain .katex { font-size: 1em; }
@@ -322,17 +338,45 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .ul.off { transform: scaleX(0); opacity: 0; }
 .halo { position: absolute; border-radius: 14px; background: color-mix(in srgb, var(--tc) 18%, transparent); transition: all .45s var(--ease); pointer-events: none; }
 .halo.off { opacity: 0; transform: scale(.9); }
-.tlab { position: absolute; font-size: 25px; font-weight: 620; line-height: 1.2; color: var(--ink); text-align: center; max-width: 12em; width: max-content; transform: translateX(-50%);
+.tlab { position: absolute; font-size: 25px; font-weight: 620; line-height: 1.2; color: var(--ink); text-align: center; max-width: 12em; width: max-content; transform: translateX(-50%); text-wrap: balance;
   transition: opacity .45s var(--ease), filter .45s var(--ease); }
 .tlab .eg { display: block; font-size: 22px; font-weight: 520; color: var(--mist); margin-top: 2px; font-variant-numeric: tabular-nums; }
 .tlab .lk { position: absolute; left: 50%; bottom: 100%; width: 2px; background: var(--hair-2); }
+.tlab.up .lk { bottom: auto; top: 100%; }   /* a label above the formula hangs its leader down */
 .tlab.off { opacity: 0; filter: blur(6px); }
 .port .tlab { font-size: 22px; max-width: 7.6em; }
 .port .tlab .eg { font-size: 20px; }
 .eqnum { position: relative; display: flex; align-items: center; justify-content: center; gap: 26px; font-size: 44px; max-width: 100%; }
 .eqnum .tag { flex: none; font-size: 20px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--haze); }
 .port .eqnum { flex-direction: column; gap: 8px; font-size: 32px; }
+.eqnum .val { white-space: nowrap; }   /* the working stays on one line; draw() shrinks it if it must */
+.land .has-fam .eqnum { flex-direction: column; gap: 6px; }   /* beside the family column: the tag goes above the numbers */
 .eqso { font-size: 29px; line-height: 1.36; color: var(--mist); text-align: center; max-width: 1150px; }
+/* the formula's family, in one band above it: the form it comes from and the move that changes it (left),
+   and the same shape in other topics (right) */
+.family { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 44px; max-width: 100%; flex: none; }
+.lineage, .kin { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px; }
+.lg-tag { font-size: 19px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--haze); }
+.lg-chip, .kin-chip { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 16px 9px; border-radius: var(--r-sm); }
+.lg-name { font-size: 18px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--haze); white-space: nowrap; }
+.lg-tex { font-size: 27px; color: var(--ink); }
+.lg-move { display: inline-flex; align-items: center; gap: 10px; font-size: 23px; font-style: italic; color: var(--mist); }
+.lg-arr { font-style: normal; font-size: 27px; color: var(--tint); }
+.lg-arr::before { content: "→"; }
+/* on a wide screen the family is a column beside the formula, read top to bottom: the chain flows down, and its
+   last move points across into the formula */
+.land .eqwrap.has-fam { flex-direction: row; align-items: stretch; gap: 0; }
+.land .eqwrap.has-fam > .family { flex: 0 0 31%; flex-direction: column; flex-wrap: nowrap; align-items: flex-start; justify-content: safe center; gap: 24px;
+  padding-right: 34px; margin-right: 34px; border-right: 1px solid var(--hair); }
+.land .has-fam .lineage { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 8px; }
+.land .has-fam .kin { justify-content: flex-start; }
+.land .has-fam .lg-move { padding-left: 14px; }
+.land .has-fam .lg-arr::before { content: "↓"; }
+.land .has-fam .lg-move:last-child .lg-arr::before { content: "→"; }
+.port .family { gap: 12px; }
+.port .lg-tag, .port .lg-name { font-size: 20px; }
+.port .lg-tex { font-size: 25px; }
+.port .lg-move { font-size: 22px; }
 .eqso b, .eqso strong { color: var(--ink); }
 .port .eqso { font-size: 26px; }
 
@@ -341,7 +385,7 @@ mark.hi { color: inherit; background: none; font-weight: 680; text-decoration: u
 .cline { display: grid; grid-template-columns: 54px 1fr; column-gap: 22px; row-gap: 6px; align-items: center; }
 .cline .num { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-size: 23px; font-weight: 700; color: var(--ink);
   background: rgba(255, 255, 255, .11); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28); }
-.cline.now .num { background: var(--accent); color: #1a0802; }
+.cline.now .num { background: linear-gradient(180deg, var(--accent-hi), var(--accent) 55%, #e2482a); color: #1a0802; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55); }
 .cline .say { font-size: 28px; color: var(--ink); font-weight: 520; }
 .cline .math { grid-column: 2; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 18px; font-size: 36px; position: relative; }
 .cline .math .part { position: relative; display: inline-block; }
@@ -357,17 +401,32 @@ table.t { border-collapse: separate; border-spacing: 0; width: 100%; font-varian
 table.t th { font-size: 21px; font-weight: 650; letter-spacing: .04em; color: var(--haze); text-align: right; padding: 10px 18px 14px; vertical-align: bottom; white-space: nowrap; }
 table.t th:first-child, table.t td:first-child { text-align: left; }
 table.t th .fx { display: inline-grid; place-items: center; width: 32px; height: 32px; margin-right: 8px; border-radius: 9px; font-size: 22px; font-style: italic; font-weight: 700;
-  color: #1a0802; background: var(--accent); transform: translateY(-2px); }
+  color: #1a0802; background: linear-gradient(180deg, var(--accent-hi), var(--accent) 55%, #e2482a); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 3px 8px -3px rgba(255, 90, 54, .6); transform: translateY(-2px); }
 table.t th.der { color: var(--ink); cursor: pointer; }
 table.t td { font-size: 28px; padding: 13px 18px; text-align: right; color: var(--ink); border-top: 1px solid var(--hair); }
-table.t tr.focus td { background: var(--accent-wash); }
-table.t tr.focus td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+table.t th .sy { margin-left: 9px; font-size: 1.12em; color: var(--mist); font-weight: 400; letter-spacing: 0; }
+/* the row being worked, the cells its formula reads (underlined in their formula colours) and the cell it fills */
+table.t tr.wrow td { background: rgba(255, 255, 255, .045); }
+table.t tr.wrow td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+table.t td.src { background: color-mix(in srgb, var(--tc) 15%, transparent); box-shadow: inset 0 -4px 0 var(--tc); }
+table.t td.cur { color: var(--accent); background: var(--accent-wash); box-shadow: inset 0 -4px 0 var(--accent); }
+table.t td.der { transition: opacity .4s var(--ease) calc(var(--ri, 0) * 90ms), color .3s; cursor: pointer; }
 table.t td.der { color: var(--ink); font-weight: 600; }
 table.t td.der.pend, table.t th.der.pend { opacity: 0; }
 table.t .now { color: var(--accent) !important; }
-.recipe { flex: 0 0 36%; padding: 28px 32px; display: flex; flex-direction: column; gap: 16px; justify-content: safe center; position: relative; min-width: 0; }
-.recipe .rk { display: none; flex-direction: column; gap: 14px; }
-.recipe .rk.shown { display: flex; }
+/* every step's working sits in one grid cell, so the card is as tall as its tallest step and never jumps */
+.recipe { flex: 0 0 36%; padding: 28px 32px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: safe center; position: relative; min-width: 0; }
+.recipe .rk { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 14px; visibility: hidden; min-width: 0; }
+.recipe .rk.shown { visibility: visible; }
+.recipe .rf, .recipe .rm { position: relative; }
+.recipe .rf, .recipe .rm, .recipe .rw > span { white-space: nowrap; display: block; width: max-content; max-width: none; }
+.recipe .gl { display: grid; grid-template-columns: 52px 1fr; column-gap: 12px; align-items: baseline; }
+.recipe .gl .gs { grid-row: span 2; font-size: 32px; color: var(--ink); }
+.recipe .gl b { font-size: 27px; font-weight: 650; }
+.recipe .gl .gm { font-size: 24px; color: var(--mist); line-height: 1.3; }
+.recipe .rline { display: flex; flex-direction: column; gap: 2px; }
+.recipe .rl { font-size: 21px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--haze); }
+.recipe .rm { font-size: 30px; padding-bottom: 14px; }
 .recipe .rname { font-size: 30px; font-weight: 680; }
 .recipe .rsays { font-size: 26px; color: var(--mist); line-height: 1.35; }
 .recipe .rf { font-size: 34px; }
@@ -375,7 +434,7 @@ table.t .now { color: var(--accent) !important; }
 /* table too wide for a side recipe: the recipe goes under it */
 .s-table .body.stacked { flex-direction: column; }
 .s-table .body.stacked .recipe { flex: none; }
-.land .s-table .body.stacked .recipe .rk.shown { display: grid; grid-template-columns: auto 1fr; column-gap: 34px; row-gap: 8px; align-items: baseline; }
+.land .s-table .body.stacked .recipe .rk { display: grid; grid-template-columns: auto 1fr; column-gap: 34px; row-gap: 8px; align-items: baseline; }
 .land .s-table .body.stacked .recipe .rk .eyebrow { grid-column: 1 / -1; }
 .land .s-table .body.stacked .recipe .rw { grid-column: 1 / -1; }
 .port .s-table .body { flex-direction: column; }
