@@ -1,0 +1,494 @@
+# Showcase viz-os deck. Probe answers it was built from: "1b 2d 3abc 4a 5c"
+# (goal: intuition + by hand · pretest: not sure · knows mean and variance, median and logs, the negative binomial ·
+#  anchor: exam rankings · deep, in chapters)
+# The numbers come from make_data.py, a toy screen worked the way the MAGeCK 0.5.9.5 code works it.
+title: How MAGeCK RRA finds the genes a screen knocked out
+subtitle: From a table of guide counts to one score per gene, one row or column at a time
+kicker: CRISPR screens
+question: How does MAGeCK RRA decide which genes a CRISPR screen depleted?
+answer: It puts every sample on one scale, learns how noisy a guide is from all guides at the same count level, scores each guide's drop as a tail probability, then asks whether a gene's guides crowd the top of the ranking more than chance allows.
+arc: journey
+learner:
+  goal: intuition+hand
+  knows: [mean, variance, median, log2, p-value, poisson]
+  anchors: [exam rankings, DESeq2]
+ladder:
+  counts: a guide's read count in one sample
+  sizefactor: size factor, one sample's depth from the median ratio
+  nb: negative binomial (variance = μ + αμ²)
+  borrow: noise borrowed from guides at the same level
+  meanvar: mean–variance model (σ² = μ + kμ^b)
+  plow: p.low, the chance of a count this low
+  percentile: a guide's place in the ranking, 0 to 1
+  alpha: α, how deep the top reaches
+  beta: Beta(k, n + 1 − k), chance's yardstick for the k-th best
+  rho: ρ, a gene's strongest Beta tail
+  perm: permutation p-value
+beats:
+  - title · the question
+  - predict · is a 400 → 200 drop real? (pretest)
+  - chapter · Counts
+  - idea · a screen turns survival into counts (flow)
+  - ops · median-ratio normalization, row → cell → column → cell
+  - predict · why the hits do not wreck the size factor (check)
+  - chapter · Noise
+  - idea · Poisson vs negative binomial (dist, sliders)
+  - ops · each guide's median, variance and extra spread (rows)
+  - idea · all guides fall on one line in log–log (chart)
+  - equation · σ² = μ + kμ^b, from Poisson and the NB
+  - calc · A1's variance read off the line
+  - statement · noise is borrowed
+  - predict · two guides, same level, wild vs calm (check)
+  - chapter · Guides
+  - idea · A1 lands outside its noise, C1 inside (chart)
+  - calc · gap, z, p.low for A1
+  - idea · the paper's NB tail vs the code's normal tail (chart)
+  - predict · z = −2 gives p ≈ 0.02 (check)
+  - chapter · Genes
+  - ops · rank the guides, ranks to percentiles
+  - idea · where each gene's guides land, the top α (chart)
+  - bridge · schools in a national exam
+  - idea · Beta(k, n + 1 − k), slider k (dist)
+  - calc · ρ for gene A
+  - idea · every random set of 3 guides, permutation p (chart)
+  - predict · why ρ is not a p-value (check)
+  - recap · the answer
+  - map · how it connects
+  - quiz · recall
+
+chapters:
+  - {title: Counts, shape: guides × samples}
+  - {title: Noise, shape: one variance per guide}
+  - {title: Guides, shape: one p-value per guide}
+  - {title: Genes, shape: one score per gene}
+data_file: data.json
+derive:
+  kc: 2^icept
+  muA: at(cmu, 0)
+  vA: at(adj, 0)
+  tA: at(tmu, 0)
+  sdA: sqrt(vA)
+  muC: at(cmu, 6)
+  vC: at(adj, 6)
+  tC: at(tmu, 6)
+  nbA: nbCdf(floor(tA), muA, (vA - muA) / muA^2)
+  nbC: nbCdf(floor(tC), muC, (vC - muC) / muC^2)
+  ntop: sum(plow <= 0.25)
+  ng: len(guides)
+  ns: len(sf)
+
+symbols:
+  mu: {tex: '\mu', says: the guide's expected count (its control median), short: expected count}
+  kc: {tex: k, says: 'size of the extra spread, 2 to the line''s intercept', short: scale}
+  slope: {tex: b, says: how fast the extra spread grows (the line's slope), short: power}
+  sig2: {tex: '\sigma^2', says: the guide's variance from the model, short: model variance}
+  muA: {tex: '\mu_{A1}', says: A1's control median}
+  vA: {tex: '\sigma^2_{A1}', says: A1's model variance}
+  tA: {tex: 't_{A1}', says: A1's treated median}
+  extraA: {tex: 'e_{A1}', says: A1's extra spread}
+  varA: {tex: '\sigma^2_{A1}', says: A1's model variance}
+  sdA: {tex: '\sigma_{A1}', says: A1's noise (SD), fmt: 1}
+  gap: {tex: '\Delta', says: treated median minus control median}
+  zA: {tex: z, says: the gap in noise units}
+  pA1: {tex: 'p_{\text{low}}', says: chance of a count this low}
+  rA: {tex: r, says: gene A's sorted percentiles}
+  ng: {tex: n, says: guides in the screen}
+  b1: {tex: 'B_1', says: chance's tail for the best guide}
+  b2: {tex: 'B_2', says: chance's tail for the second guide}
+  rho: {tex: '\rho_A', says: gene A's score}
+abbr: {RRA: robust rank aggregation, MAGeCK: a CRISPR-screen analysis tool, CRISPR: a gene-editing system, NB: negative binomial, SD: standard deviation, FDR: false discovery rate, DESeq2: a differential-expression tool, MLE: maximum likelihood estimation}
+
+slides:
+  - type: title
+
+  - type: predict
+    kind: pretest
+    q: A guide has 400 reads in the control and 200 in the treated sample, at equal depth. Is the drop real?
+    options:
+      - Yes, it halved
+      - No, 200 reads is still a lot
+      - It depends on how much guides near 400 reads normally wobble
+      - not sure
+    answer: 2
+    why: A halving can be biology or noise. MAGeCK judges it against **how much guides at this count level wobble** between replicates.
+
+  # ---------------- Counts ----------------
+  - type: chapter
+    title: Counts
+    q: What does a screen hand us, and why can't we compare it yet?
+
+  - type: idea
+    chapter: Counts
+    introduces: [counts]
+    lead: Start with where the numbers come from.
+    title: A screen turns cell survival into guide counts
+    visual:
+      flow:
+        nodes:
+          - {label: guide library, sub: one knockout per cell}
+          - {label: selection, sub: knockouts of essential genes die}
+          - {label: sequencing, sub: read each cell's guide}
+          - {label: count table, sub: '{{ng}} guides × {{ns}} samples'}
+        verbs: [select, sequence, count]
+        focus: 3
+        build: true
+      caption: A guide whose knockout kills its cell leaves fewer reads in the treated samples.
+
+  - type: ops
+    uses: [counts]
+    introduces: [sizefactor]
+    lead: But the samples got different numbers of reads.
+    title: The median ratio puts every sample on one scale
+    why: A deeper sample gives every guide more reads. A size factor per sample removes that before any comparison.
+    matrix:
+      name: raw counts
+      key: raw
+      from: raw
+      rows: guides
+      cols: [ctl1, ctl2, ctl3, trt1, trt2, trt3]
+      row: guide
+      col: sample
+      says: reads of guide $i$ in sample $j$
+      fmt: ','
+      focus: A1
+      focusCol: trt1
+    steps:
+      - {op: rows, fn: geomean, expr: x + 1, name: gm, tex: g, label: geo mean, fmt: 0, say: "Find each guide's typical count", why: 'A geometric mean is the middle on a fold scale; +1 keeps zeros harmless.'}
+      - {op: map, expr: x / gm, name: ratio, tex: q, label: ratio to typical, fmt: 2, say: "Divide each count by its guide's typical count", why: '1.2 means this sample gave this guide 20% more reads than usual.'}
+      - {op: cols, fn: median, name: size, tex: s, label: size, fmt: 2, say: "Take each sample's middle ratio", why: 'Most guides do not change, so the middle ratio measures depth alone.'}
+      - {op: map, expr: raw / size, name: xn, tex: '\tilde{x}', label: normalized counts, fmt: 0, say: "Divide every count by its sample's size factor", why: 'A difference left between samples is now biology or noise, not depth.'}
+
+  - type: predict
+    kind: check
+    uses: [sizefactor]
+    q: In trt1, A1 and A2 fell below half and gene B about tripled. Why is trt1's size factor still fine?
+    options:
+      - 'It does: the factor is biased'
+      - The median skips a few extreme ratios
+      - MAGeCK removes the hits first
+    answer: 1
+    why: The size factor is the **middle** ratio. Fallers sit below it and risers above, so it lands on A3, an unchanged guide. A real screen has thousands of those.
+
+  # ---------------- Noise ----------------
+  - type: chapter
+    title: Noise
+    q: How much does a guide wobble at its count level?
+
+  - type: idea
+    chapter: Noise
+    introduces: [nb]
+    lead: First, the curve MAGeCK's noise model grows from.
+    title: Counts spread wider than counting alone
+    points:
+      - The negative binomial is a Poisson whose rate wobbles from sample to sample.
+    controls:
+      - {name: mu, label: 'mean μ', min: 100, max: 800, step: 10, value: 420}
+      - {name: alpha, label: 'extra spread α', min: 0, max: 0.06, step: 0.002, value: 0.024}
+    visual:
+      dist:
+        family: nb
+        params: {mu: mu, alpha: alpha}
+        says: {mu: the average count, alpha: extra spread between samples}
+        label: negative binomial
+        vs: {family: poisson, params: {mu: mu}, label: Poisson}
+        x: [0, 1200]
+        xlabel: reads for one guide
+      caption: 'At α = 0 they match. Here the SD is {{sqrt(1 + alpha * mu)|1}}× Poisson''s.'
+
+  - type: ops
+    uses: [nb]
+    lead: Now measure each guide's own spread across its 3 controls.
+    title: Each guide's median and spread, row by row
+    why: MAGeCK needs an expected count and a noise level for every guide. Three replicates give a first, shaky look.
+    matrix:
+      name: normalized control counts, genes A and C
+      from: '[at(ctrl, 0), at(ctrl, 1), at(ctrl, 2), at(ctrl, 6), at(ctrl, 7), at(ctrl, 8)]'
+      rows: [A1, A2, A3, C1, C2, C3]
+      cols: [ctl1, ctl2, ctl3]
+      row: guide
+      col: control
+      tex: '\tilde{x}'
+      says: normalized reads of guide $i$ in control $j$
+      fmt: 0
+      focus: A1
+    steps:
+      - {op: rows, fn: median, name: med, tex: '\mu', label: median, fmt: 0, say: "Each guide's expected count", why: MAGeCK takes the median of the controls as μ.}
+      - {op: rows, fn: var, center: med, name: rvar, tex: 's^2', label: variance, fmt: ',', say: How far its replicates spread, why: 'Squared distances from the median, divided by n − 1 = 2.'}
+      - {op: vec, expr: rvar - med, name: extra, tex: e, label: extra spread, fmt: ',', say: The spread counting cannot explain, why: 'Counting alone gives a variance of μ. The rest is the biological wobble.'}
+
+  - type: idea
+    introduces: [borrow]
+    lead: 'A1 and C3 share a level; their variances differ {{at(cvar, 0) / at(cvar, 8)|0}}-fold.'
+    title: Across guides, extra spread rises along one line
+    points:
+      - 'Fitted to {{nfit|,}} guides of a full screen; our {{ng}} scatter around it.'
+    visual:
+      chart:
+        x: {label: 'log₂(median + 1)', min: 4, max: 11.5}
+        y: {label: 'log₂(extra spread + 1)', min: 0, max: 19}
+        series:
+          - {name: 'full screen ({{nshow}} of {{nfit|,}} guides)', kind: dots, x: fx, y: fy, color: mist}
+          - {name: 'our {{ng}} guides', kind: dots, x: mx, y: my, focus: true, step: 2}
+        marks:
+          - {kind: fn, fn: 'icept + slope * x', label: 'fitted line, slope {{slope|2}}', color: s1, step: 1}
+          - {kind: fn, fn: 'yc + 2 * (x - xc)', label: 'NB would force slope 2', color: s2, step: 3}
+      caption: The line, not 3 replicates, sets each guide's noise.
+
+  - type: equation
+    uses: [nb, borrow]
+    introduces: [meanvar]
+    lead: Undo the logs to get MAGeCK's noise model.
+    title: Variance is counting noise plus growing extra spread
+    lhs: sig2
+    expr: mu + kc * mu^slope
+    terms:
+      mu: {value: muA}
+    read: the variance is the mean, plus k times the mean to the power b
+    code: var = mu + k * mu**b
+    note: 'For A1: **{{vA|,}}**, not the {{at(cvar, 0)|,}} its 3 replicates gave.'
+    hook: 'A negative binomial with a free power: the NB fixes b = 2, MAGeCK lets the data choose.'
+    from:
+      - {name: Poisson, tex: '\sigma^2 = \mu', move: add a wobble between samples}
+      - {name: negative binomial, tex: '\sigma^2 = \mu + \alpha\mu^2', move: 'let the data choose the power: $\alpha\mu^2 \to k\mu^b$'}
+    kin:
+      - {where: ecology, name: Taylor's power law, tex: '\sigma^2 = a\mu^b'}
+      - {where: expression data, name: DESeq2's dispersion trend}
+    more: 'The 2014 paper writes $\sigma^2 = \mu + k\mu^b$ and fits it on the log scale, borrowing information across guides with similar counts. The 0.5.9.5 code fits $\log_2(s^2 - \mu + 1)$ against $\log_2(\mu + 1)$ by weighted least squares (weights = μ), on guides whose variance beats their median. It raises a slope below 1 to 1 and a negative intercept to 0, then uses $\sigma^2 = \mu + 2^{\text{intercept}}\mu^{\text{slope}}$. Careful when reading the code: it calls the slope `k` and the intercept `b`, the reverse of the paper.'
+
+  - type: calc
+    uses: [meanvar]
+    lead: Work it for one guide.
+    title: A1's noise comes from the line
+    why: Every guide at A1's level gets the same variance, so one wild replicate cannot inflate or hide a guide's noise.
+    given: 'A1: control median **{{muA|1}}** · line: k = **{{kc|3}}**, b = **{{slope|3}}**'
+    lines:
+      - {say: The extra spread at this level, expr: kc * muA^slope, name: extraA, fmt: ',', why: '$k\mu^b$, read off the fitted line'}
+      - {say: Add counting noise, expr: muA + extraA, name: varA, fmt: ',', why: '$\sigma^2 = \mu + k\mu^b$'}
+      - {say: Its standard deviation, expr: sqrt(varA), name: sdA, fmt: 1, why: the yardstick for the next part}
+
+  - type: statement
+    text: A guide's noise is ==borrowed== from every guide at the same count level.
+    sub: "Three replicates cannot measure one guide's spread. {{nfit|,}} guides can measure the trend."
+
+  - type: predict
+    kind: check
+    uses: [borrow]
+    q: Two guides share a control median of 400. One has wild replicates (variance 30,000), the other calm ones (2,000). What variance does MAGeCK give each?
+    options:
+      - Each keeps its own
+      - The same model value for both
+      - The larger of the two
+    answer: 1
+    why: 'Both get $\mu + k\mu^b$ = **{{400 + kc * 400^slope|,}}**. In the code we read (0.5.9.5), a guide''s own spread matters only through the fit.'
+
+  # ---------------- Guides ----------------
+  - type: chapter
+    title: Guides
+    q: Did this guide drop further than its noise allows?
+
+  - type: idea
+    chapter: Guides
+    uses: [meanvar]
+    introduces: [plow]
+    lead: Now set each guide's treated count against its noise.
+    title: A1 lands far outside its noise; C1 lands inside
+    points:
+      - p.low is the area of the curve below the treated count.
+    visual:
+      chart:
+        x: {label: normalized count, min: 0, max: 900}
+        y: {label: chance (density), min: 0, max: 0.0075, fmt: 3}
+        series:
+          - {name: 'A1: noise around its control median', kind: area, fn: 'normPdf(x, muA, sqrt(vA))', color: s1}
+          - {name: 'C1: noise around its control median', kind: line, fn: 'normPdf(x, muC, sqrt(vC))', color: s2, step: 2}
+        marks:
+          - {kind: vline, x: tA, label: 'A1 treated: {{tA|0}}', color: accent, step: 1}
+          - {kind: vline, x: tC, label: 'C1 treated: {{tC|0}}', color: s2, step: 3}
+          - {kind: area, fn: 'normPdf(x, muC, sqrt(vC))', x: [0, tC], label: 'C1: p.low = {{at(plow, 6)|2}}', step: 4}
+      caption: 'A1 sits {{abs(at(z, 0))|1}} SDs below its median; C1 only {{abs(at(z, 6))|1}}.'
+
+  - type: calc
+    uses: [plow]
+    lead: The same picture, as numbers.
+    title: "A1's drop is about {{abs(at(z, 0))|0}} noise units deep"
+    why: A z-score counts the noise units between treated and control medians. The normal curve turns it into a chance.
+    given: 'A1: control median **{{muA|1}}** · model SD **{{sdA|1}}** · treated median **{{tA|1}}**'
+    lines:
+      - {say: The gap, expr: tA - muA, name: gap, fmt: 1, why: treated median minus control median}
+      - {say: The gap in noise units, expr: gap / sdA, name: zA, fmt: 2, why: 'the z-score, with the model SD as the unit'}
+      - {say: The chance of a count this low, expr: normCdf(zA), name: pA1, fmt: s3, why: 'area left of z; cutting the curve at 0 reads changes nothing'}
+
+  - type: idea
+    uses: [plow]
+    lead: Counts follow a negative binomial. Why a normal curve?
+    title: Paper and code use different tails
+    points:
+      - "At A1's count: normal {{at(plow, 0)|s2}}, NB {{nbA|s2}}."
+    visual:
+      chart:
+        x: {label: "treated median of a guide at A1's level", min: 100, max: 650}
+        y: {label: 'p.low (log scale)', log: true, min: 1e-12, max: 1}
+        series:
+          - {name: 'normal tail (0.5.9.5 code)', kind: line, fn: 'normCdf(x, muA, sqrt(vA))', color: s1}
+          - {name: 'negative binomial tail (2014 paper)', kind: line, fn: 'nbCdf(floor(x), muA, (vA - muA) / muA^2)', color: s2, step: 1}
+        marks:
+          - {kind: vline, x: tA, label: 'A1 treated: {{tA|0}}', color: accent, step: 2}
+      caption: They part only far out. RRA uses only the **order**, and both rank our {{ng}} guides alike.
+
+  - type: predict
+    kind: check
+    uses: [plow]
+    q: A guide's treated median sits 2 noise units below its control median (z = −2). About what is its p.low?
+    options:
+      - '0.5'
+      - '0.02'
+      - '0.0001'
+    answer: 1
+    why: 'About 2% of a normal curve lies left of −2: Φ(−2) = **{{normCdf(-2)|3}}**. Every guide gets a number like this. Genes come next.'
+
+  # ---------------- Genes ----------------
+  - type: chapter
+    title: Genes
+    q: Do a gene's guides crowd the top of the ranking?
+
+  - type: ops
+    chapter: Genes
+    uses: [plow]
+    introduces: [percentile]
+    lead: p-values from different guides are hard to combine. Places in one ranking are easy.
+    title: Rank the guides, then turn ranks into percentiles
+    why: RRA judges a gene by where its guides sit in one ranking, not by how extreme a single p-value is.
+    matrix:
+      name: p.low per guide
+      from: pcol
+      rows: guides
+      cols: [p.low]
+      row: guide
+      col: value
+      tex: p
+      says: guide $i$'s chance of a count this low
+      fmt: s2
+      focus: C1
+    steps:
+      - {op: sort, by: plow, name: rk, label: rank, say: 'Sort the guides by p.low, smallest first', why: Rank 1 is the most depleted guide.}
+      - {op: vec, expr: (rk - 0.5) / ng, name: pctl, tex: r, label: percentile, fmt: 3, say: Turn each rank into a percentile, why: 'Under chance, a percentile is equally likely anywhere from 0 to 1.'}
+
+  - type: idea
+    uses: [percentile]
+    introduces: [alpha]
+    lead: Where do each gene's guides land?
+    title: Gene A's guides crowd the top
+    points:
+      - 'α = share of guides with p.low ≤ 0.25: {{ntop}} of {{ng}} = {{alpha_rra|3}}.'
+    visual:
+      chart:
+        x: {label: 'percentile (0 = top of the ranking)', min: 0, max: 1}
+        y: {label: gene, min: 0, max: 4, ticks: []}
+        series:
+          - {name: gene A, kind: dots, x: '[at(pct, 0), at(pct, 1), at(pct, 2)]', y: 3, focus: true}
+          - {name: gene C, kind: dots, x: '[at(pct, 6), at(pct, 7), at(pct, 8)]', y: 2}
+          - {name: gene B, kind: dots, x: '[at(pct, 3), at(pct, 4), at(pct, 5)]', y: 1}
+        marks:
+          - {kind: band, x: [0, alpha_rra], label: 'top α', step: 1}
+      caption: RRA looks inside this band; chance would scatter guides evenly from 0 to 1.
+
+  - type: bridge
+    uses: [percentile]
+    lead: You have seen this logic in exam results.
+    title: A school whose students all rank near the top
+    from: Exam rankings
+    to: CRISPR screen
+    pairs:
+      - [a school, a gene]
+      - [its students, its guides]
+      - [a student's national percentile, a guide's percentile r]
+    breaks: Schools pick their students; a gene with no effect is a school filled by lottery.
+
+  - type: idea
+    uses: [percentile]
+    introduces: [beta]
+    lead: Where would chance put the k-th best?
+    title: Chance's yardstick for the k-th best guide
+    points:
+      - 'Of 3 random guides, the k-th best lands near {{k / 4|2}} on average.'
+    controls:
+      - {name: k, label: k-th best guide, min: 1, max: 3, step: 1, value: 2}
+    visual:
+      dist:
+        family: beta
+        params: {a: k, b: 4 - k}
+        says: {a: "k, the guide's place in its gene", b: 'n + 1 − k, with n = 3'}
+        label: 'Beta(k, 4 − k)'
+        tail: {below: 'at(rA, k - 1)', label: "chance ≤ gene A's", mark: "gene A's k-th: {{at(rA, k - 1)|3}}"}
+        xlabel: percentile of the k-th best of 3 random guides
+        show: [mean]
+      caption: "Orange: the chance random guides do as well as gene A's k-th: {{betaCdf(at(rA, k - 1), k, 4 - k)|3}}."
+
+  - type: calc
+    uses: [beta, alpha]
+    introduces: [rho]
+    lead: Now score gene A.
+    title: Gene A's score ρ is its strongest Beta tail
+    why: Walk down the gene's sorted percentiles while they stay inside the top α, and keep the smallest chance.
+    given: "Gene A's percentiles: **{{at(rA, 0)|3}}**, **{{at(rA, 1)|3}}**, {{at(rA, 2)|3}} · α = **{{alpha_rra|3}}**"
+    lines:
+      - {say: 'Best guide, k = 1', expr: 'betaCdf(at(rA, 0), 1, 3)', name: b1, fmt: 3, why: the chance the best of 3 random guides sits this high}
+      - {say: 'Second guide, k = 2', expr: 'betaCdf(at(rA, 1), 2, 2)', name: b2, fmt: 3, why: the chance 2 of 3 random guides sit this high}
+      - {say: Keep the smallest, expr: 'min(b1, b2)', name: rho, fmt: 3, why: 'the third guide ({{at(rA, 2)|3}}) is past α = {{alpha_rra|3}}; the walk stops'}
+
+  - type: idea
+    uses: [rho]
+    introduces: [perm]
+    lead: 'Is ρ = {{rhoA|3}} small? Try every random set of 3.'
+    title: Chance matches gene A in {{at(hity, 0)}} of {{nnull}} tries
+    visual:
+      chart:
+        x: {label: 'ρ of a random set of 3 guides', min: 0, max: 1}
+        y: {label: number of sets, min: 0, max: 24}
+        series:
+          - {name: 'all {{nnull}} random sets', kind: lollipop, x: nullx, y: nully, color: mist}
+          - {name: as good as gene A, kind: lollipop, x: hitx, y: hity, focus: true, step: 2}
+        marks:
+          - {kind: vline, x: rhoA, label: 'gene A: ρ = {{rhoA|3}}', step: 1}
+      caption: 'p = {{at(hity, 0)}} / {{nnull}} = **{{pA|3}}**: only sets holding both top guides do as well.'
+
+  - type: predict
+    kind: check
+    uses: [rho, perm]
+    q: "Gene A's ρ is {{rhoA|3}}. Why isn't that already its p-value?"
+    options:
+      - ρ is a p-value already
+      - ρ keeps the best of several looks, so chance gets several tries
+      - ρ ignores the third guide
+    answer: 1
+    why: 'ρ is the smallest of up to 3 Beta tails, so chance reaches a small ρ more easily than one tail suggests. The permutation gives the honest p: **{{pA|3}}**.'
+
+  - type: recap
+    answer: It scores each guide's drop against noise borrowed from all guides, then asks whether a gene's guides rank above chance.
+    points:
+      - A few hits cannot move the median ratio.
+      - Noise comes from the line, not 3 replicates.
+      - Genes are judged by rank, not one p-value.
+    breaks:
+      - 'Paper: NB tails; 0.5.9.5 code: a normal tail.'
+      - '{{ng}} guides cannot give p below 1/{{nnull}}.'
+    next:
+      - How MAGeCK turns permutation p-values into an FDR
+      - MAGeCK MLE for screens with many conditions
+      - DESeq2's dispersion shrinkage
+
+  - type: map
+    center: MAGeCK RRA
+    links:
+      - {to: negative binomial, how: its variance with a free power, kind: prereq}
+      - {to: order statistics, how: Beta tails for the k-th best, kind: prereq}
+      - {to: DESeq2, how: borrows noise across genes at one level, kind: sibling}
+      - {to: Taylor's power law, how: variance as a power of the mean, kind: sibling}
+      - {to: exam rankings, how: judge a school by its students' ranks, kind: analogy}
+      - {to: MAGeCK MLE, how: a model for many conditions at once, kind: next}
+
+  - type: quiz
+    cards:
+      - {q: 'Why does the size factor use the median ratio and not the mean?', a: 'A few strongly changed guides would drag a mean. The middle ratio stays on an unchanged guide.'}
+      - {q: "Where does a guide's variance come from in MAGeCK RRA?", a: 'From the line fitted to all guides: $\sigma^2 = \mu + k\mu^b$, at the guide''s control median.', tag: meaning}
+      - {q: 'A gene has one guide at percentile 0.01 and two at 0.9. Does α-RRA count the 0.9 guides?', a: 'No. The best guide always counts; the walk stops at the first guide past α.', tag: edge case}

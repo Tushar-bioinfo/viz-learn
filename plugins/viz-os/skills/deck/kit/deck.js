@@ -11,9 +11,9 @@
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
-    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid'), pill: v('pill') };
+    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid'), pill: v('pill'), line: v('line'), surf: v('surf'), surf2: v('surf2') };
     L.colors.lantern = L.colors.accent; L.colors.amber = L.colors.tint;   // older decks wrote `color: lantern` / `amber`
-    L.fontUI = v('f-ui');
+    L.fontUI = v('f-ui'); L.fontMono = v('f-mono');
   }
 
   // ---------- layout ----------
@@ -28,22 +28,27 @@
     stage.style.transform = `translate(-50%, -50%) scale(${s})`;
     if (changed && L.ready) { L.slides.forEach(sl => sl.laid = false); layoutCurrent(); }
   }
-  // layout pipeline: unzoom -> draw (decides stacking, renders maths) -> labels (next frame) -> fit -> redraw once if the zoom moved
+  // layout pipeline: unzoom -> draw (renders maths, decides stacking, renders maths it made) -> labels (next frame) -> fit -> if the zoom moved,
+  // redraw (wrapping and labels move with it) and fit again, only ever shrinking, so it settles in a few rounds
   L.busy = 0;
   const later = fn => { L.busy++; requestAnimationFrame(() => requestAnimationFrame(() => { try { fn(); } finally { L.busy--; } })); };
   const mains = sl => [...sl.r.node.children].filter(e => e.matches(MAIN));
-  function draw(sl) { try { sl.r.layout && sl.r.layout(); } catch (e) { L.err(`slide ${sl.ctx.index + 1}`, e.message); console.error(e); } L.fill(sl.r.node, sl.ctx.scope); sl.r.show && sl.r.show(sl.k); }
+  function draw(sl) { L.fill(sl.r.node, sl.ctx.scope); try { sl.r.layout && sl.r.layout(); } catch (e) { L.err(`slide ${sl.ctx.index + 1}`, e.message); console.error(e); } L.fill(sl.r.node, sl.ctx.scope); sl.r.show && sl.r.show(sl.k); }
+  // a fit that comes due after the viewer has moved on would measure a hidden slide, so that slide is laid out again when next shown
+  const refit = (sl, top, tries) => later(() => { if (sl !== L.slides[L.i]) { sl.laid = false; return; }
+    fitSlide(sl, top); if (Math.abs(sl.zoom - top) > .005 && tries > 0) { draw(sl); refit(sl, sl.zoom, tries - 1); } });
   function layoutCurrent() {
     const sl = L.slides[L.i]; if (!sl) return;
     if (!sl.laid) {
       sl.laid = true; mains(sl).forEach(e => e.style.zoom = ''); sl.zoom = 1;
-      draw(sl);
-      later(() => { const z0 = sl.zoom; fitSlide(sl); if (Math.abs(sl.zoom - z0) > .005) { draw(sl); later(() => {}); } });
+      draw(sl); refit(sl, 1, 3);
     } else { L.fill(sl.r.node, sl.ctx.scope); sl.r.show && sl.r.show(sl.k); }
   }
+  // content that grew after the fit (an answer opened): shrink again if it no longer fits, never grow back (no jump)
+  L.refit = () => { const sl = L.slides[L.i]; if (sl && sl.laid) refit(sl, sl.zoom, 3); };
   // content that runs long is zoomed down (never below 70%) instead of spilling under the navigation
   const MAIN = '.body, .predict, .eqwrap, .bridge, .compare, .verdict, .quiz, .recap, .mapw, .s-statement > .g';
-  function fitSlide(sl) {
+  function fitSlide(sl, top = 1) {
     const node = sl.r.node, main = mains(sl);
     sl.zoom = 1;
     if (!main.length || sl.s.type === 'title') return;
@@ -60,11 +65,11 @@
       return Math.max(Math.max(...main.map(e => offTop(e) + Math.max(e.scrollHeight, e.offsetHeight))) * z - limit, ...boxes.map(c => spill(c) * z)); };
     const TOL = 2;   // .fitting drops the entry offset of hidden steps, so this is rounding only
     node.classList.add('fitting');
-    if (over(1) > TOL) {
-      let lo = .7, hi = 1;
+    if (over(top) > TOL && top > .7) {
+      let lo = .7, hi = top;
       for (let i = 0; i < 7; i++) { const mid = (lo + hi) / 2; if (over(mid) <= TOL) lo = mid; else hi = mid; }
       over(lo); sl.zoom = lo;
-    }
+    } else if (top < 1) { over(top); sl.zoom = top; }
     node.classList.remove('fitting');
   }
 
@@ -77,11 +82,15 @@
     if (window.VIZOS_DATA) Object.assign(g, window.VIZOS_DATA);
     L.derive(g, deck.derive, 'deck');
     L.global = g;
-    // chapters: listed, or taken from slides in order
-    let chs = deck.chapters ? [...deck.chapters] : [];
+    // chapters: listed, or taken from slides in order. A chapter may name the shape of the data it hands on
+    // (`{title: Normalize, shape: guides × samples}`), so the deck reads as a pipeline.
+    L.chapterShape = {};
+    let chs = (deck.chapters || []).map(c => { if (c && typeof c === 'object') { if (c.shape) L.chapterShape[c.title] = c.shape; return c.title; } return c; });
     let cur = null;
-    deck.slides.forEach(s => { if (s.type === 'chapter' && !s.chapter) s.chapter = s.title; if (s.chapter) { cur = s.chapter; if (!chs.includes(cur)) chs.push(cur); } s._ch = cur; });
+    deck.slides.forEach(s => { if (s.type === 'chapter' && !s.chapter) s.chapter = s.title; if (s.type === 'chapter' && s.shape) L.chapterShape[s.title] = s.shape;
+      if (s.chapter) { cur = s.chapter; if (!chs.includes(cur)) chs.push(cur); } s._ch = cur; });
     L.chapters = chs;
+    L.seenNotation = new Set();   // notation explained once, the first time a slide uses it
     deck.slides.forEach((s, i) => {
       const scope = L.scope(g, {});
       const ctx = { index: i, deck, scope, symbols: deck.symbols || {}, charts: [], later: [], ctl: {}, k: 0 };
@@ -103,13 +112,13 @@
   function chromeBuild() {
     chrome = h('div'); chrome.id = 'chrome';
     const chs = L.chapters;
-    chrome.innerHTML = `${chs.length ? `<div class="chapters g pill thin"><span class="chn"></span>${chs.map((c, i) => `<span class="seg" data-c="${i}">${L.esc(c)}</span>`).join('')}</div>` : ''}
-      <div class="counter g pill thin"></div>
+    chrome.innerHTML = `${chs.length ? `<div class="chapters"><span class="chn"></span>${chs.map((c, i) => `<span class="seg" data-c="${i}">${L.esc(c)}${L.chapterShape[c] ? `<span class="shp">${L.esc(L.chapterShape[c])}</span>` : ''}</span>`).join('')}</div>` : ''}
+      <div class="counter"></div>
       <div class="progress">${(chs.length ? chs : ['all']).map(() => '<div class="pc"><i></i></div>').join('')}</div>
       <div class="stepdots"></div>
-      <button class="morebtn g pill thin">+ more</button>
-      <div class="navbtns"><button class="g pill thin prev" aria-label="previous"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><button class="g pill thin next" aria-label="next"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
-      <div class="sheet g"><div class="eyebrow">Deeper</div><div class="p sheetbody"></div></div>`;
+      <button class="morebtn">Details</button>
+      <div class="navbtns"><button class="prev" aria-label="previous"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><button class="next" aria-label="next"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
+      <div class="sheet g"><div class="eyebrow">Details</div><div class="p sheetbody"></div></div>`;
     stage.appendChild(chrome);
     chrome.querySelector('.prev').onclick = e => { e.stopPropagation(); back(); };
     chrome.querySelector('.next').onclick = e => { e.stopPropagation(); fwd(); };
@@ -207,7 +216,7 @@
       if (fs < (orient === 'port' ? 10.5 : 12) && s > .3) out.push(`${name(e)} renders at ${fs.toFixed(1)}px on screen (too small)`);
       if (e.nodeType === 1 && !e.closest('svg')) { const cs = getComputedStyle(e);
         if (['block', 'flex', 'grid', 'list-item'].includes(cs.display) && cs.overflow === 'visible' && e.clientWidth && (e.scrollWidth > e.clientWidth + 3)) out.push(`${name(e)} is wider than its box`);
-        // text must stay inside its glass card, clear of the rim
+        // text must stay inside its card, clear of the border
         const card = e.parentElement && e.parentElement.closest('.g');
         if (card && node.contains(card) && getComputedStyle(card).overflow === 'visible') { const c = toStage(card.getBoundingClientRect());
           if (b.y1 > c.y1 - 6 || b.x1 > c.x1 - 4 || b.y0 < c.y0 + 2 || b.x0 < c.x0 + 2) out.push(`${name(e)} spills out of its card`); } }
@@ -223,6 +232,10 @@
     if (sl.zoom && sl.zoom < .8) out.push(`content was shrunk to ${Math.round(sl.zoom * 100)}% to fit: cut words or split the slide`);
     node.querySelectorAll('.katex-error').forEach(e => out.push(`formula error: ${e.title || e.textContent.slice(0, 40)}`));
     node.querySelectorAll('.iv.bad').forEach(e => out.push(`could not compute {{${e.dataset.x}}}`));
+    node.querySelectorAll('.approx').forEach(e => { if (!visible(e)) return;
+      const k = e.closest('.katex') || e, line = k.closest('.part') ? k.closest('.part').parentElement : k;   // a calc line is split into parts
+      const t = [...line.querySelectorAll('.katex-html')].map(x => x.textContent).join(' ').replace(/\s+/g, ' ').trim();
+      out.push(`a worked line reads ≈ (“${t.length > 70 ? '…' + t.slice(-69) : t}”): its rounded numbers do not give the result shown even with 2 more digits; give the inputs a finer fmt or name the step in between`); });
     node.querySelectorAll('.vis .chart').forEach(c => { if (!c.querySelector('svg')) out.push('a chart did not draw (no room, or bad data)'); });
     node.querySelectorAll('.codebox').forEach(c => { if (c.scrollWidth > c.clientWidth + 2) out.push(`code runs off its box: "${c.textContent.split('\n').sort((a, b) => b.length - a.length)[0].slice(0, 40)}"`); });
     if (sl.r.audit) try { out.push(...sl.r.audit()); } catch (e) { out.push('audit failed: ' + e.message); }
@@ -253,7 +266,6 @@
     const src = document.getElementById('vizos-deck');
     const deck = JSON.parse(src.textContent);
     if (CHECK) document.body.classList.add('no-anim');
-    if ((deck.theme || {}).glass === 'clear') document.body.classList.add('glass-clear');   // neutral glass instead of the blue tint
     readColors();
     const vp = h('div'); vp.id = 'viewport'; stage = h('div'); stage.id = 'stage'; vp.appendChild(stage); document.body.appendChild(vp);
     document.title = deck.title || 'viz-os deck';

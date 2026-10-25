@@ -40,6 +40,17 @@
     else s = String(v);
     return minus(s);
   };
+  // the number a reader sees, read back as a value: 4,291 -> 4291, 1.2×10⁻⁵ -> 0.000012, 25.6% -> 0.256
+  const UNSUP = Object.fromEntries(Object.entries(SUP).map(([k, c]) => [c, k]));
+  L.shown = (v, spec) => { if (typeof v !== 'number' || !Number.isFinite(v)) return v;
+    const s = L.fmt(v, spec).replace(/−/g, '-').replace(/,/g, ''), m = /^(-?[\d.]+)×10(\S+)$/.exec(s);
+    return m ? +m[1] * 10 ** +[...m[2]].map(c => UNSUP[c]).join('') : s.endsWith('%') ? parseFloat(s) / 100 : +s; };
+  // spec showing k more digits of v (a number already shown exactly, like a count, keeps its spec)
+  L.more = (spec, v, k) => { if (!k || typeof v !== 'number' || L.shown(v, spec) === v) return spec; let m;
+    if (typeof spec === 'number' || /^\d+$/.test(spec)) return +spec + k;
+    if (spec === ',' || spec === 'int') return k;
+    if ((m = /^([se%])(\d+)?$/.exec(spec))) return m[1] + ((m[2] ? +m[2] : { s: 4, e: 2, '%': 1 }[m[1]]) + k);
+    return 's' + ((L.fmt(v, spec).split('×')[0].replace(/\D/g, '').replace(/^0+/, '') || '0').length + k); };
 
   // ---------- html + markdown-lite ----------
   const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -189,7 +200,7 @@
     log1p: vec(Math.log1p), floor: vec(Math.floor), ceil: vec(Math.ceil), sign: vec(Math.sign),
     round: vec((x, d = 0) => Math.round(x * 10 ** d) / 10 ** d), pow: vec(Math.pow),
     sum: agg(a => a.reduce((s, x) => s + x, 0)), mean: agg(mean), var: agg(variance), sd: agg(a => Math.sqrt(variance(a))),
-    min: agg(a => Math.min(...a)), max: agg(a => Math.max(...a)), median: agg(a => quant(a, .5)), count: agg(a => a.length), len: a => Array.isArray(a) ? a.length : 1,
+    min: agg(a => Math.min(...a)), max: agg(a => Math.max(...a)), median: agg(a => quant(a, .5)), geomean: agg(a => Math.exp(mean(a.map(Math.log)))), count: agg(a => a.length), len: a => Array.isArray(a) ? a.length : 1,
     quantile: (a, p) => quant(flat([a]), p), cumsum: a => { let s = 0; return a.map(x => s += x); }, sort: a => [...a].sort((x, y) => x - y),
     rank: a => { const s = a.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]), r = []; s.forEach(([, i], k) => r[i] = k + 1); return r; },
     at: (a, i) => a[i], first: a => a[0], last: a => a[a.length - 1],
@@ -256,30 +267,35 @@
   const FN = { log: x => `\\ln ${x}`, ln: x => `\\ln ${x}`, log2: x => `\\log_2 ${x}`, log10: x => `\\log_{10} ${x}`, log1p: x => `\\ln(1 + ${x.replace(/^\\left\(|\\right\)$/g, '')})`,
     exp: x => `e^{${x.replace(/^\\left\((.*)\\right\)$/, '$1')}}`, sqrt: x => `\\sqrt{${x.replace(/^\\left\((.*)\\right\)$/, '$1')}}`, abs: x => `\\left|${x.replace(/^\\left\((.*)\\right\)$/, '$1')}\\right|`,
     normCdf: x => `\\Phi${x}`, normPdf: x => `\\varphi${x}`, floor: x => `\\lfloor ${x.replace(/^\\left\((.*)\\right\)$/, '$1')} \\rfloor`, ceil: x => `\\lceil ${x.replace(/^\\left\((.*)\\right\)$/, '$1')} \\rceil` };
-  // opts: { sym: name -> tex, val: name -> number (substitute), wrap: (name, tex, i) -> tex, fmt }
+  // opts: { sym: name -> tex, val: name -> number (substitute), wrap: (name, tex, i) -> tex, fmt, fmtOf: (name, value) -> fmt (a substituted number's own rounding), lit: fmt for numbers written in the expression }
   L.tex = function tex(src, opts = {}) {
     const ast = typeof src === 'string' ? L.parse(src) : src; let occ = 0;
     const isNumLike = a => a.t === 'num' || (opts.val && a.t === 'id' && opts.val(a.n) != null);
+    // a negative number gets brackets only where a sign would be misread: after + − × /, under a minus, as a base.
+    // In a function, a fraction or at the start it stays bare: Φ(−4.23), not Φ((−4.23))
+    const isNeg = a => a.t === 'par' ? isNeg(a.a) : a.t === 'neg' || (a.t === 'num' && a.v < 0) || (a.t === 'id' && !!opts.val && typeof opts.val(a.n) === 'number' && opts.val(a.n) < 0);
+    const negw = (a, t) => isNeg(a) ? `\\left(${t}\\right)` : t;
+    const fmtOf = (n, v) => (opts.fmtOf && opts.fmtOf(n, v)) ?? opts.fmt;
     const go = (a, ctx = 0) => {
       let s, p = 9;
       switch (a.t) {
-        case 'num': s = a.v >= 1e4 && Number.isInteger(Math.log10(a.v)) ? `10^{${Math.log10(a.v)}}` : numTex(a.v, opts.fmt); if (a.v < 0) p = 4; break;
+        case 'num': s = a.v >= 1e4 && Number.isInteger(Math.log10(a.v)) ? `10^{${Math.log10(a.v)}}` : numTex(a.v, opts.lit !== undefined ? opts.lit : opts.fmt); if (a.v < 0) p = 4; break;
         case 'id': {
           const v = opts.val ? opts.val(a.n) : null;
-          if (v != null) { s = numTex(v, opts.fmt); if (typeof v === 'number' && v < 0) { s = `\\left(${s}\\right)`; } }
+          if (v != null) { s = numTex(v, fmtOf(a.n, v)); if (typeof v === 'number' && v < 0) p = PREC.neg; }
           else s = (opts.sym && opts.sym(a.n)) || L.autoSym(a.n);
           if (opts.wrap) s = opts.wrap(a.n, s, occ++);
           break;
         }
         case 'par': return go(a.a, ctx);
         case 'arr': s = `[${a.items.map(x => go(x)).join(',\\ ')}]`; break;
-        case 'neg': s = `-${go(a.a, PREC.neg)}`; p = PREC.neg; break;
+        case 'neg': s = `-${negw(a.a, go(a.a, PREC.neg))}`; p = PREC.neg; break;
         case 'bin': {
           p = PREC[a.op];
           if (a.op === '/' && !opts.slash) { s = `\\dfrac{${go(a.a)}}{${go(a.b)}}`; p = 9; break; }
-          if (a.op === '/') { s = `${go(a.a, 3)} \\mathbin{/} ${go(a.b, 3.5)}`; p = 3; break; }
+          if (a.op === '/') { s = `${go(a.a, 3)} \\mathbin{/} ${negw(a.b, go(a.b, 3.5))}`; p = 3; break; }
           if (a.op === '^') { const base = go(a.a, 6); s = `{${base}}^{${go(a.b)}}`; break; }
-          const L1 = go(a.a, p), R1 = go(a.b, a.op === '-' || a.op === '/' ? p + .5 : p);
+          const L1 = go(a.a, p), R0 = go(a.b, a.op === '-' || a.op === '/' ? p + .5 : p), R1 = '+-*'.includes(a.op) ? negw(a.b, R0) : R0;
           if (a.op === '*') {
             const juxt = !opts.val && !isNumLike(a.b) && !(a.b.t === 'neg') && (isNumLike(a.a) || a.a.t === 'id' || a.a.t === 'par');
             s = juxt ? `${L1}\\,${R1}` : `${L1} \\times ${R1}`;
@@ -296,7 +312,7 @@
               const ss = `\\sum_i (${xi} - ${xbar})^2`;
               s = { mean: `\\tfrac{1}{n}\\sum_i ${xi}`, sum: `\\sum_i ${xi}`, var: `\\tfrac{1}{n-1}${ss}`, sd: `\\sqrt{\\tfrac{1}{n-1}${ss}}` }[a.f];
             } else {
-              const n = arr.length, f = v => numTex(v, opts.fmt), list = n <= 8 ? arr.map(f).join(' + ') : `${f(arr[0])} + ${f(arr[1])} + \\dots + ${f(arr[n - 1])}`;
+              const n = arr.length, f = v => numTex(v, fmtOf(one, v)), list = n <= 8 ? arr.map(f).join(' + ') : `${f(arr[0])} + ${f(arr[1])} + \\dots + ${f(arr[n - 1])}`;
               const mean = arr.reduce((u, v) => u + v, 0) / n, SS = arr.reduce((u, v) => u + (v - mean) ** 2, 0);
               const wrapL = t => opts.wrap ? opts.wrap(one, t, occ++) : t;
               s = { mean: `\\dfrac{${wrapL(list)}}{${n}}`, sum: wrapL(list),
@@ -305,7 +321,15 @@
             }
             break;
           }
+          if (a.f === 'at' && a.args.length === 2 && a.args[0].t === 'id' && a.args[1].t === 'num') {   // one entry of a list: r_2 on the page, its number when substituting
+            const nm = a.args[0].n, arr = opts.arr ? opts.arr(nm) : null, i = a.args[1].v;
+            s = arr && opts.val ? numTex(arr[i], fmtOf(nm, arr[i])) : `{${(opts.sym && opts.sym(nm)) || L.autoSym(nm)}}_{${i + 1}}`;
+            if (opts.wrap) s = opts.wrap(nm, s, occ++);
+            break;
+          }
           const args = a.args.map(x => go(x));
+          const CDF = { betaCdf: 'Beta', nbCdf: 'NB', poisCdf: 'Pois', binomCdf: 'Bin' };   // a CDF reads F_{Beta(a, b)}(x)
+          if (CDF[a.f] && args.length > 1) { s = `F_{\\mathrm{${CDF[a.f]}}(${args.slice(1).join(',\\,')})}\\left(${args[0]}\\right)`; break; }
           if (a.f === 'choose') { s = `\\binom{${args[0]}}{${args[1]}}`; break; }
           if (a.f === 'factorial') { s = `${args[0]}!`; break; }
           if (a.f === 'pow') { s = `{${args[0]}}^{${args[1]}}`; break; }
@@ -318,6 +342,25 @@
       return p < ctx ? `\\left(${s}\\right)` : s;
     };
     return go(ast);
+  };
+  // working that adds up: worked by hand, the numbers a line shows must give the result it shows. When they would not
+  // (30,229 − 418 = 29,811, not 29,812), every rounded input gets one more digit, twice at most; past that the line reads ≈.
+  // Takes tex()'s options plus the result, its fmt and the scope for names the line leaves as symbols; returns { tex, eq }
+  L.work = function work(src, opts, result, rfmt, scope = {}) {
+    const ast = typeof src === 'object' ? src : L.parse(String(src)), want = L.fmt(result, rfmt);
+    const base = (n, v) => (opts.fmtOf && opts.fmtOf(n, v)) ?? opts.fmt;
+    if (typeof result !== 'number' || !Number.isFinite(result)) return { tex: L.tex(ast, opts), eq: '=' };
+    for (let k = 0; k <= 2; k++) {
+      const fmtOf = (n, v) => L.more(base(n, v), v, k), sc = Object.create(scope);
+      const walk = a => { if (!a || typeof a !== 'object') return;
+        if (a.t === 'id' && opts.val) { const v = opts.val(a.n); if (typeof v === 'number') sc[a.n] = L.shown(v, fmtOf(a.n, v)); }
+        if (a.t === 'call' && opts.arr && a.args[0] && a.args[0].t === 'id') { const nm = a.args[0].n, arr = opts.arr(nm); if (Array.isArray(arr)) sc[nm] = arr.map(v => L.shown(v, fmtOf(nm, v))); }
+        [a.a, a.b, ...(a.args || []), ...(a.items || [])].forEach(walk); };
+      walk(ast);
+      let hand; try { hand = ev(ast, sc); } catch (e) { return { tex: L.tex(ast, opts), eq: '=' }; }
+      if (typeof hand !== 'number' || L.fmt(hand, rfmt) === want) return { tex: L.tex(ast, k ? { ...opts, fmtOf } : opts), eq: '=' };
+    }
+    return { tex: L.tex(ast, opts), eq: '\\htmlClass{approx}{\\approx}' };   // the audit reports these
   };
   function numTex(v, f) {
     if (Array.isArray(v)) return `[\\dots]`;

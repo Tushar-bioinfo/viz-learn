@@ -253,11 +253,12 @@ slides:
     uses: [alpha]
     lead: Where does α come from? Six numbers.
     title: Our replicates give α by subtraction
+    why: α measures a gene's extra spread. Six replicates are enough to estimate it.
     given: 'Replicates: {{reps}}'
     lines:
-      - {say: Average the replicates, expr: mean(reps), name: m}
-      - {say: Measure their spread, expr: var(reps), name: v}
-      - {say: 'Remove counting, divide by μ²', expr: (v - m) / m^2, name: alpha_hat}
+      - {say: Average the replicates, expr: mean(reps), name: m, why: our best guess of the true level μ}
+      - {say: Measure their spread, expr: var(reps), name: v, why: this holds counting noise plus the wobble}
+      - {say: 'Remove counting, divide by μ²', expr: (v - m) / m^2, name: alpha_hat, why: 'variance = μ + αμ², solved for α'}
 
   - type: idea
     lead: So which part matters more? It depends on the mean.
@@ -313,18 +314,20 @@ slides:
   - type: calc
     lead: Where does the first verdict come from?
     title: Against counting noise, the gap looks big
+    why: A z-score counts how many noise units apart two groups sit. The noise model sets the unit.
     lines:
-      - {say: The gap between the groups, expr: muB - m, name: diff}
-      - {say: 'Noise in the gap, counting only', expr: sqrt(m / n + muB / n), name: se_p}
-      - {say: The gap in noise units, expr: diff / se_p, name: z_p, fmt: 2}
+      - {say: The gap between the groups, expr: muB - m, name: diff, why: treated average minus control average}
+      - {say: 'Noise in the gap, counting only', expr: sqrt(m / n + muB / n), name: se_p, why: 'Poisson: each variance equals its mean'}
+      - {say: The gap in noise units, expr: diff / se_p, name: z_p, fmt: 2, why: beyond about 2 usually reads as real}
 
   - type: calc
     lead: But the replicates showed bigger noise.
     title: Against the real noise, the gap shrinks
+    why: Same gap, but now the yardstick includes the wobble between replicates.
     given: 'Variances from μ + αμ²: control **{{vA|0}}**, treated **{{vB|0}}**.'
     lines:
-      - {say: 'Noise in the gap, with wobble', expr: sqrt(vA / n + vB / n), name: se_nb}
-      - {say: The same gap in noise units, expr: diff / se_nb, name: z_nb, fmt: 2}
+      - {say: 'Noise in the gap, with wobble', expr: sqrt(vA / n + vB / n), name: se_nb, why: each group's variance is now μ + αμ²}
+      - {say: The same gap in noise units, expr: diff / se_nb, name: z_nb, fmt: 2, why: a wider yardstick gives a smaller z}
 
   - type: idea
     lead: Put both on one yardstick.

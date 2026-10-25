@@ -1,4 +1,4 @@
-/* viz-os charts: declarative SVG plots in the glass theme.
+/* viz-os charts: declarative SVG plots in the flat proff theme (plain fills, square bars, square label tags).
    Series: line, area, bars, hist, dots, lollipop, step. Marks: vline, hline, band, point, label, arrow, line, fn, area, span.
    Every series and mark may carry `step`; labels avoid each other and the data; a data table and a hover readout come free. */
 (function () {
@@ -7,7 +7,7 @@
   const NS = 'http://www.w3.org/2000/svg';
   let uid = 0;
   const mctx = document.createElement('canvas').getContext('2d');
-  L.measure = (s, size = 24, weight = 600) => { mctx.font = `${weight} ${size}px ${L.fontUI || 'Inter, system-ui, sans-serif'}`; return mctx.measureText(String(s)).width; };
+  L.measure = (s, size = 24, weight = 600, family) => { mctx.font = `${weight} ${size}px ${family || L.fontUI || 'Inter, system-ui, sans-serif'}`; return mctx.measureText(String(s)).width; };
   const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
   L.svgEl = el;
   const col = c => (L.colors && L.colors[c]) || c || (L.colors && L.colors.mist);
@@ -92,14 +92,6 @@
       svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': spec.alt || spec.title || 'chart' });
       wrap.insertBefore(svg, tip);
       const defs = el('defs', {}, svg), made = {};
-      // frosted fill for bars: lit at the top, clearer toward the base (like the glyphs on the iOS icons)
-      const glassFill = (c, a) => { const k = `f${c}${a}`; if (made[k]) return made[k]; const gid = made[k] = `${id}-gf${Object.keys(made).length}`;
-        const lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
-        [[0, L.tone(c, .3), a], [.5, c, a * .95], [1, c, a * .64]].forEach(([o, sc, op]) => el('stop', { offset: o, 'stop-color': sc, 'stop-opacity': op }, lg)); return gid; };
-      // a glass bead for dots: a highlight up and to the left, a little shade down and to the right
-      const bead = c => { const k = `b${c}`; if (made[k]) return made[k]; const gid = made[k] = `${id}-gb${Object.keys(made).length}`;
-        const rg = el('radialGradient', { id: gid, cx: .36, cy: .3, r: .78 }, defs);
-        [[0, L.tone(c, .55)], [.5, c], [1, L.tone(c, -.2)]].forEach(([o, sc]) => el('stop', { offset: o, 'stop-color': sc }, rg)); return gid; };
 
       // domains
       const xs = spec.x || {}, ys = spec.y || {};
@@ -134,7 +126,7 @@
       legend.innerHTML = hasLegend ? series.filter(s => s.name && s.legend !== false).map(s =>
         `<span class="mk${s.step ? ' st' : ''}" data-mstep="${s.step || 0}"><i class="${['dots', 'lollipop'].includes(s.kind) ? 'dot' : ['bars', 'hist'].includes(s.kind) ? 'bar' : ''}" style="background:${col(s.c)}${s.dash ? ';background:repeating-linear-gradient(90deg,' + col(s.c) + ' 0 7px,transparent 7px 11px)' : ''}"></i>${L.md(s.name)}</span>`).join('') : '';
       const legH = hasLegend && !vhead ? legend.offsetHeight + 14 : 0;
-      if (vhead) vhead.classList.toggle('empty', !hasLegend && !vhead.querySelector('.controls') && spec.table === false);
+      if (vhead) vhead.classList.toggle('empty', !hasLegend && !vhead.querySelector('.controls, .famcard') && spec.table === false);
       const endLabels = !hasLegend || W < 760 ? [] : series.filter(s => ['line', 'area', 'step'].includes(s.kind || 'line') && s.name && s.label !== false && series.length <= 3);
       const endW = endLabels.length ? Math.max(...endLabels.map(s => L.measure(L.plain(s.label || s.name, scope), 24, 600))) + 30 : 0;
       const lastX = cats ? '' : (xs.log ? logFmt(xdom[1]) : L.fmt(xdom[1], xs.fmt));   // the last tick label is centred on the plot edge
@@ -179,9 +171,9 @@
           case 'hline': { const y = sy(V(mk.y)); el('line', { x1: m.l, x2: m.l + pw, y1: y, y2: y, stroke: c, 'stroke-width': 2.5, 'stroke-dasharray': mk.dash === false ? null : '9 8' }, gg);
             segs.push([[m.l, y], [m.l + pw, y]]); if (mk.label) labels.push({ text: mk.label, ax: m.l + pw - 4, ay: y, pref: ['al', 'bl'], step: mk.step, c }); break; }
           case 'band': { if (mk.x) { const [a, b] = mk.x.map(V); const x0 = sx(Math.max(a, xdom[0])), x1 = sx(Math.min(b, xdom[1]));
-              el('rect', { x: x0, y: m.t, width: Math.max(0, x1 - x0), height: ph, fill: c, opacity: .13, rx: 6 }, gg);
+              el('rect', { x: x0, y: m.t, width: Math.max(0, x1 - x0), height: ph, fill: c, opacity: .13 }, gg);
               if (mk.label) labels.push({ text: mk.label, ax: (x0 + x1) / 2, ay: m.t + 4, pref: ['b', 'bc'], step: mk.step, c, inside: true }); }
-            else if (mk.y) { const [a, b] = mk.y.map(V); const y0 = sy(b), y1 = sy(a); el('rect', { x: m.l, y: y0, width: pw, height: Math.max(0, y1 - y0), fill: c, opacity: .13, rx: 6 }, gg);
+            else if (mk.y) { const [a, b] = mk.y.map(V); const y0 = sy(b), y1 = sy(a); el('rect', { x: m.l, y: y0, width: pw, height: Math.max(0, y1 - y0), fill: c, opacity: .13 }, gg);
               if (mk.label) labels.push({ text: mk.label, ax: m.l + pw - 6, ay: y0 + 4, pref: ['bl'], step: mk.step, c }); } break; }
           case 'area': { const [a, b] = mk.x.map(V), ast = L.parse(mk.fn), sc = L.scope(scope, {}); const n = 120, pts = [];
             for (let i = 0; i <= n; i++) { const x = Math.max(xdom[0], a) + (Math.min(xdom[1], b) - Math.max(xdom[0], a)) * i / n; sc.x = x; const y = L.try(ast, sc, 'mark area'); pts.push([sx(x), clampY(sy(Math.max(ydom[0], y)))]); }
@@ -199,7 +191,7 @@
               const alts = pts.length < 3 ? null : [f0, .15, .25, .35, .45, .55, .65, .75, .85, .95].filter((f, i) => !i || Math.abs(f - f0) > .04).map(f => [...at(f), Math.abs(f - f0) * 2]);
               labels.push({ text: mk.label, ax: p[0], ay: p[1], alts, own: pts, pref: ['tl', 'br', 'l', 'r'], step: mk.step, c, lead: true }); } break; }
           case 'point': { const at = mk.at || [mk.x, mk.y], x = sx(V(at[0])), y = sy(V(at[1]));
-            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: `url(#${bead(c)})`, stroke: L.colors.plate, 'stroke-width': 3 }, gg);
+            el('circle', { cx: x, cy: y, r: mk.r || 10, fill: c, stroke: L.colors.plate, 'stroke-width': 3 }, gg);
             obstacles.push([x - 12, y - 12, x + 12, y + 12]); if (mk.label) labels.push({ text: mk.label, ax: x, ay: y, pref: mk.place ? [mk.place] : ['tr', 'tl', 'br', 'bl', 'r', 'l', 't'], step: mk.step, c, lead: true, strong: true }); break; }
           case 'label': { const at = mk.at; labels.push({ text: mk.text || mk.label, ax: sx(V(at[0])), ay: sy(V(at[1])), pref: mk.place ? [mk.place] : ['c'], step: mk.step, c, plain: true }); break; }
           case 'arrow': { const [x1, y1] = [sx(V(mk.from[0])), sy(V(mk.from[1]))], [x2, y2] = [sx(V(mk.to[0])), sy(V(mk.to[1]))];
@@ -207,7 +199,7 @@
             el('path', { d: `M${x1},${y1}Q${cx},${cy} ${x2},${y2}`, fill: 'none', stroke: c, 'stroke-width': 3, 'stroke-linecap': 'round' }, gg);
             const ang = Math.atan2(y2 - cy, x2 - cx), h = 14; el('path', { d: `M${x2},${y2}L${x2 - h * Math.cos(ang - .45)},${y2 - h * Math.sin(ang - .45)}L${x2 - h * Math.cos(ang + .45)},${y2 - h * Math.sin(ang + .45)}Z`, fill: c }, gg);
             segs.push([[x1, y1], [cx, cy], [x2, y2]]); if (mk.label) labels.push({ text: mk.label, ax: cx, ay: cy, pref: ['t', 'b', 'r', 'l'], step: mk.step, c }); break; }
-          case 'span': { const [a, b] = mk.x.map(V), y = mk.y != null ? sy(V(mk.y)) : m.t + 18, x0 = sx(a), x1 = sx(b);
+          case 'span': { const [a, b] = mk.x.map(V), y = mk.y != null ? sy(V(mk.y)) : m.t + (mk.yf != null ? ph * mk.yf : 18), x0 = sx(Math.max(a, xdom[0])), x1 = sx(Math.min(b, xdom[1]));
             el('path', { d: `M${x0},${y - 9}V${y + 9}M${x0},${y}H${x1}M${x1},${y - 9}V${y + 9}`, stroke: c, 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round' }, gg);
             segs.push([[x0, y], [x1, y]]); if (mk.label) labels.push({ text: mk.label, ax: (x0 + x1) / 2, ay: y - 6, pref: ['t', 'b'], step: mk.step, c }); break; }
           default: L.err('chart', `unknown mark kind "${mk.kind}"`);
@@ -227,40 +219,35 @@
           const clipped = pts.map(p => [p[0], clampY(p[1])]);
           const path = 'M' + clipped.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L');
           if (kind === 'area') {
-            const gid = `${id}-ag${si}`, lg = el('linearGradient', { id: gid, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
-            el('stop', { offset: '0%', 'stop-color': c, 'stop-opacity': .34 }, lg); el('stop', { offset: '100%', 'stop-color': c, 'stop-opacity': .03 }, lg);
-            el('path', { d: path + `L${clipped[clipped.length - 1][0]},${m.t + ph}L${clipped[0][0]},${m.t + ph}Z`, fill: `url(#${gid})` }, gg);
+            el('path', { d: path + `L${clipped[clipped.length - 1][0]},${m.t + ph}L${clipped[0][0]},${m.t + ph}Z`, fill: c, 'fill-opacity': .18 }, gg);
           }
-          el('path', { d: path, fill: 'none', stroke: c, 'stroke-width': s.width || (s.focus ? 4 : 3.5), 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': s.dash ? '10 9' : null, opacity: s.opacity }, gg);
+          el('path', { d: path, fill: 'none', stroke: c, 'stroke-width': s.width || (s.focus ? 4 : 3.5), 'stroke-linecap': 'square', 'stroke-linejoin': 'miter', 'stroke-dasharray': s.dash ? '10 9' : null, opacity: s.opacity }, gg);
           segs.push(clipped);
           if (endLabels.includes(s) && clipped.length) { const p = clipped[clipped.length - 1]; labels.push({ text: s.label || s.name, ax: p[0] + 6, ay: p[1], pref: ['r'], step: s.step, c, end: true, plain: true }); }
         } else if (kind === 'bars' || kind === 'lollipop') {
           const xsArr = d.map(p => p[0]);
           let band = cats ? pw / cats.length : xsArr.length > 1 ? Math.min(...xsArr.slice(1).map((x, i) => Math.abs(sx(x) - sx(xsArr[i])))) : pw / 8;
-          const bw = Math.max(2, Math.min(band * (s.bw ?? .64), 64)), r = Math.min(6, bw / 2);
-          const gid = glassFill(c, 1);
+          const bw = Math.max(2, Math.min(band * (s.bw ?? .64), 64));
           d.forEach(p => { const cx = cats ? sx(p[0] + .5) : sx(p[0]), y0 = sy(Math.max(ydom[0], ys.log ? ydom[0] : 0)), y1 = clampY(sy(p[1]));
-            if (kind === 'lollipop') { el('line', { x1: cx, x2: cx, y1: y0, y2: y1, stroke: c, 'stroke-width': 3, opacity: .9 }, gg); el('circle', { cx, cy: y1, r: Math.min(7, Math.max(4, bw / 3)), fill: `url(#${bead(c)})`, stroke: L.colors.plate, 'stroke-width': 2 }, gg); }
+            if (kind === 'lollipop') { el('line', { x1: cx, x2: cx, y1: y0, y2: y1, stroke: c, 'stroke-width': 3, opacity: .9 }, gg); el('circle', { cx, cy: y1, r: Math.min(7, Math.max(4, bw / 3)), fill: c, stroke: L.colors.plate, 'stroke-width': 2 }, gg); }
             else { const h = y0 - y1; if (h <= .5) return; const x = cx - bw / 2;
-              el('path', { d: `M${x},${y0}V${y1 + r}Q${x},${y1} ${x + r},${y1}H${x + bw - r}Q${x + bw},${y1} ${x + bw},${y1 + r}V${y0}Z`, fill: `url(#${gid})`, opacity: s.opacity ?? (s.focus ? 1 : .94) }, gg);
-              if (bw > 2 * r + 6 && h > 5) el('path', { d: `M${x + r},${y1 + .9}H${x + bw - r}`, stroke: 'rgba(255,255,255,.62)', 'stroke-width': 1.4, 'stroke-linecap': 'round', opacity: s.opacity ?? 1 }, gg); }
+              el('rect', { x, y: y1, width: bw, height: h, fill: c, opacity: s.opacity ?? (s.focus ? 1 : .92) }, gg); }
             obstacles.push([cx - bw / 2, y1, cx + bw / 2, y0]); });
           if (s.highlight != null) { const hv = L.val(s.highlight, scope); const hi = d.find(p => p[0] === hv); if (hi) { const cx = cats ? sx(hi[0] + .5) : sx(hi[0]); const y1 = sy(hi[1]);
-            el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, rx: 8, fill: 'none', stroke: col('accent'), 'stroke-width': 3 }, gg); } }
+            el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, fill: 'none', stroke: col('accent'), 'stroke-width': 3 }, gg); } }
         } else if (kind === 'hist') {
-          const gid = glassFill(c, .9);
-          d.forEach(b => { if (b.y <= 0) return; const x0 = sx(Math.max(b.x0, xdom[0])) + 1, x1 = sx(Math.min(b.x1, xdom[1])) - 1, y1 = clampY(sy(b.y)), y0 = sy(0), w = x1 - x0, r = Math.min(5, w / 2);
-            if (w <= 0) return; el('path', { d: `M${x0},${y0}V${y1 + r}Q${x0},${y1} ${x0 + r},${y1}H${x1 - r}Q${x1},${y1} ${x1},${y1 + r}V${y0}Z`, fill: `url(#${gid})`, opacity: s.opacity ?? .9 }, gg);
+          d.forEach(b => { if (b.y <= 0) return; const x0 = sx(Math.max(b.x0, xdom[0])) + 1, x1 = sx(Math.min(b.x1, xdom[1])) - 1, y1 = clampY(sy(b.y)), y0 = sy(0), w = x1 - x0;
+            if (w <= 0) return; el('rect', { x: x0, y: y1, width: w, height: y0 - y1, fill: c, opacity: s.opacity ?? .9 }, gg);
             obstacles.push([x0, y1, x1, y0]); });
         } else if (kind === 'dots') {
           const many = d.length > 300, r = s.r || (many ? 4.5 : 8);
           d.forEach(p => { const x = sx(p[0]), y = sy(p[1]); if (x < m.l - 2 || x > m.l + pw + 2 || y < m.t - 2 || y > m.t + ph + 2) return;
-            el('circle', { cx: x, cy: y, r, fill: many ? c : `url(#${bead(c)})`, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); else dense.push([x, y]); });
+            el('circle', { cx: x, cy: y, r, fill: c, stroke: L.colors.plate, 'stroke-width': many ? 1.2 : 2.5, opacity: s.opacity ?? (many ? .75 : 1) }, gg); if (!many) obstacles.push([x - r, y - r, x + r, y + r]); else dense.push([x, y]); });
         }
       });
       over.forEach(mk => drawMark(mk, layerM));
 
-      // labels: glass pills placed clear of other labels, data and the plot edge
+      // labels: flat square tags placed clear of other labels, data and the plot edge
       const placed = [];
       // axis titles and tick labels are taken space: labels must not land on them
       g.querySelectorAll('text').forEach(t => { const b = t.getBBox(); placed.push([b.x - 4, b.y - 2, b.x + b.width + 4, b.y + b.height + 2]); });
@@ -281,9 +268,11 @@
             bc: [ax - w / 2, ay + 8], al: [ax - w, ay - h - 8] };
           if (lb.end) { for (let dy = 0; dy < 140; dy += 8) for (const sgn of [1, -1]) { const y = ay - h / 2 + sgn * dy; cand['r' + sgn * dy] = [ax + gap, y]; } }
           const order = lb.end ? Object.keys(cand).filter(k => /^r-?\d/.test(k)) : [...lb.pref, ...['tr', 'tl', 'r', 'l', 't', 'b', 'br', 'bl'].filter(k => !lb.pref.includes(k))];
-          for (const k of order) {
-            const [x, y] = cand[k] || cand.tr, box = [x, y, x + w, y + h];
-            let score = (lb.end ? order.indexOf(k) * .05 : order.indexOf(k) * .5) + away;
+          // a tag may also slide sideways along its side (a little cost per pixel), so a crowded corner does not force an overlap
+          const slides = lb.end || lb.plain ? [0] : [0, 40, -40, 90, -90, w / 2, -w / 2];
+          for (const k of order) { for (const dx of slides) {
+            const [x0, y] = cand[k] || cand.tr, x = x0 + dx, box = [x, y, x + w, y + h];
+            let score = (lb.end ? order.indexOf(k) * .05 : order.indexOf(k) * .5) + away + Math.abs(dx) / 80;
             if (box[0] < plotBox[0] - (lb.end ? 0 : 2) || box[2] > W - 2 || box[1] < 2 || box[3] > m.t + ph + (lb.end ? 4 : 0)) score += 100;
             if (placed.some(p => over2(p, box))) score += 60;
             if (obstacles.some(o => over2(o, box))) score += 14;
@@ -292,14 +281,14 @@
             if (lb.lead && k !== 'c' && cuts([ax, ay], leadEnd(ax, ay, box), lb.own)) score += 8;
             if (score < bestScore) { bestScore = score; best = { box, k, ax, ay }; }
             if (score < 1) break;
-          }
+          } if (bestScore < 1) break; }
         });
         const [x0, y0, x1, y1] = best.box, { ax, ay } = best; placed.push(best.box);
         const gg = markG(lb.step, layerL);
         if (lb.end && Math.abs((best.box[1] + best.box[3]) / 2 - ay) > 10) el('line', { x1: ax - 4, y1: ay, x2: best.box[0], y2: (best.box[1] + best.box[3]) / 2, stroke: lb.c, 'stroke-width': 1.5, opacity: .7 }, markG(lb.step, layerL));
         if (lb.lead && best.k !== 'c') { const [tx, ty] = leadEnd(ax, ay, best.box);
           el('line', { x1: ax, y1: ay, x2: tx, y2: ty, stroke: lb.c, 'stroke-width': 2, opacity: .85 }, gg); }
-        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: (y1 - y0) / 2, fill: L.colors.pill || 'rgba(19,21,31,.92)', stroke: 'rgba(255,255,255,.22)', 'stroke-width': 1.2 }, gg);
+        if (!lb.plain) el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, fill: L.colors.pill || '#242526', stroke: L.colors.line || '#565653', 'stroke-width': 2 }, gg);
         if (!lb.plain) el('circle', { cx: x0 + 14, cy: (y0 + y1) / 2, r: 0 }, gg);
         const t = el('text', { x: lb.plain ? x0 + 2 : (x0 + x1) / 2, y: (y0 + y1) / 2 + 8, 'text-anchor': lb.plain ? 'start' : 'middle', class: 'lbl' + (lb.end ? ' dim' : ''), 'data-lbl': 1 }, gg);
         t.textContent = text;
@@ -343,7 +332,7 @@
             if (best && bd < (s.kind === 'dots' ? 36 : 60)) { rows.push([s, best]); gx = gx ?? sx(best[0]); } }
           else { const b = d.find(q => x >= sx(q.x0) && x <= sx(q.x1)); if (b) rows.push([s, [`${L.fmt(b.x0)}–${L.fmt(b.x1)}`, b.y]]); } });
         if (!rows.length) return hide();
-        if (gx != null) { if (!guide) guide = el('line', { class: 'grid', y1: m.t, y2: m.t + ph, 'stroke-width': 2, stroke: 'rgba(255,255,255,.35)' }, svg); guide.setAttribute('x1', gx); guide.setAttribute('x2', gx); }
+        if (gx != null) { if (!guide) guide = el('line', { class: 'grid', y1: m.t, y2: m.t + ph, 'stroke-width': 2, stroke: L.colors.line || '#565653' }, svg); guide.setAttribute('x1', gx); guide.setAttribute('x2', gx); }
         const xs = spec.x || {}, ys = spec.y || {};
         tip.innerHTML = `<div>${L.esc(xs.label || 'x')}: <b>${typeof rows[0][1][0] === 'string' ? rows[0][1][0] : state.cats ? L.esc(state.cats[rows[0][1][0]]) : L.fmt(rows[0][1][0], xs.fmt)}</b></div>` +
           rows.map(([s, p]) => `<div><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${col(s.c)};margin-right:8px"></span>${L.esc(L.plain(s.name || ys.label || 'y'))}: <b>${L.fmt(p[1], ys.fmt)}</b></div>`).join('');

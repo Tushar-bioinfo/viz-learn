@@ -48,7 +48,94 @@
   const symOf = (ctx, n) => { const s = (ctx.symbols || {})[n] || (ctx.terms || {})[n]; return s && s.tex ? s.tex : L.autoSym(n); };
   const saysOf = (ctx, n) => { const s = (ctx.terms || {})[n] || (ctx.symbols || {})[n]; return s && s.says ? s.says : null; };
   // the label under a number: `short` if given, else `says`
+  // how a number substituted into working is written: the rounding it is shown with elsewhere (an earlier line, its
+  // column, its symbol's `fmt`), else 4 significant figures (whole numbers in full), so a reader can redo the
+  // arithmetic by hand (a line's own `fmt` rounds only its result)
+  const subFmt = (ctx, n, v, own) => own ?? (((ctx.terms || {})[n] || (ctx.symbols || {})[n] || {}).fmt) ?? (Number.isInteger(v) ? ',' : 's4');
   const shortOf = (ctx, n) => { const s = (ctx.terms || {})[n] || (ctx.symbols || {})[n]; return (s && (s.short || s.says)) || n; };
+
+  // ---------- notation: the first slide that uses a symbol says what it means, in plain words, once per deck ----------
+  const NOTATION = [
+    [/\\sum\b/, '\\sum', 'add up every term'],
+    [/\\prod\b/, '\\prod', 'multiply every term'],
+    [/\\bar\{/, '\\bar{x}', 'the average of x'],
+    [/\\hat\{/, '\\hat{x}', 'x estimated from the data'],
+    [/_\{\s*i\s*,?\s*j\s*\}/, 'x_{ij}', 'row i, column j of a table'],
+    [/\\log_\{?2\b/, '\\log_2', 'how many doublings'],
+    [/\\log_\{10\}/, '\\log_{10}', 'how many powers of ten'],
+    [/\\ln\b/, '\\ln', 'log to base e (natural log)'],
+    [/(?<![A-Za-z\\])e\^/, 'e^{x}', 'e (about 2.718) to the power x'],
+    [/\\sqrt\b/, '\\sqrt{v}', 'square root: back to the units of x'],
+    [/\\Phi\b/, '\\Phi(z)', 'normal area to the left of z'],
+    [/\\varphi\b/, '\\varphi(z)', 'height of the normal curve at z'],
+    [/\\sim\b/, 'X \\sim', 'X is drawn from'],
+    [/\\mid\b/, 'P(A \\mid B)', 'chance of A once B is known'],
+    [/\\binom\b/, '\\tbinom{n}{k}', 'ways to choose k of n'],
+    [/\\Gamma\b/, '\\Gamma(r)', 'factorial stretched to any number'],
+    [/[\w)}]!/, 'n!', 'n × (n − 1) × … × 1'],
+    [/median/, '\\operatorname{median}', 'the middle value after sorting'],
+    [/\\operatorname\{rank\}|\\mathrm\{rank\}/, '\\operatorname{rank}', 'position after sorting'],
+    [/\\in\b/, 'j \\in S', 'j is one of the items in S'],
+    [/\\min\b/, '\\min', 'the smallest'],
+    [/\\max\b/, '\\max', 'the largest'],
+    [/\\operatorname\{Var\}|\\mathrm\{Var\}/, '\\operatorname{Var}', 'variance: spread around the mean'],
+    [/\\mathbb\{E\}|\\operatorname\{E\}/, '\\mathbb{E}', 'expected value: the long-run average'],
+    [/\\propto\b/, '\\propto', 'grows in step with'],
+    [/\\approx\b/, '\\approx', 'about equal to'],
+    [/\\int\b/, '\\int', 'area under a curve'],
+    [/\\infty\b/, '\\infty', 'without end'],
+  ];
+  // the plain words for symbols a slide uses for the first time in the deck (at most 4), plus any the slide lists itself
+  function notationEl(texs, s, cls = '') {
+    if (s.notation === false || (L.deck && L.deck.notation === false)) return null;
+    const src = texs.filter(Boolean).join(' '), hits = [];
+    (Array.isArray(s.notation) ? s.notation : []).forEach(n => { if (!L.seenNotation.has(n.tex)) { L.seenNotation.add(n.tex); hits.push([n.tex, n.says]); } });
+    NOTATION.forEach(([re, tex, words]) => { if (hits.length < 4 && re.test(src) && !L.seenNotation.has(tex)) { L.seenNotation.add(tex); hits.push([tex, words]); } });
+    if (!hits.length) return null;
+    return h('div', 'notation ' + cls, `<span class="wtag">New notation</span>` + hits.map(([t, w]) => `<span class="nt"><span class="ns tx" data-tex="${L.esc(t)}"></span><span class="nw">${md(w)}</span></span>`).join(''));
+  }
+  L.notationEl = notationEl;
+
+  // ---------- distributions by name: shape, parameters, mean and variance ----------
+  // pmf/mean/var are expressions; {p} is replaced by the author's expression for parameter p (so sliders move them)
+  const DIST = {
+    poisson: { name: 'Poisson', disc: true, p: ['mu'], pmf: 'poisPmf(x, {mu})', cdf: 'poisCdf(x, {mu})', mean: '{mu}', var: '{mu}', mt: '\\mu', vt: '\\mu' },
+    nb: { name: 'Negative binomial', disc: true, p: ['mu', 'alpha'], pmf: 'nbPmf(x, {mu}, {alpha})', cdf: 'nbCdf(x, {mu}, {alpha})', mean: '{mu}', var: '{mu} + {alpha} * {mu}^2', mt: '\\mu', vt: '\\mu + \\alpha\\mu^2' },
+    binomial: { name: 'Binomial', disc: true, p: ['n', 'p'], pmf: 'binomPmf(x, {n}, {p})', cdf: 'binomCdf(x, {n}, {p})', mean: '{n} * {p}', var: '{n} * {p} * (1 - {p})', mt: 'np', vt: 'np(1-p)' },
+    normal: { name: 'Normal', p: ['mu', 'sigma'], pmf: 'normPdf(x, {mu}, {sigma})', cdf: 'normCdf(x, {mu}, {sigma})', mean: '{mu}', var: '{sigma}^2', mt: '\\mu', vt: '\\sigma^2' },
+    gamma: { name: 'Gamma', p: ['shape', 'rate'], pmf: 'gammaPdf(x, {shape}, {rate})', mean: '{shape} / {rate}', var: '{shape} / {rate}^2', mt: 'k/\\beta', vt: 'k/\\beta^2' },
+    beta: { name: 'Beta', p: ['a', 'b'], pmf: 'betaPdf(x, {a}, {b})', cdf: 'betaCdf(x, {a}, {b})', mean: '{a} / ({a} + {b})', var: '{a} * {b} / (({a} + {b})^2 * ({a} + {b} + 1))', mt: '\\tfrac{a}{a+b}', vt: '\\tfrac{ab}{(a+b)^2(a+b+1)}' },
+    uniform: { name: 'Uniform', p: ['a', 'b'], pmf: 'where(x >= {a}, where(x <= {b}, 1 / ({b} - {a}), 0), 0)', cdf: 'clamp((x - {a}) / ({b} - {a}), 0, 1)', mean: '({a} + {b}) / 2', var: '({b} - {a})^2 / 12', mt: '\\tfrac{a+b}{2}', vt: '\\tfrac{(b-a)^2}{12}' },
+  };
+  const PSYM = { mu: '\\mu', alpha: '\\alpha', sigma: '\\sigma', n: 'n', p: 'p', shape: 'k', rate: '\\beta', a: 'a', b: 'b' };
+  L.DIST = DIST;
+  // a dist visual becomes a chart: bars (counts) or a curve, the mean, plus or minus one SD, an optional tail in orange,
+  // and an optional second family drawn as a dashed line for comparison
+  function distOf(d, where) {
+    const F = DIST[d.family]; if (!F) throw new Error(`${where}: unknown distribution family "${d.family}" (use ${Object.keys(DIST).join(', ')})`);
+    const P = d.params || {}; F.p.forEach(k => { if (P[k] == null) throw new Error(`${where}: ${d.family} needs params.${k}`); });
+    const sub = t => t.replace(/\{(\w+)\}/g, (_, k) => `(${P[k]})`);
+    return { F, P, pmf: sub(F.pmf), cdf: F.cdf ? sub(F.cdf) : null, mean: sub(F.mean), sd: `sqrt(${sub(F.var)})`, var: sub(F.var) };
+  }
+  function distSpec(d, scope, where) {
+    const A = distOf(d, where), B = d.vs ? distOf(d.vs, where) : null, disc = A.F.disc;
+    let [lo, hi] = d.x || [NaN, NaN];
+    if (!d.x) { const m = L.try(A.mean, scope, where), sd = L.try(A.sd, scope, where), sdB = B ? L.try(B.sd, scope, where) : 0, w = 4 * Math.max(sd, sdB);
+      lo = d.family === 'beta' || d.family === 'uniform' ? 0 : Math.max(disc || d.family === 'gamma' ? 0 : -Infinity, m - w); hi = d.family === 'beta' ? 1 : m + w;
+      if (disc) { lo = Math.floor(lo); hi = Math.ceil(hi); } }
+    const many = disc && hi - lo > 120, kind = disc && !many ? 'bars' : 'area';
+    const series = [{ name: d.label || A.F.name, kind, fn: A.pmf, discrete: disc, color: d.color || 's1' }];
+    if (B) series.push({ name: d.vs.label || B.F.name, kind: 'line', fn: B.pmf, discrete: B.F.disc && !many, dash: true, color: d.vs.color || 's2', width: 3.5 });
+    const t = d.tail;
+    if (t) { const cond = t.below != null ? `x <= (${t.below})` : `x >= (${t.above})`;
+      series.push({ name: t.label || 'tail', legend: false, kind, fn: `where(${cond}, ${A.pmf}, 0)`, discrete: disc, color: 'accent' }); }
+    const show = d.show || ['mean', 'sd'], marks = [];
+    if (show.includes('mean')) marks.push({ kind: 'vline', x: A.mean, color: 'ink', label: d.meanLabel || 'mean' });
+    if (show.includes('sd')) { marks.push({ kind: 'span', x: [`${A.mean} - ${A.sd}`, `${A.mean} + ${A.sd}`], yf: B ? .1 : .14, color: d.color || 's1', label: B ? `±1 SD, ${d.label || A.F.name}` : '±1 SD' });
+      if (B) marks.push({ kind: 'span', x: [`${B.mean} - ${B.sd}`, `${B.mean} + ${B.sd}`], yf: .26, color: d.vs.color || 's2', label: `±1 SD, ${d.vs.label || B.F.name}` }); }
+    if (t && t.at !== false) marks.push({ kind: 'vline', x: t.below ?? t.above, color: 'accent', dash: false, label: t.mark || null });
+    return { A, B, spec: { x: { label: d.xlabel || (disc ? 'count' : 'x'), min: lo, max: hi, fmt: d.xfmt }, y: { label: d.ylabel || (disc ? 'probability' : 'density'), fmt: d.yfmt }, series, marks, table: false, alt: d.alt || `${A.F.name} distribution` } };
+  }
 
   // ---------- common head ----------
   const LEADW = /^(But|So|Now|Why|Yet|Then|Therefore|Next|Wait|First|Finally|Notice|Here|Still|Instead|Remember|Recall|Back)\b/;
@@ -57,8 +144,11 @@
     if (s.eyebrow || extra) hd.appendChild(h('div', 'eyebrow', md(s.eyebrow || extra)));
     if (s.lead) hd.appendChild(h('div', 'lead', md(s.lead).replace(LEADW, '<span class="lw">$1</span>')));
     if (s.title) hd.appendChild(h('div', 'h1', md(s.title)));
+    // why this step: what the slide is for, so no calculation is a procedure without a reason (a predict slide's `why` is its answer)
+    if (s.why && s.type !== 'predict') hd.appendChild(h('div', 'purpose', `<span class="wtag">Why</span><span>${md(s.why)}</span>`));
     return hd;
   }
+  L.head = head;
   function points(list, from = 1, build = true) {
     const ul = h('ul', 'pts');
     (list || []).forEach((p, i) => { const li = h('li', '', `<span class="pip"></span><span>${md(p)}</span>`); if (build) li.dataset.step = from + i; ul.appendChild(li); });
@@ -69,7 +159,7 @@
   function controls(list, slideCtx) {
     const box = h('div', 'controls');
     (list || []).forEach(c => {
-      const w = h('div', 'ctl g pill thin');
+      const w = h('div', 'ctl g pill thin'); w.dataset.name = c.name;
       const id = `ctl-${slideCtx.index}-${c.name}`;
       w.innerHTML = `<label for="${id}">${md(c.label || c.name)}</label><input id="${id}" type="range" min="${c.min}" max="${c.max}" step="${c.step ?? (c.max - c.min) / 100}" value="${c.value ?? c.min}"><output></output>`;
       const inp = w.querySelector('input'), out = w.querySelector('output');
@@ -102,12 +192,10 @@
         const n = Math.round(L.val(u.n, ctx.scope, 'units.n')), hi = Math.round(L.val(u.hi ?? 0, ctx.scope, 'units.hi')), W = svg.clientWidth || 600, H = svg.clientHeight || 300;
         let cols = u.cols || Math.ceil(Math.sqrt(n * W / H)); const rows = Math.ceil(n / cols), cell = Math.min(W / cols, H / rows), r = cell * .36;
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
-        const ox = (W - cols * cell) / 2, oy = (H - rows * cell) / 2, A = L.colors.accent, gid = `ub${ctx.index}`;
-        // a lit unit is a glass bead; the others are rings
-        const rg = L.svgEl('radialGradient', { id: gid, cx: .36, cy: .3, r: .78 }, L.svgEl('defs', {}, svg));
-        [[0, L.tone(A, .55)], [.5, A], [1, L.tone(A, -.2)]].forEach(([o, c]) => L.svgEl('stop', { offset: o, 'stop-color': c }, rg));
+        const ox = (W - cols * cell) / 2, oy = (H - rows * cell) / 2, A = L.colors.accent;
+        // a lit unit is a solid orange dot; the others are grey rings
         for (let i = 0; i < n; i++) { const cx = ox + (i % cols + .5) * cell, cy = oy + (Math.floor(i / cols) + .5) * cell, on = i < hi;
-          L.svgEl('circle', { cx, cy, r, fill: on ? `url(#${gid})` : 'none', stroke: on ? 'none' : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
+          L.svgEl('circle', { cx, cy, r, fill: on ? A : 'none', stroke: on ? 'none' : L.colors.haze, 'stroke-width': on ? 0 : 2, opacity: on ? 1 : .7 }, svg); }
       };
       vis.classList.remove('plate');
     } else if (v.parts) {
@@ -115,24 +203,20 @@
       const svg = L.svgEl('svg', {}); box.appendChild(svg);
       const items = (p.items || []).map(it => typeof it === 'string' ? { label: it } : it), multi = !!p.rows;
       if (p.build) R.steps = multi ? p.rows.length : items.length;
-      // pieces that are not the focus are frosted white at four strengths, so the glass shows through, as on the icons' glyphs
-      const FROST = [.5, .28, .68, .2];
-      const fillOf = (it, i) => it.color ? [L.colors[it.color] || it.color, 1] : it.focus ? [L.colors.accent, 1] : ['#e4e8f6', FROST[i % FROST.length]];
+      // pieces that are not the focus are flat greys at four strengths, neighbours never the same; the focus is orange
+      const GREYS = ['#8e8c86', '#5b5a56', '#b3b0a8', '#6f6d68'];
+      const fillOf = (it, i) => it.color ? (L.colors[it.color] || it.color) : it.focus ? L.colors.accent : GREYS[i % GREYS.length];
       R.layout = () => {
         const W = box.clientWidth, H = box.clientHeight; if (!W || !H) return;
         svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
         const val = x => L.val(x, ctx.scope, `slide ${ctx.index + 1} parts`), fmt = x => L.fmt(x, p.fmt);
-        // each piece is frosted glass: lit at the top, a little clearer at the bottom
-        const defs = L.svgEl('defs', {}, svg), made = {}, glass = ([c, a]) => made[c + a] || (made[c + a] = (() => { const id = `pg${ctx.index}-${Object.keys(made).length}`, lg = L.svgEl('linearGradient', { id, x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
-          [[0, L.tone(c, .28), a], [.55, c, a * .97], [1, c, a * .78]].forEach(([o, sc, op]) => L.svgEl('stop', { offset: o, 'stop-color': sc, 'stop-opacity': op }, lg)); return id; })());
         const g = st => L.svgEl('g', st ? { 'data-pstep': st } : {}, svg);
         const text = (par, cls, x, y, t, anchor = 'middle') => { const e = L.svgEl('text', { class: cls, x, y, 'text-anchor': anchor }, par); e.textContent = t; return e; };
         // one bar per row; each piece's width is its share of the row's total. parOf(i) is the group piece i is drawn in
         const bar = (parOf, vals, x0, w, y, bh) => { const sum = vals.reduce((a, b) => a + b, 0) || 1; let x = x0; return vals.map((v, i) => {
           const ww = Math.max(0, w * v / sum), r = { x, w: ww, cx: x + ww / 2, v, share: v / sum };
-          if (ww > 0.5) { const rx = Math.min(10, bh / 4), xx = x + (i ? 2 : 0), w2 = Math.max(1, ww - (i ? 2 : 0) - (i < vals.length - 1 ? 2 : 0)), gp = parOf(i);
-            L.svgEl('rect', { x: xx, y, width: w2, height: bh, rx, fill: `url(#${glass(fillOf(items[i] || {}, i))})` }, gp);
-            if (w2 > 2 * rx + 6) L.svgEl('path', { d: `M${xx + rx},${y + .9}H${xx + w2 - rx}`, stroke: 'rgba(255,255,255,.55)', 'stroke-width': 1.4, 'stroke-linecap': 'round' }, gp); }
+          if (ww > 0.5) { const xx = x + (i ? 2 : 0), w2 = Math.max(1, ww - (i ? 2 : 0) - (i < vals.length - 1 ? 2 : 0));
+            L.svgEl('rect', { x: xx, y, width: w2, height: bh, fill: fillOf(items[i] || {}, i) }, parOf(i)); }
           x += ww; return r; }); };
         if (!multi) {
           const vals = items.map(it => val(it.value)), sum = vals.reduce((a, b) => a + b, 0);
@@ -155,7 +239,7 @@
           const n = p.rows.length, legH = 54, rowH = Math.min(96, (H - legH) / n), bh = rowH * .58;
           const lw = Math.max(...p.rows.map(r => L.measure(L.plain(r.label || '', ctx.scope), 24, 640))) + 26, endW = p.share ? 96 : 120, bw = Math.max(40, W - lw - endW);
           const fi = Math.max(0, items.findIndex(it => it.focus));
-          let lx = 0; items.forEach((it, i) => { L.svgEl('rect', { x: lx, y: 10, width: 22, height: 22, rx: 5, fill: `url(#${glass(fillOf(it, i))})` }, svg); const t = text(svg, 'pk', lx + 32, 29, L.plain(it.label || '', ctx.scope), 'start'); lx += 32 + L.measure(t.textContent, 24, 560) + 34; });
+          let lx = 0; items.forEach((it, i) => { L.svgEl('rect', { x: lx, y: 10, width: 22, height: 22, fill: fillOf(it, i) }, svg); const t = text(svg, 'pk', lx + 32, 29, L.plain(it.label || '', ctx.scope), 'start'); lx += 32 + L.measure(t.textContent, 24, 560) + 34; });
           const y0 = legH + Math.max(0, (H - legH - n * rowH) / 2);
           p.rows.forEach((r, j) => { const gj = g(p.build ? j + 1 : 0), y = y0 + j * rowH + (rowH - bh) / 2, vals = (r.values || []).map(val);
             text(gj, 'pr', 0, y + bh / 2 + 9, L.plain(r.label || '', ctx.scope), 'start');
@@ -194,14 +278,45 @@
       R.layout = () => fitCode(pre);
     } else if (v.image) {
       const box = h('div', 'imgbox'); const img = h('img'); img.src = (window.VIZOS_ASSETS || {})[v.image] || v.image; img.alt = v.alt || ''; box.appendChild(img); vis.appendChild(box);
+      // the picture carries no words: labels sit on it at fractions of its width and height, optionally one per step
+      const labs = (v.labels || []).map(lb => { const e = h('div', 'il', md(lb.text)); if (lb.step) e.dataset.step = lb.step; box.appendChild(e); return { lb, e }; });
+      if (labs.length) {
+        R.steps = Math.max(0, ...labs.map(x => x.lb.step || 0));
+        const place = () => { const b = box.getBoundingClientRect(), r = img.getBoundingClientRect(), sc = b.width / (box.offsetWidth || 1) || 1; if (!r.width) return;
+          labs.forEach(({ lb, e }) => { const [fx, fy] = lb.at || [.5, .5]; e.style.left = ((r.left - b.left) / sc + fx * r.width / sc) + 'px'; e.style.top = ((r.top - b.top) / sc + fy * r.height / sc) + 'px'; }); };
+        R.layout = place; img.addEventListener('load', () => requestAnimationFrame(place));
+        R.show = k => labs.forEach(({ lb, e }) => e.classList.toggle('now', lb.step === k));
+      }
+    } else if (v.dist) {
+      const where = `slide ${ctx.index + 1} dist`; let D;
+      try { D = distSpec(v.dist, ctx.scope, where); } catch (e) { L.err(where, e.message); D = null; }
+      if (D) {
+        // the chart, and beside it the family card: its name, each parameter with its meaning and live value (or its slider), then mean and variance
+        vis.classList.add('vis-dist'); const row = h('div', 'distrow'), col = h('div', 'distchart'); row.appendChild(col); vis.appendChild(row);
+        const C = L.chart(col, D.spec, () => ctx.scope, { vis });
+        const d = v.dist, says = d.says || {}, card = h('div', 'famcard');
+        const val = x => `<span class="pv2 iv" data-x="${L.esc(String(x))}"></span>`;
+        const eq = (key, tex, x, cls = '') => `<div class="mrow${cls}"><span class="mk">${key}</span><span class="tx" data-tex="${L.esc(tex)}"></span><span class="eqs">=</span>${val(x)}</div>`;
+        const tail = d.tail && D.A.cdf ? (d.tail.below != null ? D.A.cdf.replace(/\bx\b/g, `(${d.tail.below})`) : `1 - ${D.A.cdf.replace(/\bx\b/g, `((${d.tail.above}) - ${D.A.F.disc ? 1 : 0})`)}`) : null;
+        card.innerHTML = `<div class="fn">${L.esc(d.label || D.A.F.name)}</div>` +
+          D.A.F.p.map(k => `<div class="prow" data-px="${L.esc(String(d.params[k]).trim())}"><div class="pl"><span class="ps tx" data-tex="${L.esc(PSYM[k] || k)}"></span>${says[k] ? `<span class="pw">${md(says[k])}</span>` : ''}${val(d.params[k])}</div></div>`).join('') +
+          `<div class="msep"></div>` + eq('mean', D.A.F.mt, D.A.mean) + eq('variance', D.A.F.vt, D.A.var) +
+          (D.B ? eq(`${L.esc(d.vs.label || D.B.F.name)} variance`, D.B.F.vt, D.B.var, ' vs') : '') +
+          (tail ? `<div class="mrow tl"><span class="mk">${L.esc(d.tail.label || 'tail')}</span><span class="eqs">=</span>${val(tail)}</div>` : '');
+        row.appendChild(card);
+        // a slider that sets one parameter moves into that parameter's row
+        R.adopt = box => { box.querySelectorAll('.ctl').forEach(c => { const r = [...card.querySelectorAll('.prow')].find(p => p.dataset.px === c.dataset.name); if (r) { c.classList.remove('g', 'pill', 'thin'); r.appendChild(c); } }); if (!box.children.length) box.remove(); };
+        R.steps = C.steps; R.layout = () => C.render(); R.show = k => C.setStep(k); R.audit = () => C.audit(); ctx.charts.push(C);
+      }
     } else if (v.eqn) {
       const box = h('div', 'eqmain'); vis.appendChild(box); const tex = v.eqn;
       R.layout = () => { L.renderTex(box, L.interp(tex, ctx.scope, true), true); fitEq(box); };
     } else if (v.svg) {
       const box = h('div', 'imgbox'); box.innerHTML = v.svg; vis.appendChild(box);
-    } else L.err(`slide ${ctx.index + 1}`, `visual needs one of chart, stat, units, parts, flow, code, image, eqn, svg`);
-    const tg = v.chart && ctx.charts.length && ctx.charts[ctx.charts.length - 1].toggle;
-    if (v.caption || tg) { const f = h('div', 'vfoot'); if (v.caption) f.appendChild(h('div', 'cap', md(v.caption))); if (tg) f.appendChild(tg); vis.appendChild(f); }
+    } else L.err(`slide ${ctx.index + 1}`, `visual needs one of chart, dist, stat, units, parts, flow, code, image, eqn, svg`);
+    const tg = (v.chart || v.dist) && ctx.charts.length && ctx.charts[ctx.charts.length - 1].toggle;
+    // a dist's caption sits under its chart, so the family card beside it can use the plate's full height
+    if (v.caption || tg) { const f = h('div', 'vfoot'); if (v.caption) f.appendChild(h('div', 'cap', md(v.caption))); if (tg) f.appendChild(tg); (vis.querySelector('.distchart') || vis).appendChild(f); }
     return R;
   };
 
@@ -250,7 +365,10 @@
     const base = container.getBoundingClientRect(), sc = base.width / (container.offsetWidth || 1) || L.scale || 1;
     const row = container.closest('.math') || container;   // labels go under the tallest piece of the whole row
     // an inline .katex box is only a line tall; its .base boxes carry the real height of fractions and roots
-    const kb = [...row.querySelectorAll('.katex .base, .katex')].map(k => k.getBoundingClientRect()).reduce((a, b) => (b.bottom > a.bottom ? b : a), (container.querySelector('.katex') || container).getBoundingClientRect());
+    // (only pieces on the container's own line: when a row wraps, the next line's pieces come after the labels)
+    const cr = container.getBoundingClientRect();
+    const kb = [...row.querySelectorAll('.katex .base, .katex')].map(k => k.getBoundingClientRect()).filter(b => b.top < cr.bottom - 1 && b.bottom > cr.top + 1)
+      .reduce((a, b) => (b.bottom > a.bottom ? b : a), (container.querySelector('.katex') || container).getBoundingClientRect());
     const card = container.closest('.calc, .recipe, .eqwrap, .g') || container, cb = card.getBoundingClientRect();
     const lo = (cb.left - base.left) / sc + 14, hi = (cb.right - base.left) / sc - 14;
     const top0 = (kb.bottom - base.top) / sc + 8, rows = [];
@@ -283,15 +401,16 @@
     const bases = () => [...container.querySelectorAll('.katex .base')].map(e => e.getBoundingClientRect()).filter(r => r.height);
     const kb = bases(); if (!kb.length) return;
     const base0 = container.getBoundingClientRect(), s0 = sc(), top = Math.min(...kb.map(r => r.top)), bot = Math.max(...kb.map(r => r.bottom));
+    // a label that wraps keeps its box at the full max-width; shrink it to its longest line so neighbours fit
+    const tight = lab => { const rg = document.createRange(); rg.selectNodeContents(lab.lastChild); const lines = [...rg.getClientRects()];
+      if (lines.length > 1) lab.style.width = Math.ceil((Math.max(...lines.map(q => q.right)) - Math.min(...lines.map(q => q.left))) / s0) + 2 + 'px'; };
     // the formula's axis is the middle of its = sign; terms clearly above it (numerators, powers) are named above
     const rel = container.querySelector('.katex .mrel'), rr = rel && rel.getBoundingClientRect(), mid = rr && rr.height ? (rr.top + rr.bottom) / 2 : (top + bot) / 2;
     const labs = items.map(it => {
       const sp = container.querySelector(`.lt-${CSS.escape(it.id)}`); if (!sp || !it.text) return null;
       const r = sp.getBoundingClientRect(); if (!r.width) return null;
       const lab = h('div', 'tlab', `<span class="lk"></span>${L.esc(it.text)}`); lab.dataset.term = it.id; container.appendChild(lab);
-      // a label that wraps keeps its box at the full max-width; shrink it to its longest line so neighbours fit
-      const rg = document.createRange(); rg.selectNodeContents(lab.lastChild); const lines = [...rg.getClientRects()];
-      if (lines.length > 1) lab.style.width = Math.ceil((Math.max(...lines.map(q => q.right)) - Math.min(...lines.map(q => q.left))) / s0) + 2 + 'px';
+      tight(lab);
       return { lab, tx: (r.left + r.width / 2 - base0.left) / s0, w: lab.offsetWidth, hh: lab.offsetHeight, up: (r.top + r.bottom) / 2 < mid - 8 && bot - top > 40 };
     }).filter(Boolean);
     const M = 12, GAP = 16; let crowded = false;
@@ -324,11 +443,19 @@
           if (!blockers.every(q => pushLeft(q, l.tx - 4, moves))) continue;
           moves.forEach((nx, q) => { q.cx = nx; }); P.push({ l, row, cx }); return;
         }
-        crowded = true; P.push({ l, row: 3, cx: Math.max(lo(l), Math.min(hi(l), l.tx)) });   // nowhere clean: the audit says so
+        // nowhere clean (its leader would cross a label): at least keep it off the other labels; the audit says so
+        crowded = true; const cx = Math.max(lo(l), Math.min(hi(l), l.tx));
+        P.push({ l, cx, row: [0, 1, 2, 3].find(r => P.every(q => q.row !== r || x1(q) + GAP <= cx - l.w / 2 || x0(q) - GAP >= cx + l.w / 2)) ?? 3 });
       });
       return P;
     };
-    const below = place(labs.filter(l => !l.up)), above = place(labs.filter(l => l.up));
+    let below = place(labs.filter(l => !l.up)), above = place(labs.filter(l => l.up));
+    // still crowded: put each label of two or more words on two lines, which makes it about half as wide, and try again
+    const wide = labs.filter(l => !l.lab.style.width && /\S\s+\S/.test(l.lab.lastChild.textContent));
+    if (crowded && wide.length) {
+      wide.forEach(l => { l.lab.style.width = Math.ceil(l.w * .6) + 'px'; tight(l.lab); l.w = l.lab.offsetWidth; l.hh = l.lab.offsetHeight; });
+      crowded = false; below = place(labs.filter(l => !l.up)); above = place(labs.filter(l => l.up));
+    }
     const RH = Math.max(0, ...labs.map(l => l.hh)) + 10, nb = below.length ? Math.max(...below.map(p => p.row)) + 1 : 0, na = above.length ? Math.max(...above.map(p => p.row)) + 1 : 0;
     // room above the formula for the labels that go there; then measure again, since the formula moved down
     if (na) container.style.paddingTop = (na * RH + 14) + 'px';
@@ -356,7 +483,8 @@
     node.appendChild(h('div', 'display enter', md(s.title || d.title)));
     if (s.subtitle || d.subtitle) node.appendChild(h('div', 'subtitle enter', md(s.subtitle || d.subtitle)));
     const q = s.question || d.question; if (q) node.appendChild(h('div', 'question g enter', `<div class="qmark">?</div><div class="qt">${md(q)}</div>`));
-    const chs = L.chapters || []; if (chs.length > 1 && s.chips !== false) { const c = h('div', 'chips enter'); chs.forEach((x, i) => c.appendChild(h('span', 'g pill thin', `${i + 1} · ${L.esc(x)}`))); node.appendChild(c); }
+    const chs = L.chapters || []; if (chs.length > 1 && s.chips !== false) { const c = h('div', 'pipe enter');
+      c.innerHTML = chs.map((x, i) => `<span class="pp"><b><i>${i + 1}</i>${L.esc(x)}</b>${L.chapterShape[x] ? `<span>${L.esc(L.chapterShape[x])}</span>` : ''}</span>`).join('<span class="pa">→</span>'); node.appendChild(c); }
     return { node, steps: 0 };
   };
 
@@ -364,7 +492,9 @@
     const node = h('section', 'slide s-statement s-chapter');
     const n = (L.chapters || []).indexOf(s.title) + 1;
     const g = h('div', 'g enter');
-    g.innerHTML = `<div class="eyebrow" style="margin-bottom:22px">${n ? `Part ${n} of ${L.chapters.length}` : 'Next part'}</div><div class="big">${md(s.title)}</div>${s.q ? `<div class="sub">${md(s.q)}</div>` : ''}`;
+    const out = L.chapterShape[s.title], inn = n > 1 ? L.chapterShape[L.chapters[n - 2]] : null;
+    const flow = out ? `<div class="flowline">${inn ? `<span class="shape"><span class="sx">in</span> ${L.esc(inn)}</span><span class="arr">→</span>` : ''}<span class="shape out"><span class="sx">out</span> ${L.esc(out)}</span></div>` : '';
+    g.innerHTML = `<div class="eyebrow" style="margin-bottom:22px">${n ? `Part ${n} of ${L.chapters.length}` : 'Next part'}</div><div class="big">${md(s.title)}</div>${s.q ? `<div class="sub">${md(s.q)}</div>` : ''}${flow}`;
     node.appendChild(g); return { node, steps: 0 };
   };
 
@@ -390,7 +520,7 @@
       body.appendChild(col);
     }
     if (v) { const cv = h('div', 'col-vis'); cv.appendChild(v.node); body.appendChild(cv); }
-    const ctl = (s.controls || (s.visual && s.visual.chart && s.visual.chart.controls)); if (ctl && v) { const hd = v.node.querySelector('.vhead'); let f = hd || v.node.querySelector('.vfoot'); if (!f) { f = h('div', 'vfoot'); v.node.appendChild(f); } const c = controls(ctl, ctx); if (hd) hd.appendChild(c); else f.appendChild(c); }
+    const ctl = (s.controls || (s.visual && s.visual.chart && s.visual.chart.controls)); if (ctl && v) { const hd = v.node.querySelector('.vhead'); let f = hd || v.node.querySelector('.vfoot'); if (!f) { f = h('div', 'vfoot'); v.node.appendChild(f); } const c = controls(ctl, ctx); if (hd) hd.appendChild(c); else f.appendChild(c); v.adopt && v.adopt(c); }
     return { node, steps: Math.max(nPts, v ? v.steps : 0), show: k => { node.querySelectorAll('.pts li').forEach((li, i) => li.classList.toggle('now', i + 1 === k)); v && v.show(k); }, layout: () => v && v.layout(), audit: () => v ? v.audit() : [] };
   };
 
@@ -410,7 +540,7 @@
     const choose = i => { if (body.dataset.done) return; body.dataset.done = 1;
       btns.forEach((b, j) => { b.disabled = true; if (j === s.answer) { b.classList.add('right'); b.querySelector('.om').textContent = '✓'; } });
       if (s.answer != null && i !== s.answer) { btns[i].classList.add('wrong'); btns[i].querySelector('.om').textContent = '✗'; }
-      why.classList.add('open'); hint.style.display = 'none'; ctx.later.forEach(v => v.layout()); };
+      why.classList.add('open'); hint.style.display = 'none'; ctx.later.forEach(v => v.layout()); L.refit && L.refit(); };
     btns.forEach((b, i) => b.addEventListener('click', e => { e.stopPropagation(); choose(i); }));
     ctx.keys = e => { const i = '1234abcd'.indexOf(e.key.toLowerCase()) % 4; if (i >= 0 && i < btns.length) { choose(i); return true; } };
     ctx.reveal = () => choose(s.answer ?? 0);
@@ -454,6 +584,8 @@
     let numRow = null;
     if (s.plug !== false && (computable || s.plug)) { numRow = h('div', 'eqnum'); numRow.dataset.step = ++step; numRow.innerHTML = `<span class="tag">With our numbers</span><span class="val"></span>`; eqb.appendChild(numRow); }
     if (s.note) { const r = h('div', 'eqso'); r.dataset.step = ++step; r.innerHTML = md(s.note); eqb.appendChild(r); }
+    if (s.hook) { const r = h('div', 'hook', `<span class="wtag">Remember</span><span>${md(s.hook)}</span>`); r.dataset.step = ++step; eqb.appendChild(r); }
+    const nt = notationEl([main], s); if (nt) eqb.appendChild(nt);
     // the same shape in other topics: this formula is one more member of a family the learner may know
     if (s.kin && s.kin.length) { const k = h('div', 'kin', `<div class="lg-tag">Same shape</div>` + s.kin.map(c => chip(c, 'kin-chip')).join('')); k.dataset.step = ++step; fam.appendChild(k); }
     // said aloud, and in code: one tap away in the more sheet, so the face stays the formula and its names
@@ -468,8 +600,8 @@
       if (numRow) {
         const v = numRow.querySelector('.val');
         if (computable) {
-          const sub = L.tex(s.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null, wrap: (n, t) => wrapT(n, t), fmt: s.fmt });
-          L.renderTex(v, `${sub} = \\htmlClass{res}{${L.numTex(result, s.fmt)}}`, false);
+          const { tex: sub, eq } = L.work(s.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null, wrap: (n, t) => wrapT(n, t), fmt: s.fmt, lit: null, fmtOf: (n, x) => subFmt(ctx, n, x, ((s.terms || {})[n] || {}).fmt) }, result, s.fmt, sc);
+          L.renderTex(v, `${sub} ${eq} \\htmlClass{res}{${L.numTex(result, s.fmt)}}`, false);
         } else L.renderTex(v, L.interp(String(s.plug).replace(/\[([A-Za-z_]\w*)\]/g, (_, n) => wrapT(n, sym(n))), ctx.scope, true), false);
         numRow.style.fontSize = ''; let fs = parseFloat(getComputedStyle(numRow).fontSize), guard = 0;   // one line: shrink to fit, never wrap
         while (numRow.scrollWidth > numRow.clientWidth + 2 && fs > 24 && guard++ < 20) { fs -= 2; numRow.style.fontSize = fs + 'px'; }
@@ -499,26 +631,33 @@
     const node = h('section', 'slide s-calc'); node.appendChild(head(s));
     const body = h('div', 'body ' + (s.visual ? 'split vis-left' : 'text-only')); node.appendChild(body);
     const box = h('div', 'calc g plate enter'); body.appendChild(box);
-    if (s.given) box.appendChild(h('div', 'small', md(s.given)));
+    const top = h('div', 'ctop'); if (s.given) top.appendChild(h('div', 'small', md(s.given)));
     const sym = n => symOf(ctx, n);
+    const nt = notationEl((s.lines || []).map(ln => { try { return ln.expr ? L.tex(ln.expr, { sym }) : ln.tex || ''; } catch (e) { return ''; } }), s, 'left'); if (nt) top.appendChild(nt);
+    if (top.children.length) box.appendChild(top);
     const lines = (s.lines || []).map((ln, i) => {
       const row = h('div', 'cline'); row.dataset.step = i + 1;
-      row.innerHTML = `<div class="num">${i + 1}</div><div class="say">${md(ln.say || '')}</div><div class="math"></div>`; box.appendChild(row); return { ln, row };
+      row.innerHTML = `<div class="num">${i + 1}</div><div class="say">${md(ln.say || '')}${ln.why ? `<span class="cwhy">${md(ln.why)}</span>` : ''}</div><div class="math"></div>`; box.appendChild(row); return { ln, row };
     });
     let v = null; if (s.visual) { v = L.visual(s.visual, ctx); const cv = h('div', 'col-vis'); cv.appendChild(v.node); body.appendChild(cv); }
     const draw = () => {
       const labelled = new Set();   // each name is labelled once per slide: the first time its number appears
+      const shownFmt = {};          // a number worked out on an earlier line keeps the rounding it was shown with
       lines.forEach(({ ln, row }, i) => {
         const math = row.querySelector('.math'); math.innerHTML = '';
         const where = `slide ${ctx.index + 1} calc line ${i + 1}`;
         if (ln.expr) {
           const val = L.try(ln.expr, ctx.scope, where); if (ln.name) ctx.scope[ln.name] = val;
-          const names = [], seen = new Set(); const sub = L.tex(ln.expr, { slash: true, val: n => { const x = ctx.scope[n]; return typeof x === 'number' ? x : null; }, arr: n => Array.isArray(ctx.scope[n]) ? ctx.scope[n] : null,
-            wrap: (n, t) => { if (seen.has(n) || labelled.has(n)) return t; seen.add(n); labelled.add(n); names.push(shortOf(ctx, n)); return `\\htmlClass{op op-${names.length - 1}}{${t}}`; }, fmt: ln.fmt });
-          if (ln.name) labelled.add(ln.name);   // a result named on its own line needs no label later
+          const names = [], seen = new Set(); const { tex: sub, eq } = L.work(ln.expr, { slash: true, val: n => { const x = ctx.scope[n]; return typeof x === 'number' ? x : null; }, arr: n => Array.isArray(ctx.scope[n]) ? ctx.scope[n] : null,
+            wrap: (n, t) => { if (seen.has(n) || labelled.has(n)) return t; seen.add(n); labelled.add(n); names.push(shortOf(ctx, n)); return `\\htmlClass{op op-${names.length - 1}}{${t}}`; },
+            fmt: ln.fmt, lit: null, fmtOf: (n, x) => subFmt(ctx, n, x, shownFmt[n]) }, val, ln.fmt, ctx.scope);
+          if (ln.name) { labelled.add(ln.name); shownFmt[ln.name] = ln.fmt; }   // a result named on its own line needs no label later
           const symb = L.tex(ln.expr, { sym });
-          const parts = [ln.name ? `${sym(ln.name)} = ${symb}` : symb, sub !== symb ? `= ${sub}` : null, `= \\htmlClass{res}{${L.numTex(val, ln.fmt)}}`].filter(Boolean);
+          const parts = [ln.name ? `${sym(ln.name)} = ${symb}` : symb, sub !== symb ? `= ${sub}` : null, `${eq} \\htmlClass{res}{${L.numTex(val, ln.fmt)}}`].filter(Boolean);
           parts.forEach((tex, pi) => { const span = h('span', 'part' + (pi === 1 && sub !== symb ? ' sub' : '')); math.appendChild(span); L.renderTex(span, tex, false); });
+          // a line too long for one row stacks its parts at the = signs, so no '= result' is left alone at the edge
+          math.classList.remove('wrapped'); const ps = [...math.children];
+          if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
           row._names = names;
         } else if (ln.tex) { const span = h('span'); math.appendChild(span); L.renderTex(span, L.interp(ln.tex, ctx.scope, true), false); }
       });
@@ -567,9 +706,10 @@
       const fr = computed[r] || {}, sc = L.scope(ctx.scope, fr), names = [], seen = new Set();
       const lt = (n, t) => `\\htmlClass{lt lt-${n}}{${t}}`;
       const f = L.tex(c.expr, { sym, wrap: (n, t) => keys.has(n) ? lt(n, t) : t });
-      const sub = L.tex(c.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null,
-        wrap: (n, t) => { if (keys.has(n)) return lt(n, t); if (seen.has(n)) return t; seen.add(n); names.push(says(n)); return `\\htmlClass{op op-${names.length - 1}}{${t}}`; } });
-      return { f: `${lt(c.key, sym(c.key))} = ${f}`, sub: `${sub} = \\htmlClass{res}{${L.numTex(fr[c.key], c.fmt)}}`, names, withSym };
+      const { tex: sub, eq } = L.work(c.expr, { slash: true, val: n => typeof sc[n] === 'number' ? sc[n] : null,
+        wrap: (n, t) => { if (keys.has(n)) return lt(n, t); if (seen.has(n)) return t; seen.add(n); names.push(says(n)); return `\\htmlClass{op op-${names.length - 1}}{${t}}`; },
+        lit: null, fmtOf: (n, x) => subFmt(ctx, n, x, (colOf(n) || {}).fmt) }, fr[c.key], c.fmt, sc);
+      return { f: `${lt(c.key, sym(c.key))} = ${f}`, sub: `${sub} ${eq} \\htmlClass{res}{${L.numTex(fr[c.key], c.fmt)}}`, names, withSym };
     };
     const block = (k, html) => { const b0 = h('div', 'rk', html); b0.dataset.k = k; rec.appendChild(b0); blocks[k] = b0; return b0; };
     const draw = () => {
@@ -587,7 +727,7 @@
           inputs.map(n => `<div class="gl"><span class="gs" data-n="${L.esc(n)}"></span><b>${L.esc(label(n))}</b><span class="gm">${md(says(n))}</span></div>`).join('') +
           `<div class="small">Then one new ${per} per step.</div>`);
         rec.querySelectorAll('.gs').forEach(e => L.renderTex(e, sym(e.dataset.n), false));
-        const one = (c, r, eyebrow) => { const w = working(c, r), b0 = block(`${r}:${c.key}`, `<div class="eyebrow">${eyebrow}</div><div class="rname">${md(c.label || c.key)}</div><div class="rsays">${md(c.says || saysOf(ctx, c.key) || '')}</div><div class="rf"></div><div class="rw"><div class="small">For ${L.esc(rowName(r))}:</div><span></span></div>`);
+        const one = (c, r, eyebrow) => { const w = working(c, r), b0 = block(`${r}:${c.key}`, `<div class="eyebrow">${eyebrow}</div><div class="rname">${md(c.label || c.key)}</div><div class="rsays">${md(c.says || saysOf(ctx, c.key) || '')}</div>${c.why ? `<div class="rwhy">${md(c.why)}</div>` : ''}<div class="rf"></div><div class="rw"><div class="small">For ${L.esc(rowName(r))}:</div><span></span></div>`);
           L.renderTex(b0.querySelector('.rf'), w.f, false); L.renderTex(b0.querySelector('.rw span'), w.sub, false); b0._names = w.names; b0._c = c; };
         der.forEach((c, i) => rowsSrc.forEach((_, r) => one(c, r, mode === 'cells' ? `Column ${i + 1} of ${der.length} · row ${r + 1} of ${rowsSrc.length}` : `Step ${i + 1} of ${der.length} · how it is made`)));
         if (mode === 'rows') rowsSrc.forEach((_, r) => { const b0 = block(`${r}:*`, `<div class="eyebrow">Row ${r + 1} of ${rowsSrc.length}</div><div class="rname">${L.esc(rowName(r))}</div>` + der.map(c => `<div class="rline" data-col="${L.esc(c.key)}"><span class="rl">${md(c.label || c.key)}</span><span class="rm"></span></div>`).join(''));

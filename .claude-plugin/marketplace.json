@@ -8,7 +8,7 @@
     {
       "name": "viz-os",
       "source": "./plugins/viz-os",
-      "description": "Learning decks in an iOS Liquid Glass style on black: probe what you know, build the story from the ground up, show where every formula comes from, work tables one step at a time, check on desktop and phone."
+      "description": "Learning decks in a flat dark look for laptop and phone: probe what you know, build the story from the ground up, show where every formula comes from, work matrices row by row or column by column, compute every number from data, check on desktop and phone."
     }
   ]
 }

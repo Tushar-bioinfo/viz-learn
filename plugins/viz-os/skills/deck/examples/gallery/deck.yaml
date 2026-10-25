@@ -4,7 +4,10 @@ subtitle: Every viz-os slide type, on one small idea
 kicker: viz-os gallery
 question: Two samples, different depths. How do we compare a gene across them?
 answer: Divide each count by its sample's total reads and scale to a million (CPM), then compare those rates.
-chapters: [Raw counts, The fix, Check it]
+chapters:
+  - {title: Raw counts, shape: genes × samples}
+  - {title: The fix, shape: genes × samples}
+  - {title: Check it, shape: one number per gene}
 
 learner:
   goal: intuition+hand
@@ -40,7 +43,7 @@ symbols:
   lam: {tex: '\lambda', says: expected reads (a rate)}
   k: {tex: k, says: reads we actually see}
 
-abbr: {CPM: counts per million, SD: standard deviation, FASTQ: the raw read file format, TMM: trimmed mean of M-values}
+abbr: {CPM: counts per million, SD: standard deviation, FASTQ: the raw read file format, TMM: trimmed mean of M-values, LFC: log fold change, FC: fold change}
 
 slides:
   - type: title
@@ -103,6 +106,7 @@ slides:
       N: {value: libA}
     code: cpm = x / N * 1e6
     note: The same gene now reads {{cpmA|0}} in both samples.
+    hook: Like a percentage, but per million reads instead of per hundred.
     from: {name: a percentage, tex: '\dfrac{\text{part}}{\text{whole}} \times 100', move: count per million reads, not per hundred}
     kin:
       - {where: cricket, name: run rate, tex: '\dfrac{\text{runs}}{\text{overs}}'}
@@ -111,9 +115,20 @@ slides:
   - type: calc
     lead: Work it once by hand.
     title: Two steps turn reads into CPM
+    why: Doing it once by hand shows the two moves the formula hides.
     lines:
-      - {say: Find the gene's share of the sample, expr: xA / libA, name: p}
+      - {say: Find the gene's share of the sample, expr: xA / libA, name: p, why: so the depth drops out}
       - {say: Scale the share to a million reads, expr: p * 1e6, name: cpm}
+
+  - type: predict
+    kind: check
+    q: GeneB has 30 reads in a library of 1,000. What is its CPM?
+    options:
+      - '30'
+      - '3,000'
+      - '30,000'
+    answer: 2
+    why: 30 out of 1,000 is a share of 0.03. Times a million gives **30,000**.
 
   - type: idea
     lead: A share is a slice of one sample.
@@ -131,6 +146,7 @@ slides:
   - type: table
     lead: Every gene follows the same recipe.
     title: Each new column is one step of the recipe
+    why: The same two steps, repeated for every gene.
     rows:
       - {gene: GeneA, x: 120, N: 1000}
       - {gene: GeneB, x: 30, N: 1000}
@@ -139,13 +155,14 @@ slides:
       - {key: gene, label: gene}
       - {key: x, label: reads}
       - {key: N, label: library}
-      - {key: p, label: share, expr: x / N, fmt: 3, says: the gene's share of all reads}
+      - {key: p, label: share, expr: x / N, fmt: 3, says: the gene's share of all reads, why: removes the depth}
       - {key: cpm, label: CPM, expr: p * 1e6, fmt: ',', says: reads per million reads}
     focus: 0
 
   - type: table
     lead: Or walk it one gene at a time.
     title: Each row is one gene's whole recipe
+    why: Follow one gene from raw reads all the way to CPM.
     build: rows
     given: false
     rows:
@@ -158,15 +175,57 @@ slides:
       - {key: p, label: share, expr: x / N, fmt: 3, says: the gene's share of all reads}
       - {key: cpm, label: CPM, expr: p * 1e6, fmt: ',', says: reads per million reads}
 
+  - type: ops
+    lead: Now every gene and every sample at once.
+    title: Totals come from columns, levels from rows
+    why: Real data is a whole table, so each step works on a whole row or column.
+    matrix:
+      name: raw counts
+      values:
+        - [120, 70, 230]
+        - [30, 10, 70]
+        - [850, 420, 1700]
+      rows: [GeneA, GeneB, GeneC]
+      cols: [S1, S2, S3]
+      row: gene
+      col: sample
+      says: reads of gene $i$ in sample $j$
+      fmt: ','
+    steps:
+      - {op: cols, fn: sum, name: N, tex: N, label: library, fmt: ',', say: "Add up each sample's reads", why: The total is the depth we divide by.}
+      - {op: map, expr: x / N * 1e6, tex: '\mathrm{cpm}', label: CPM, fmt: ',', say: "Divide each count by its sample's total", why: Every sample is now on one per-million scale.}
+      - {op: rows, fn: mean, name: level, tex: '\bar{c}', label: mean CPM, fmt: ',', say: Average each gene across samples, why: One level per gene that we can compare between genes.}
+      - {op: sort, by: level, desc: true, label: rank, say: Rank the genes by level, why: The top of the list is the most expressed gene.}
+
+  - type: ops
+    lead: A dot product is a weighted sum along a row.
+    title: A fold change is a row times a weight list
+    why: Contrasts like treated minus control are dot products, so one rule covers them all.
+    matrix:
+      name: log2 expression
+      values:
+        - [5.0, 5.2, 7.1, 6.9]
+        - [8.0, 8.2, 8.1, 7.9]
+        - [3.0, 2.8, 1.0, 1.2]
+      rows: [GeneA, GeneB, GeneC]
+      cols: [ctrl 1, ctrl 2, treat 1, treat 2]
+      row: gene
+      col: sample
+      says: '$\log_2$ expression of gene $i$ in sample $j$'
+      fmt: 1
+    steps:
+      - {op: dot, with: [-0.5, -0.5, 0.5, 0.5], wtex: w, withLabel: weights, name: lfc, tex: '\mathrm{LFC}', label: LFC, fmt: 2, say: Weight each sample then add, why: Treated average minus control average is the log fold change.}
+      - {op: vec, expr: 2^lfc, name: fc, tex: '\mathrm{FC}', label: fold change, fmt: 2, say: Undo the log, why: A fold change reads as how many times higher.}
+
   - type: predict
     kind: check
-    q: GeneB has 30 reads in a library of 1,000. What is its CPM?
+    q: A gene's log2 fold change is 3. How many times higher is it in the treated samples?
     options:
-      - '30'
-      - '3,000'
-      - '30,000'
+      - 3 times
+      - 6 times
+      - 8 times
     answer: 2
-    why: 30 out of 1,000 is a share of 0.03. Times a million gives **30,000**.
+    why: The log is base 2, so undo it with 2³ = **8**. Each +1 on the log2 scale is one doubling.
 
   - type: statement
     text: A count means nothing until you know ==how many reads== it came from.
@@ -195,6 +254,31 @@ slides:
           - {kind: span, x: ['lam - sqrt(lam)', 'lam + sqrt(lam)'], y: 0.17, label: '±1 SD = ±{{sqrt(lam)|1}}', step: 3}
           - {kind: area, fn: 'normPdf(x, lam, sqrt(lam))', x: [30, 60], label: 'P(k ≥ 30) = {{tail|%1}}', step: 4}
       caption: The spread is about the square root of the mean.
+
+  - type: idea
+    lead: But real samples wobble more than that.
+    title: Biological counts spread wider than Poisson
+    controls:
+      - {name: lam, label: 'mean μ', min: 5, max: 60, step: 1, value: 20}
+      - {name: disp, label: 'extra spread α', min: 0, max: 0.5, step: 0.01, value: 0.2}
+    visual:
+      dist:
+        family: nb
+        params: {mu: lam, alpha: disp}
+        says: {mu: the average count, alpha: extra spread between samples}
+        label: negative binomial
+        vs: {family: poisson, params: {mu: lam}, label: Poisson}
+      caption: Same mean, wider spread as soon as α is above zero.
+
+  - type: predict
+    kind: check
+    q: Slide the extra spread α down to 0. What does the negative binomial become?
+    options:
+      - A bell curve
+      - The Poisson
+      - A flat line
+    answer: 1
+    why: 'Its variance is μ + αμ². At α = 0 that leaves μ, the Poisson rule. The negative binomial is a Poisson with room for extra spread.'
 
   - type: compare
     lead: So which number should you compare?

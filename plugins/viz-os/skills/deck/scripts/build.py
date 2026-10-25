@@ -12,21 +12,22 @@ import argparse, base64, json, mimetypes, os, re, sys
 from pathlib import Path
 
 KIT = Path(__file__).resolve().parent.parent / "kit"
-KIT_JS = ["core.js", "chart.js", "slides.js", "deck.js"]
+KIT_JS = ["core.js", "chart.js", "slides.js", "ops.js", "deck.js"]
 KATEX_V = "0.16.11"
 KATEX_CDN = (f'<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/{KATEX_V}/katex.min.css">'
              f'<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/{KATEX_V}/katex.min.js"></script>')
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-         '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">')
+         '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">')
 
-COMMON = {"type", "title", "lead", "eyebrow", "chapter", "introduces", "uses", "more", "derive", "controls", "id", "notes"}
+# why: one line on what the slide is for (shown under the title); notation: extra symbols to explain, or false
+COMMON = {"type", "title", "lead", "eyebrow", "chapter", "introduces", "uses", "more", "derive", "controls", "id", "notes", "why", "notation"}
 FIELDS = {
     "title": {"kicker", "subtitle", "question", "chips"},
-    "chapter": {"q"},
+    "chapter": {"q", "shape"},
     "statement": {"text", "sub"},
     "idea": {"points", "text", "visual", "layout", "build"},
     "predict": {"q", "options", "answer", "why", "kind", "visual"},
-    "equation": {"expr", "tex", "lhs", "terms", "order", "read", "plug", "code", "note", "fmt", "store", "build", "from", "kin"},
+    "equation": {"expr", "tex", "lhs", "terms", "order", "read", "plug", "code", "note", "fmt", "store", "build", "from", "kin", "hook"},
     "calc": {"lines", "given", "visual"},
     "table": {"rows", "from", "cols", "focus", "build", "given"},
     "bridge": {"from", "to", "pairs", "breaks"},
@@ -34,22 +35,31 @@ FIELDS = {
     "quiz": {"cards"},
     "recap": {"answer", "points", "breaks", "next"},
     "map": {"center", "links"},
+    "ops": {"matrix", "steps"},
 }
 REQUIRED = {"predict": ["q", "options"], "equation": [], "calc": ["lines"], "table": ["cols"], "bridge": ["pairs"],
-            "compare": ["a", "b"], "quiz": ["cards"], "recap": ["answer"], "map": ["center", "links"], "statement": ["text"]}
-VISUAL = {"chart", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg", "caption", "terms"}
+            "compare": ["a", "b"], "quiz": ["cards"], "recap": ["answer"], "map": ["center", "links"], "statement": ["text"],
+            "ops": ["matrix", "steps"]}
+VISUAL = {"chart", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg", "dist", "caption", "terms", "labels"}
+DIST = {"poisson": ["mu"], "nb": ["mu", "alpha"], "binomial": ["n", "p"], "normal": ["mu", "sigma"], "gamma": ["shape", "rate"], "beta": ["a", "b"], "uniform": ["a", "b"]}
+DIST_KEYS = {"family", "params", "says", "label", "color", "vs", "tail", "show", "meanLabel", "x", "xlabel", "ylabel", "xfmt", "yfmt", "alt"}
+# a matrix-operations slide: a small matrix and what each step does to it (kit/ops.js)
+OPS_KINDS = {"rows", "cols", "map", "dot", "sort", "vec"}
+OPS_FNS = {"sum", "mean", "median", "geomean", "var", "sd", "min", "max"}
+OPS_MATRIX = {"values", "from", "cols", "rows", "rowKey", "name", "says", "why", "tex", "fmt", "key", "focus", "focusCol", "row", "col", "corner"}
+OPS_STEP = {"op", "fn", "center", "expr", "over", "name", "tex", "label", "fmt", "formula", "say", "why", "store", "with", "wtex", "withLabel", "by", "desc"}
 PARTS = {"items", "rows", "total", "share", "fmt", "build"}
 # words a learner reads on a slide's face, per type (the more sheet, table cells and chart internals do not count).
 # The visual carries the story; past these the slide reads as a page of text. An equation's budget includes the moves
 # of its `from:` chain, since where a formula comes from is part of explaining it.
 FACE_LIMIT = {"idea": 40, "statement": 30, "equation": 40, "calc": 45, "table": 30, "bridge": 55, "compare": 55,
-              "predict": 70, "recap": 60, "map": 60}
+              "predict": 70, "recap": 60, "map": 60, "ops": 30}
 CHART = {"x", "y", "series", "marks", "legend", "table", "alt", "controls"}
 SERIES_KINDS = {"line", "area", "bars", "hist", "dots", "lollipop", "step"}
 MARK_KINDS = {"vline", "hline", "band", "point", "label", "arrow", "line", "fn", "area", "span"}
-CONTENT = {"idea", "equation", "calc", "table", "bridge", "compare", "statement", "map"}
+CONTENT = {"idea", "equation", "calc", "table", "bridge", "compare", "statement", "map", "ops"}
 FUNCS = set("""abs sqrt exp log ln log2 log10 log1p floor ceil sign round pow sum mean var sd min max median count len quantile cumsum sort rank at first last
-seq where clamp choose factorial normPdf normCdf normInv tPdf tCdf binomPmf poisPmf nbPmf gammaPdf betaPdf betaCdf poisCdf binomCdf nbCdf rnorm runif rpois rgamma rnb rbinom""".split())
+seq where clamp choose factorial geomean normPdf normCdf normInv tPdf tCdf binomPmf poisPmf nbPmf gammaPdf betaPdf betaCdf poisCdf binomCdf nbCdf rnorm runif rpois rgamma rnb rbinom""".split())
 CONSTS = {"pi", "e", "inf"}
 BANNED = re.compile(r"\b(imagine|clearly|obviously|of course|simply|trivially|it is easy to see|it's easy to see|as you know|intuitively|just)\b", re.I)
 ABBR = re.compile(r"(?<![\w$\\{])([A-Z][A-Z0-9]{1,5})(?![\w}])")
@@ -129,7 +139,9 @@ def face_words(s):
     """Words on the face of a slide: what the learner has to read before the visual can do its work."""
     w = lambda x: words(x) if isinstance(x, str) else 0
     t = s.get("type", "idea")
-    n = sum(w(s.get(k)) for k in ("title", "lead", "eyebrow", "text", "sub", "q", "why", "note", "given", "breaks", "answer", "verdict", "center"))
+    n = sum(w(s.get(k)) for k in ("title", "lead", "eyebrow", "text", "sub", "q", "note", "given", "breaks", "answer", "verdict", "center"))
+    if t == "predict":   # a predict slide's `why` is its answer; elsewhere `why` is the purpose line, budgeted on its own
+        n += w(s.get("why"))
     n += sum(w(x) for k in ("points", "options") for x in (s.get(k) or []))
     if t == "recap":
         n += sum(w(x) for x in (s.get("breaks") or []) if isinstance(s.get("breaks"), list))
@@ -157,7 +169,8 @@ def texts_of(node):
         yield node
     elif isinstance(node, dict):
         for k, v in node.items():
-            if k in ("expr", "tex", "fn", "code", "svg", "x", "y", "values", "min", "max", "from", "rows", "at", "to", "eqn", "key", "highlight", "image", "plug") and not (k == "from" and isinstance(v, (list, dict))):
+            if k in ("expr", "tex", "fn", "code", "svg", "x", "y", "values", "min", "max", "from", "rows", "at", "to", "eqn", "key", "highlight", "image", "plug",
+                     "cols", "over", "with", "by", "formula", "wtex", "rowKey", "store", "center", "op", "focus", "focusCol", "params", "family") and not (k == "from" and isinstance(v, (list, dict))):
                 continue
             yield from texts_of(v)
     elif isinstance(node, list):
@@ -165,13 +178,41 @@ def texts_of(node):
             yield from texts_of(v)
 
 
-TOP = {"title", "subtitle", "kicker", "question", "answer", "learner", "ladder", "arc", "beats", "chapters", "data", "derive", "symbols", "abbr", "slides", "theme", "include"}
+TOP = {"title", "subtitle", "kicker", "question", "answer", "learner", "ladder", "arc", "beats", "chapters", "data", "derive", "symbols", "abbr", "slides", "include", "notation"}
 
 
-def lint(deck, lint_extra_names=()):
+# keys whose strings are TeX, expressions or names, not prose
+NOT_PROSE = {"tex", "expr", "fn", "formula", "from", "lhs", "code", "color", "kind", "op", "name", "key", "fmt", "type", "id",
+             "uses", "introduces", "center", "by", "src", "image", "focus", "focusCol", "row", "col", "x", "y", "value", "values",
+             "at", "min", "max", "w", "anchor", "layout", "shape", "arc", "notation", "derive", "plug", "order", "wtex", "with", "over",
+             "rowKey", "eqn", "svg", "params", "xfmt", "yfmt", "tail"}
+
+
+def bare_math(Lx, where, node, key=None):
+    """Math typed straight into prose (k\u03bc^b, \\sigma) shows as a caret or a backslash: it belongs in $...$."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == "notation" and isinstance(v, list):   # a notation chip: its tex is TeX, its says is prose
+                for item in v:
+                    if isinstance(item, dict) and isinstance(item.get("says"), str):
+                        bare_math(Lx, where, item["says"], "says")
+            elif k not in NOT_PROSE:
+                bare_math(Lx, where, v, k)
+    elif isinstance(node, list):
+        for v in node:
+            bare_math(Lx, where, v, key)
+    elif isinstance(node, str):
+        rest = re.sub(r"\$[^$]*\$|\{\{.*?\}\}|`[^`]*`", "", node)
+        m = re.search(r"\S*(\^|\\[A-Za-z]+)\S*", rest)
+        if m:
+            Lx.warn(where, f"`{key}` has math outside $...$ (“{m.group(0)}”), which shows as typed: write it as $...$")
+
+
+def lint(deck, lint_extra_names=(), extra_data=None):
     Lx = Lint()
     for k in set(deck) - TOP:
-        Lx.warn("deck", f"unknown top-level key `{k}` (known: {', '.join(sorted(TOP))})")
+        Lx.warn("deck", "`theme` set the 1.x glass look; 2.0 has one look, so delete it" if k == "theme"
+                else f"unknown top-level key `{k}` (known: {', '.join(sorted(TOP))})")
     if not deck.get("answer"):
         Lx.warn("deck", "no `answer`: write the one-sentence answer before the slides (story.md §1)")
     slides = deck.get("slides") or []
@@ -186,6 +227,10 @@ def lint(deck, lint_extra_names=()):
     known = set(learner.get("knows") or [])
     ladder = deck.get("ladder") or {}
     glob = set(data) | set(derive) | CONSTS | set(lint_extra_names)
+    values = {**(extra_data or {}), **data}   # known data, so an ops matrix can be measured
+    for c in deck.get("chapters") or []:
+        if isinstance(c, dict) and not c.get("title"):
+            Lx.err("deck chapters", f"a chapter written as a mapping needs `title` (and optionally `shape`): {c!r}")
     for k, v in derive.items():
         check_expr(Lx, "deck derive." + k, v, glob)
 
@@ -211,6 +256,7 @@ def lint(deck, lint_extra_names=()):
         if t not in FIELDS:
             Lx.err(where, f"unknown type `{t}`; use one of {', '.join(sorted(FIELDS))}")
             continue
+        bare_math(Lx, where, s)
         extra = set(s) - COMMON - FIELDS[t]
         if extra:
             Lx.err(where, f"unknown field(s) {sorted(extra)} for {t}")
@@ -265,6 +311,12 @@ def lint(deck, lint_extra_names=()):
         cap_ = (s.get("visual") or {}).get("caption") if isinstance(s.get("visual"), dict) else None
         if cap_ and words(cap_) > 20:
             Lx.warn(where, f"caption has {words(cap_)} words (≤ 20): one line that says where to look")
+        if t != "predict" and s.get("why") and words(s["why"]) > 22:
+            Lx.warn(where, f"`why` has {words(s['why'])} words (≤ 22): one line on what this slide is for")
+        if t in ("calc", "table", "ops") and not s.get("why"):
+            Lx.warn(where, "no `why`: one line on what this working is for, so the numbers are not a procedure without a reason")
+        if t == "chapter" and s.get("shape") and words(s["shape"]) > 6:
+            Lx.warn(where, "chapter `shape` is a label for the data's shape, like “guides × samples” (≤ 6 words)")
         if t == "statement" and words(s.get("text")) > 22:
             Lx.warn(where, "statement over 22 words: it should be one sentence worth remembering")
         if t == "predict":
@@ -321,6 +373,8 @@ def lint(deck, lint_extra_names=()):
                     Lx.warn(f"{where} line {j + 1}", "each line needs `say`: what this step does, in words")
                 elif words(ln["say"]) > 9:
                     Lx.warn(f"{where} line {j + 1}", f"`say` has {words(ln['say'])} words (≤ 9): the working shows the rest")
+                if ln.get("why") and words(ln["why"]) > 12:
+                    Lx.warn(f"{where} line {j + 1}", f"`why` has {words(ln['why'])} words (≤ 12): the reason for this step only")
         if t == "table":
             cols = s.get("cols") or []
             rows = s.get("rows") or []
@@ -337,6 +391,8 @@ def lint(deck, lint_extra_names=()):
             if bmode is not False and nsteps > 15:
                 Lx.warn(where, f"the table takes {nsteps} steps: use build: cols, or fewer rows")
             for c in cols:
+                if c.get("why") and words(c["why"]) > 12:
+                    Lx.warn(f"{where} column {c.get('key')}", f"`why` has {words(c['why'])} words (≤ 12): what this column is for")
                 if c.get("expr"):
                     check_expr(Lx, f"{where} column {c.get('key')}", c["expr"], keys)
                     if not c.get("says") and not meaning(c.get("key")):
@@ -345,6 +401,8 @@ def lint(deck, lint_extra_names=()):
                         col = next((x for x in cols if x.get("key") == n), None)
                         if n not in CONSTS and not meaning(n) and not (col and (col.get("says") or col.get("label"))):
                             Lx.err(f"{where} column {c.get('key')}", f"`{n}` is used in the formula but never explained")
+        if t == "ops":
+            glob |= lint_ops(Lx, where, s, scope, values)   # later slides can use what the steps made, by name
         if t == "map" and len(s.get("links") or []) > 6:
             Lx.warn(where, "more than 6 links: keep the strongest connections")
         if t == "map":
@@ -442,13 +500,180 @@ def lint_equation(Lx, where, s, scope, symbols):
             Lx.err(where, f"`kin` item {j + 1} needs `where` (the topic) and `tex` or `name` (the same shape there)")
 
 
+def lint_ops(Lx, where, s, scope, values):
+    """A matrix-operations slide: small enough to read, every step a known operation with a reason. Returns the names it stores."""
+    mx = s.get("matrix") or {}
+    if not isinstance(mx, dict):
+        Lx.err(where, "`matrix` is a mapping: {values: [[...], ...], cols: [...], rows: [...], row: guide, col: sample, says: ...}")
+        return set()
+    ex = set(mx) - OPS_MATRIX
+    if ex:
+        Lx.err(where, f"unknown matrix field(s) {sorted(ex)} (known: {', '.join(sorted(OPS_MATRIX))})")
+    src = mx.get("values", mx.get("from"))
+    if isinstance(src, str):
+        check_expr(Lx, f"{where} matrix", src, scope)
+        src = values.get(src)
+    elif src is None:
+        Lx.err(where, "ops needs matrix.values (a list of rows) or matrix.from (a data name)")
+    cols = mx.get("cols") if isinstance(mx.get("cols"), list) else None
+    rows = mx.get("rows") if isinstance(mx.get("rows"), list) else None
+    n = m = 0
+    if isinstance(src, list) and src:
+        n = len(src)
+        if isinstance(src[0], list):
+            m = len(src[0])
+        elif isinstance(src[0], dict):
+            m = len(cols) if cols else sum(1 for x in src[0].values() if isinstance(x, (int, float)) and not isinstance(x, bool))
+    steps = s.get("steps") or []
+    cap = 10 if any(isinstance(op, dict) and op.get("op") in ("cols", "sort") for op in steps) else 8   # a column summary or a ranking needs every row
+    if n > cap:
+        Lx.warn(where, f"the matrix has {n} rows: show ≤ {cap} (pick rows that tell the story; the card says the rest follow the same rule)")
+    if m > 6:
+        Lx.warn(where, f"the matrix has {m} columns: more than 6 will not read on a phone")
+    if cols and m and len(cols) != m:
+        Lx.err(where, f"matrix.cols has {len(cols)} labels for {m} columns")
+    if rows and n and len(rows) != n:
+        Lx.err(where, f"matrix.rows has {len(rows)} labels for {n} rows")
+    for f, labs in (("focus", rows), ("focusCol", cols)):
+        fv = mx.get(f)
+        if isinstance(fv, str) and labs and fv not in [str(x) for x in labs]:
+            Lx.err(where, f"matrix.{f} {fv!r} is not one of the labels {labs}")
+    if not mx.get("says"):
+        Lx.warn(where, "matrix needs `says`: what one cell holds (“reads of guide i in sample j”)")
+    if not (mx.get("row") and mx.get("col")):
+        Lx.warn(where, "say what a row and a column are (`row: guide`, `col: sample`), so every step can name them")
+    names = set(scope) | {"x"} | ({mx["key"]} if mx.get("key") else set())
+    made, vecs = set(), set()
+    if len(steps) > 6:
+        Lx.warn(where, f"{len(steps)} steps: 6 or fewer read well; split the working over two slides")
+    for j, op in enumerate(steps):
+        w = f"{where} step {j + 1}"
+        if not isinstance(op, dict):
+            Lx.err(w, f"a step is a mapping like {{op: rows, fn: median, say: ..., why: ...}}; got {op!r}")
+            continue
+        ex = set(op) - OPS_STEP
+        if ex:
+            Lx.err(w, f"unknown step field(s) {sorted(ex)} (known: {', '.join(sorted(OPS_STEP))})")
+        kind = op.get("op", "rows")
+        if kind not in OPS_KINDS:
+            Lx.err(w, f"op `{kind}`: use rows (each row → one number), cols (each column → one number), map (every cell), dot, sort or vec")
+            continue
+        if kind in ("rows", "cols"):
+            fn = op.get("fn", "sum")
+            if fn not in OPS_FNS:   # a custom summary: an expression on x, the row's (or column's) numbers
+                check_expr(Lx, w, fn, set(scope) | {"x"})
+                if not op.get("formula"):
+                    Lx.warn(w, f"a custom fn needs `formula` (its TeX), so the card can show the rule; built in: {', '.join(sorted(OPS_FNS))}")
+            if op.get("center") not in (None, "mean", "median") and op.get("center") not in vecs:
+                Lx.err(w, f"`center` is mean (the default), median, or the name of an earlier step (one number per {'row' if kind == 'rows' else 'column'})")
+            other = cols if kind == "rows" else rows
+            for o in ([op["over"]] if not isinstance(op.get("over"), list) and op.get("over") is not None else op.get("over") or []):
+                if isinstance(o, str) and other and o not in [str(x) for x in other]:
+                    Lx.err(w, f"over: {o!r} is not one of the {'columns' if kind == 'rows' else 'rows'} {other}")
+        if kind in ("map", "vec") and not op.get("expr"):
+            Lx.err(w, f"{kind} needs `expr`: the rule for one {'cell, using x' if kind == 'map' else 'entry, using earlier steps by name'}")
+        if op.get("expr"):
+            check_expr(Lx, w, op["expr"], names)
+        if kind == "dot":
+            wv = op.get("with")
+            if wv is None:
+                Lx.err(w, "dot needs `with`: one weight per column (a list, or the name of an earlier column-wise step)")
+            elif isinstance(wv, str):
+                check_expr(Lx, w, wv, names)
+            elif isinstance(wv, list) and m and len(wv) != m:
+                Lx.err(w, f"with: has {len(wv)} weights for {m} columns")
+        if kind == "sort":
+            by = op.get("by")
+            if by is None:
+                Lx.err(w, "sort needs `by`: the name of an earlier row-wise step (or a list, one number per row)")
+            elif isinstance(by, str):
+                check_expr(Lx, w, by, names)
+        if kind == "map":
+            if op.get("name"):
+                names.add(op["name"])   # the new matrix, usable by name in later cell rules
+            if isinstance(op.get("store"), str):
+                made.add(op["store"])
+        else:
+            nm = op.get("name") or {"rows": "r", "cols": "c", "dot": "d", "sort": "rank", "vec": "v"}[kind]
+            names.add(nm)
+            vecs.add(nm)
+            if op.get("store") is not False:
+                made.add(nm)
+        if not op.get("say"):
+            Lx.warn(w, "each step needs `say`: what it does, in words (≤ 9)")
+        elif words(op["say"]) > 9:
+            Lx.warn(w, f"`say` has {words(op['say'])} words (≤ 9): the matrix and the working show the rest")
+        if not op.get("why"):
+            Lx.warn(w, "each step needs `why`: what the result is for (≤ 14 words)")
+        elif words(op["why"]) > 14:
+            Lx.warn(w, f"`why` has {words(op['why'])} words (≤ 14)")
+    return made
+
+
+def lint_dist(Lx, where, d, scope, main=True):
+    if not isinstance(d, dict):
+        Lx.err(where, f"dist is a mapping like {{family: nb, params: {{mu: 100, alpha: 0.2}}}}; got {d!r}")
+        return
+    ex = set(d) - DIST_KEYS
+    if ex:
+        Lx.err(where, f"unknown dist field(s) {sorted(ex)}")
+    fam = d.get("family")
+    if fam not in DIST:
+        Lx.err(where, f"dist family {fam!r}: use one of {', '.join(DIST)}")
+        return
+    P = d.get("params") or {}
+    for k in DIST[fam]:
+        if P.get(k) is None:
+            Lx.err(where, f"{fam} needs params.{k}")
+        elif isinstance(P[k], str):
+            check_expr(Lx, f"{where} dist {k}", P[k], scope)
+    for k in set(P) - set(DIST[fam]):
+        Lx.err(where, f"{fam} has no parameter `{k}` (it takes {', '.join(DIST[fam])})")
+    if main and not d.get("says"):
+        Lx.warn(where, f"dist: say what each parameter means in plain words (`says: {{{DIST[fam][0]}: ...}}`)")
+    if d.get("vs"):
+        lint_dist(Lx, where, d["vs"], scope, main=False)
+    t = d.get("tail")
+    if t is not None:
+        if not isinstance(t, dict) or (t.get("below") is None and t.get("above") is None):
+            Lx.err(where, "dist tail needs `below:` or `above:` (a number or an expression)")
+        else:
+            for k in ("below", "above"):
+                if isinstance(t.get(k), str):
+                    check_expr(Lx, f"{where} dist tail", t[k], scope)
+    xr = d.get("x")
+    if xr is not None:
+        if not (isinstance(xr, list) and len(xr) == 2):
+            Lx.err(where, "dist x is the axis range [low, high]")
+        else:
+            for x in xr:
+                if isinstance(x, str):
+                    check_expr(Lx, f"{where} dist x", x, scope)
+
+
 def lint_visual(Lx, where, v, scope):
     extra = set(v) - VISUAL
     if extra:
         Lx.err(where, f"unknown visual field(s) {sorted(extra)}")
-    kinds = [k for k in ("chart", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg") if k in v]
+    kinds = [k for k in ("chart", "dist", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg") if k in v]
     if len(kinds) != 1:
-        Lx.err(where, f"a visual has exactly one of chart, stat, units, parts, flow, code, image, eqn, svg (found {kinds or 'none'})")
+        Lx.err(where, f"a visual has exactly one of chart, dist, stat, units, parts, flow, code, image, eqn, svg (found {kinds or 'none'})")
+    if "dist" in v:
+        lint_dist(Lx, where, v["dist"], scope)
+        if not v.get("caption"):
+            Lx.warn(where, "dist has no caption: one line that says what to look at")
+    labs = v.get("labels")
+    if labs is not None:
+        if "image" not in v:
+            Lx.err(where, "`labels` go on an image: names placed on the picture, so it carries no text of its own")
+        for lb in labs if isinstance(labs, list) else []:
+            at = lb.get("at") if isinstance(lb, dict) else None
+            if not isinstance(lb, dict) or not lb.get("text"):
+                Lx.err(where, f"an image label needs `text` and `at: [x, y]` (fractions of the picture, 0–1): {lb!r}")
+            elif not (isinstance(at, list) and len(at) == 2 and all(isinstance(q, (int, float)) and 0 <= q <= 1 for q in at)):
+                Lx.err(where, f"image label {lb.get('text')!r}: `at` is [x, y] as fractions of the picture (0–1)")
+            elif words(lb["text"]) > 4:
+                Lx.warn(where, f"image label {lb['text']!r}: ≤ 4 words")
     for nd in (v.get("flow") or {}).get("nodes") or []:
         nd = nd if isinstance(nd, dict) else {"label": nd}
         if words(nd.get("label")) > 5 or words(nd.get("sub")) > 5:
@@ -523,7 +748,7 @@ def build(path, out=None, katex_dir=None, quiet=False):
         d = json.loads((path.parent / data_file).read_text())
         extra_names = list(d)
         data_js = f"window.VIZOS_DATA={safe_json(d)};"
-    lx = lint(deck, extra_names)
+    lx = lint(deck, extra_names, d if data_file else None)
     assets = {}
     for img in re.findall(r'"image":\s*"([^"]+)"', json.dumps(deck)):
         f = path.parent / img
@@ -534,7 +759,7 @@ def build(path, out=None, katex_dir=None, quiet=False):
             lx.err("image", f"file not found: {img}")
     css = (KIT / "vizos.css").read_text()
     js = "\n".join((KIT / f).read_text() for f in KIT_JS)
-    needs_tex = bool(re.search(r'"type":\s*"(equation|calc|table)"|\$[^$\s][^$]*\$|"eqn":', json.dumps(deck)))
+    needs_tex = bool(re.search(r'"type":\s*"(equation|calc|table|ops)"|\$[^$\s][^$]*\$|"eqn":|"dist":', json.dumps(deck)))
     katex = ""
     if needs_tex:
         kd = katex_dir or os.environ.get("VIZOS_KATEX_DIR")
@@ -542,7 +767,7 @@ def build(path, out=None, katex_dir=None, quiet=False):
     title = deck.get("title", "viz-os deck")
     page = (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-            f'<meta name="theme-color" content="#000000"><title>{esc(title)}</title>{FONTS}{katex}<style>{css}</style></head><body>'
+            f'<meta name="theme-color" content="#0b0c0e"><title>{esc(title)}</title>{FONTS}{katex}<style>{css}</style></head><body>'
             f'<script type="application/json" id="vizos-deck">{safe_json(deck)}</script>'
             f'<script>window.VIZOS_ASSETS={safe_json(assets)};{data_js}</script>'
             f'<script>{js}</script></body></html>')
