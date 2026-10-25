@@ -51,10 +51,4 @@ Uncertainty: these are lab and classroom effects on average; none tested viz-os 
 What the agent reads: `SKILL.md` 1,500 words (every time) · `probe.md` 1,059 (first turn) · `story.md` 2,779 and `spec.md` 4,802 (build turn). Example decks: `gallery` 2,231 words of YAML, `negative-binomial` 2,645, `mageck-rra` 3,891 for 30 slides. The kit (about 240 KB) is never read by the agent. Build and check print one line per problem.
 
 ## Backlog
-- A cold-start test: a fresh agent with only the plugin builds a deck on a new topic, and the four gates plus a review score it. This is the real measure of whether the docs are enough.
-- A light theme: it needs its own series palette, measured the same way on a light plate, and a full check run on all examples.
-- Animated transitions between two states of the same chart (morphing marks), not just fades.
-- Speaker notes / narration export, and an Obsidian companion note writer (the user's vault has an ingest script).
-- Calc steps that follow sliders already recompute; tables do not yet take slider-driven rows.
-- A tiny Python port of the expression language, so build-time lint can evaluate values (today it checks names and functions only; values are checked in the browser).
-- A script that compares `numbers.txt` with `data.json` directly, instead of by eye.
+Open problems live in the repository's `docs/backlog.md` (not shipped with the plugin).

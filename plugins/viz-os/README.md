@@ -1,6 +1,6 @@
 # viz-os: learning decks that explain, not just show
 
-A Claude Code plugin that turns "teach me X" into a slide deck you can follow from the basics to the advanced part. It is made for a laptop or desktop screen, in the flat dark look of proff-viz (square blocks, thick grey borders, one orange). Version 2.0.0; see [CHANGELOG.md](CHANGELOG.md).
+An agent plugin (Claude Code, Codex, Cursor, Grok, Muse, Antigravity, Gemini) that turns "teach me X" into a slide deck you can follow from the basics to the advanced part. It is made for a laptop or desktop screen, in the flat dark look of proff-viz (square blocks, thick grey borders, one orange). Version 2.0.0; see [CHANGELOG.md](CHANGELOG.md).
 
 It was built from four problems with long generated lessons:
 1. **Style drift.** Long outputs forget the template. In viz-os the model never writes HTML, CSS or SVG. It writes content in `deck.yaml`, and one fixed kit draws every slide, so the look cannot drift.
@@ -15,7 +15,7 @@ claude plugin install viz-os@viz-learn
 pip install pyyaml playwright pillow && playwright install chromium   # build + check
 ```
 Then ask for a deck, for example "make me a viz-os deck on maximum likelihood", or run `/viz-os:deck <topic>`.
-Other agent harnesses (Codex, Cursor, Gemini CLI): link `plugins/viz-os/skills/deck` into the harness's skills folder. The skill is written so any agent can follow it from its files alone.
+Codex, Cursor, Grok Build, Muse Code, Antigravity CLI and Gemini CLI each have their own manifest here; the install line for each is in the [repository README](../../README.md). The skill is written so any agent can follow it from its own folder alone.
 
 ## What happens when you ask
 1. **Probe.** One message with 3–4 lettered questions: your goal, a quick guess about the topic (a pretest), what you already know (including formulas the new ones can grow from), and which comparison makes the core idea click. You answer in one line (`1b 2c 3ad 4a`), or say "just build".
@@ -41,7 +41,11 @@ Series colours: blue `#7fb0ff`, mint `#5fdcc4` and magenta `#c274aa`. Measured i
 ## Files
 ```
 plugins/viz-os/
-  .claude-plugin/plugin.json
+  .claude-plugin/plugin.json   manifests: Claude Code (also read by Grok and Muse)
+  .codex-plugin/plugin.json    Codex
+  .cursor-plugin/plugin.json   Cursor
+  plugin.json                  Antigravity CLI
+  gemini-extension.json        Gemini CLI
   skills/deck/
     SKILL.md            the loop, the gates and the rules (read every time)
     probe.md            questions before building
@@ -56,16 +60,11 @@ plugins/viz-os/
                                  make_data.py writes data.json, verify_data.py recomputes it independently
     examples/negative-binomial/  a puzzle-arc deck: distributions, sliders, from: and kin:
     examples/gallery/            one of every slide type (regression test)
-  docs/design.md        why it is built this way, sources, backlog
+  docs/design.md        why it is built this way, with sources
   CHANGELOG.md
 ```
 
 ## Working on the plugin
-```bash
-cd plugins/viz-os/skills/deck
-for d in gallery negative-binomial mageck-rra; do python3 scripts/build.py examples/$d/deck.yaml && python3 scripts/check.py examples/$d/deck.html; done
-python3 examples/mageck-rra/verify_data.py    # needs numpy and scipy
-```
-Each build should end with `0 errors  0 warnings`, each check with `check: 0 warnings`, and `verify_data.py` with `ALL OK`. Anything else is a regression. Offline machines: `--katex-dir DIR` on `build.py` inlines KaTeX; `--vendor DIR` on `check.py` serves CDN files from disk. The fonts come from Google Fonts.
+Start with the repository's `AGENTS.md`. `tools/check-all.sh` rebuilds and checks every example; each build should end with `0 errors  0 warnings`, each check with `check: 0 warnings`, and `verify_data.py` with `ALL OK`. Offline machines: `--katex-dir DIR` on `build.py` inlines KaTeX; `--vendor DIR` on `check.py` serves CDN files from disk. The fonts come from Google Fonts.
 
 Built on the ideas of [proff-viz](https://github.com/Tushar-bioinfo/proff) L4: build from the ground, name every symbol with an example, audit in a real browser.

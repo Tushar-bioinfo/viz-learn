@@ -26,6 +26,10 @@ The goal of this version: another agent, given only the plugin, can build a deck
 - A worked line must add up by hand. A line's `fmt` now rounds only its result. The numbers going in get up to 2 extra digits until the shown result follows from them; if that is not enough, the line reads ≈ and the check warns. Before, 2.648 was rounded to 3 and "3 × 418^1.22 = 4,291" was off by about 10%, and "30,229 − 418 = 29,812" did not add up.
 - Number formats are listed in one table in `spec.md` (auto, decimals, significant digits, integers, percent, scientific).
 
+**Install**
+- One repository, every agent: manifests for Claude Code, Codex, Cursor, Grok Build, Muse Code, Antigravity CLI and Gemini CLI, all at the same version (`tools/check_manifests.py`). Install lines are in the repository README.
+- Start-up notes for agents working on the plugin: `AGENTS.md` (also `CLAUDE.md`, `GEMINI.md`) and `docs/` (architecture, testing with the cold-start test, backlog, release), plus `tools/check-all.sh`.
+
 **Check**
 - Desktop only. The user did not need phone checks, so the phone pass, `--only` and the lint warnings about columns that "will not read on a phone" are gone. The kit keeps its portrait layout for phones, but nothing checks it.
 - "After the answer": every predict answer is opened and the slide is audited again.

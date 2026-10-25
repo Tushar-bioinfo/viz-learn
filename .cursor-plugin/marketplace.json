@@ -1,0 +1,16 @@
+{
+  "name": "viz-learn",
+  "owner": {
+    "name": "Tushar Singh"
+  },
+  "metadata": {
+    "description": "Visual learning tools by Tushar Singh."
+  },
+  "plugins": [
+    {
+      "name": "viz-os",
+      "source": "plugins/viz-os",
+      "description": "Learning decks in a flat dark look for a laptop or desktop screen: probe what you know, build the story from the ground up, show where every formula comes from, work matrices row by row or column by column, compute every number from data, check in a desktop browser."
+    }
+  ]
+}
