@@ -178,7 +178,7 @@ Use it whenever a step works across a table. The grid keeps its place; each step
 - In a rule, `x` is this cell, a matrix's `key` or `name` is its cell, a `rows` result is this row's number, a `cols` result is this column's number.
 - Every step needs `say` (≤ 9 words) and `why` (≤ 14). `name` (default r, c, d, rank, v), `tex`, `label` (≤ 8 letters reads best) and `fmt` name and show the result.
 - Results are stored under their `name` for later slides (charts, `{{…}}`); `store: false` stops that.
-- Limits: ≤ 8 rows (≤ 10 with a `cols` or `sort` step), ≤ 6 columns, ≤ 6 steps. Pick the rows that tell the story, then plot the result on the next slide.
+- Limits: ≤ 8 rows (≤ 10 with a `cols` or `sort` step) and ≤ 6 steps; the check warns when the columns crowd the matrix. Pick the rows that tell the story, then plot the result on the next slide.
 
 ## Visuals (`visual:` on idea, predict, calc, compare sides)
 A visual has exactly one kind, plus an optional `caption` (where to look, ≤ 20 words).
@@ -275,7 +275,7 @@ Operators `+ - * / ^`, comparisons give 1/0, `[a, b]` lists, and maths on lists 
 | `%` / `%2` | a percent (of a fraction) with 1 or 2 decimals | (0.256 → 25.6%) |
 | `e` / `e3` | scientific with 2 (or 3) significant digits | 1.2×10³ / 1.23×10³ |
 
-**In worked lines** (equation numbers, calc lines, table recipes, ops cards), each number going in is shown with its own `fmt` (an earlier calc line, a table column, an equation term), else its symbol's `fmt`, else in full if it is an integer, else 4 significant digits. A line's `fmt` rounds only its result. The working must add up by hand: if the rounded inputs do not give the result shown, the kit adds up to 2 digits to them; if that is still not enough, the line reads ≈ and the check warns. Fix it with a finer `fmt` on the inputs, or name the step in between. Negative numbers go in brackets when substituted, and a long line breaks at "=" on a phone.
+**In worked lines** (equation numbers, calc lines, table recipes, ops cards), each number going in is shown with its own `fmt` (an earlier calc line, a table column, an equation term), else its symbol's `fmt`, else in full if it is an integer, else 4 significant digits. A line's `fmt` rounds only its result. The working must add up by hand: if the rounded inputs do not give the result shown, the kit adds up to 2 digits to them; if that is still not enough, the line reads ≈ and the check warns. Fix it with a finer `fmt` on the inputs, or name the step in between. Negative numbers go in brackets when substituted, and a `calc` line too long for one row breaks at the = signs.
 
 **Notation chips.** The first slide that uses a symbol such as ∑, ∏, a bar, a hat, `x_{ij}`, a log, e^x, √, Φ, ~, |, a binomial coefficient, n!, median, rank, min, max, Var, E, ∝, ≈, ∫ or ∞ gets a "New notation" chip with its meaning, once per deck and at most 4 per slide. Add your own with `notation: [{tex, says}]`; turn them off with `notation: false` on a slide or the deck.
 
@@ -284,8 +284,8 @@ Operators `+ - * / ^`, comparisons give 1/0, `[a, b]` lists, and maths on lists 
 |---|---|---|---|
 | title | 4–8 (warns past 10) | points beside a visual | ≤ 2 (≤ 3 without) |
 | lead | ≤ 12 | calc lines | ≤ 4 |
-| point | ≤ 16 | table | ≤ 6 columns, ≤ 8 rows, ≤ 15 steps |
-| caption | ≤ 20 | ops | ≤ 8 rows (10 with cols/sort), ≤ 6 columns, ≤ 6 steps |
+| point | ≤ 16 | table | ≤ 8 rows, ≤ 15 steps |
+| caption | ≤ 20 | ops | ≤ 8 rows (10 with cols/sort), ≤ 6 steps |
 | slide `why` | ≤ 22 (predict ≤ 35) | equation terms | ≤ 5 |
 | calc `say` / `why` | ≤ 9 / ≤ 12 | `from` links / `kin` | ≤ 3 / ≤ 3 |
 | ops `say` / `why` | ≤ 9 / ≤ 14 | recap | ≤ 3 points, ≤ 2 breaks |
@@ -303,7 +303,7 @@ Words on a slide's face: idea 40, statement 30, equation 40, calc 45, table 30, 
 - `yes`, `no`, `on` and `off` stay text (the build reads YAML 1.2), so `No` is safe as an option.
 
 ## Build and check output
-`build.py` prints `ERR` (must fix) and `WARN` (fix unless you have a reason) lines, then `build: <path>  N KB  N slides  N errors  N warnings`. `check.py` opens the deck at desktop (1440 × 900) and phone (390 × 844) sizes, visits every step, moves every slider to both ends, opens every predict answer ("after the answer"), measures text contrast on the pixels, and refits each slide with animations on. It prints `WARN [desktop|phone] slide N: …` lines and `check: N warnings`, writes `snaps/desktop.png`, `snaps/phone.png` and `snaps/numbers.txt` (every visible line with a digit, per slide), and exits 0 when clean, 1 with warnings, 2 when it could not run. Options: `--slides 3,5-7` to check part of a deck, `--only desktop|phone`, `--out <dir>`, `--all-steps` (a screenshot per step), `--vendor <dir>` (KaTeX and fonts from a local folder, offline). Open a slide at a step with `deck.html#12.3`.
+`build.py` prints `ERR` (must fix) and `WARN` (fix unless you have a reason) lines, then `build: <path>  N KB  N slides  N errors  N warnings`. `check.py` opens the deck on a desktop screen (1440 × 900), visits every step, moves every slider to both ends, opens every predict answer ("after the answer"), measures text contrast on the pixels, and refits each slide with animations on. It prints `WARN slide N: …` lines and `check: N warnings`, writes the contact sheet `snaps/desktop.png`, one `snaps/desktop-NN.png` per slide and `snaps/numbers.txt` (every visible line with a digit, per slide), and exits 0 when clean, 1 with warnings, 2 when it could not run. The kit's portrait layout for phones is not checked. Options: `--slides 3,5-7` to check part of a deck, `--out <dir>`, `--all-steps` (a screenshot per step), `--vendor <dir>` (KaTeX and fonts from a local folder, offline). Open a slide at a step with `deck.html#12.3`.
 
 | Message | Fix |
 |---|---|

@@ -379,8 +379,6 @@ def lint(deck, lint_extra_names=(), extra_data=None):
             cols = s.get("cols") or []
             rows = s.get("rows") or []
             keys = set(scope) | {c.get("key") for c in cols} | {k for r in rows if isinstance(r, dict) for k in r}
-            if len(cols) > 6:
-                Lx.warn(where, f"{len(cols)} columns: more than 6 will not read on a phone")
             if len(rows) > 8:
                 Lx.warn(where, f"{len(rows)} rows: show ≤ 8 and say the rest follow the same rule")
             bmode = s.get("build", "cols")
@@ -528,8 +526,6 @@ def lint_ops(Lx, where, s, scope, values):
     cap = 10 if any(isinstance(op, dict) and op.get("op") in ("cols", "sort") for op in steps) else 8   # a column summary or a ranking needs every row
     if n > cap:
         Lx.warn(where, f"the matrix has {n} rows: show ≤ {cap} (pick rows that tell the story; the card says the rest follow the same rule)")
-    if m > 6:
-        Lx.warn(where, f"the matrix has {m} columns: more than 6 will not read on a phone")
     if cols and m and len(cols) != m:
         Lx.err(where, f"matrix.cols has {len(cols)} labels for {m} columns")
     if rows and n and len(rows) != n:

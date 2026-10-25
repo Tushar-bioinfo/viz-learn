@@ -93,7 +93,7 @@ The visual is the slide; words only point at it. Pick the visual by the job:
 - Add a slider (`controls`) when moving one parameter **is** the lesson ("raise α and watch the spread grow"). Say what to try in the caption.
 
 ## 9. Review before you reply
-Open both contact sheets and `snaps/numbers.txt`, and answer in your notes:
+Open the contact sheet (`snaps/desktop.png`) and `snaps/numbers.txt`, and answer in your notes:
 1. Read only the titles, in order. Do they tell the story by themselves? Is each one linked by a "but" or "so"?
 2. Could a learner say where every number on every slide came from? Does every number in `numbers.txt` match your independent recompute?
 3. Is each new symbol named before or on the slide where it first appears? Does each formula say where it comes from?

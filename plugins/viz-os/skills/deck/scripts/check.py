@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Check a built viz-os deck in a real browser, on a desktop and a phone screen.
+"""Check a built viz-os deck in a real browser, on a desktop screen (1440 × 900).
 
-Usage: check.py deck.html [--out DIR] [--only desktop|phone] [--slides 3,5-7] [--vendor DIR] [--all-steps]
+Usage: check.py deck.html [--out DIR] [--slides 3,5-7] [--vendor DIR] [--all-steps]
 
 For every slide and every build step it reports text that overlaps, leaves the slide, hides under the
 navigation, renders too small, or overflows its box; content shrunk below 80%; formula and expression errors;
@@ -10,7 +10,7 @@ It moves every slider to both ends, opens every predict answer and audits the sl
 and measures text contrast on the real pixels (labels over chart marks are where legibility fails). The check
 runs with animations off; it then re-fits every slide with them on and reports any slide a viewer would see
 shrunk differently.
-Contact sheets: <out>/desktop.png, <out>/phone.png. Every visible line that holds a digit, per slide (all steps
+Contact sheet: <out>/desktop.png. Every visible line that holds a digit, per slide (all steps
 shown, answers open): <out>/numbers.txt, to check the deck's numbers against an independent recompute.
 Exit 0 = clean, 1 = warnings, 2 = could not run (say "not checked").
 --vendor DIR serves cdnjs and Google Fonts files from DIR (offline machines): DIR/katex/katex.min.js etc.
@@ -18,7 +18,7 @@ Exit 0 = clean, 1 = warnings, 2 = could not run (say "not checked").
 import argparse, json, os, re, sys
 from pathlib import Path
 
-VIEWS = {"desktop": (1440, 900), "phone": (390, 844)}
+VIEW = (1440, 900)   # a laptop screen; the kit's portrait (phone) layout is not checked
 HIDE_TEXT = ("/*hide-text*/ :root body .slide.on, :root body .slide.on * { color: transparent !important; -webkit-text-fill-color: transparent !important; caret-color: transparent !important; text-decoration-color: transparent !important; }"
              " .slide.on svg text { fill: transparent !important; } .slide.on mark.hi { background: none !important; }")
 # the visible lines with a digit on slide i (KaTeX keeps a hidden MathML copy of each formula: leave it out)
@@ -143,8 +143,8 @@ def sheet(page, shots, path, cols, w, h):
 ZOOM = "(VizOS.slides[VizOS.i].zoom || 1)"
 
 
-def run_view(br, deck, view, out, args, report):
-    W, H = VIEWS[view]
+def check_deck(br, deck, out, args, report):
+    W, H = VIEW
     ctx = br.new_context(viewport={"width": W, "height": H}, device_scale_factor=1)
     if args.vendor:
         ctx.route(re.compile(r"https://cdnjs\.cloudflare\.com/.*"), vendor_route(args.vendor))
@@ -156,11 +156,11 @@ def run_view(br, deck, view, out, args, report):
     try:
         page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000)
     except Exception:
-        report.append((view, 0, "deck did not start: " + " | ".join(console[:3])))
+        report.append((0, "deck did not start: " + " | ".join(console[:3])))
         return []
     page.wait_for_timeout(300)
     if not page.evaluate("!!window.katex") and page.evaluate("document.querySelectorAll('.tex-fallback').length"):
-        report.append((view, 0, "KaTeX did not load: formulas show as plain text (offline? use --vendor or --katex-dir)"))
+        report.append((0, "KaTeX did not load: formulas show as plain text (offline? use --vendor or --katex-dir)"))
     info = page.evaluate("VizOS.info()")
     shots, zooms, nums = [], {}, []
     for i in parse_slides(args.slides, info["n"]):
@@ -171,41 +171,40 @@ def run_view(br, deck, view, out, args, report):
             page.evaluate(f"VizOS.go({i},{k})")
             settle(page)
             for w in page.evaluate("VizOS.audit()"):
-                report.append((view, i + 1, w if k == s["steps"] or s["steps"] <= 1 else f"step {k}: {w}"))
+                report.append((i + 1, w if k == s["steps"] or s["steps"] <= 1 else f"step {k}: {w}"))
         for c in s["controls"]:
             for v in (c["min"], c["max"]):
                 page.evaluate(f"VizOS.setControl({json.dumps(c['name'])},{v})")
                 settle(page)
                 for w in page.evaluate("VizOS.audit()"):
-                    report.append((view, i + 1, f"{c['name']}={v}: {w}"))
+                    report.append((i + 1, f"{c['name']}={v}: {w}"))
             page.evaluate(f"VizOS.setControl({json.dumps(c['name'])},{c['value']})")
         if s["predict"]:
             page.evaluate("VizOS.reveal()")
             page.wait_for_timeout(120)
             for w in page.evaluate("VizOS.audit()"):
-                report.append((view, i + 1, f"after the answer: {w}"))
+                report.append((i + 1, f"after the answer: {w}"))
         page.evaluate(f"VizOS.go({i},-1)")
         if s["predict"]:
             page.evaluate("VizOS.reveal()")
         settle(page)
         page.wait_for_timeout(150)
         zooms[i] = page.evaluate(ZOOM)
-        if view == "desktop":
-            nums.append(f"slide {i + 1}: " + " | ".join(page.evaluate(NUMBERS, i)))
-        f = out / f"{view}-{i + 1:02d}.png"
+        nums.append(f"slide {i + 1}: " + " | ".join(page.evaluate(NUMBERS, i)))
+        f = out / f"desktop-{i + 1:02d}.png"
         page.screenshot(path=str(f))
         boxes = page.evaluate("VizOS.textBoxes()")
-        bgf = out / f".bg-{view}-{i + 1:02d}.png"
+        bgf = out / f".bg-{i + 1:02d}.png"
         page.add_style_tag(content=HIDE_TEXT)
         page.wait_for_timeout(60)
         page.screenshot(path=str(bgf))
         page.evaluate("document.querySelectorAll('style[data-hide]').forEach(s => s.remove()); document.querySelectorAll('style').forEach(s => { if (s.textContent.startsWith('/*hide-text*/')) s.remove(); })")
         bad = contrast_issues(f, bgf, boxes, 1)
         bgf.unlink(missing_ok=True)
-        if bad is None and view == "desktop" and i == 0:
-            report.append((view, 0, "contrast not checked (pip install pillow)"))
+        if bad is None and i == 0:
+            report.append((0, "contrast not checked (pip install pillow)"))
         for ratio, need, text in sorted(bad or [])[:3]:
-            report.append((view, i + 1, f'low contrast {ratio:.1f}:1 (needs {need:g}) on "{text}"'))
+            report.append((i + 1, f'low contrast {ratio:.1f}:1 (needs {need:g}) on "{text}"'))
         shots.append((f, f"{i + 1}"))
     # a viewer has animations on: each slide must fit the same way it did here
     live = ctx.new_page()
@@ -219,21 +218,20 @@ def run_view(br, deck, view, out, args, report):
             settle(live)
             zl = live.evaluate(ZOOM)
             if abs(zl - z) > .02:
-                report.append((view, i + 1, f"with animations on, the slide fits at {zl:.0%}, not {z:.0%}: its fit depends on timing (kit bug)"))
+                report.append((i + 1, f"with animations on, the slide fits at {zl:.0%}, not {z:.0%}: its fit depends on timing (kit bug)"))
     except Exception as e:
-        report.append((view, 0, f"could not re-fit with animations on: {str(e).splitlines()[0]}"))
+        report.append((0, f"could not re-fit with animations on: {str(e).splitlines()[0]}"))
     live.close()
     errs = page.evaluate("VizOS.errors")
     for e in errs:
-        report.append((view, 0, "error: " + e))
+        report.append((0, "error: " + e))
     for c in console[:5]:
         if "favicon" not in c and "net::ERR" not in c:
-            report.append((view, 0, "console: " + c[:160]))
+            report.append((0, "console: " + c[:160]))
     if nums:
         (out / "numbers.txt").write_text("\n".join(nums) + "\n")
     if shots:
-        cols, w, h = (3, 480, 270) if view == "desktop" else (5, 216, 468)
-        sheet(page, shots, out / f"{view}.png", cols, w, h)
+        sheet(page, shots, out / "desktop.png", 3, 480, 270)
     ctx.close()
     return shots
 
@@ -242,7 +240,6 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("deck")
     ap.add_argument("--out")
-    ap.add_argument("--only", choices=list(VIEWS))
     ap.add_argument("--slides", help="e.g. 3,5-7 (1-based)")
     ap.add_argument("--vendor", default=os.environ.get("VIZOS_VENDOR"))
     ap.add_argument("--all-steps", action="store_true", help="also screenshot every step (slower)")
@@ -264,23 +261,21 @@ def main():
         except RuntimeError as e:
             print(f"check: {e}: not checked")
             return 2
-        for view in ([args.only] if args.only else list(VIEWS)):
-            run_view(br, deck, view, out, args, report)
+        check_deck(br, deck, out, args, report)
         br.close()
     seen, lines = set(), []
-    for view, i, msg in report:
+    for i, msg in report:
         key = (i, re.sub(r"^step \d+: ", "", msg))
-        tag = f"[{view}] slide {i}" if i else f"[{view}]"
-        if (view, key) in seen:
+        if key in seen:
             continue
-        seen.add((view, key))
-        lines.append(f"WARN {tag}: {msg}")
+        seen.add(key)
+        lines.append(f"WARN slide {i}: {msg}" if i else f"WARN {msg}")
     for ln in lines[:45]:
         print(ln)
     if len(lines) > 45:
         print(f"WARN ... and {len(lines) - 45} more")
     nf = out / "numbers.txt"
-    print(f"check: {len(lines)} warnings · sheets: {out / 'desktop.png'} {out / 'phone.png'}" + (f" · numbers: {nf}" if nf.exists() else ""))
+    print(f"check: {len(lines)} warnings · sheet: {out / 'desktop.png'}" + (f" · numbers: {nf}" if nf.exists() else ""))
     return 1 if lines else 0
 
 

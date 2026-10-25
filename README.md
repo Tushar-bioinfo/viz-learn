@@ -1,8 +1,8 @@
 # viz-learn
 
-Home of **viz-os**, a Claude Code plugin that turns "teach me X" into a visual learning deck you can follow from the basics up, in a flat dark look (square blocks, thick grey borders, one orange), for laptop and phone.
+Home of **viz-os**, a Claude Code plugin that turns "teach me X" into a visual learning deck you can follow from the basics up, in a flat dark look (square blocks, thick grey borders, one orange), for a laptop or desktop screen.
 
-Before it builds, it asks what you know and which comparisons click for you. Then it tells the story mostly with visuals. Every formula shows where it comes from and what it is related to. Matrix steps show which rows or columns are computed and how the shape changes. Every working step says what it does and why. Every number is computed from data and checked, and every deck is checked in a real browser on desktop and phone.
+Before it builds, it asks what you know and which comparisons click for you. Then it tells the story mostly with visuals. Every formula shows where it comes from and what it is related to. Matrix steps show which rows or columns are computed and how the shape changes. Every working step says what it does and why. Every number is computed from data and checked, and every deck is checked in a real browser on a desktop screen.
 
 ## Install
 ```bash

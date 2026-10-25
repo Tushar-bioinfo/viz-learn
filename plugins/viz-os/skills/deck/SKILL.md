@@ -1,6 +1,6 @@
 ---
 name: deck
-description: Learning decks that explain, not just show. Builds a slide deck that teaches one topic from the ground up, in a flat dark look (square blocks, thick grey borders, one orange) for desktop and phone. Asks 3-4 quick questions first to learn what the learner knows and which comparisons click. Visuals carry the story - annotated charts, distributions with their parameters, matrices worked row by row or column by column, formulas with every term named and run on real numbers - and every step says what it does and why. Every formula shows where it comes from and its relatives in other topics, every number is computed from data, and checkpoints make the learner predict first. Use for "make a deck", "teach me X visually", "viz-os", "learning slides", "explain X as slides", "walk me through this method", or any request to understand a method, equation, statistic or pipeline step by step.
+description: Learning decks that explain, not just show. Builds a slide deck that teaches one topic from the ground up, in a flat dark look (square blocks, thick grey borders, one orange) for a laptop or desktop screen. Asks 3-4 quick questions first to learn what the learner knows and which comparisons click. Visuals carry the story - annotated charts, distributions with their parameters, matrices worked row by row or column by column, formulas with every term named and run on real numbers - and every step says what it does and why. Every formula shows where it comes from and its relatives in other topics, every number is computed from data, and checkpoints make the learner predict first. Use for "make a deck", "teach me X visually", "viz-os", "learning slides", "explain X as slides", "walk me through this method", or any request to understand a method, equation, statistic or pipeline step by step.
 ---
 
 # viz-os: decks that explain, not just show
@@ -16,19 +16,19 @@ You are a story partner first and a slide builder second. The learner should fin
 5. **Build and check.**
    ```bash
    python3 S/scripts/build.py decks/<slug>/deck.yaml      # lint + one HTML file next to the yaml
-   python3 S/scripts/check.py decks/<slug>/deck.html      # desktop + phone: every step, slider end and answer
+   python3 S/scripts/check.py decks/<slug>/deck.html      # desktop screen: every step, slider end and answer
    ```
-6. **Look.** Open `snaps/desktop.png` and `snaps/phone.png`, read `snaps/numbers.txt`, and answer the review in `story.md` §9. A clean check does not prove the deck teaches.
-7. **Reply** in 4 lines or fewer: the path, the arc and the running example in one line, the gate results (`lint 0/0 · check: 0 warnings · numbers verified · sheets viewed 2/2`), and any rung you skipped and why. End with `→ quiz me · go deeper on <x> · next: <topic>`.
+6. **Look.** Open `snaps/desktop.png`, read `snaps/numbers.txt`, and answer the review in `story.md` §9. A clean check does not prove the deck teaches.
+7. **Reply** in 4 lines or fewer: the path, the arc and the running example in one line, the gate results (`lint 0/0 · check: 0 warnings · numbers verified · sheet viewed`), and any rung you skipped and why. End with `→ quiz me · go deeper on <x> · next: <topic>`.
 8. **Remember.** Add to the profile what you learned: new anchors, concepts and formulas now known, the comparisons that clicked (`connections:`), anything that confused them.
 
 ## Gates: a deck is done only when all four pass
 | Gate | Pass when |
 |---|---|
 | Lint | `build.py` ends with `0 errors  0 warnings`. |
-| Browser | `check.py` prints `check: 0 warnings` (exit 0), on desktop and phone. Exit 2 means it could not run: report "not checked", never "passed". |
+| Browser | `check.py` prints `check: 0 warnings` (exit 0). Exit 2 means it could not run: report "not checked", never "passed". |
 | Numbers | Every number on a slide is a `{{…}}` expression, or a constant of the design you can defend ("3 replicates", "α = 0 gives the Poisson"). The data script is seeded; an independent recompute agrees with `data.json`; `snaps/numbers.txt` shows the same values. No worked line reads ≈ (the check warns when rounded numbers do not give the result shown). |
-| Eyes | You opened both contact sheets and answered `story.md` §9. |
+| Eyes | You opened the contact sheet and answered `story.md` §9. |
 Fix with small edits, not rewrites, and rerun. A warning that survives 3 rounds of honest fixes is probably a kit bug: report it with the slide number and message. Never hide a warning by cutting the content that teaches.
 
 ## Rules that never bend

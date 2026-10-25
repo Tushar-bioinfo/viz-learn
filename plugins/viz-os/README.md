@@ -1,6 +1,6 @@
 # viz-os: learning decks that explain, not just show
 
-A Claude Code plugin that turns "teach me X" into a slide deck you can follow from the basics to the advanced part. It works on a laptop and a phone, in the flat dark look of proff-viz (square blocks, thick grey borders, one orange). Version 2.0.0; see [CHANGELOG.md](CHANGELOG.md).
+A Claude Code plugin that turns "teach me X" into a slide deck you can follow from the basics to the advanced part. It is made for a laptop or desktop screen, in the flat dark look of proff-viz (square blocks, thick grey borders, one orange). Version 2.0.0; see [CHANGELOG.md](CHANGELOG.md).
 
 It was built from four problems with long generated lessons:
 1. **Style drift.** Long outputs forget the template. In viz-os the model never writes HTML, CSS or SVG. It writes content in `deck.yaml`, and one fixed kit draws every slide, so the look cannot drift.
@@ -22,11 +22,11 @@ Other agent harnesses (Codex, Cursor, Gemini CLI): link `plugins/viz-os/skills/d
 2. **Spine.** The question, the one-sentence answer, the ladder of concepts from the ground up, the arc (puzzle, ladder, journey, duel or fix), and one beat per slide.
 3. **Facts and data.** For a real method, the agent reads its code or paper and notes the version. A seeded script makes the deck's numbers (`make_data.py` → `data.json`), and independent code recomputes them (`verify_data.py`).
 4. **Slides.** Content in `deck.yaml`. Every number on a slide is an expression over the data (`{{name|fmt}}`), never typed.
-5. **Build and check.** `build.py` lints the story and writes one self-contained HTML file. `check.py` opens it in Chromium on a desktop and a phone screen. It visits every build step, slider end and opened answer, measures text contrast on the real pixels, and writes contact sheets plus `numbers.txt`, every number each slide shows.
-6. **Look.** The agent opens the contact sheets and answers a short review. A clean check does not prove the deck teaches.
+5. **Build and check.** `build.py` lints the story and writes one self-contained HTML file. `check.py` opens it in Chromium on a desktop screen (1440 × 900). It visits every build step, slider end and opened answer, measures text contrast on the real pixels, and writes a contact sheet plus `numbers.txt`, every number each slide shows. The kit also has a portrait layout for phones, which is not checked.
+6. **Look.** The agent opens the contact sheet and answers a short review. A clean check does not prove the deck teaches.
 7. **Remember.** What you know, how you like things explained and which comparisons clicked go into `~/.viz-os/learner.yaml`, so the next deck asks less.
 
-A deck is done only when four gates pass: lint (0 errors, 0 warnings), browser check (0 warnings on desktop and phone), numbers (seeded, recomputed independently, and no worked line that fails to add up) and eyes (contact sheets opened and reviewed).
+A deck is done only when four gates pass: lint (0 errors, 0 warnings), browser check (0 warnings on a desktop screen), numbers (seeded, recomputed independently, and no worked line that fails to add up) and eyes (contact sheet opened and reviewed).
 
 ## Slide types
 `title` · `chapter` (shows the data's shape coming in and going out) · `predict` (guess, then reveal why) · `idea` (claim + visual) · `statement` · `equation` (where it comes from and its relatives beside it; each term named on the formula and run with numbers; said aloud and in code under "+ more") · `calc` (named arithmetic steps, each with what and why) · `ops` (matrix steps: row-wise, column-wise or whole-matrix, with the shape change) · `table` (one column, row or number per step; tap any number for its working) · `bridge` (analogy mapping + where it breaks) · `compare` · `quiz` (flip cards) · `recap` · `map` (how it connects).
@@ -50,7 +50,7 @@ plugins/viz-os/
     profile.example.yaml
     kit/                vizos.css + core.js (expressions, stats) + chart.js + slides.js + ops.js (matrix steps) + deck.js
     scripts/build.py    yaml -> html, with the story lint
-    scripts/check.py    desktop + phone browser audit, contrast, contact sheets, numbers.txt
+    scripts/check.py    desktop browser audit, contrast, contact sheet, numbers.txt
     scripts/image.py    optional picture, only when the user asks (Codex CLI, or --print for the prompt)
     examples/mageck-rra/         a real method: 30 slides in 4 chapters, matrices worked row by row;
                                  make_data.py writes data.json, verify_data.py recomputes it independently

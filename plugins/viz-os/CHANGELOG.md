@@ -27,6 +27,7 @@ The goal of this version: another agent, given only the plugin, can build a deck
 - Number formats are listed in one table in `spec.md` (auto, decimals, significant digits, integers, percent, scientific).
 
 **Check**
+- Desktop only. The user did not need phone checks, so the phone pass, `--only` and the lint warnings about columns that "will not read on a phone" are gone. The kit keeps its portrait layout for phones, but nothing checks it.
 - "After the answer": every predict answer is opened and the slide is audited again.
 - A live pass with animations on. It caught a fit measured while slides were still animating in, which shrank every phone slide to 70% for real viewers while the old check (animations off) saw full size.
 - `snaps/numbers.txt` lists every number each slide shows, to compare with the data and the recompute.
