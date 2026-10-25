@@ -16,7 +16,7 @@ pip install pyyaml playwright pillow && playwright install chromium
 | Codex | `codex plugin marketplace add Tushar-bioinfo/viz-learn` then `codex plugin add viz-os@viz-learn` |
 | Grok Build | `grok plugin marketplace add Tushar-bioinfo/viz-learn` then `grok plugin install viz-os` |
 | Muse Code | `muse plugins marketplace add viz-learn https://github.com/Tushar-bioinfo/viz-learn` then `muse plugins install viz-os@viz-learn` |
-| Cursor | `cursor-agent plugin marketplace add https://github.com/Tushar-bioinfo/viz-learn`, then install viz-os from the marketplace |
+| Cursor | `cursor-agent plugin marketplace add https://github.com/Tushar-bioinfo/viz-learn`, then `/plugins` in Cursor Agent and install viz-os |
 | Antigravity CLI | `git clone https://github.com/Tushar-bioinfo/viz-learn` then `agy plugin install viz-learn/plugins/viz-os` |
 | Gemini CLI | `git clone https://github.com/Tushar-bioinfo/viz-learn` then `gemini extensions link viz-learn/plugins/viz-os` |
 | Anything else | point the agent at `plugins/viz-os/skills/deck/SKILL.md`; the skill needs only its own folder |

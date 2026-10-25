@@ -17,9 +17,9 @@ Only when the user asks for a release, a commit or a push.
 | Codex | `codex plugin marketplace add Tushar-bioinfo/viz-learn` then `codex plugin add viz-os@viz-learn` | `codex plugin marketplace upgrade viz-learn` then add again |
 | Grok Build | `grok plugin marketplace add Tushar-bioinfo/viz-learn` then `grok plugin install viz-os` | `grok plugin marketplace update` then `grok plugin update viz-os` |
 | Muse Code | `muse plugins marketplace add viz-learn https://github.com/Tushar-bioinfo/viz-learn` then `muse plugins install viz-os@viz-learn` | `muse plugins marketplace update viz-learn` then install again |
-| Cursor | `cursor-agent plugin marketplace add https://github.com/Tushar-bioinfo/viz-learn`, then install viz-os from the marketplace in Cursor | `cursor-agent plugin marketplace update viz-learn` |
+| Cursor | `cursor-agent plugin marketplace add https://github.com/Tushar-bioinfo/viz-learn`, then `/plugins` in Cursor Agent and install viz-os (no headless install yet) | `cursor-agent plugin marketplace update viz-learn` |
 | Antigravity CLI | from a clone: `agy plugin install <clone>/plugins/viz-os` | `git pull` in the clone, then install again |
-| Gemini CLI | from a clone: `gemini extensions link <clone>/plugins/viz-os` | `git pull` in the clone (a link follows the files) |
+| Gemini CLI | from a clone: `gemini extensions link <clone>/plugins/viz-os` (or `install`, which copies; it asks you to trust the folder) | `git pull` in the clone (a link follows the files) |
 Start a new agent session after installing so the skill loads. Every harness also needs Python 3 with `pyyaml`, `playwright` + Chromium and `pillow` to build and check decks.
 
 ## Adding a harness
