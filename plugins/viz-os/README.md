@@ -1,6 +1,6 @@
 # viz-os: learning decks that explain, not just show
 
-An agent plugin (Claude Code, Codex, Cursor, Grok, Muse, Antigravity, Gemini) that turns "teach me X" into a slide deck you can follow from the basics to the advanced part. It is made for a laptop or desktop screen, in the flat dark look of proff-viz (square blocks, thick grey borders, one orange). Version 2.0.0; see [CHANGELOG.md](CHANGELOG.md).
+An agent plugin (Claude Code, Codex, Cursor, Grok, Muse, Antigravity, Gemini) that turns "teach me X" into a slide deck you can follow from the basics to the advanced part. It is made for a laptop or desktop screen, in the flat dark look of proff-viz (square blocks, thick grey borders, one orange). Version 2.1.0; see [CHANGELOG.md](CHANGELOG.md).
 
 It was built from four problems with long generated lessons:
 1. **Style drift.** Long outputs forget the template. In viz-os the model never writes HTML, CSS or SVG. It writes content in `deck.yaml`, and one fixed kit draws every slide, so the look cannot drift.

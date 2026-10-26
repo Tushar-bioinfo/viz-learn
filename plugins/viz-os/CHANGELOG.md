@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased (class skill, in progress)
+## 2.1.0 (2026-10-26)
+
+Adds the `class` skill: board lessons, series memory and recall, and a three-part PCA series. Deck output is unchanged.
 
 **Class lesson lint (U5)**
 - `class/scripts/lesson_lint.py` holds every lesson rule. New: the lesson's beat order and size, a think stop at least every 6 steps, a `lead` on each scene after the plan, at most 24 words per teacher line, no symbol before its number, formulas built from numbers worked by hand, typed numbers (with the data name they match), review cards that read only `data.json`, and three deck failures as errors (`rows:` given a data name, a line whose formula is its own name, a worked name read in a later scene).
