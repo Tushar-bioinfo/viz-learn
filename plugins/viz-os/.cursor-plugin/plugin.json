@@ -1,6 +1,6 @@
 {
   "name": "viz-os",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Learning decks that explain, not just show, in a flat dark look (square blocks, thick grey borders, one orange) for a laptop or desktop screen. Asks what you know and which comparisons click for you, then tells the story from the ground up, mostly with visuals. Every formula shows where it comes from and its relatives in other topics, with each term named and run with real numbers; matrix steps show which rows or columns are computed and how the shape changes; distributions show their shape and parameters; every step says what and why; every number is computed from data and must add up. Lint plus a desktop browser check keep long decks on-style and their numbers honest.",
   "author": {
     "name": "Tushar Singh"

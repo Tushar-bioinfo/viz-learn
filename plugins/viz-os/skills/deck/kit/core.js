@@ -307,8 +307,10 @@
           const one = a.args.length === 1 && a.args[0].t === 'id' ? a.args[0].n : null;
           const arr = one && opts.arr ? opts.arr(one) : null;
           if (one && ['mean', 'sum', 'var', 'sd'].includes(a.f) && !(opts.val && !arr)) {
-            // a symbol that already names its item (x_i) keeps one subscript: x_i, not x_i_i
-            const base = ((opts.sym && opts.sym(one)) || L.autoSym(one)).replace(/_(\{[^{}]*\}|\w)$/, ''), xi = `${base}_i`, xbar = `\\bar{${base}}`;
+            // a symbol that already names its item (x_i) keeps one subscript: x_i, not x_i_i.
+            // A label with its own braces (cd3_t -> \mathrm{cd3}_{\mathrm{t}}) is kept and joins the index: cd3_{t,i}, with \bar{cd3}_t
+            const sy = (opts.sym && opts.sym(one)) || L.autoSym(one), lab = sy.match(/^(.*)_\{((?:[^{}]*\{[^{}]*\})+[^{}]*)\}$/);
+            const base = lab ? lab[1] : sy.replace(/_(\{[^{}]*\}|\w)$/, ''), xi = lab ? `${base}_{${lab[2]},i}` : `${base}_i`, xbar = lab ? `\\bar{${base}}_{${lab[2]}}` : `\\bar{${base}}`;
             if (!arr) {
               const ss = `\\sum_i (${xi} - ${xbar})^2`;
               s = { mean: `\\tfrac{1}{n}\\sum_i ${xi}`, sum: `\\sum_i ${xi}`, var: `\\tfrac{1}{n-1}${ss}`, sd: `\\sqrt{\\tfrac{1}{n-1}${ss}}` }[a.f];

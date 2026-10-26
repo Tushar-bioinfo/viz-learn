@@ -1,0 +1,31 @@
+# expect: builds
+# expect: not: Double subscript
+# expect: not: ParseError
+# mean() and var() of a list whose name has a label (cd3_t): the symbol keeps the label and adds the index, cd3_{t,i}.
+# Both 2026-10-26 cold starts hit "Double subscript" here (backlog 35).
+title: Mean of a labelled list
+question: Can a worked line take the mean of cd3_t?
+answer: Yes, the symbol keeps its label.
+data: {cd3_t: [4.3, 4.9, 4.6], cd3_b: [0.5, 0.0], m_t: 4.6, v_t: 0.09, m_b: 0.25}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Two means
+    steps:
+      - say: The T-cell mean.
+        add: {calc: {say: T mean, expr: 'mean(cd3_t)', name: m_t}}
+      - say: The T-cell variance.
+        add: {calc: {say: T variance, expr: 'var(cd3_t)', name: v_t}}
+      - say: The B-cell mean.
+        add: {calc: {say: B mean, expr: 'mean(cd3_b)', name: m_b}}
+  - type: board
+    beat: formula
+    title: The mean as a formula
+    steps:
+      - say: The same sum, as a formula.
+        add:
+          assemble:
+            lhs: m_t
+            expr: 'mean(cd3_t)'
+      - say: m sub t is the T mean, and the sum runs over the T cells.

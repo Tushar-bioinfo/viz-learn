@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.1 (2026-10-26)
+
+- Fixed: `mean()`, `var()`, `sum()` and `sd()` of a list whose name carries a label (`cd3_t`) crashed KaTeX with "Double subscript". The symbol now keeps the label beside the index, `cd3_{t,i}`, and the mean reads `\bar{cd3}_t`, so two groups stay apart on the page. Both 2026-10-26 cold starts hit it. Test case `mean-labelled-list`. No working deck changes: only symbols that used to fail take the new path.
+
 ## 2.1.0 (2026-10-26)
 
 Adds the `class` skill: board lessons, series memory and recall, and a three-part PCA series. Deck output is unchanged.
