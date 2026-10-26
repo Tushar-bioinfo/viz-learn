@@ -16,7 +16,7 @@ Only when the user asks for a release, a commit or a push.
 | Claude Code | `claude plugin marketplace add Tushar-bioinfo/viz-learn` then `claude plugin install viz-os@viz-learn` | `claude plugin marketplace update viz-learn` then `claude plugin update viz-os@viz-learn` |
 | Codex | `codex plugin marketplace add Tushar-bioinfo/viz-learn` then `codex plugin add viz-os@viz-learn` | `codex plugin marketplace upgrade viz-learn` then add again |
 | Grok Build | `grok plugin marketplace add Tushar-bioinfo/viz-learn` then `grok plugin install viz-os` | `grok plugin marketplace update` then `grok plugin update viz-os` |
-| Muse Code | `muse plugins marketplace add viz-learn https://github.com/Tushar-bioinfo/viz-learn` then `muse plugins install viz-os@viz-learn` | `muse plugins marketplace update viz-learn` then install again |
+| Muse Code | `muse plugins marketplace add viz-learn https://github.com/Tushar-bioinfo/viz-learn` then `muse plugins install viz-os@viz-learn` | `muse plugins remove viz-os`, `muse plugins marketplace remove viz-learn`, then add and install again (`marketplace update` keeps the old snapshot: `backlog.md` 40) |
 | Cursor | `cursor-agent plugin marketplace add https://github.com/Tushar-bioinfo/viz-learn`, then `/plugins` in Cursor Agent and install viz-os (no headless install yet) | `cursor-agent plugin marketplace update viz-learn` |
 | Antigravity CLI | from a clone: `agy plugin install <clone>/plugins/viz-os` | `git pull` in the clone, then install again |
 | Gemini CLI | from a clone: `gemini extensions link <clone>/plugins/viz-os` (or `install`, which copies; it asks you to trust the folder) | `git pull` in the clone (a link follows the files) |
