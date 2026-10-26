@@ -1,0 +1,32 @@
+# expect: is not a frame of the run (0..3)
+# expect: one run per scene
+# expect: `toggle` is two labels
+# expect: plane `ring` takes 2 values
+# expect: has unmatched brackets
+title: A broken run
+question: Does the lint catch a bad run?
+answer: Yes.
+data: {xs: [0, 1, 2, 3]}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: run
+    title: Two runs and a bad frame
+    controls:
+      - {name: t, run: 4}
+      - {name: u, run: 3}
+      - {name: v, toggle: [one]}
+    derive: {pos: at(xs, t)}
+    steps:
+      - say: Start.
+        frame: 7
+        add:
+          plane:
+            x: {label: x, min: 0, max: 4}
+            y: {label: y, min: 0, max: 4}
+            marks:
+              - {ring: [at(xs, t), 1]}
+      - say: End.
+  - type: recap
+    answer: The lint stops it.

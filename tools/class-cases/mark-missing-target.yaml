@@ -1,0 +1,24 @@
+# expect: mark target not found: col:nope
+# expect: mark target not found: #nope
+title: A mark with no target
+question: Does the check catch a highlight that lands on nothing?
+answer: Yes, the audit names the target.
+data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}], cd3: [4, 6]}
+abbr: {CD3: a T-cell surface marker}
+symbols:
+  xbar: {tex: '\bar{x}', says: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Work it out by hand
+    table: {from: rows, cols: [cell, cd3]}
+    steps:
+      - say: 'Add the two values and halve them.'
+        add: {calc: {say: Average CD3, expr: mean(cd3), name: xbar}}
+        mark: col:nope
+      - say: 'So the average is {{xbar}}.'
+        mark: '#nope'
+  - type: recap
+    answer: A wrong target is reported.

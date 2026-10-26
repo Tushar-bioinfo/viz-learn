@@ -1,0 +1,316 @@
+title: Why is PC1 the best line, and how many PCs do you keep?
+subtitle: PCA, part 3. Every arrow is a mix of the PCs, and a third marker joins
+question: Why can no arrow beat PC1, and what changes when a third marker joins?
+answer: Any arrow splits into PC parts whose squares add to 1, and its spread mixes their stretches. All on PC1 wins. The stretches also say how many PCs to keep.
+series: pca
+episode: 3
+recall: [../pca-1-what, ../pca-2-how]
+home: cells
+data_file: data.json
+abbr: {PCA: principal component analysis, PC1: the first principal component, PC2: the second principal component, PC3: the third principal component, CD3: a T-cell surface marker, CD19: a B-cell surface marker, CD14: a monocyte surface marker, SVD: singular value decomposition, UMAP: uniform manifold approximation and projection}
+symbols:
+  d1: {tex: 'd_1', says: CD3 measured from the middle, short: CD3 from the middle, color: s1, fmt: 2}
+  d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
+  d3: {tex: 'd_3', says: CD14 measured from the middle, short: CD14 from the middle, color: s3, fmt: 2}
+  n: {tex: 'n', says: the number of cells, short: cells}
+  i: {tex: 'i', says: which cell, kind: index}
+  u1: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3 part}
+  u2: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19 part}
+  v1: {tex: 'v_1', says: PC1's arrow, CD3 part, short: PC1's CD3 part, fmt: 3}
+  v2: {tex: 'v_2', says: PC1's arrow, CD19 part, short: PC1's CD19 part, fmt: 3}
+  w1: {tex: 'w_1', says: PC2's arrow, CD3 part, short: PC2's CD3 part, fmt: 3}
+  w2: {tex: 'w_2', says: PC2's arrow, CD19 part, short: PC2's CD19 part, fmt: 3}
+  a: {tex: 'a', says: how much of u points along PC1, short: PC1 part, color: accent, fmt: 3}
+  b: {tex: 'b', says: how much of u points along PC2, short: PC2 part, color: s3, fmt: 3}
+  v_cd3: {tex: 's_1^2', says: the spread of CD3, short: CD3 spread, color: s1, fmt: 3}
+  c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, fmt: 3}
+  lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, fmt: 3}
+  lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, fmt: 3}
+  s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: spread along u, fmt: 3}
+  p: {tex: 'a^2', says: the share of the arrow on PC1, short: share on PC1, color: accent, fmt: 2}
+  sp: {tex: 's_u^2', says: the spread along the mixed arrow, short: spread now, fmt: 3}
+  prod13: {tex: 'd_1 d_3', says: a cell's CD3 and CD14 distances multiplied, short: product, fmt: 2}
+  c13: {tex: 'c_{13}', says: the covariance of CD3 and CD14, short: covariance, fmt: 3}
+  c23: {tex: 'c_{23}', says: the covariance of CD19 and CD14, short: covariance, fmt: 3}
+  L1: {tex: '\lambda_1', says: PC1's stretch with three markers, short: PC1 stretch, fmt: 3}
+  L2: {tex: '\lambda_2', says: PC2's stretch with three markers, short: PC2 stretch, fmt: 3}
+  L3: {tex: '\lambda_3', says: PC3's stretch with three markers, short: PC3 stretch, fmt: 3}
+  z1: {tex: 'z_1', says: a cell's score on PC1, short: PC1 score, fmt: 2}
+  z2: {tex: 'z_2', says: a cell's score on PC2, short: PC2 score, fmt: 2}
+  z3: {tex: 'z_3', says: a cell's score on PC3, short: PC3 score, fmt: 2}
+  e2: {tex: 'q', says: PC2's arrow for three markers, short: PC2's arrow, fmt: 3}
+  z2c4: {tex: 'z_{2,c4}', says: c4's score on PC2, short: c4 on PC2, fmt: 2}
+  lost4: {tex: 'e_{c4}', says: what c4 loses when only PC1 is kept, short: c4's loss, fmt: 3}
+  lostall: {tex: 'E', says: what all six cells lose when only PC1 is kept, short: total loss, fmt: 3}
+slides:
+  - type: title
+
+  - type: board
+    beat: plan
+    title: The plan for today
+    steps:
+      - say: Part 2 found PC1 as the arrow C only stretches. Today we see why nothing beats it.
+        add: {flow: {nodes: [{label: split an arrow, sub: PC1 + PC2}, {label: its spread, sub: a mix}, {label: a third marker, sub: CD14}, {label: three PCs, sub: 3 × 3 C}, {label: how many, sub: to keep}], verbs: [square, add, rebuild, count]}}
+      - say: Then a third marker joins, and the stretches tell us how many PCs to keep.
+
+  - type: board
+    beat: problem
+    title: Why is PC1 the top of the curve?
+    lead: Part 2 found it. It never said why.
+    steps:
+      - say: 'Here are our six cells with PC1 and PC2, the two arrows C only stretches. They meet at a right angle.'
+        add:
+          plane:
+            x: {label: CD3 from the middle, min: -3, max: 3.5}
+            y: {label: CD19 from the middle, min: -2.5, max: 3}
+            marks:
+              - points: {from: cells, x: d1, y: d2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
+              - {line: [0, '-v2', v1], color: accent, label: PC1}
+              - {line: [0, '-w2', w1], color: ink, dash: true, label: PC2}
+      - say: 'PC1''s stretch, {{lam1|3}}, was the biggest spread of any line. PC2''s, {{lam2|3}}, was the smallest.'
+      - think:
+          q: Any arrow through the middle points partly along PC1 and partly along PC2. How could that help?
+          a: If we know what C does to each of the two, we know what it does to any mix of them.
+
+  - type: board
+    beat: by-hand
+    title: Split an arrow into its PC parts
+    lead: Two dot products give the two parts.
+    steps:
+      - say: 'Take the flat arrow u = (1, 0), the CD3 line. Its spread is CD3''s spread, {{v_cd3|3}}.'
+        add:
+          plane:
+            x: {label: CD3 direction, min: -1.3, max: 1.3}
+            y: {label: CD19 direction, min: -1, max: 1}
+            marks:
+              - {line: [0, '-v2', v1], color: mist, label: PC1}
+              - {line: [0, '-w2', w1], color: mist, dash: true, label: PC2}
+              - {vector: [u1, u2], color: ink, name: u, label: the arrow u}
+              - {vector: [ax, ay], color: accent, name: a · PC1, label: its PC1 part, step: 2}
+              - {vector: ['u1 - ax', 'u2 - ay'], from: [ax, ay], color: s3, name: b · PC2, label: its PC2 part, step: 3}
+      - say: How much of u points along PC1? Its dot product with PC1's arrow.
+        add: {calc: {say: u's PC1 part, expr: u1 * v1 + u2 * v2, name: a, fmt: 3}}
+      - say: And along PC2, its dot product with PC2's arrow.
+        add: {calc: {say: u's PC2 part, expr: u1 * w1 + u2 * w2, name: b, fmt: 3}}
+      - think:
+          q: 'Square the two parts and add them. What do you get, and why?'
+          a: '{{a2|3}} + {{b2|3}} = 1. The two parts are the sides of a right triangle whose long side, u, has length 1.'
+
+  - type: board
+    beat: by-hand
+    title: C stretches each part by its own amount
+    lead: Part 2's three numbers give each PC's stretch.
+    steps:
+      - say: 'C times PC1''s arrow is PC1''s arrow, stretched. Divide the CD3 parts to read the stretch.'
+        add: {calc: {say: PC1's stretch, why: 'This is also the spread along PC1.', expr: (v_cd3 * v1 + c12 * v2) / v1, name: lam1, fmt: 3}}
+      - say: PC2's the same way, with PC2's arrow.
+        add: {calc: {say: PC2's stretch, expr: (v_cd3 * w1 + c12 * w2) / w1, name: lam2, fmt: 3}}
+      - say: Now u. Its PC1 part is stretched by λ₁, its PC2 part by λ₂, each weighed by its square.
+        add: {calc: {say: The spread along u from its two parts, why: 'The same as CD3''s spread, {{v_cd3|3}}.', expr: a^2 * lam1 + b^2 * lam2, name: s2u, fmt: 3}}
+      - think:
+          q: Why do the parts' squares weigh the stretches, not the parts themselves?
+          a: Spread squares each shadow. A part half as long gives shadows a quarter as spread.
+
+  - type: board
+    beat: formula
+    title: The spread is a mix of the two stretches
+    lead: Our numbers, in the shape of the formula.
+    steps:
+      - say: The numbers for the flat arrow u.
+        add:
+          assemble:
+            say: The spread along any arrow u, split into PC parts
+            lhs: s2u
+            tex: '[a]^2 [lam1] + [b]^2 [lam2]'
+            plug: '[s2u:{{s2u|3}}] = [a:{{a|3}}]^2 \cdot [lam1:{{lam1|3}}] + [b:{{b|3}}]^2 \cdot [lam2:{{lam2|3}}]'
+      - think:
+          q: 'The squares a² and b² always add to 1. Which split gives the biggest spread?'
+          a: 'All on PC1: a² = 1. Any share moved to PC2 is stretched by {{lam2|2}} instead of {{lam1|2}}.'
+      - say: That is the whole reason PC1 is the best line. No mix can beat putting everything on it.
+
+  - type: board
+    beat: what-if
+    title: Move the mix, watch the spread
+    lead: The spread slides between the two stretches.
+    controls:
+      - {name: p, label: share on PC1, min: 0, max: 1, step: 0.05, value: 0.5, fmt: 2}
+    derive:
+      sp: p * lam1 + (1 - p) * lam2
+      ex: sqrt(p) * v1 + sqrt(1 - p) * w1
+      ey: sqrt(p) * v2 + sqrt(1 - p) * w2
+    steps:
+      - say: Drag the share on PC1. The rest, 1 − a², goes on PC2.
+        add:
+          - {params: {say: The mixed arrow now, names: [p, sp]}}
+          - plane:
+              x: {label: CD3 direction, min: -1.3, max: 1.3}
+              y: {label: CD19 direction, min: -1, max: 1}
+              marks:
+                - {line: [0, '-v2', v1], color: mist, label: PC1}
+                - {line: [0, '-w2', w1], color: mist, dash: true, label: PC2}
+                - {vector: [ex, ey], color: accent, name: u, label: the mixed arrow}
+      - think:
+          q: Where on the slider is the spread biggest, and where smallest?
+          a: 'At 1 it is {{lam1|3}}, PC1. At 0 it is {{lam2|3}}, PC2. Every arrow sits in between.'
+      - say: 'Part 1''s hand tilt had only {{ha^2|3}} of its share on PC1. So its spread, {{s2h|3}}, sat near the floor.'
+
+  - type: board
+    beat: data
+    title: A third marker joins
+    lead: CD14 marks monocytes.
+    table:
+      from: cells
+      cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d3, label: d₃, fmt: 2}]
+    steps:
+      - say: 'Add CD14 for the same six cells. ==s3:d₃== is each cell''s CD14 from the middle.'
+        mark: col:d3
+      - say: The two monocytes, c4 and c10, sit far above the middle. The other four sit below it.
+        mark: [row:3, row:5]
+      - say: Multiply each cell's CD3 and CD14 distances, as in part 2.
+        add: {col: {key: prod13, label: d₁ × d₃, expr: d1 * d3, fmt: 2}}
+        mark: col:prod13
+      - say: 'Add the products and divide by n − 1. CD19 with CD14 the same way gives {{c23|3}}.'
+        add: {calc: {say: The covariance of CD3 and CD14, expr: sum(d1 * d3) / (n - 1), name: c13, fmt: 3}}
+      - think:
+          q: Why are both new covariances negative?
+          a: Monocytes are high in CD14 and low in CD3 and CD19. The T and B cells are the other way round.
+        mark: col:prod13
+
+  - type: board
+    beat: by-hand
+    title: The 3 × 3 matrix and its PC1
+    lead: The same test as part 2, one row longer.
+    steps:
+      - say: 'Here is C for three markers. Multiply each row by the arrow v that the part 2 repeats find.'
+        add:
+          ops:
+            notation: false
+            matrix: {name: covariance matrix C, from: cmat3, cols: [cd3, cd19, cd14], rowKey: name, row: marker, col: marker, says: 'marker $i$ with marker $j$', fmt: 3, focus: CD3}
+            steps:
+              - {op: dot, with: e1, wtex: 'v', withLabel: PC1's arrow, name: cv, tex: '(Cv)', label: C times v, fmt: 3, say: Multiply each row of C by v, why: 'v comes from part 2''s repeats, run on this C.'}
+      - say: 'Divide each part of C v by the same part of v: {{at(ratio_cv, 0)|3}}, {{at(ratio_cv, 1)|3}} and {{at(ratio_cv, 2)|3}}.'
+      - think:
+          q: All three parts grew by the same factor. What does that say about v?
+          a: 'C only stretches it. It is PC1 for three markers, with stretch {{L1|3}}.'
+      - say: 'PC2 is the best arrow at a right angle to PC1, PC3 the one left. Their stretches: {{L2|3}} and {{L3|3}}.'
+
+  - type: board
+    beat: picture
+    title: The cells on PC1 and PC2
+    lead: Two scores per cell instead of three markers.
+    steps:
+      - say: A cell's score on a PC is its dot product with that PC's arrow. Here is c4 on PC2.
+        add: {calc: {say: c4's score on PC2, expr: 'at(d1, 3) * at(e2, 0) + at(d2, 3) * at(e2, 1) + at(d3, 3) * at(e2, 2)', name: z2c4, fmt: 2}}
+      - say: Plot every cell by its PC1 and PC2 scores.
+        add:
+          plane:
+            x: {label: PC1 score, min: -4, max: 3.5}
+            y: {label: PC2 score, min: -3, max: 3.8}
+            marks:
+              - points: {from: cells, x: z1, y: z2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
+              - {line: [0, 1, 0], color: mist}
+              - {line: [0, 0, 1], color: mist}
+              - {ring: ['at(z1, 3)', z2c4], color: accent}
+      - think:
+          q: Three markers went in, but the picture has two axes. Did we lose the cell types?
+          a: 'No. T cells, B cells and monocytes form three clumps. PC1 splits T from B; PC2 lifts the monocytes.'
+
+  - type: board
+    beat: by-hand
+    title: What keeping one PC loses
+    lead: Rebuild each cell from PC1 alone.
+    steps:
+      - say: Keep only PC1. c4 is rebuilt from its PC1 score, so it loses its PC2 and PC3 scores.
+        add:
+          plane:
+            x: {label: PC1 score, min: -4, max: 3.5}
+            y: {label: PC2 score, min: -3, max: 3.8}
+            marks:
+              - points: {from: cells, x: z1, y: z2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
+              - {line: [0, 0, 1], color: accent, label: PC1 kept}
+              - {foot: {from: ['at(z1, 3)', 'at(z2, 3)'], line: [0, 0, 1]}, color: ink, label: c4's drop to PC1}
+              - {square: [['at(z1, 3)', 0], ['at(z1, 3)', 'at(z2, 3)']], color: accent, label: the squared drop, step: 2}
+      - say: The loss is the squared drop. PC3's part is tiny but counts too.
+        add: {calc: {say: What c4 loses, why: 'PC3 adds only {{at(z3, 3)^2|3}}.', expr: 'at(z2, 3)^2 + at(z3, 3)^2', name: lost4, fmt: 3}}
+      - say: Add the loss over all six cells.
+        add: {calc: {say: What all six cells lose, why: 'One loss per cell, added up.', expr: sum(z2^2 + z3^2), name: lostall, fmt: 3}}
+      - think:
+          q: 'Compare with (n − 1) times the stretches we dropped, λ₂ + λ₃. What do you see?'
+          a: '({{n}} − 1) × ({{L2|3}} + {{L3|3}}) = {{(n - 1) * (L2 + L3)|3}}. The same: dropping a PC loses its stretch.'
+
+  - type: board
+    beat: picture
+    title: How many PCs to keep
+    lead: Each stretch is a share of the total spread.
+    steps:
+      - say: 'The three spreads add to {{tot3|3}}, and so do the three stretches. Each stretch over the total is that PC''s share.'
+        add:
+          chart:
+            x: {cats: [PC1, PC2, PC3], label: principal component}
+            y: {label: share of the spread (%), min: 0, max: 100, ticks: [0, 25, 50, 75, 100]}
+            series:
+              - {name: each PC's share, kind: bars, x: '[0, 1, 2]', y: '[100 * L1 / tot3, 100 * L2 / tot3, 100 * L3 / tot3]', color: s1}
+              - {name: running total, kind: line, x: '[0.5, 1.5, 2.5]', y: '[100 * share1, 100 * share12, 100]', color: accent}
+          caption: 'Two PCs keep {{100 * share12|1}}% of the spread.'
+      - think:
+          q: How many PCs would you keep here?
+          a: 'Two. PC3 holds {{100 * at(shares, 2)|1}}%, about what measuring noise gives.'
+      - say: In real data, look for the bend where the bars stop falling fast, the elbow (elbow).
+
+  - type: board
+    beat: limits
+    title: What PCA does not tell you
+    lead: A line, a sign and a straight world.
+    steps:
+      - say: The maths fixes PC1's line, not which way its arrow points. Flip it, and every score flips sign.
+        add:
+          compare:
+            a: {title: PC1 as we chose it, tone: good, verdict: right, text: 'c1 scores {{at(z1, 0)|2}}.'}
+            b: {title: PC1 flipped, tone: good, verdict: also right, text: 'c1 scores {{-at(z1, 0)|2}}. The picture mirrors.'}
+      - say: PCA finds straight directions only. Cells along a curve, like a differentiation path, need a method that bends.
+      - say: Spread squares each distance, so one extreme cell can drag PC1 toward itself.
+      - say: Real software skips C and finds the PCs from the centred table directly. The answer is the same.
+        add: {note: 'That route is the **singular value decomposition** (SVD). It is faster and more exact for big panels.'}
+      - think:
+          q: A paper's PC1 has the opposite signs to yours. Is one of you wrong?
+          a: No. Flip the arrow and the scores flip with it. Only the line carries meaning.
+
+  - type: recap
+    answer: Any arrow splits into PC parts whose squares add to 1, and its spread mixes their stretches. All on PC1 wins.
+    points:
+      - An arrow's spread is a²λ₁ + b²λ₂, with a² + b² = 1.
+      - More markers give a bigger C. The arrows it only stretches are the PCs.
+      - Keeping k PCs loses (n − 1) times the stretches you drop.
+
+  - type: board
+    beat: next
+    title: Next, when the cells lie on a curve
+    lead: PCA draws straight axes.
+    steps:
+      - say: Our cells form three clumps, and two straight axes separate them.
+        add:
+          plane:
+            x: {label: PC1 score, min: -4, max: 3.5}
+            y: {label: PC2 score, min: -3, max: 3.8}
+            marks:
+              - points: {from: cells, x: z1, y: z2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
+      - think:
+          q: If cells lay along a curve, like stem cells maturing, would one straight PC follow it?
+          a: No. Next comes UMAP, which follows curves. It usually starts from the top PCs.
+
+  - type: quiz
+    cards:
+      - q: Why can no arrow have more spread than PC1?
+        a: Its spread is a²λ₁ + b²λ₂ with a² + b² = 1. That is biggest when all of it, a² = 1, is on PC1.
+      - q: How do you find how much of an arrow points along PC1?
+        a: Take its dot product with PC1's arrow.
+      - q: 'Part 1''s hand tilt had a small spread. Why?'
+        a: 'Almost all of it pointed along PC2, the direction C stretches least.'
+      - q: How do you check that an arrow is a PC of C?
+        a: Multiply it by C. Every part must grow by the same factor, the stretch.
+      - q: What do you lose when you keep only PC1?
+        a: Each cell's scores on the other PCs. In total, (n − 1) times their stretches.
+      - q: 'With three markers, two PCs kept {{100 * share12|0}}%. What does that say about the third?'
+        a: The cells barely spread along it. Three markers carry two directions of real difference.
+      - q: Your PC1 has the opposite signs to a colleague's. Who is right?
+        a: Both. Only the line matters; flipping the arrow flips every score.

@@ -1,0 +1,14 @@
+# Episode 1 for the recall cases: six review cards that read its data.json. Not a case itself (no "# expect:").
+title: What is spread?
+data_file: data.json
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'The mean CD3 of our {{n}} cells was {{xbar|1}}. Which cells pull it up?', a: The T cells.}
+      - {q: 'The variance was {{v|2}}. What is the SD?', a: '{{sqrt(v)|2}}, in CD3 units.'}
+      - {q: 'Why square the distances?', a: So cells below the mean do not cancel cells above it.}
+      - {q: 'Why n − 1?', a: The mean is fitted to the same cells.}
+      - {q: 'The far cell held {{share|0}}% of the sum of squares. Why so much?', a: Its distance is squared.}
+      - {q: Card six, which the recall quiz leaves out., a: Six.}
+abbr: {CD3: a T-cell surface marker, SD: standard deviation}

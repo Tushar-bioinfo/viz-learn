@@ -1,0 +1,26 @@
+# expect: has no tag
+# expect: names no [m] term
+# An assembled formula whose numbers are not all tagged: the lint must point at the bare number and the unknown tag.
+title: Plug tags
+question: Does the lint catch a bare number in plug?
+answer: Yes.
+data: {cd3: [4, 6], xbar: 5}
+symbols:
+  xbar: {tex: '\bar{x}', says: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i}
+  n: {tex: 'n', says: cells}
+slides:
+  - type: title
+  - type: board
+    beat: formula
+    title: The mean as a formula
+    steps:
+      - say: Our numbers first.
+        add:
+          assemble:
+            lhs: xbar
+            tex: '\dfrac{\sum_i [cd3]}{[n]}'
+            plug: '[xbar:{{xbar}}] = \dfrac{[cd3:4] + 6.0}{[m:2]}'
+      - say: Then the symbols.
+  - type: recap
+    answer: Yes.

@@ -1,0 +1,28 @@
+# expect: builds
+# expect: not: review cards; use
+# The largest review quiz a lesson may end on: eight cards must fit at 80% zoom or more (the check warns below that).
+title: Eight review cards
+question: Do eight cards fit?
+answer: Yes.
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - q: Why square the distances from the mean?
+        a: So cells below the mean do not cancel cells above it, and far cells count most.
+      - q: What do the plain distances from the mean add up to?
+        a: Zero, always. That is what makes it the mean.
+      - q: Why divide by n − 1 and not n?
+        a: The mean is fitted to the same cells, so the squared distances run a little small.
+      - q: What does the standard deviation add over the variance?
+        a: It is in the marker's own units, so it sits on the same axis as the data.
+      - q: Two donors share a mean. What can still differ?
+        a: How spread out their cells are.
+      - q: One cell sits far from the rest. What happens to the variance?
+        a: It jumps, because its distance is squared.
+      - q: Every cell has the same level. What is the variance?
+        a: Zero. No cell sits away from the mean.
+      - q: You double every value. What happens to the variance?
+        a: It grows four times, because each distance doubles and is then squared.
+  - type: recap
+    answer: Yes.

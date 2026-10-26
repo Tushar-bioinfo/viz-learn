@@ -1,0 +1,22 @@
+# expect: make_data.py and the page disagree
+# A worked line that stores a name data.json already holds must reproduce it: here the data's xbar is wrong on purpose.
+title: Worked number against the data
+question: Does the board catch a worked number that disagrees with data.json?
+answer: Yes.
+data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}], cd3: [4, 6], xbar: 5.5}
+abbr: {CD3: a T-cell surface marker}
+symbols:
+  xbar: {tex: '\bar{x}', says: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: The mean by hand
+    table: {from: rows, cols: [cell, cd3]}
+    steps:
+      - say: Add the two values and halve them.
+        add: {calc: {say: Average CD3, expr: mean(cd3), name: xbar}}
+      - say: That is the middle of the two cells.
+  - type: recap
+    answer: Yes.

@@ -1,0 +1,28 @@
+# expect: `assemble` uses `s`, whose number was not worked in an earlier by-hand scene
+# An expr assemble: q and a are worked by hand, but s inside the expression never shows before it.
+title: A formula with an unworked term
+question: What if an expression formula names a number nobody worked?
+answer: The lint names that term too, not only the left side.
+data: {a: 6, s: 2}
+symbols:
+  q: {tex: 'q', says: the ratio}
+  a: {tex: 'a', says: a total}
+  s: {tex: 's', says: a spread}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Work the ratio
+    steps:
+      - say: Halve the total; the spread never shows.
+        add: {calc: {say: Half the total, expr: 'a / 2', name: q}}
+  - type: board
+    beat: formula
+    title: The ratio as a formula
+    steps:
+      - say: The same division, as a formula.
+        add:
+          assemble:
+            lhs: q
+            expr: 'a / s'
+      - say: The symbols mean the total and the spread.

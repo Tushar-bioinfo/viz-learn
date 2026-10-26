@@ -1,0 +1,10 @@
+# expect: episode 3 has no `recall:`
+# A later episode that recalls nothing.
+title: No recall
+series: spread
+episode: 3
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'A?', a: B.}

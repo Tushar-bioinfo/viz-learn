@@ -47,8 +47,9 @@ m = re.search(r"^## (\d+\.\d+\.\d+)", log, re.M)
 versions["CHANGELOG.md"] = m.group(1) if m else None
 if len(set(versions.values())) != 1:
     problems.append("versions differ: " + ", ".join(f"{k} {v}" for k, v in versions.items()))
-if not (PLUGIN / "skills/deck/SKILL.md").exists():
-    problems.append("plugins/viz-os/skills/deck/SKILL.md is missing")
+for skill in ("deck", "class"):
+    if not (PLUGIN / f"skills/{skill}/SKILL.md").exists():
+        problems.append(f"plugins/viz-os/skills/{skill}/SKILL.md is missing")
 
 for line in problems:
     print("ERR", line)

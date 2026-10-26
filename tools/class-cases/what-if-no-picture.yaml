@@ -1,0 +1,18 @@
+# expect: a what-if scene with no picture
+# The slider moves a number, and nothing on the board is drawn from it.
+title: A slider with nothing to watch
+question: What if a what-if scene moves only numbers?
+answer: The lint asks for a picture the slider moves.
+data: {a: 6}
+slides:
+  - type: title
+  - type: board
+    beat: what-if
+    title: Change the total
+    controls:
+      - {name: k, label: add, min: 0, max: 4, step: 1, value: 0}
+    derive:
+      tot: 'a + k'
+    steps:
+      - say: Move the slider and the total moves.
+        add: {params: {say: The total, names: [tot]}}

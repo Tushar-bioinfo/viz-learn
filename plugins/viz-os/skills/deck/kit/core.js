@@ -307,7 +307,8 @@
           const one = a.args.length === 1 && a.args[0].t === 'id' ? a.args[0].n : null;
           const arr = one && opts.arr ? opts.arr(one) : null;
           if (one && ['mean', 'sum', 'var', 'sd'].includes(a.f) && !(opts.val && !arr)) {
-            const base = (opts.sym && opts.sym(one)) || L.autoSym(one), xi = `${base}_i`, xbar = `\\bar{${base}}`;
+            // a symbol that already names its item (x_i) keeps one subscript: x_i, not x_i_i
+            const base = ((opts.sym && opts.sym(one)) || L.autoSym(one)).replace(/_(\{[^{}]*\}|\w)$/, ''), xi = `${base}_i`, xbar = `\\bar{${base}}`;
             if (!arr) {
               const ss = `\\sum_i (${xi} - ${xbar})^2`;
               s = { mean: `\\tfrac{1}{n}\\sum_i ${xi}`, sum: `\\sum_i ${xi}`, var: `\\tfrac{1}{n-1}${ss}`, sd: `\\sqrt{\\tfrac{1}{n-1}${ss}}` }[a.f];

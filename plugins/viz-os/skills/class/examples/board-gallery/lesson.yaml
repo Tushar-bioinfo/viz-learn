@@ -1,0 +1,273 @@
+title: How spread out are six cells?
+subtitle: Variance, built on the board one line at a time
+question: How do we put one number on how spread out a set of measurements is?
+answer: Take each value's distance from the mean, square it, add the squares, and divide by n − 1.
+data_file: data.json
+abbr: {SD: standard deviation, CD3: a T-cell surface marker, CD19: a B-cell surface marker, CD4: a helper T-cell marker}
+symbols:
+  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i}
+  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean, fmt: 2}
+  n: {tex: 'n', says: the number of cells, short: cells}
+  i: {tex: 'i', says: which cell, kind: index}
+  ss: {tex: 'SS', says: the sum of squared distances, short: sum of squares, fmt: 2}
+  s2: {tex: 's^2', says: the variance, short: variance, fmt: 2}
+  sd: {tex: 's', says: the standard deviation, short: SD, fmt: 2}
+  d1: {tex: 'd_1', says: how far c1 sits from the mean, short: distance of c1, fmt: 2}
+  sq: {tex: 'd^2', says: squared distance of each cell, short: squared distance, fmt: 2}
+  w0: {tex: 'w_0', says: the line's offset, short: offset, color: s3, fmt: 2}
+  w1: {tex: 'w_1', says: the line's weight on CD3, short: CD3 weight, color: s1, fmt: 2}
+  w2: {tex: 'w_2', says: the line's weight on CD19, short: CD19 weight, color: s2, fmt: 2}
+slides:
+  - type: title
+
+  - type: board
+    beat: plan
+    title: The plan for today
+    steps:
+      - say: One question today. How do we put one number on how spread out cells are?
+        add: {flow: {nodes: [{label: six cells, sub: one marker}, by hand, a formula, its limits], verbs: [look, write, test]}}
+      - say: We look at the cells, work it out by hand, write the formula, then see where it breaks.
+
+  - type: board
+    beat: problem
+    title: Two donors, the same mean
+    lead: The mean alone cannot tell these two apart.
+    steps:
+      - say: Two donors, six cells each. Each dot is one cell's CD3 level.
+        add:
+          chart:
+            x: {cats: [Donor A, Donor B], label: donor}
+            y: {label: CD3 level, min: 4, max: 7}
+            series:
+              - {name: Donor A, kind: dots, x: 'donor_a * 0 + 0.5', y: donor_a, color: s1}
+              - {name: Donor B, kind: dots, x: 'donor_b * 0 + 1.5', y: donor_b, color: s2}
+            marks:
+              - {kind: hline, y: mA, label: 'mean {{mA|1}}', step: 2}
+          caption: Same middle, but look how far the dots reach.
+      - say: 'Their means match: {{mA|1}} and {{mB|1}}.'
+      - think:
+          q: Same mean. Are the two donors' cells alike?
+          a: The mean cannot say. We need a second number, for how far the cells sit from it.
+
+  - type: board
+    beat: data
+    title: Six cells, one marker
+    lead: Each cell has a CD3 level. Some sit near the middle, some far out.
+    table:
+      from: cells
+      cols: [{key: id, label: cell}, {key: cd3, label: CD3}]
+    steps:
+      - say: One stick per cell. Its height is the cell's ==s1:CD3== level.
+        add:
+          chart:
+            x: {cats: [c1, c2, c3, c4, c5, c6], label: cell}
+            y: {label: CD3 level, min: 0, max: 10}
+            series:
+              - {name: CD3, kind: lollipop, x: 'seq(0, 5, 1)', y: cd3, color: s1}
+            marks:
+              - {kind: hline, y: xbar, label: 'mean {{xbar|1}}', step: 2}
+          caption: The tallest stick sits farthest above the line.
+      - say: The orange line is the mean, the middle of the six.
+        mark: col:cd3
+      - think:
+          q: Which cell sits farthest from the mean?
+          a: '{{far_id}}, {{far_dev|1}} above it. A spread number must count cells like that one most.'
+        mark: row:4
+
+  - type: board
+    beat: by-hand
+    title: Work it out by hand
+    lead: Distance from the mean, for every cell, then one number.
+    derive: {sq: (cd3 - xbar)^2}
+    table:
+      from: cells
+      cols: [{key: id, label: cell}, {key: cd3, label: CD3}]
+    steps:
+      - say: 'Start from the mean, {{xbar|2}}. How far does c1 sit from it?'
+        add: {calc: {say: How far c1 sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
+        mark: row:0
+      - say: Do the same for every cell. Some are below the mean, some above.
+        add: {col: {key: dev, label: distance, expr: cd3 - xbar, fmt: 2}}
+        mark: col:dev
+      - think:
+          q: Why not add the distances up as they are?
+          a: 'They cancel: the sum is {{sum_dev|2}}. The mean sits where the pluses and minuses balance.'
+      - say: Square each distance. Now every one counts, and far cells count most.
+        add: {col: {key: sq, label: squared, expr: (cd3 - xbar)^2, fmt: 2}}
+        mark: col:sq
+      - say: Add the squares, then divide by one less than the number of cells.
+        add:
+          - {calc: {say: Sum of squares, expr: sum(sq), name: ss, fmt: 2}}
+          - {calc: {say: The variance, expr: ss / (n - 1), name: s2, fmt: 2}}
+
+  - type: board
+    beat: picture
+    title: A squared distance is a real square
+    lead: Squaring a distance gives an area you can see.
+    steps:
+      - say: Each cell at its CD3 level, and the mean as a flat line.
+        add:
+          plane:
+            x: {label: cell number, min: 0, max: 7}
+            y: {label: CD3 level, min: 0, max: 10}
+            marks:
+              - points: {from: cells, x: i, y: cd3, label: id}
+              - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|1}}'}
+              - {foot: {from: [far_i, 'at(cd3, far_i - 1)'], line: ['-xbar', 0, 1]}, color: ink, label: distance to the mean, step: 2}
+              - {square: [[far_i, xbar], [far_i, 'at(cd3, far_i - 1)']], color: s2, label: its square, step: 3}
+              - {text: 'd² = {{far_dev^2|2}}', at: ['far_i - far_dev / 2', 'xbar + far_dev + 0.4'], step: 3}
+      - say: '{{far_id}} sits {{far_dev|1}} above the mean: the drop to the line.'
+      - say: 'Squared, that distance is the area of this square, {{far_dev^2|2}}.'
+      - think:
+          q: One cell sits twice as far from the mean as another. How much bigger is its square?
+          a: Four times. Squaring makes far cells count much more than near ones.
+
+  - type: board
+    beat: formula
+    title: The same steps, written as a formula
+    lead: Every symbol in the formula is a number we already worked.
+    steps:
+      - say: Here are our numbers, in the shape of the formula.
+        add:
+          assemble:
+            say: The variance of our six cells
+            lhs: s2
+            tex: '\dfrac{\sum_{[i]} ([cd3] - [xbar])^2}{[n] - 1}'
+            plug: '[s2:{{s2|2}}] = \dfrac{([cd3:{{at(cd3, 0)|1}}] - [xbar:{{xbar|1}}])^2 + ([cd3:{{at(cd3, 1)|1}}] - [xbar:{{xbar|1}}])^2 + \cdots + ([cd3:{{at(cd3, 5)|1}}] - [xbar:{{xbar|1}}])^2}{[n:{{n}}] - 1}'
+      - say: And the same thing in symbols. Each symbol keeps its number's colour.
+      - say: The square root puts the spread back in CD3 units.
+        add: {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
+      - think:
+          q: Why divide by n − 1 and not n?
+          a: The mean was fitted to these cells, so the distances run small. n − 1 makes up for it.
+
+  - type: board
+    beat: compare
+    title: Same middle, different spread
+    lead: Two donors, the same mean CD3, but one is far more spread out.
+    steps:
+      - say: Donor A's cells huddle together. Donor B's spread wide.
+        add:
+          compare:
+            a: {title: Donor A, tone: good, text: 'Cells close to the mean.', visual: {stat: {value: '{{sA|2}}', label: variance of CD3, sub: 'mean {{mA|1}}'}}}
+            b: {title: Donor B, tone: bad, text: 'Cells far from the mean.', visual: {stat: {value: '{{sB|2}}', label: variance of CD3, sub: 'mean {{mB|1}}'}}}
+      - say: The means match. Only the spread tells them apart.
+        add: {note: 'The means are ==s1:{{mA|1}}== and ==s2:{{mB|1}}==, but B is **{{ratio|1}}×** as variable as A.'}
+      - think:
+          q: Which donor gives a more trustworthy mean?
+          a: Donor A. Its cells agree, so a new cell from A would land close to the same middle.
+
+  - type: board
+    beat: run
+    title: One variance per marker
+    lead: The same rule, run down every column of a cell × marker table.
+    steps:
+      - say: Six cells, three markers. One variance for each column.
+        add:
+          ops:
+            matrix:
+              name: marker levels
+              from: cells
+              cols: [cd3, cd19, cd4]
+              row: cell
+              col: marker
+              says: level of marker $j$ in cell $i$
+              fmt: 1
+              focusCol: cd19
+            steps:
+              - {op: cols, fn: var, name: mvar, tex: 's^2', label: variance, fmt: 2, say: Find each marker's variance, why: Each column is its own set of six numbers.}
+      - say: Each column gives one number. CD19 varies most here.
+
+  - type: board
+    beat: run
+    title: A line that learns, one cell at a time
+    lead: One wrong cell per update. Run it and watch the line settle.
+    controls:
+      - {name: t, run: 12, label: updates, stops: [0, 1, 2, 11]}
+      - {name: prev, toggle: [hide, show], label: last line, step_at: 3}
+    derive:
+      w0: at(w0_trace, t)
+      w1: at(w1_trace, t)
+      w2: at(w2_trace, t)
+      pw0: at(w0_trace, t - (t > 0))
+      pw1: at(w1_trace, t - (t > 0))
+      pw2: at(w2_trace, t - (t > 0))
+    steps:
+      - say: Eight cells and a first guess at the line. The ring marks a cell the line gets wrong.
+        add:
+          - {params: {say: 'The line, at this update', names: [w0, w1, w2]}}
+          - plane:
+              x: {label: CD3, min: 0, max: 10}
+              y: {label: CD19, min: 0, max: 10}
+              marks:
+                - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+                - {shade: [w0, w1, w2], color: s1, label: called T}
+                - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev}
+                - {line: [w0, w1, w2], color: accent, label: the line now}
+                - {ring: ['at(next_x, t)', 'at(next_y, t)'], when: 'at(has_next, t)'}
+      - say: 'One update: each weight moves by η = {{eta}} times the ringed cell''s values, toward its right side.'
+        add: {note: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$, with $x_0 = 1$ and $y = +1$ for a T cell, $-1$ for a B cell.'}
+      - think:
+          q: Show the last line. The cell ringed one click ago moved it. Is that cell on its right side now?
+          a: 'Yes, each update fixes its own cell. But it can push another wrong: {{redo_id}} gets fixed {{redo_n}} times.'
+      - say: 'After {{updates}} updates no cell is wrong, so the line stops. Press play or drag to see every update.'
+
+  - type: board
+    beat: picture
+    title: What the numbers stand for
+    lead: Brighter cells carry more CD3.
+    steps:
+      - say: Six cells under the scope. Brighter means more CD3.
+        add:
+          image: cells.png
+          alt: six round cells in a row, glowing orange in different strengths
+          labels: [{text: c1, at: [0.083, 0.88]}, {text: c5, at: [0.75, 0.88], step: 2}]
+      - say: c5 is the brightest, the one far above the mean.
+        add: {params: {say: 'What we worked out', names: [n, xbar, s2, sd]}}
+
+  - type: board
+    beat: limits
+    title: Where variance misleads
+    lead: Squares make far cells count most, for good and bad.
+    steps:
+      - say: 'One cell, {{far_id}}, sits far out. How much of the sum of squares is it?'
+        add:
+          - {parts: {items: [{label: '{{far_id}}', value: 'far_dev^2', focus: true}, {label: the other cells, value: 'ss - far_dev^2'}], total: {label: sum of squares}, fmt: 2}}
+          - {note: '**{{far_id}}** alone gives **{{100 * far_dev^2 / ss|0}}%** of the sum of squares, from one cell of {{n}}.'}
+      - say: If that cell were a doublet, two cells stuck together, the variance would mostly measure the mistake.
+      - think:
+          q: A sample mixes T cells and B cells. Is its large CD3 variance noise?
+          a: No, it is two groups. Variance assumes one group around one middle.
+
+  - type: recap
+    answer: Variance is the average squared distance from the mean, with n − 1 at the bottom.
+    points:
+      - Distances cancel; squares do not.
+      - The SD is the square root, back in the data's units.
+
+  - type: board
+    beat: next
+    title: Next, two markers at once
+    lead: Spread for one marker. What about two together?
+    steps:
+      - say: Next time we ask whether CD3 and CD19 rise and fall together.
+        add:
+          plane:
+            x: {label: CD3, min: 0, max: 10}
+            y: {label: CD19, min: 0, max: 10}
+            marks:
+              - points: {from: cells, x: cd3, y: cd19, label: id}
+      - say: The same move, distance from the mean, but multiplied across two markers. That is covariance.
+
+  - type: quiz
+    cards:
+      - q: Why square the distances?
+        a: So cells below the mean do not cancel cells above it, and far cells count most.
+      - q: What do the plain distances from the mean add up to?
+        a: 'Zero, always: that is what makes it the mean.'
+      - q: Why n − 1 in the bottom?
+        a: The mean is fitted to the same cells, so the squared distances run a little small.
+      - q: What does the SD add over the variance?
+        a: It is in the marker's own units, so it can sit on the same axis as the data.
+      - q: Two donors share a mean. What can still differ?
+        a: How spread out their cells are.

@@ -1,0 +1,12 @@
+# expect: end with the review cards
+# The lesson ends on the plan, with no review quiz after it.
+title: No review cards
+question: What if the lesson never ends on the review cards?
+answer: The lint asks for them.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - say: We start with a plan and never reach the cards.

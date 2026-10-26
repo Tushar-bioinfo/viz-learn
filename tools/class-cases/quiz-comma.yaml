@@ -1,0 +1,14 @@
+# expect: builds
+# expect: not: ERR
+# A review question with a comma and a question mark, written plain in block style, which YAML keeps as one string.
+title: A comma in a question
+question: Does a comma inside a question survive?
+answer: Yes, when the question is one quoted string.
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - q: Why keep a comma, then ask?
+        a: The question is one string, so the build does not split it.
+  - type: recap
+    answer: The question stays whole.

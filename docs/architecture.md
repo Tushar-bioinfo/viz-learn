@@ -38,6 +38,26 @@ The agent never writes HTML, CSS or SVG, so the look cannot drift and output sta
 - **A new rule for the deck-building agent:** a lint check in `build.py` if it can be checked; otherwise one line in the skill file that owns that step (see the table above). Never both in two skill files.
 - **A new example:** `examples/<slug>/` with `deck.yaml`, `make_data.py` → `data.json`, and `verify_data.py` ending in `ALL OK`. Add the slug to `tools/check-all.sh` and the Files table in `SKILL.md`.
 
+## The class skill
+`skills/class/` makes board lessons with the deck's kit; it adds a slide type, not a second renderer.
+```
+lesson.yaml ──lesson.py──> deck build.py (ext: board fields, lesson lint, board.js + board.css) ──> lesson.html
+                                                                                                    │
+                                                                         deck check.py, unchanged ──┘
+```
+| Concern | File | Notes |
+|---|---|---|
+| The lesson loop, the five gates | `skills/class/SKILL.md` | reaches the deck as its sibling folder `D` |
+| Beats, teaching moves, voice, pacing, series, review | `lesson.md` | pedagogy has one home |
+| Every board field, item, plane mark, control, lint message | `board.md` | `tools/check_docs.py` fails if a field `board.js` reads is missing here |
+| Lesson rules (beats, think stops, symbol before number, typed numbers, recall) | `scripts/lesson_lint.py` | run through `build.py`'s lint hook |
+| Build glue: runs and toggles become sliders, recall cards copied with their numbers | `scripts/lesson.py` | `prepare()`; never writes to the viz-os home |
+| The board: zones, worked lines, plane, controls, highlights, its audit | `kit/board.js`, `kit/board.css` | reuses the deck's chart, table, ops, compare, stat renderers |
+| Series memory, seeded home tables | `scripts/memory.py`, `scripts/home.py` | `$VIZOS_HOME` or `~/.viz-os` |
+| The deck seam | `deck/scripts/build.py` (`ext`) | with no `ext` the deck builds exactly as before |
+
+**Adding a board item or mark:** draw it in `board.js`, add its fields to the `BOARD` field table in `lesson.py`, document it in `board.md` (`check_docs.py` checks this), add a scene to `examples/board-gallery/lesson.yaml`, then `tools/check-all.sh`. A lesson rule goes in `lesson_lint.py` with a case in `tools/class-cases/`.
+
 ## Packaging for each agent harness
 The plugin root is `plugins/viz-os/`. Each harness reads its own manifest; all must agree (`tools/check_manifests.py`).
 | Harness | Plugin manifest | Marketplace (repo root) |

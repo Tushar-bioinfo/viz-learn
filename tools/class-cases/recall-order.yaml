@@ -1,0 +1,13 @@
+# expect: builds
+# expect: not: ERR
+# expect: Why n − 1? | The 4 cells summed to 10.2. What is their mean? | 2.55.
+# expect: not: second card
+# KTD17 order: two lessons recalled. The latest (last listed) gives its first 4 cards, then the older one its first card.
+title: Recall order
+recall: [recall/old, recall/ep1]
+data_file: recall/ep2-data.json
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'Mean {{xbar|1}}?', a: Yes.}

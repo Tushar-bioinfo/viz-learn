@@ -641,6 +641,12 @@ table.t td.cur.now { color: var(--on) !important; }
 .flip .face .q { font-size: 32px; line-height: 1.3; font-weight: 700; }
 .flip .face .a { font-size: 29px; line-height: 1.38; }
 .flip .face .hint { font: 600 16px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--haze); margin-top: 10px; }
+/* seven or eight cards: four across, tighter type, so the deck still fits at full size */
+.quiz.dense { gap: 22px; }
+.quiz.dense .flip .face { padding: 22px 24px; gap: 12px; }
+.quiz.dense .flip .face .q { font-size: 26px; }
+.quiz.dense .flip .face .a { font-size: 24px; line-height: 1.34; }
+.quiz.dense .flip .face .hint { font-size: 14px; margin-top: 4px; }
 .port .quiz { grid-template-columns: 1fr; max-height: none; gap: 20px; align-content: start; grid-auto-rows: minmax(190px, auto); }
 .port .flip .face { padding: 22px 24px; gap: 10px; }
 .port .flip .face .q { font-size: 26px; }

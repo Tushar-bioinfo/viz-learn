@@ -1,0 +1,16 @@
+# expect: typed number 7.9 in `say` matches `xbar`
+# expect: write {{xbar|1}}
+# A teacher line types 7.9, the one-decimal form of the data value xbar.
+title: A typed decimal
+question: What if a teacher line types a data value?
+answer: The lint wants the value written as an expression.
+data: {xbar: 7.92}
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: A typed mean
+    steps:
+      - say: the mean is 7.9

@@ -173,12 +173,14 @@ def check_deck(br, deck, out, args, report):
             for w in page.evaluate("VizOS.audit()"):
                 report.append((i + 1, w if k == s["steps"] or s["steps"] <= 1 else f"step {k}: {w}"))
         for c in s["controls"]:
+            if c["min"] is None or c["max"] is None:   # a control with no range is a lint error already
+                continue
             for v in (c["min"], c["max"]):
                 page.evaluate(f"VizOS.setControl({json.dumps(c['name'])},{v})")
                 settle(page)
                 for w in page.evaluate("VizOS.audit()"):
                     report.append((i + 1, f"{c['name']}={v}: {w}"))
-            page.evaluate(f"VizOS.setControl({json.dumps(c['name'])},{c['value']})")
+            page.evaluate(f"VizOS.setControl({json.dumps(c['name'])},{c['value'] if c['value'] is not None else c['min']})")
         if s["predict"]:
             page.evaluate("VizOS.reveal()")
             page.wait_for_timeout(120)

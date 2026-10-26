@@ -1,0 +1,21 @@
+# expect: is made by a worked line on slide
+# A later scene reads tot, a name made by a worked line on an earlier board and absent from the data.
+title: A name that dies at the scene edge
+question: Can the next scene read a name the last scene worked?
+answer: No. Each scene has its own scope.
+data: {cd3: [4, 6]}
+symbols:
+  tot: {tex: 'T', says: the sum}
+slides:
+  - type: board
+    beat: by-hand
+    title: Make the sum
+    steps:
+      - say: Add the two levels.
+        add: {calc: {say: Sum, expr: sum(cd3), name: tot}}
+  - type: board
+    beat: problem
+    title: Read the sum
+    lead: The sum should still be here.
+    steps:
+      - say: 'The sum is {{tot}}.'

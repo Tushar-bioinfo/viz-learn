@@ -40,7 +40,7 @@ FIELDS = {
 REQUIRED = {"predict": ["q", "options"], "equation": [], "calc": ["lines"], "table": ["cols"], "bridge": ["pairs"],
             "compare": ["a", "b"], "quiz": ["cards"], "recap": ["answer"], "map": ["center", "links"], "statement": ["text"],
             "ops": ["matrix", "steps"]}
-VISUAL = {"chart", "stat", "units", "parts", "flow", "code", "image", "eqn", "svg", "dist", "caption", "terms", "labels"}
+VISUAL = {"chart", "stat", "units", "parts", "flow", "code", "image", "alt", "eqn", "svg", "dist", "caption", "terms", "labels"}
 DIST = {"poisson": ["mu"], "nb": ["mu", "alpha"], "binomial": ["n", "p"], "normal": ["mu", "sigma"], "gamma": ["shape", "rate"], "beta": ["a", "b"], "uniform": ["a", "b"]}
 DIST_KEYS = {"family", "params", "says", "label", "color", "vs", "tail", "show", "meanLabel", "x", "xlabel", "ylabel", "xfmt", "yfmt", "alt"}
 # a matrix-operations slide: a small matrix and what each step does to it (kit/ops.js)
@@ -188,19 +188,19 @@ NOT_PROSE = {"tex", "expr", "fn", "formula", "from", "lhs", "code", "color", "ki
              "rowKey", "eqn", "svg", "params", "xfmt", "yfmt", "tail"}
 
 
-def bare_math(Lx, where, node, key=None):
+def bare_math(Lx, where, node, key=None, skip=NOT_PROSE):
     """Math typed straight into prose (k\u03bc^b, \\sigma) shows as a caret or a backslash: it belongs in $...$."""
     if isinstance(node, dict):
         for k, v in node.items():
             if k == "notation" and isinstance(v, list):   # a notation chip: its tex is TeX, its says is prose
                 for item in v:
                     if isinstance(item, dict) and isinstance(item.get("says"), str):
-                        bare_math(Lx, where, item["says"], "says")
-            elif k not in NOT_PROSE:
-                bare_math(Lx, where, v, k)
+                        bare_math(Lx, where, item["says"], "says", skip)
+            elif k not in skip:
+                bare_math(Lx, where, v, k, skip)
     elif isinstance(node, list):
         for v in node:
-            bare_math(Lx, where, v, key)
+            bare_math(Lx, where, v, key, skip)
     elif isinstance(node, str):
         rest = re.sub(r"\$[^$]*\$|\{\{.*?\}\}|`[^`]*`", "", node)
         m = re.search(r"\S*(\^|\\[A-Za-z]+)\S*", rest)
@@ -208,11 +208,17 @@ def bare_math(Lx, where, node, key=None):
             Lx.warn(where, f"`{key}` has math outside $...$ (“{m.group(0)}”), which shows as typed: write it as $...$")
 
 
-def lint(deck, lint_extra_names=(), extra_data=None):
+def lint(deck, lint_extra_names=(), extra_data=None, ext=None):
+    """`ext` lets a sibling skill (class) add slide types and rules without copying this file; None is the deck as is."""
     Lx = Lint()
-    for k in set(deck) - TOP:
+    ext = ext or {}
+    top = TOP | set(ext.get("top", ()))
+    fields = {**FIELDS, **ext.get("fields", {})}
+    required = {**REQUIRED, **ext.get("required", {})}
+    skip = NOT_PROSE | set(ext.get("not_prose", ()))
+    for k in set(deck) - top:
         Lx.warn("deck", "`theme` set the 1.x glass look; 2.0 has one look, so delete it" if k == "theme"
-                else f"unknown top-level key `{k}` (known: {', '.join(sorted(TOP))})")
+                else f"unknown top-level key `{k}` (known: {', '.join(sorted(top))})")
     if not deck.get("answer"):
         Lx.warn("deck", "no `answer`: write the one-sentence answer before the slides (story.md §1)")
     slides = deck.get("slides") or []
@@ -253,14 +259,14 @@ def lint(deck, lint_extra_names=(), extra_data=None):
     for i, s in enumerate(slides):
         t = s.get("type") or "idea"
         where = f"slide {i + 1} ({t}{(' “' + str(s.get('title') or s.get('q') or s.get('text') or '')[:38] + '”') if (s.get('title') or s.get('q') or s.get('text')) else ''})"
-        if t not in FIELDS:
-            Lx.err(where, f"unknown type `{t}`; use one of {', '.join(sorted(FIELDS))}")
+        if t not in fields:
+            Lx.err(where, f"unknown type `{t}`; use one of {', '.join(sorted(fields))}")
             continue
-        bare_math(Lx, where, s)
-        extra = set(s) - COMMON - FIELDS[t]
+        bare_math(Lx, where, s, skip=skip)
+        extra = set(s) - COMMON - fields[t]
         if extra:
             Lx.err(where, f"unknown field(s) {sorted(extra)} for {t}")
-        for f in REQUIRED.get(t, []):
+        for f in required.get(t, []):
             if not s.get(f):
                 Lx.err(where, f"`{f}` is required for {t}")
         if t in CONTENT and t not in ("statement", "map") and not s.get("title"):
@@ -270,7 +276,7 @@ def lint(deck, lint_extra_names=(), extra_data=None):
         if s.get("lead"):
             leads += 1
             if words(s["lead"]) > 14:
-                Lx.warn(where, "lead is long; it is one short bridge line from the last slide (≤ 12 words)")
+                Lx.warn(where, f"lead has {words(s['lead'])} words; it is one short bridge line from the last slide (aim for ≤ 12; this warns past 14)")
         if t in CONTENT:
             contents += 1
             since_check += 1
@@ -285,6 +291,8 @@ def lint(deck, lint_extra_names=(), extra_data=None):
         scope = set(glob) | set((s.get("derive") or {}).keys())
         ctls = s.get("controls") or ((s.get("visual") or {}).get("chart") or {}).get("controls") or []
         scope |= {c.get("name") for c in ctls if isinstance(c, dict)}
+        if ext.get("scope"):   # names a sibling type makes inside the slide (a board's worked lines)
+            scope |= set(ext["scope"](s))
         for k, v in (s.get("derive") or {}).items():
             check_expr(Lx, f"{where} derive.{k}", v, scope)
         # ladder
@@ -438,6 +446,8 @@ def lint(deck, lint_extra_names=(), extra_data=None):
         Lx.warn("deck", f"only {leads}/{contents} content slides have a `lead`; the lead is the 'but/so' that links each slide to the last")
     if not any((s.get("type") == "recap") for s in slides[-3:]):
         Lx.warn("deck", "no `recap` near the end: answer the opening question in one sentence")
+    if ext.get("lint"):
+        ext["lint"](Lx, deck, glob)
     return Lx
 
 
@@ -445,6 +455,9 @@ def check_expr(Lx, where, expr, names):
     if isinstance(expr, (int, float)) or expr is None:
         return
     if isinstance(expr, list):
+        return
+    if isinstance(expr, str) and expr.count("(") != expr.count(")"):
+        Lx.err(where, f"`{expr}` has unmatched brackets: inside a {{...}} or [...] line YAML splits at each comma, so quote it ('at(xs, t)')")
         return
     for f in funcs(expr):
         if f not in FUNCS:
@@ -734,17 +747,21 @@ def lint_visual(Lx, where, v, scope):
             Lx.warn(where, "chart has no caption: one line that says what to look at")
 
 
-def build(path, out=None, katex_dir=None, quiet=False):
+def build(path, out=None, katex_dir=None, quiet=False, ext=None):
+    """`ext` (see lint) also carries extra kit files: `js` (inserted before deck.js), `css`, `tex_types`, and
+    `prepare(deck, data, path) -> data`, which may edit the deck and its data before the lint."""
     path = Path(path)
     deck = load(path)
     data_file = deck.pop("data_file", None)
     extra_names = []
     data_js = ""
-    if data_file:
-        d = json.loads((path.parent / data_file).read_text())
+    d = json.loads((path.parent / data_file).read_text()) if data_file else None
+    if ext and ext.get("prepare"):
+        d = ext["prepare"](deck, d, path)
+    if d is not None:
         extra_names = list(d)
         data_js = f"window.VIZOS_DATA={safe_json(d)};"
-    lx = lint(deck, extra_names, d if data_file else None)
+    lx = lint(deck, extra_names, d, ext)
     assets = {}
     for img in re.findall(r'"image":\s*"([^"]+)"', json.dumps(deck)):
         f = path.parent / img
@@ -754,8 +771,13 @@ def build(path, out=None, katex_dir=None, quiet=False):
         else:
             lx.err("image", f"file not found: {img}")
     css = (KIT / "vizos.css").read_text()
-    js = "\n".join((KIT / f).read_text() for f in KIT_JS)
-    needs_tex = bool(re.search(r'"type":\s*"(equation|calc|table|ops)"|\$[^$\s][^$]*\$|"eqn":|"dist":', json.dumps(deck)))
+    js_files = [KIT / f for f in KIT_JS]
+    if ext:   # a sibling's renderers register before deck.js boots the page
+        js_files[-1:-1] = [Path(f) for f in ext.get("js", ())]
+        css += "".join("\n" + Path(f).read_text() for f in ext.get("css", ()))
+    js = "\n".join(f.read_text() for f in js_files)
+    tex_types = "|".join(["equation", "calc", "table", "ops", *(ext or {}).get("tex_types", ())])
+    needs_tex = bool(re.search(r'"type":\s*"(' + tex_types + r')"|\$[^$\s][^$]*\$|"eqn":|"dist":', json.dumps(deck)))
     katex = ""
     if needs_tex:
         kd = katex_dir or os.environ.get("VIZOS_KATEX_DIR")

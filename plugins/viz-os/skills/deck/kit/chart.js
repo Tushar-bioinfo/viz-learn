@@ -230,11 +230,11 @@
           const bw = Math.max(2, Math.min(band * (s.bw ?? .64), 64));
           d.forEach(p => { const cx = cats ? sx(p[0] + .5) : sx(p[0]), y0 = sy(Math.max(ydom[0], ys.log ? ydom[0] : 0)), y1 = clampY(sy(p[1]));
             if (kind === 'lollipop') { el('line', { x1: cx, x2: cx, y1: y0, y2: y1, stroke: c, 'stroke-width': 3, opacity: .9 }, gg); el('circle', { cx, cy: y1, r: Math.min(7, Math.max(4, bw / 3)), fill: c, stroke: L.colors.plate, 'stroke-width': 2 }, gg); }
-            else { const h = y0 - y1; if (h <= .5) return; const x = cx - bw / 2;
-              el('rect', { x, y: y1, width: bw, height: h, fill: c, opacity: s.opacity ?? (s.focus ? 1 : .92) }, gg); }
-            obstacles.push([cx - bw / 2, y1, cx + bw / 2, y0]); });
+            else { const h = Math.abs(y0 - y1); if (h <= .5) return; const x = cx - bw / 2;   // a negative value hangs below zero
+              el('rect', { x, y: Math.min(y0, y1), width: bw, height: h, fill: c, opacity: s.opacity ?? (s.focus ? 1 : .92) }, gg); }
+            obstacles.push([cx - bw / 2, Math.min(y0, y1), cx + bw / 2, Math.max(y0, y1)]); });
           if (s.highlight != null) { const hv = L.val(s.highlight, scope); const hi = d.find(p => p[0] === hv); if (hi) { const cx = cats ? sx(hi[0] + .5) : sx(hi[0]); const y1 = sy(hi[1]);
-            el('rect', { x: cx - bw / 2 - 4, y: y1 - 4, width: bw + 8, height: sy(0) - y1 + 4, fill: 'none', stroke: col('accent'), 'stroke-width': 3 }, gg); } }
+            el('rect', { x: cx - bw / 2 - 4, y: Math.min(y1, sy(0)) - 4, width: bw + 8, height: Math.abs(sy(0) - y1) + 8, fill: 'none', stroke: col('accent'), 'stroke-width': 3 }, gg); } }
         } else if (kind === 'hist') {
           d.forEach(b => { if (b.y <= 0) return; const x0 = sx(Math.max(b.x0, xdom[0])) + 1, x1 = sx(Math.min(b.x1, xdom[1])) - 1, y1 = clampY(sy(b.y)), y0 = sy(0), w = x1 - x0;
             if (w <= 0) return; el('rect', { x: x0, y: y1, width: w, height: y0 - y1, fill: c, opacity: s.opacity ?? .9 }, gg);

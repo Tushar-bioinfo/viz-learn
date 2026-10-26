@@ -1,0 +1,12 @@
+# expect: no `limits` scene
+# A lesson with a plan and no scene that says where the method breaks.
+title: No limits
+question: What if the lesson never says where the method breaks?
+answer: The lint asks for a limits scene.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - say: A plan, and no place where the method breaks.

@@ -1,0 +1,12 @@
+# expect: names data, which a table cannot read
+# A table slide sets rows to the data name cells, which a table cannot read.
+title: Rows as a data name
+question: Can a table take its rows from a data name?
+answer: No. It has to use from.
+data: {cells: [{cd3: 4}, {cd3: 6}]}
+slides:
+  - type: table
+    title: The cells
+    rows: cells
+    cols:
+      - {key: cd3, label: level}

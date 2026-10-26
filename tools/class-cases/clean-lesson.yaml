@@ -1,0 +1,135 @@
+# expect: clean
+# A full small lesson on the mean that passes every rule, including the browser check.
+title: Where the mean sits
+subtitle: Three cells, one middle
+question: Where does the mean sit among these cells?
+answer: Add the marker levels and divide by the number of cells.
+data:
+  rows:
+    - {cell: c1, cd3: 2}
+    - {cell: c2, cd3: 4}
+    - {cell: c3, cd3: 6}
+  cd3: [2, 4, 6]
+  n: 3
+  tot: 12
+  xbar: 4
+abbr: {CD3: a T-cell surface marker}
+symbols:
+  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i}
+  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean}
+  n: {tex: 'n', says: the number of cells, short: cells}
+  tot: {tex: 'T', says: the sum of the levels, short: sum}
+slides:
+  - type: title
+
+  - type: board
+    beat: plan
+    title: The plan for today
+    steps:
+      - say: One question today. Where does the mean of three cells sit?
+        add:
+          flow:
+            nodes: [three cells, by hand, a formula, its limits]
+            verbs: [see, add, test]
+      - say: Work it by hand, write the formula, then test the edges.
+      - think:
+          q: What should that one number do?
+          a: Sit in the middle of the three levels.
+
+  - type: board
+    beat: problem
+    title: The mean has a job
+    lead: The job comes before any formula.
+    steps:
+      - say: Three cells, one marker. We want their middle.
+        add: {note: One number has to stand for all three levels.}
+      - think:
+          q: One cell sits far higher. Does the middle move?
+          a: Yes. The mean is pulled toward that cell.
+
+  - type: board
+    beat: data
+    title: Three cells, one marker
+    lead: These are the three levels we add.
+    table:
+      from: rows
+      cols: [{key: cell, label: cell}, {key: cd3, label: CD3}]
+    steps:
+      - say: Each row is one cell and its CD3 level.
+        add: {note: From the lowest level to the highest.}
+      - think:
+          q: Which cell sits highest?
+          a: c3 does. The mean has to sit below it.
+
+  - type: board
+    beat: by-hand
+    title: Work the mean by hand
+    lead: Add them, then share the sum.
+    table:
+      from: rows
+      cols: [{key: cell, label: cell}, {key: cd3, label: CD3}]
+    steps:
+      - say: Add the three CD3 levels.
+        add: {calc: {say: Sum of CD3, expr: sum(cd3), name: tot}}
+      - say: 'Divide that sum by the number of cells, {{n}}.'
+        add: {calc: {say: The mean, expr: tot / n, name: xbar}}
+      - think:
+          q: Why divide by the number of cells?
+          a: So the mean is a level, not a total.
+
+  - type: board
+    beat: formula
+    title: The same steps, as a formula
+    lead: Each symbol is a number we made.
+    steps:
+      - say: Our numbers, in the shape of the formula.
+        add:
+          assemble:
+            say: The mean of our three cells
+            lhs: xbar
+            tex: '\dfrac{[tot]}{[n]}'
+            plug: '[xbar:{{xbar}}] = \dfrac{[tot:{{tot}}]}{[n:{{n}}]}'
+      - say: Now the same line in symbols.
+        add: {note: The sum keeps its colour over the count.}
+      - think:
+          q: What does the top of the formula add?
+          a: Every cell CD3 level, once.
+
+  - type: board
+    beat: limits
+    title: Where the mean misleads
+    lead: One odd cell can move the middle.
+    steps:
+      - say: A far cell pulls the mean up with it.
+        add: {note: The mean assumes one group around one middle.}
+      - think:
+          q: Two groups share one mean. Is that middle real?
+          a: No. It can sit between the groups.
+
+  - type: recap
+    answer: The mean is the sum of the levels divided by the number of cells.
+    points:
+      - Add every level, then divide by how many cells.
+      - One far cell pulls the middle toward itself.
+
+  - type: board
+    beat: next
+    title: Next, how far cells sit
+    lead: The middle is set. Spread is next.
+    steps:
+      - say: Next we ask how far each cell sits from the mean.
+        add: {note: Distance from this middle is the next question.}
+      - say: Square those distances and average them.
+
+  - type: quiz
+    cards:
+      - q: What do you add to get the mean?
+        a: Each cell CD3 level.
+      - q: What do you divide that sum by?
+        a: The number of cells.
+      - q: A cell sits far above the others. What happens to the mean?
+        a: The mean moves up toward that cell.
+      - q: Two groups of cells share one mean. What is wrong?
+        a: The middle can fall between the groups, where no cell sits.
+      - q: Why is the mean in the same units as the cells?
+        a: Dividing the sum by the count returns a level, not a total.

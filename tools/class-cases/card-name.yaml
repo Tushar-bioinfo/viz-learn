@@ -1,0 +1,11 @@
+# expect: review card 1 reads `m`
+# The last slide is a review card that reads m, a top-level derive name that is not in the data.
+title: A card that names a derive
+question: Can a review card read a derive name?
+answer: No. The card can read only data names.
+derive: {m: 4}
+slides:
+  - type: quiz
+    cards:
+      - q: What is the mean?
+        a: 'It is {{m}}.'

@@ -1,0 +1,29 @@
+# expect: builds
+# expect: not: cannot read
+# An expr assemble that reads one entry of a list with at(): the symbol row draws x with a subscript.
+title: One entry in a formula
+question: Can a formula name one entry of a list?
+answer: Yes, as x with a subscript.
+data: {x: [1, 4, 7], m: 4}
+symbols:
+  x: {tex: 'x', says: a level}
+  m: {tex: 'm', says: the mean}
+  d: {tex: 'd', says: a gap}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: One gap
+    steps:
+      - say: The third level minus the mean.
+        add: {calc: {say: The gap, expr: 'at(x, 2) - m', name: d}}
+  - type: board
+    beat: formula
+    title: The gap as a formula
+    steps:
+      - say: The same subtraction, as a formula.
+        add:
+          assemble:
+            lhs: d
+            expr: 'at(x, 2) - m'
+      - say: The symbols mean the level and the mean.

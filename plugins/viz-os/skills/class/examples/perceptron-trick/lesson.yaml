@@ -1,0 +1,405 @@
+title: How does a line learn to gate your cells?
+subtitle: The perceptron trick, worked by hand on eight cells from your panel
+question: How does a perceptron find a line that splits T cells from B cells, without us placing it?
+answer: Start with any line. Each wrong cell nudges the weights by η (y − ŷ) times its values, until no cell is wrong.
+series: perceptron
+episode: 1
+home: cells
+data_file: data.json
+abbr: {DN: double-negative, DP: double-positive, XOR: exclusive or, CD3: a T-cell surface marker, CD19: a B-cell surface marker, CD4: a helper T-cell marker, CD8: a killer T-cell marker}
+symbols:
+  cd3: {tex: 'x_1', says: a cell's CD3 level, short: CD3, fmt: 1}
+  cd19: {tex: 'x_2', says: a cell's CD19 level, short: CD19, fmt: 1}
+  x0: {tex: 'x_0', says: a 1 put in front of every cell, short: always 1}
+  y: {tex: 'y', says: 'the cell''s true type: 1 for T, 0 for B', short: true type}
+  call: {tex: '\hat{y}', says: 'what the line calls it: 1 for T, 0 for B', short: called}
+  score: {tex: 's', says: 'a cell''s score: 0 or more is called T', short: score, fmt: 2}
+  sc1: {tex: 's_{c1}', says: c1's score on the bad line, short: score of c1, fmt: 2}
+  w0: {tex: 'w_0', says: the line's offset, short: offset, color: s3, fmt: 2}
+  w1: {tex: 'w_1', says: the line's weight on CD3, short: CD3 weight, color: s1, fmt: 2}
+  w2: {tex: 'w_2', says: the line's weight on CD19, short: CD19 weight, color: s2, fmt: 2}
+  eta: {tex: '\eta', says: 'the learning rate: how big one step is', short: step size}
+  wv: {tex: 'w_j', says: a weight of the line now, short: weight now, fmt: 2}
+  xv: {tex: 'x_j', says: 'c5''s value for that weight, with a 1 for the offset', short: c5's value, fmt: 1}
+  wnew: {tex: 'w_j - x_j', says: the weight after a full step, short: full step, fmt: 2}
+  wsmall: {tex: 'w_j - \eta x_j', says: the weight after a small step, short: small step, fmt: 2}
+  w2n: {tex: 'w_2''', says: CD19's weight after the small step, short: new CD19 weight, color: s2, fmt: 2}
+  diff: {tex: 'y - \hat{y}', says: 'true type minus the call', short: direction}
+  nw: {tex: 'n_{\text{wrong}}', says: cells on the wrong side of the line, short: cells wrong}
+  ep: {tex: 'e', says: 'the epoch: one pass over all eight cells', short: epoch}
+  slope: {tex: 'm', says: CD19 change for one unit of CD3 along the line, short: slope, fmt: 2}
+  icept: {tex: 'b', says: where the line crosses the CD19 axis, short: crossing, fmt: 2}
+slides:
+  - type: title
+
+  - type: board
+    beat: plan
+    title: The plan for today
+    steps:
+      - say: A perceptron is a line through your cells. One side is called T, the other B.
+        add: {flow: {nodes: [{label: a bad line, sub: to start}, {label: one wrong cell, sub: nudges it}, {label: one rule, sub: every case}, {label: many epochs, sub: until none wrong}, its limits], verbs: [pick, write, run, test]}}
+      - say: Today we watch how it finds that line by itself, one wrong cell at a time.
+
+  - type: board
+    beat: data
+    title: Eight cells a line could gate
+    lead: Two kinds of cell, two markers, one flow plot.
+    table:
+      from: pcells
+      cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}, {key: y, label: y}]
+    steps:
+      - say: 'Eight cells from your panel: four T cells and four B cells, by CD3 and CD19.'
+        add:
+          plane:
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+      - say: On a flow plot you would draw this gate by eye. Today the data places it.
+      - say: We write T as 1 and B as 0. That number is the cell's label, y.
+        mark: col:y
+      - think:
+          q: Can one straight line put every T cell on one side and every B cell on the other?
+          a: 'Yes: T cells sit low and right, B cells high and left. Cells like this are linearly separable.'
+
+  - type: board
+    beat: problem
+    title: Start from a bad line
+    lead: Any line will do as a start. Then the cells complain.
+    steps:
+      - say: Here is a bad first line. The shaded side is what it calls T.
+        add:
+          plane:
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+              - {shade: [w0, w1, w2], color: s1, label: called T}
+              - {line: [w0, w1, w2], color: accent, label: the bad line}
+              - {ring: [c5_cd3, c5_cd19], step: 3}
+      - say: '{{n_wrong0}} of {{n}} cells sit on the wrong side: every B cell, and two T cells.'
+      - say: 'Each wrong cell objects. c5 says: “I am a B cell. Move the line past me!”'
+      - say: Pick a cell at random. If it objects, nudge the line. Repeat until no cell objects.
+        add: {note: '**The loop:** pick a random cell → wrong side? nudge the line → repeat until **no cell is wrong**.'}
+      - think:
+          q: c5 wants to be on the B side. Which way should the line move?
+          a: Toward c5 and past it, so c5 ends up unshaded. How far, and how, is the trick.
+
+  - type: board
+    beat: by-hand
+    title: Which side does the line call T?
+    lead: Plug a cell into the line to see its side.
+    table:
+      from: pcells
+      cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}, {key: y, label: y}]
+    steps:
+      - say: 'The bad line is every point where {{w0}} + ({{w1}}) × CD3 + {{w2}} × CD19 is exactly 0.'
+        add:
+          plane:
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+              - {line: [w0, w1, w2], color: accent, label: the bad line}
+              - {shade: [w0, w1, w2], color: s1, label: score 0 or more, step: 4}
+      - think:
+          q: Off the line that sum is above 0 or below it. Which side gets called T?
+          a: You cannot tell by looking. Plug in a cell and read the sign.
+      - say: Plug in c1, a T cell. Each weight times its marker, then add.
+        add: {calc: {say: c1's score, row: 0, expr: w0 + w1 * cd3 + w2 * cd19, name: sc1, fmt: 2}}
+        mark: row:0
+      - say: The same sum for every cell. That number is the cell's score.
+        add: {col: {key: score, label: score, expr: w0 + w1 * cd3 + w2 * cd19, fmt: 1}}
+        mark: col:score
+      - say: A score of 0 or more is called T, written 1. Below 0 is called B.
+        add: {col: {key: call, label: ŷ, expr: w0 + w1 * cd3 + w2 * cd19 >= 0}}
+        mark: col:call
+      - think:
+          q: Compare the call with y. Which cells are wrong?
+          a: '{{n_wrong0}} of them: every B cell, plus c3 and c6. They are the cells that object.'
+        mark: col:call
+
+  - type: board
+    beat: what-if
+    title: Three weights, two kinds of move
+    lead: Before any rule, feel what each weight does to the line.
+    controls:
+      - {name: w0, label: w0, min: -10, max: 10, step: 0.5, value: 9}
+      - {name: w1, label: w1, min: -3, max: 3, step: 0.1, value: -2.1}
+      - {name: w2, label: w2, min: -3, max: 3, step: 0.1, value: 0.9}
+    derive:
+      nw: sum((w0 + w1 * cd3 + w2 * cd19 >= 0) != y)
+    steps:
+      - say: One slider per weight, set to the bad line. The card counts the wrong cells.
+        add:
+          - {params: {say: 'The line you set', names: [w0, w1, w2, nw]}}
+          - plane:
+              x: {label: CD3, min: -0.5, max: 5.5}
+              y: {label: CD19, min: 0, max: 5}
+              marks:
+                - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+                - {shade: [w0, w1, w2], color: s1, label: called T}
+                - {line: [w0, w1, w2], color: accent, label: your line}
+      - say: Drag only w0. Watch the line.
+      - think:
+          q: w0 moved the line. Did it turn?
+          a: No. It slid sideways and stayed parallel. w0 shifts the line; it never tilts it.
+      - say: Now put w0 back and drag w1 or w2.
+      - think:
+          q: What do w1 and w2 do that w0 cannot?
+          a: They turn the line. w1 weighs CD3, w2 weighs CD19, and their balance sets the tilt.
+      - think:
+          q: Can you reach 0 wrong cells by hand?
+          a: 'Yes, many lines work. One is {{wg0|1}}, {{wg1|1}}, {{wg2|1}}. The trick finds one without guessing.'
+
+  - type: board
+    beat: by-hand
+    title: One wrong cell, one step
+    lead: The line and the cell both become three numbers. Subtract.
+    table:
+      from: trick
+      cols: [{key: part, label: weight for}, {key: wv, label: w now, fmt: 2}, {key: xv, label: c5, fmt: 1}]
+    steps:
+      - say: 'Take c5, a B cell the line calls T. CD3 {{c5_cd3}}, CD19 {{c5_cd19}}.'
+        add:
+          plane:
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+              - {line: [w0, w1, w2], color: accent, label: the bad line}
+              - {ring: [c5_cd3, c5_cd19]}
+              - {line: [wb0, wb1, wb2], color: s3, label: after one full step, step: 3}
+              - {shade: [wb0, wb1, wb2], color: s1, label: called T now, step: 3}
+        mark: col:xv
+      - say: 'Put a {{x0}} in front, for the offset. Now the cell has three numbers, like the line.'
+        mark: row:0
+      - say: c5 should score lower. Subtract its numbers from the weights, one by one.
+        add: {col: {key: wnew, label: w − c5, expr: wv - xv, fmt: 2}}
+        mark: col:wnew
+      - think:
+          q: Where did the new line land?
+          a: 'Far past c5. Now {{n_wrong_big}} cells are wrong: every T cell. A whole cell is too big a step.'
+
+  - type: board
+    beat: by-hand
+    title: Take a smaller step
+    lead: Shrink the cell before subtracting it. The shrink factor is η.
+    table:
+      from: trick
+      cols: [{key: part, label: weight for}, {key: wv, label: w now, fmt: 2}, {key: xv, label: c5, fmt: 1}]
+    steps:
+      - say: 'Too far. Multiply c5''s numbers by η = {{eta}} first, then subtract.'
+        add:
+          plane:
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+              - {line: [w0, w1, w2], color: accent, label: the bad line}
+              - {line: [wb0, wb1, wb2], color: mist, dash: true, label: full step}
+              - {ring: [c5_cd3, c5_cd19]}
+              - {line: [ws0, ws1, ws2], color: s3, label: small step, step: 3}
+      - say: CD19's weight first. It moves the most, because c5's CD19 is high.
+        add: {calc: {say: CD19's weight after a small step, row: 2, expr: wv - eta * xv, name: w2n, fmt: 2}}
+        mark: row:2
+      - say: The same for all three weights. The new line turns a little toward c5.
+        add: {col: {key: wsmall, label: w − η × c5, expr: wv - eta * xv, fmt: 2}}
+        mark: col:wsmall
+      - think:
+          q: Is c5 on the right side now?
+          a: 'Not yet: its score fell from {{c5_score|2}} to {{c5_small|2}}. Small steps need more visits, but they do not overshoot.'
+      - say: η is the learning rate. It sets how far one wrong cell may pull the line.
+
+  - type: board
+    beat: formula
+    title: The score, written as a formula
+    lead: Every symbol is a number we already plugged in.
+    steps:
+      - say: Here is c1's score, in the shape of the formula.
+        add:
+          assemble:
+            say: c1's score on the bad line
+            lhs: sc1
+            tex: '[w0] + [w1] [cd3] + [w2] [cd19]'
+            plug: '[sc1:{{sc1|2}}] = [w0:{{w0}}] + ([w1:{{w1}}]) \cdot [cd3:{{at(cd3, 0)}}] + [w2:{{w2}}] \cdot [cd19:{{at(cd19, 0)}}]'
+      - say: In symbols. Each symbol keeps its number's colour.
+      - say: w0 has no marker beside it. Give it one, x0, that is always 1, as in our hand step.
+        add: {note: 'Write $w_0$ as $w_0 x_0$ with $x_0 = 1$. Now **every term is a weight times an input**: $s = w_0 x_0 + w_1 x_1 + w_2 x_2$.'}
+      - say: Weights times inputs, added up, is a dot product. The score is the weights dotted with the cell.
+        add: {note: 'The **dot product** of $(w_0, w_1, w_2)$ with $(x_0, x_1, x_2)$: multiply in pairs, then add.'}
+      - think:
+          q: Why give the 1 a name at all?
+          a: Then all three weights update the same way. w0 moves by η times 1, exactly as we did by hand.
+
+  - type: board
+    beat: run
+    title: Run it, one wrong cell at a time
+    lead: Each epoch visits all eight cells in a shuffled order.
+    controls:
+      - {name: t, run: 13, label: updates}
+      - {name: prev, toggle: [hide, show], label: last line, step_at: 4}
+    derive:
+      w0: at(w0_trace, t)
+      w1: at(w1_trace, t)
+      w2: at(w2_trace, t)
+      pw0: at(w0_trace, t - (t > 0))
+      pw1: at(w1_trace, t - (t > 0))
+      pw2: at(w2_trace, t - (t > 0))
+      nw: at(wrong_trace, t)
+      ep: at(epoch_trace, t)
+    steps:
+      - say: Back to the bad line, with η = {{eta}}. The ring marks the next wrong cell the shuffle finds.
+        frame: 0
+        add:
+          - {params: {say: 'The line, at this update', names: [w0, w1, w2, nw, ep]}}
+          - plane:
+              x: {label: CD3, min: -0.5, max: 5.5}
+              y: {label: CD19, min: 0, max: 5}
+              marks:
+                - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+                - {shade: [w0, w1, w2], color: s1, label: called T}
+                - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev}
+                - {line: [w0, w1, w2], color: accent, label: the line now}
+                - {ring: ['at(next_x, t)', 'at(next_y, t)'], when: 'at(has_next, t)'}
+      - say: 'The first wrong cell is {{at(next_id, 0)}}, our hand step. The line turns a little.'
+        frame: 1
+      - think:
+          q: 'The ring is on {{plus_id}}, a T cell called B. Add its values, or subtract them?'
+          a: 'Add. A T cell on the B side pulls the line toward itself: w + η x.'
+        frame: 3
+      - say: 'Wrong cells: {{at(wrong_trace, 0)}} at the start, {{at(wrong_trace, 3)}} before {{plus_id}}, {{at(wrong_trace, 4)}} after. Turn on the last line to compare.'
+        frame: 4
+      - think:
+          q: The count of wrong cells went up before it came down. Is the trick broken?
+          a: No. Each step helps its own cell, but can tip others over. Over epochs the line settles.
+      - say: 'After {{updates}} updates no cell is wrong, and epoch {{epochs}} changes nothing. The line stops.'
+        frame: 12
+
+  - type: board
+    beat: formula
+    title: Two rules become one
+    lead: Add for a T cell called B, subtract for a B cell called T.
+    table:
+      from: cases
+      cols: [{key: y, label: 'y (true)'}, {key: call, label: 'ŷ (called)'}]
+    steps:
+      - say: Here is c5's small step again, written so it works for any cell.
+        add:
+          assemble:
+            say: c5's step, for CD19's weight
+            lhs: w2n
+            tex: '[w2] + [eta] ([y] - [call]) [cd19]'
+            plug: '[w2n:{{ws2|2}}] = [w2:{{w2}}] + [eta:{{eta}}] ([y:{{c5_y}}] - [call:{{c5_call}}]) \cdot [cd19:{{c5_cd19}}]'
+      - say: In symbols. The bracket, true type minus the call, picks the direction.
+      - say: Work that bracket for all four cases.
+        add: {col: {key: diff, label: y − ŷ, expr: y - call}}
+        mark: col:diff
+      - think:
+          q: A T cell called T. What does the rule do?
+          a: y − ŷ is 1 − 1 = 0, so nothing moves. Only wrong cells nudge the line.
+        mark: row:0
+      - say: Plus 1 adds the cell, minus 1 subtracts it. That one line is the whole perceptron trick.
+        add: {note: '**The trick:** $w_j \leftarrow w_j + \eta\,(y - \hat{y})\,x_j$ for $j = 0, 1, 2$, with $x_0 = 1$.'}
+
+  - type: board
+    beat: picture
+    title: Weights become a slope and a crossing
+    lead: A flow person reads a gate as a slope and where it crosses.
+    derive: {w0: wf0, w1: wf1, w2: wf2}
+    steps:
+      - say: 'The final line, as weights. Set the score to 0 and solve for CD19.'
+        add:
+          - {params: {say: 'The final line', names: [w0, w1, w2]}}
+          - plane:
+              x: {label: CD3, min: -0.5, max: 5.5}
+              y: {label: CD19, min: 0, max: 5}
+              marks:
+                - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+                - {line: [w0, w1, w2], color: accent, label: the final line}
+                - {segment: [[1, 'icept + slope'], [2, 'icept + slope']], color: ink, name: '1 unit of CD3', step: 2}
+                - {segment: [[2, 'icept + slope'], [2, 'icept + 2 * slope']], color: s2, name: 'm', step: 2}
+                - {point: [0, icept], color: accent, name: b, step: 3}
+      - say: Slope first. One unit more CD3 moves the line this much in CD19.
+        add: {calc: {say: The slope, expr: -w1 / w2, name: slope, fmt: 2}}
+      - say: Then where it crosses the CD19 axis, at CD3 = 0.
+        add: {calc: {say: The crossing, expr: -w0 / w2, name: icept, fmt: 2}}
+      - think:
+          q: Why the minus signs? What goes wrong without them?
+          a: 'Moving w1 x1 and w0 across the = flips their signs. Without them the line tilts up and crosses at {{-icept|2}}.'
+      - think:
+          q: Let w2 shrink toward 0. What happens to the slope?
+          a: It blows up and the line stands upright. At w2 = 0 it is a plain CD3 gate.
+
+  - type: board
+    beat: limits
+    title: Where the trick falls short
+    lead: It stops at the first line that works, and needs one to exist.
+    steps:
+      - say: Same shuffles, but start from all-zero weights. It stops at another line, also with no cell wrong.
+        add:
+          plane:
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+              - {line: [wf0, wf1, wf2], color: accent, label: from the bad line}
+              - {line: [wg0, wg1, wg2], color: s3, label: from zeros}
+              - {ring: [graze_x, graze_y], step: 2}
+              - {segment: [['at(cd3, 0)', 'at(cd19, 0)'], ['at(cd3, 2)', 'at(cd19, 2)']], color: ink, dash: true, step: 4}
+              - {point: [c9_cd3, c9_cd19], color: s2, name: c9, step: 4}
+      - say: 'Ours passes {{gap1|2}} from {{graze_id}}. The other keeps {{gap2|1}} from every cell.'
+      - think:
+          q: Both lines make no mistakes. Which would you trust on a new cell?
+          a: The one down the middle. The perceptron cannot tell; it stops at the first line that works.
+      - say: Now say c9, a T cell, was typed as B by mistake. It sits between c1 and c3.
+        add: {note: '**{{epochs9}} epochs** with c9 typed B: **{{updates9}} updates**, and never 0 wrong. The fewest was {{min_err9}}.'}
+      - think:
+          q: Why can no line get c9 right?
+          a: c9 sits on the segment from c1 to c3. A line with both on the T side has the whole segment there.
+      - say: So the trick needs cells a line can split. With one bad label it never stops.
+
+  - type: recap
+    answer: Each wrong cell nudges the weights by η (y − ŷ) times its values, until none is wrong.
+    points:
+      - w0 slides the line; w1 and w2 turn it.
+      - Subtract a B cell called T; add a T cell called B.
+      - It stops at the first line that works, if one exists.
+
+  - type: board
+    beat: next
+    title: Next, cells no single line can split
+    lead: Thymocytes break the one-line idea.
+    steps:
+      - say: Next time, thymocytes, the T cells still maturing in the thymus, on CD4 against CD8.
+        add:
+          plane:
+            x: {label: CD4, min: 0, max: 5}
+            y: {label: CD8, min: 0, max: 5}
+            marks:
+              - points: {from: thymo, x: cd4, y: cd8, by: y, colors: {1: {color: s1, label: single-positive}, 0: {color: s2, label: double-negative or double-positive}}}
+              - {text: DN, at: [1.5, 1.5]}
+              - {text: DP, at: [3, 3]}
+              - {text: CD4 only, at: [4, 1.6]}
+              - {text: CD8 only, at: [1.2, 4.6]}
+      - think:
+          q: Single-positive cells sit in two opposite corners. Can one straight line put both corners on one side?
+          a: 'No. The best line still gets {{xor_best}} of {{n_thymo}} cells wrong: a whole group.'
+      - say: This is the XOR problem. Next lesson stacks perceptrons, so several lines can work together.
+
+  - type: quiz
+    cards:
+      - q: A B cell sits on the T side. Add its values to the weights, or subtract them?
+        a: 'Subtract: w − η (1, CD3, CD19). It pushes the line past the cell.'
+      - q: Why put a 1 in front of every cell?
+        a: So the offset w0 learns like the other weights. It moves by η times 1.
+      - q: What does w0 do to the line? And w1 and w2?
+        a: w0 slides it without turning it. w1 and w2 turn it.
+      - q: In w ← w + η (y − ŷ) x, what happens on a cell the line already gets right?
+        a: y − ŷ = 0, so nothing moves.
+      - q: 'Final weights {{wf0|2}}, {{wf1|2}} and {{wf2|2}}. Where does the line cross the CD19 axis?'
+        a: 'At −w0 / w2 = {{icept|2}}.'
+      - q: Two labs run the trick on the same cells and get two different lines. Is one of them wrong?
+        a: Not if both get every cell right. The start and the shuffle order decide where it stops.
+      - q: When does the perceptron trick never stop?
+        a: When no line can split the cells, like one T cell typed B in the middle of the T cells.

@@ -1,0 +1,12 @@
+# expect: a formula scene builds its formula with an `assemble` item
+# A formula scene whose steps never add an assemble item.
+title: Formula with no assemble
+question: What if a formula scene never builds the formula?
+answer: The lint asks for an assemble item.
+slides:
+  - type: title
+  - type: board
+    beat: formula
+    title: The formula
+    steps:
+      - say: No assemble builds this formula.

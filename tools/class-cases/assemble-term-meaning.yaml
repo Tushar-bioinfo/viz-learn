@@ -1,0 +1,16 @@
+# expect: term [q] has no meaning
+# An assemble formula has a [q] term, and q is not under symbols.
+title: A term with no meaning
+question: What if a formula term has no plain meaning?
+answer: The lint asks for a symbol entry.
+slides:
+  - type: board
+    beat: formula
+    title: A nameless term
+    steps:
+      - say: This term was never defined.
+        add:
+          assemble:
+            tex: '[q]'
+            plug: '[q:1]'
+      - say: The words would follow.

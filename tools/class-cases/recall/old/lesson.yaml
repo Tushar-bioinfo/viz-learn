@@ -1,0 +1,9 @@
+# An older lesson for the recall cases: its first card joins the quiz after the latest lesson's cards.
+title: What is a mean?
+data_file: data.json
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'The {{m}} cells summed to {{total|1}}. What is their mean?', a: '{{total / m|2}}.'}
+      - {q: The older lesson's second card, which the quiz leaves out., a: Out.}

@@ -1,0 +1,17 @@
+# expect: no `lead`: one short line
+# The scene after the plan has no lead line back to the plan.
+title: A missing lead
+question: What if a later scene has no lead?
+answer: The lint asks for one short line.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - say: First we say what we will do.
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: This scene never links back.

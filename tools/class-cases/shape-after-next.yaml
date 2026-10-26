@@ -1,0 +1,14 @@
+# expect: after the `next` tease only the review cards follow
+# A recap sits after the next-lesson tease, where only the review cards may follow.
+title: A slide after the tease
+question: What may follow the next-lesson tease?
+answer: Only the review cards.
+slides:
+  - type: title
+  - type: board
+    beat: next
+    title: The tease
+    steps:
+      - say: Next time we ask a new question.
+  - type: recap
+    answer: This recap sits after the tease.

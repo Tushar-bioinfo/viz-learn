@@ -1,0 +1,24 @@
+# expect: no `summary` scene
+# A plan, then straight to the review cards: the opening question is never answered on a recap slide.
+title: No summary
+question: What if no scene answers the question?
+answer: The lint asks for a summary scene.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: A short plan
+    steps:
+      - say: One scene, then the cards.
+  - type: quiz
+    cards:
+      - q: What is the first thing?
+        a: The plan.
+      - q: What is the second thing?
+        a: The working.
+      - q: What is the third thing?
+        a: The formula.
+      - q: What is the fourth thing?
+        a: The limit.
+      - q: What is the fifth thing?
+        a: The summary.

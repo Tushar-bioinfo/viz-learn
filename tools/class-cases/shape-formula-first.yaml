@@ -1,0 +1,12 @@
+# expect: a formula scene before any `problem` scene
+# A formula scene is the first real scene, before any problem scene.
+title: Formula first
+question: What if the formula comes before the problem?
+answer: The lint stops that order.
+slides:
+  - type: title
+  - type: board
+    beat: formula
+    title: The formula first
+    steps:
+      - say: The formula arrives before any problem.

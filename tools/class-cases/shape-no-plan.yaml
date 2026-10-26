@@ -1,0 +1,12 @@
+# expect: is a `plan` scene
+# The first scene after the title is a problem, so the lesson never opens with a plan.
+title: No plan
+question: What happens if the lesson skips the plan?
+answer: The lint asks for a plan scene first.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: We start at the problem and skip the plan.

@@ -1,0 +1,22 @@
+# expect: 4 review cards; use 5–8
+# The lesson ends on a review quiz of four cards, one under the minimum of five.
+title: Four review cards
+question: What if the review has only four cards?
+answer: The lint asks for five to eight.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: A short plan
+    steps:
+      - say: One scene, then too few cards.
+  - type: quiz
+    cards:
+      - q: What is the first thing?
+        a: The plan.
+      - q: What is the second thing?
+        a: The working.
+      - q: What is the third thing?
+        a: The formula.
+      - q: What is the fourth thing?
+        a: The limit.

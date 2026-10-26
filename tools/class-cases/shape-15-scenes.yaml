@@ -1,0 +1,22 @@
+# expect: 15 scenes; a lesson is 8–14
+# Fifteen plan scenes, one over the lesson cap of fourteen.
+title: Fifteen scenes
+question: Is fifteen scenes too many?
+answer: Yes. A lesson stays within fourteen scenes.
+slides:
+  - type: title
+  - {type: board, beat: plan, title: Scene one, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene two, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene three, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene four, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene five, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene six, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene seven, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene eight, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene nine, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene ten, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene eleven, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene twelve, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene thirteen, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene fourteen, lead: The lesson keeps going., steps: [{say: One more scene.}]}
+  - {type: board, beat: plan, title: Scene fifteen, lead: The lesson keeps going., steps: [{say: One more scene.}]}

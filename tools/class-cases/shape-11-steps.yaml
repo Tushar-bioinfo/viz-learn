@@ -1,0 +1,22 @@
+# expect: 11 steps (≤ 10)
+# One board with eleven teacher steps, one over the cap of ten.
+title: Eleven steps
+question: What if one scene has eleven steps?
+answer: The lint says to split it.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: Too many steps
+    steps:
+      - say: Count one.
+      - say: Count two.
+      - say: Count three.
+      - say: Count four.
+      - say: Count five.
+      - say: Count six.
+      - say: Count seven.
+      - say: Count eight.
+      - say: Count nine.
+      - say: Count ten.
+      - say: Count eleven.

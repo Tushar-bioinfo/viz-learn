@@ -1,0 +1,9 @@
+# expect: a review card reads `zz`, which is not in that lesson's data.json
+# The recalled lesson's card reads a name its data.json lacks.
+title: Bad recall
+recall: [recall/bad]
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'A?', a: B.}

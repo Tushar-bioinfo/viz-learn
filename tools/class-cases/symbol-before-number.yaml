@@ -1,0 +1,40 @@
+# expect: symbol `xbar`
+# expect: shows on slide 4 step 2 (the formula strip)
+# expect: its number first shows on slide 5 step 1
+# The formula strip shows the symbol xbar on slide 4, and the number first appears on the next slide.
+title: Symbol before its number
+question: Does the symbol wait for its number?
+answer: It should. The number comes first.
+data: {xbar: 5, n: 3}
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean}
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - say: We will meet a symbol too early.
+  - type: board
+    beat: problem
+    title: The problem
+    lead: The cells need a middle.
+    steps:
+      - say: Three cells, and no number for the mean yet.
+  - type: board
+    beat: formula
+    title: The formula too soon
+    lead: The symbol arrives before the number.
+    steps:
+      - say: The strip shows the symbol on the next click.
+        add:
+          assemble:
+            tex: '[xbar]'
+            plug: '[n:{{n}}]'
+      - say: The symbol is on screen and its number is not.
+  - type: board
+    beat: by-hand
+    title: The number at last
+    lead: Only now does the mean appear.
+    steps:
+      - say: 'The mean is {{xbar}}.'

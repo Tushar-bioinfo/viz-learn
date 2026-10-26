@@ -1,0 +1,18 @@
+# expect: comes after `next`
+# The limits scene is placed after the next-lesson tease.
+title: Limits after the tease
+question: What if limits come after the tease?
+answer: The lint wants limits first.
+slides:
+  - type: title
+  - type: board
+    beat: next
+    title: The tease
+    steps:
+      - say: Next time we ask a new question.
+  - type: board
+    beat: limits
+    title: Limits too late
+    lead: This comes after the tease.
+    steps:
+      - say: The method breaks on two groups.

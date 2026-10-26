@@ -1,0 +1,21 @@
+# expect: builds
+title: Minimal board
+question: Does a board scene build?
+answer: Yes, through lesson.py.
+data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}], cd3: [4, 6]}
+abbr: {CD3: a T-cell surface marker}
+symbols:
+  xbar: {tex: '\bar{x}', says: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Work it out by hand
+    table: {from: rows, cols: [cell, cd3]}
+    steps:
+      - say: 'Add the two values and halve them.'
+        add: {calc: {say: Average CD3, expr: mean(cd3), name: xbar}}
+      - say: 'So the average is {{xbar}}.'
+  - type: recap
+    answer: A board builds.

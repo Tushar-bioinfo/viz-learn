@@ -1,0 +1,17 @@
+# expect: 6 steps in a row with no `think` stop
+# Six teacher steps in a row, and none of them asks the learner to think.
+title: No think stop
+question: What if six steps pass with no think?
+answer: The lint asks for a think stop.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: Six steps and no pause
+    steps:
+      - say: Count one.
+      - say: Count two.
+      - say: Count three.
+      - say: Count four.
+      - say: Count five.
+      - say: Count six.

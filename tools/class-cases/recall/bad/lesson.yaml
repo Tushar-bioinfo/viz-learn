@@ -1,0 +1,8 @@
+# A lesson whose review card reads a name its data.json does not have.
+title: Bad cards
+data_file: data.json
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'The mean was {{zz|1}}.', a: Gone.}

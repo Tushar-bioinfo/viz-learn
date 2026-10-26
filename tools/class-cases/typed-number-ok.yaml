@@ -1,0 +1,23 @@
+# expect: builds
+# expect: not: typed number
+# CD19, the weight w1, and a count of 6 cells are names and a small count, not typed data numbers.
+title: Names that look like numbers
+question: Do CD19 and w1 pass the number check?
+answer: Yes. They are names, and six cells is a small count.
+data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}], cd3: [4, 6]}
+abbr: {CD3: a T-cell surface marker, CD19: a B-cell surface marker}
+symbols:
+  xbar: {tex: '\bar{x}', says: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Six cells and a weight
+    table: {from: rows, cols: [cell, cd3]}
+    steps:
+      - say: CD19 on 6 cells uses weight w1.
+        add: {calc: {say: Average CD3, expr: mean(cd3), name: xbar}}
+      - say: 'So the average is {{xbar}}.'
+  - type: recap
+    answer: Names and a small count pass.

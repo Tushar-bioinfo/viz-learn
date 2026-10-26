@@ -1,0 +1,29 @@
+# expect: overlaps another label or dot
+# expect: plane mark 3 (point) is outside the box
+# expect: plane mark 5 (vector) is outside the box
+title: A crowded plane
+question: Does the check catch names on top of each other and marks off the plane?
+answer: Yes, both are reported.
+# thirteen cells on one spot: there are twelve places to put a name, so one cannot fit
+data: {px: 2, py: 2, crowd: [{id: a, x: 1, y: 3}, {id: b, x: 1, y: 3}, {id: c, x: 1, y: 3}, {id: d, x: 1, y: 3}, {id: e, x: 1, y: 3}, {id: f, x: 1, y: 3}, {id: g, x: 1, y: 3}, {id: h, x: 1, y: 3}, {id: i, x: 1, y: 3}, {id: j, x: 1, y: 3}, {id: k, x: 1, y: 3}, {id: l, x: 1, y: 3}, {id: m, x: 1, y: 3}]}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A crowd, a stray point and an arrow
+    steps:
+      - say: A crowd on one spot, a point off the plane, and an arrow that runs out of it.
+        add:
+          plane:
+            x: {label: x, min: 0, max: 4}
+            y: {label: y, min: 0, max: 4}
+            marks:
+              - points: {from: crowd, x: x, y: y, label: id}
+              - {point: [px, py], name: p}
+              - {point: [5, 1], name: c}
+              - {segment: [[0, 0], [px, py]], color: mist, label: a segment}
+              - {vector: [3, 3], from: [px, py], color: accent, label: an arrow}
+      - say: The check names each problem.
+  - type: recap
+    answer: Crowded names and marks off the plane are reported.

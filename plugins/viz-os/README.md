@@ -28,6 +28,13 @@ Codex, Cursor, Grok Build, Muse Code, Antigravity CLI and Gemini CLI each have t
 
 A deck is done only when four gates pass: lint (0 errors, 0 warnings), browser check (0 warnings on a desktop screen), numbers (seeded, recomputed independently, and no worked line that fails to add up) and eyes (contact sheet opened and reviewed).
 
+## Class lessons (the `class` skill)
+A second skill, for lessons taught the way a good classroom teacher works a board: a problem first, numbers worked by hand on a small table, the formula built from those numbers, then symbols, a "what if" slider, an iteration you can play, limits, and review cards. Ask for "a viz-os class on <topic>" or run `/viz-os:class <topic>`.
+- The agent writes `lesson.yaml`: a deck file whose scenes are `board` slides. Each scene is one board that grows click by click (table, worked lines, picture), and a teacher line says what each click does. `think` steps ask before they answer.
+- `lesson.py` builds it with the deck's own kit and lint, plus the lesson rules (numbers before symbols, a think stop at least every 6 clicks, no typed numbers, at most 24 words per teacher line). The deck's `check.py` audits it.
+- Lessons can form a series on one toy data table (`home.py`, seeded), and each part opens with review cards from the earlier parts (`recall:`). Series memory lives in `~/.viz-os/series/` (set `VIZOS_HOME` to keep the profile, home tables and series somewhere else).
+- Examples: `variance`, `perceptron-trick`, the three-part PCA series (`pca-1-what`, `pca-2-how`, `pca-3-why`) and `board-gallery` (every scene kind).
+
 ## Slide types
 `title` · `chapter` (shows the data's shape coming in and going out) · `predict` (guess, then reveal why) · `idea` (claim + visual) · `statement` · `equation` (where it comes from and its relatives beside it; each term named on the formula and run with numbers; said aloud and in code under "+ more") · `calc` (named arithmetic steps, each with what and why) · `ops` (matrix steps: row-wise, column-wise or whole-matrix, with the shape change) · `table` (one column, row or number per step; tap any number for its working) · `bridge` (analogy mapping + where it breaks) · `compare` · `quiz` (flip cards) · `recap` · `map` (how it connects).
 
@@ -60,11 +67,19 @@ plugins/viz-os/
                                  make_data.py writes data.json, verify_data.py recomputes it independently
     examples/negative-binomial/  a puzzle-arc deck: distributions, sliders, from: and kin:
     examples/gallery/            one of every slide type (regression test)
+  skills/class/
+    SKILL.md            the lesson loop, the five gates and the rules
+    lesson.md           beats, teaching moves, voice, pacing, series, review cards
+    board.md            lesson.yaml reference: every board field, item, plane mark and control
+    kit/                board.js + board.css (the board slide type, drawn with the deck's kit)
+    scripts/lesson.py   lesson.yaml -> lesson.html through the deck's build.py; lesson_lint.py holds the lesson rules
+    scripts/home.py     seeded toy tables for a series; memory.py keeps series memory
+    examples/           variance, perceptron-trick, pca-1-what / pca-2-how / pca-3-why, board-gallery, home/
   docs/design.md        why it is built this way, with sources
   CHANGELOG.md
 ```
 
 ## Working on the plugin
-Start with the repository's `AGENTS.md`. `tools/check-all.sh` rebuilds and checks every example; each build should end with `0 errors  0 warnings`, each check with `check: 0 warnings`, and `verify_data.py` with `ALL OK`. Offline machines: `--katex-dir DIR` on `build.py` inlines KaTeX; `--vendor DIR` on `check.py` serves CDN files from disk. The fonts come from Google Fonts.
+Start with the repository's `AGENTS.md`. `tools/check-all.sh` rebuilds and checks every deck and class example; each build should end with `0 errors  0 warnings`, each check with `check: 0 warnings`, and `verify_data.py` with `ALL OK`. Offline machines: `--katex-dir DIR` on `build.py` inlines KaTeX; `--vendor DIR` on `check.py` serves CDN files from disk. The fonts come from Google Fonts.
 
 Built on the ideas of [proff-viz](https://github.com/Tushar-bioinfo/proff) L4: build from the ground, name every symbol with an example, audit in a real browser.

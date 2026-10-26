@@ -1,0 +1,357 @@
+title: How do you find PC1 without trying every line?
+subtitle: PCA, part 2. Three numbers, one matrix, and the arrow it only stretches
+question: 'Last time we tried {{n_lines}} lines to find PC1. Can we go straight to it?'
+answer: Pack the spreads and the covariance into a matrix C. PC1 is the arrow C only stretches, found by multiplying by C again and again.
+series: pca
+episode: 2
+recall: [../variance, ../pca-1-what]
+home: cells
+data_file: data.json
+abbr: {PCA: principal component analysis, PC1: the first principal component, PC2: the second principal component, CD3: a T-cell surface marker, CD19: a B-cell surface marker, SD: standard deviation}
+symbols:
+  d1: {tex: 'd_1', says: CD3 measured from the middle, short: CD3 from the middle, color: s1, fmt: 2}
+  d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
+  n: {tex: 'n', says: the number of cells, short: cells}
+  i: {tex: 'i', says: which cell, kind: index}
+  prod: {tex: 'd_1 d_2', says: a cell's two distances multiplied, short: product, fmt: 2}
+  c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 3}
+  v_cd3: {tex: 's_1^2', says: the spread of CD3, short: CD3 spread, color: s1, fmt: 3}
+  v_cd19: {tex: 's_2^2', says: the spread of CD19, short: CD19 spread, color: s2, fmt: 3}
+  u1: {tex: 'u_1', says: the arrow's CD3 part, short: arrow's CD3 part}
+  u2: {tex: 'u_2', says: the arrow's CD19 part, short: arrow's CD19 part}
+  p0: {tex: 'p_{c1}', says: c1's shadow on the tilted line, short: c1's shadow, fmt: 2}
+  sq0: {tex: 'p_{c1}^2', says: c1's shadow squared, short: shadow squared, fmt: 3}
+  s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: spread along u, fmt: 3}
+  cu1: {tex: '(Cu)_1', says: the CD3 part of C times u, short: Cu's CD3 part, fmt: 3}
+  cu2: {tex: '(Cu)_2', says: the CD19 part of C times u, short: Cu's CD19 part, fmt: 3}
+  th: {tex: '\theta', says: the angle of the arrow u, in degrees, short: u's angle, fmt: 0}
+  ex: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3 part, fmt: 2}
+  ey: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19 part, fmt: 2}
+  cx: {tex: '(Cu)_1', says: the CD3 part of C times u, short: Cu's CD3 part, fmt: 2}
+  cy: {tex: '(Cu)_2', says: the CD19 part of C times u, short: Cu's CD19 part, fmt: 2}
+  cang: {tex: '\theta_{Cu}', says: the angle of C times u, short: Cu's angle, fmt: 0}
+  gp: {tex: '\Delta\theta', says: how many degrees apart u and Cu point, short: degrees apart, fmt: 0}
+  lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, fmt: 3}
+  lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, fmt: 3}
+  ca1: {tex: '(Ca)_1', says: the CD3 part of C times the start arrow, short: Ca's CD3 part, fmt: 3}
+  ca2: {tex: '(Ca)_2', says: the CD19 part of C times the start arrow, short: Ca's CD19 part, fmt: 3}
+  blen: {tex: '|Ca|', says: the length of C times the start arrow, short: length, fmt: 3}
+  nu1: {tex: 'u_1', says: the new arrow's CD3 part, short: new CD3 part, fmt: 3}
+  qth: {tex: '\theta', says: the arrow's angle after this many repeats, short: angle now, fmt: 1}
+  qs: {tex: 's_u^2', says: the spread along the arrow now, short: spread now, fmt: 3}
+slides:
+  - type: title
+
+  - type: board
+    beat: plan
+    title: The plan for today
+    steps:
+      - say: 'Last time we found PC1 by trying {{n_lines}} lines. Today we find it straight from the data.'
+        add: {flow: {nodes: [{label: a new number, sub: covariance}, {label: three numbers, sub: every line}, {label: a matrix, sub: C}, {label: C times u, sub: a new arrow}, {label: repeat, sub: PC1}], verbs: [add, pack, multiply, repeat]}}
+      - say: One new number, a box that holds three numbers, and one move repeated until it stops changing.
+
+  - type: board
+    beat: problem
+    title: Trying lines does not scale
+    lead: We found the peak by brute force.
+    steps:
+      - say: 'Last time we turned a line through {{last(ths)}} degrees and read the spread at each angle.'
+        add:
+          chart:
+            x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}
+            y: {label: spread of the shadows, min: 0, max: 7}
+            series:
+              - {name: spread at each angle, kind: line, x: ths, y: sweep, color: s1}
+            marks:
+              - {kind: point, x: th_star, y: lam1, label: PC1, place: t, color: accent}
+          caption: The curve from part 1.
+      - say: 'That worked for two markers. Thirty markers would need more lines than any computer can try.'
+      - think:
+          q: The whole curve came from six cells. What would you need to know to draw it without trying lines?
+          a: A few numbers about the cells. Today we find that three numbers draw the whole curve.
+
+  - type: board
+    beat: data
+    title: The same six cells, centred
+    lead: Each cell measured from the middle, as in part 1.
+    table:
+      from: cells
+      cols: [{key: id, label: cell}, {key: type, label: type}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
+    steps:
+      - say: 'Here are part 1''s six cells, each measured from the middle: ==s1:d₁== for CD3, ==s2:d₂== for CD19.'
+        add:
+          plane:
+            x: {label: CD3 from the middle, min: -3, max: 3.5}
+            y: {label: CD19 from the middle, min: -2.5, max: 3}
+            marks:
+              - points: {from: cells, x: d1, y: d2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
+              - {line: [0, 1, 0], color: mist}
+              - {line: [0, 0, 1], color: mist}
+      - say: T cells sit right and low. B cells sit left and high.
+        mark: [col:d1, col:d2]
+      - think:
+          q: When a cell's CD3 is above the middle, which way does its CD19 tend to go?
+          a: Down. High CD3 comes with low CD19, and the other way round. Can one number say how strongly?
+
+  - type: board
+    beat: by-hand
+    title: Covariance, one product per cell
+    lead: Multiply each cell's two distances.
+    table:
+      from: cells
+      cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
+    steps:
+      - say: Multiply each cell's two distances. Same direction gives a positive product, opposite directions a negative one.
+        add: {col: {key: prod, label: d₁ × d₂, expr: d1 * d2, fmt: 2}}
+        mark: col:prod
+      - say: 'Right-and-low or left-and-high gives a negative product. {{n_neg}} of the six cells do that.'
+        add:
+          plane:
+            x: {label: CD3 from the middle, min: -3, max: 3.5}
+            y: {label: CD19 from the middle, min: -2.5, max: 3}
+            marks:
+              - points: {from: cells, x: d1, y: d2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
+              - {line: [0, 1, 0], color: mist}
+              - {line: [0, 0, 1], color: mist}
+              - {text: product +, at: [2.2, 2.6], color: good}
+              - {text: product +, at: [-2.2, -2.2], color: good}
+              - {text: product −, at: [-2.2, 2.6], color: bad}
+              - {text: product −, at: [2.2, -2.2], color: bad}
+      - say: Add the products and divide by n − 1, as for a variance.
+        add: {calc: {say: The covariance of CD3 and CD19, expr: sum(d1 * d2) / (n - 1), name: c12, fmt: 3}}
+      - think:
+          q: 'Why do the two monocytes barely move the covariance?'
+          a: Both sit left and low, so their products are positive but small. The T and B cells' big negative products win.
+        mark: col:prod
+
+  - type: board
+    beat: by-hand
+    title: Three numbers give every line's spread
+    lead: Square one cell's shadow and open it up.
+    table:
+      from: cells
+      cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
+    steps:
+      - say: 'Take part 1''s tilted arrow, (==s1:{{u1}}==, ==s2:{{u2}}==). c1''s shadow on it is a dot product.'
+        add: {calc: {say: c1's shadow, row: 0, expr: u1 * d1 + u2 * d2, name: p0, fmt: 2}}
+        mark: row:0
+      - say: 'Square it the long way: (a + b)² is a² + 2ab + b².'
+        add: {calc: {say: 'c1''s shadow squared, opened up', why: 'Each piece holds one kind of number: d₁², d₁d₂ or d₂².', row: 0, expr: u1^2 * d1^2 + 2 * u1 * u2 * d1 * d2 + u2^2 * d2^2, name: sq0, fmt: 3}}
+        mark: row:0
+      - say: Add that over all six cells and divide by n − 1. Each piece turns into one of three numbers.
+        add: {calc: {say: The spread along u from three numbers, expr: u1^2 * v_cd3 + 2 * u1 * u2 * c12 + u2^2 * v_cd19, name: s2u, fmt: 3}}
+      - think:
+          q: 'Part 1 got {{s2u|3}} for this arrow by dropping all six cells. Which of the three numbers change when you turn the arrow?'
+          a: None of them. Only u₁ and u₂ change. The two spreads and the covariance give every line's spread.
+
+  - type: board
+    beat: formula
+    title: The spread along any arrow
+    lead: Our three numbers, in the shape of the formula.
+    steps:
+      - say: Our numbers for part 1's arrow.
+        add:
+          assemble:
+            say: The spread of the shadows along the arrow u
+            lhs: s2u
+            tex: '[u1]^2 [v_cd3] + 2 [u1] [u2] [c12] + [u2]^2 [v_cd19]'
+            plug: '[s2u:{{s2u|3}}] = [u1:{{u1}}]^2 \cdot [v_cd3:{{v_cd3|3}}] + 2 \cdot [u1:{{u1}}] \cdot [u2:{{u2}}] \cdot ([c12:{{c12|3}}]) + [u2:{{u2}}]^2 \cdot [v_cd19:{{v_cd19|3}}]'
+      - say: And in symbols. The arrow's parts mix the three numbers.
+      - think:
+          q: Why is there a 2 in front of the covariance?
+          a: 'The middle piece of (a + b)² is 2ab. Each cell''s d₁d₂ part comes in twice.'
+
+  - type: board
+    beat: by-hand
+    title: C times an arrow is a new arrow
+    lead: Multiply C by u, row by row.
+    steps:
+      - say: 'Box the three numbers: the covariance matrix C. Multiply each row by u''s parts and add.'
+        add:
+          ops:
+            notation: false
+            matrix: {name: covariance matrix C, from: cmat, cols: [cd3, cd19], rowKey: name, row: marker, col: marker, says: 'marker $i$ with marker $j$', fmt: 3, focus: CD3}
+            steps:
+              - {op: dot, with: uvec, wtex: 'u', withLabel: arrow u, name: cuv, tex: '(Cu)', label: C times u, fmt: 3, say: Multiply each row of C by u, why: 'Two parts come out, so C u is an arrow too.'}
+      - say: 'Draw both. u points at {{th_hand|0}} degrees, but C u points at {{cu_th|0}} degrees.'
+        add:
+          plane:
+            x: {label: CD3 direction, min: -1.5, max: 1.5}
+            y: {label: CD19 direction, min: -1.2, max: 1.2}
+            marks:
+              - {vector: [u1, u2], color: ink, name: u, label: the arrow u}
+              - {vector: [cu1, cu2], color: accent, name: C u, label: C times u}
+      - think:
+          q: C turned this arrow. Is there an arrow that C does not turn, only stretches?
+          a: Find out next. Turn u and watch C u.
+
+  - type: board
+    beat: what-if
+    title: Turn the arrow, watch C u
+    lead: Some arrows C only stretches.
+    controls:
+      - {name: th, label: angle of u, min: 0, max: 180, step: 5, value: 0, fmt: 0}
+    derive:
+      ex: at(ux, th / 5)
+      ey: at(uy, th / 5)
+      cx: at(cux, th / 5)
+      cy: at(cuy, th / 5)
+      cang: at(cth, th / 5)
+      gp: at(gap, th / 5)
+    steps:
+      - say: Drag the slider. The ink arrow is u, the orange one is C times u.
+        add:
+          - {params: {say: The two arrows now, names: [th, cang, gp]}}
+          - plane:
+              x: {label: CD3 direction, min: -5.5, max: 5.5}
+              y: {label: CD19 direction, min: -4, max: 4}
+              marks:
+                - {vector: [ex, ey], color: ink, name: u, label: the arrow u}
+                - {vector: [cx, cy], color: accent, name: C u, label: C times u}
+      - think:
+          q: Find the angles where u and C u point along the same line. How many are there?
+          a: 'Two, near {{th_star|0}} and {{th_low|0}} degrees. At {{th_star|0}} C stretches u {{lam1|2}}-fold, at {{th_low|0}} only {{lam2|2}}-fold.'
+      - say: 'An arrow that C only stretches is called an eigenvector (eigenvector). Its stretch is its eigenvalue.'
+      - think:
+          q: 'Which of the two is PC1, and why?'
+          a: 'The one at {{th_star|0}} degrees. Its stretch, {{lam1|3}}, is part 1''s peak spread. The other is PC2.'
+
+  - type: board
+    beat: by-hand
+    title: One repeat by hand
+    lead: Multiply by C, then shrink back to length 1.
+    derive: {ca1: 'at(pcu1, 0)', ca2: 'at(pcu2, 0)'}
+    steps:
+      - say: 'Start from the flat arrow a = (1, 0). C times it is C''s first column, ({{v_cd3|3}}, {{c12|3}}).'
+        add:
+          plane:
+            x: {label: CD3 direction, min: -1.5, max: 5}
+            y: {label: CD19 direction, min: -2.5, max: 1.5}
+            marks:
+              - {vector: [a1, a2], color: ink, name: a, label: the start arrow}
+              - {vector: [ca1, ca2], color: accent, name: C a, label: C times a}
+              - {vector: ['at(pu1, 1)', 'at(pu2, 1)'], color: s1, name: new u, label: the new arrow, step: 3}
+      - say: That arrow is too long. Find its length.
+        add: {calc: {say: The length of C times a, expr: sqrt(ca1^2 + ca2^2), name: blen, fmt: 3}}
+      - say: 'Divide each part by the length. CD3 is shown; CD19 the same way gives {{at(pu2, 1)|3}}.'
+        add: {calc: {say: The new arrow's CD3 part, expr: ca1 / blen, name: nu1, fmt: 3}}
+      - think:
+          q: 'The start pointed at 0 degrees. The new arrow points at {{at(pth, 1)|0}}. Is that closer to PC1?'
+          a: 'Yes. PC1 is at {{th_star|0}} degrees. One repeat moved most of the way there.'
+
+  - type: board
+    beat: run
+    title: Repeat until it stops turning
+    lead: Each repeat is the same move.
+    controls:
+      - {name: t, run: 8, label: repeats}
+    derive:
+      qa: at(pu1, t)
+      qb: at(pu2, t)
+      qc: at(pcu1, t)
+      qd: at(pcu2, t)
+      qth: at(pth, t)
+      qs: at(pq, t)
+    steps:
+      - say: Start flat. Each repeat multiplies by C and shrinks the arrow back to length 1.
+        frame: 0
+        add:
+          - {params: {say: After this many repeats, names: [qth, qs]}}
+          - plane:
+              x: {label: CD3 direction, min: -5.5, max: 5.5}
+              y: {label: CD19 direction, min: -4, max: 4}
+              marks:
+                - {line: [0, '-v2', v1], color: mist, dash: true, label: PC1}
+                - {vector: [qa, qb], color: ink, name: u, label: the arrow u}
+                - {vector: [qc, qd], color: accent, name: C u, label: C times u}
+      - say: 'One repeat: {{at(pth, 1)|1}} degrees, as we worked by hand.'
+        frame: 1
+      - think:
+          q: Predict. Where does the arrow settle?
+          a: 'On PC1, at {{th_star|1}} degrees. After that C only stretches it, so it stops turning.'
+        frame: 2
+      - say: 'Seven repeats: {{at(pth, 7)|1}} degrees, and a spread of {{at(pq, 7)|3}}, the peak from part 1.'
+        frame: 7
+      - think:
+          q: Why does every repeat pull the arrow toward PC1?
+          a: 'C stretches its PC1 part {{lam1|1}}-fold, its PC2 part only {{lam2|1}}-fold. PC1 wins more each time.'
+        frame: 7
+
+  - type: board
+    beat: picture
+    title: How fast the repeats close in
+    lead: The gap to the peak, repeat by repeat.
+    steps:
+      - say: The gap between the spread now and PC1's spread, after each repeat, on a log scale.
+        add:
+          chart:
+            x: {label: repeats, min: 0, max: reps, ticks: [0, 1, 2, 3, 4, 5, 6, 7]}
+            y: {label: gap to the peak spread (log scale), min: 1e-9, max: 10, log: true, ticks: [1e-8, 1e-6, 1e-4, 1e-2, 1]}
+            series:
+              - {name: gap to the peak, kind: line, x: steps_t, y: perr, color: accent}
+          caption: A straight line on a log scale. The gap shrinks by the same factor every repeat.
+      - think:
+          q: 'The stretches are {{lam1|2}} and {{lam2|2}}. Guess the factor the gap shrinks by.'
+          a: '({{lam2|2}} ÷ {{lam1|2}})² = {{ratio2|3}}, about {{1 / ratio2|0}}-fold each repeat.'
+      - say: When the two stretches are far apart, a handful of repeats is enough.
+
+  - type: board
+    beat: limits
+    title: PC1 follows the units
+    lead: C holds raw spreads, so units matter.
+    steps:
+      - say: 'Read CD3 on a scale {{gain}} times as wide, say a brighter channel. Same cells, same biology.'
+        add:
+          compare:
+            a: {title: CD3 as measured, tone: good, verdict: as before, text: 'PC1 at {{th_star|0}} degrees.'}
+            b: {title: 'CD3 read ×{{gain}}', tone: bad, verdict: turned, text: 'PC1 turns to {{th_g|0}} degrees, toward CD3.'}
+      - think:
+          q: Why does PC1 turn when nothing about the cells changed?
+          a: 'CD3''s spread grew {{gain^2}}-fold, and PC1 chases the biggest spread.'
+      - say: 'Divide each marker by its SD first (standardise). Then PC1 sits at {{th_r|0}} degrees, whatever the units.'
+        add: {note: 'Standardised, C holds **correlations**: 1 on the diagonal, {{r12|2}} in the corners.'}
+      - say: And if the two stretches were nearly equal, the repeats would crawl.
+
+  - type: recap
+    answer: PC1 is the arrow the covariance matrix C only stretches. Its stretch is PC1's spread.
+    points:
+      - Two spreads and one covariance give every line's spread.
+      - Repeat "multiply by C, shrink to length 1" and any start turns to PC1.
+      - Standardise when markers sit on different scales.
+
+  - type: board
+    beat: next
+    title: Next, why this arrow is the best
+    lead: Every arrow is a mix of PC1 and PC2.
+    steps:
+      - say: 'C stretches PC1 by {{lam1|2}} and PC2 by {{lam2|2}}. Every line''s spread sits between the two.'
+        add:
+          chart:
+            x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}
+            y: {label: spread of the shadows, min: 0, max: 7}
+            series:
+              - {name: spread at each angle, kind: line, x: ths, y: sweep, color: s1}
+            marks:
+              - {kind: hline, y: lam1, label: PC1's stretch}
+              - {kind: hline, y: lam2, label: PC2's stretch}
+          caption: The whole curve stays inside the band.
+      - think:
+          q: If an arrow is part PC1 and part PC2, what would its spread be?
+          a: A mix of the two stretches. It can never beat PC1's. Next time we prove it, then add a third marker.
+
+  - type: quiz
+    cards:
+      - q: What is PC1, in terms of the covariance matrix C?
+        a: The arrow C only stretches, with the biggest stretch. The stretch is PC1's spread.
+      - q: Which three numbers give the spread along any line through two markers?
+        a: The two markers' spreads and their covariance.
+      - q: 'Why was our covariance negative?'
+        a: 'T cells are high in CD3 and low in CD19, B cells the other way. Their products are negative.'
+      - q: How does the repeat move work?
+        a: Multiply the arrow by C, then divide by its length. Do it again until it stops turning.
+      - q: 'What sets how fast the repeats close in?'
+        a: 'The ratio of PC2''s stretch to PC1''s. Here the gap shrinks about {{1 / ratio2|0}}-fold per repeat.'
+      - q: You log-transform one marker but not another. What can happen to PC1?
+        a: It can turn toward whichever marker has the bigger spread. Standardise, or transform both the same way.
+      - q: Does a positive covariance mean two markers are made by the same cells?
+        a: No. It says they rise and fall together in this sample. It can come from mixing cell types.

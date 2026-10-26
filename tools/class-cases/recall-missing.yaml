@@ -1,0 +1,9 @@
+# expect: `recall: recall/nope` not found
+# A recall path that does not exist fails the build and names the path.
+title: Missing recall
+recall: [recall/nope]
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'A?', a: B.}

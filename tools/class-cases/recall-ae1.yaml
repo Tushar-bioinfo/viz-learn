@@ -1,0 +1,20 @@
+# expect: builds
+# expect: not: ERR
+# expect: not: abbreviation
+# expect: slide 2: The mean CD3 of our 6 cells was 7.9.
+# expect: The far cell held 52% of the sum of squares. Why so much?
+# expect: not: Card six
+# expect: slide 3: This lesson has 4 cells with mean 3.1.
+# AE1: episode 2 recalls episode 1 and also has a data value named xbar, with a different number.
+# Slide 2 must be "Before we start: from last time" with episode 1's first 5 cards, showing episode 1's numbers
+# (6 cells and 7.9, not 4 and 3.1), read from the page as the browser drew it.
+title: How is spread computed?
+series: spread
+episode: 2
+recall: [recall/ep1]
+data_file: recall/ep2-data.json
+slides:
+  - type: title
+  - type: quiz
+    cards:
+      - {q: 'This lesson has {{n}} cells with mean {{xbar|1}}. What is their sum?', a: '{{n * xbar|1}}.'}

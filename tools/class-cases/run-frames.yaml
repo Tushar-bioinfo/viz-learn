@@ -1,0 +1,34 @@
+# expect: builds
+# expect: not: is not a frame
+title: A run with set frames
+question: Do steps with frame and a toggle build clean?
+answer: Yes.
+data: {xs: [0, 1, 2, 3, 4, 5]}
+symbols:
+  pos: {tex: 'p', says: the point's place, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: run
+    title: A point that walks
+    controls:
+      - {name: t, run: 6, label: steps}
+      - {name: show, toggle: ['off', 'on'], label: the path}
+    derive: {pos: 'at(xs, t)'}
+    steps:
+      - say: The point starts at the left.
+        frame: 0
+        add:
+          - {params: {say: Where it is, names: [pos]}}
+          - plane:
+              x: {label: x, min: 0, max: 6}
+              y: {label: y, min: 0, max: 3}
+              marks:
+                - {point: [pos, 1], name: p}
+                - {segment: [[0, 1], [pos, 1]], color: mist, dash: true, label: the path, when: show}
+      - say: Three steps later it is in the middle.
+        frame: 3
+      - say: And at the end it stops.
+        frame: 5
+  - type: recap
+    answer: A run takes its frames from the steps.

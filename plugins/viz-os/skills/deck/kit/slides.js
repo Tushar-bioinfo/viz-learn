@@ -805,7 +805,7 @@
 
   T.quiz = (s) => {
     const node = h('section', 'slide s-quiz'); node.appendChild(head({ ...s, title: s.title || 'Say it before you flip it' }, s.eyebrow || 'Recall'));
-    const q = h('div', 'quiz enter'); q.style.setProperty('--n', Math.min(3, (s.cards || []).length || 1)); node.appendChild(q);
+    const q = h('div', 'quiz enter' + ((s.cards || []).length > 6 ? ' dense' : '')); q.style.setProperty('--n', (s.cards || []).length > 6 ? 4 : Math.min(3, (s.cards || []).length || 1)); node.appendChild(q);
     (s.cards || []).forEach(c => { const f = h('div', 'flip'); f.innerHTML = `<div class="in"><div class="face front g">${c.tag ? `<div class="tag">${md(c.tag)}</div>` : ''}<div class="q">${md(c.q)}</div><div class="hint">answer out loud, then tap</div></div><div class="face back g warm"><div class="a">${md(c.a)}</div></div></div>`;
       f.addEventListener('click', e => { e.stopPropagation(); f.classList.toggle('on'); }); q.appendChild(f); });
     return { node, steps: 0 };

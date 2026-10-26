@@ -1,0 +1,15 @@
+# expect: `calc` has no field `not n.`
+# A `why:` with a comma inside an unquoted { } mapping: YAML splits it into a second key.
+title: A comma that splits a field
+question: What if a flow mapping value holds a comma?
+answer: The lint names the stray field and says to quote the value.
+data: {z: 3}
+symbols:
+  z2: {tex: 'z^2', says: z squared}
+slides:
+  - type: board
+    beat: by-hand
+    title: Square it
+    steps:
+      - say: Square the value.
+        add: {calc: {say: Square, why: n − 1, not n., expr: z * z, name: z2}}

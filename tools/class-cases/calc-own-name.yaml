@@ -1,0 +1,15 @@
+# expect: has its own name as its formula
+# A worked line named z2 whose expression is z squared, the same text as that symbol.
+title: A line that repeats its symbol
+question: What if a worked line uses its own symbol as the formula?
+answer: The lint says the line says nothing.
+data: {z: 3}
+symbols:
+  z2: {tex: 'z^2', says: z squared}
+slides:
+  - type: board
+    beat: by-hand
+    title: Square it
+    steps:
+      - say: Square the value.
+        add: {calc: {say: Square, expr: 'z^2', name: z2}}

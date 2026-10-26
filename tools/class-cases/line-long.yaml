@@ -1,0 +1,12 @@
+# expect: `say` has 25 words (≤ 24)
+# One teacher line with twenty-five words, one over the breath limit.
+title: A long teacher line
+question: What if a teacher line runs past one breath?
+answer: The lint counts the words.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: Too many words
+    steps:
+      - say: The mean of these cells is the sum of every marker level divided by how many cells we measured in this small set today here

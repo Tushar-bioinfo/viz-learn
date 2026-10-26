@@ -1,0 +1,21 @@
+# expect: whose number was not worked in an earlier by-hand scene
+# An assemble uses q, and no earlier by-hand scene worked that number.
+title: A formula from nowhere
+question: What if the formula uses a number nobody worked by hand?
+answer: The lint sends you back to the by-hand scene.
+data: {q: 4}
+symbols:
+  q: {tex: 'q', says: a total}
+slides:
+  - type: title
+  - type: board
+    beat: formula
+    title: Built from nothing
+    steps:
+      - say: The formula uses a number nobody worked.
+        add:
+          assemble:
+            lhs: q
+            tex: '[q]'
+            plug: '[q:{{q}}]'
+      - say: The symbol means the total.

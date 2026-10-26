@@ -1,0 +1,140 @@
+/* viz-os class: the board scene. Zones on a grid: the pinned table | the work area, then the teacher band.
+   Hidden items keep their space (opacity), so the board never reflows as it grows. */
+.s-board { gap: 16px; }
+/* a compact head: the beat chip and the title on one row, the bridge line under them */
+.s-board .head { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "eb title" "lead lead"; gap: 6px 18px; align-items: center; }
+.s-board .head .eyebrow { grid-area: eb; }
+.s-board .head .h1 { grid-area: title; font-size: 38px; }
+.s-board .head .lead { grid-area: lead; font-size: 23px; }
+.s-board .head .purpose { grid-column: 1 / -1; }
+.slide > .body.board { position: relative; display: grid; grid-template-columns: minmax(0, 29%) minmax(0, 1fr); grid-template-rows: minmax(min-content, 1fr) 76px;   /* a full board grows the body, so the deck's fit shrinks it */
+  grid-template-areas: "table work" "teach teach"; gap: 14px 26px; align-items: stretch; }
+.slide > .body.board.no-table { grid-template-columns: minmax(0, 1fr); grid-template-areas: "work" "teach"; }
+/* a scene that builds a formula: the strip runs under both columns, above the teacher band */
+.slide > .body.board.has-strip { grid-template-rows: minmax(min-content, 1fr) auto 76px; grid-template-areas: "table work" "form form" "teach teach"; }
+.slide > .body.board.no-table.has-strip { grid-template-areas: "work" "form" "teach"; }
+.slide > .body.board.has-strip.strip-top { grid-template-rows: auto minmax(min-content, 1fr) 76px; grid-template-areas: "form form" "table work" "teach teach"; }
+.slide > .body.board.no-table.has-strip.strip-top { grid-template-areas: "form" "work" "teach"; }
+.board .zf { grid-area: form; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.board .zone { min-width: 0; }
+.board .zl { grid-area: table; display: flex; flex-direction: column; gap: 14px; }
+.board .tcard { padding: 14px 8px 10px; flex: none; }
+.board .zw { grid-area: work; display: flex; gap: 24px; }
+.board .zs { grid-area: teach; }
+.board .wcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.board .wtext { flex: 1 1 0; }
+.board .zw.two .wtext { flex: 1.15 1 0; }
+.board .wpic { flex: 1 1 0; }
+
+/* the pinned table: smaller than a table slide, so it can stay up beside the work */
+.board table.t th { font-size: 17px; padding: 6px 12px 10px; }
+.board table.t td { font-size: 23px; padding: 8px 12px; }
+.board table.t td.der.now, .board table.t th.der.now { color: var(--accent); }
+.board table.t td.der.past { color: var(--mist); }
+/* highlights on the table itself, by text colour: the row in use is lit (the deck's row look) with its name in orange,
+   the cells a worked line reads are written in its term colours, and a marked column is written in orange */
+.board table.t td { transition: background .3s var(--ease), color .3s var(--ease); }
+.board table.t tr.wrow td:first-child { color: var(--accent); font-weight: 750; }
+.board table.t td.src, .board table.t tr.wrow td.src { background: var(--surf2); box-shadow: none; color: var(--tc); font-weight: 750; }
+.board table.t .hcol { color: var(--accent); font-weight: 750; }
+
+/* worked lines: the deck's calc look, with each term's symbol and number written in its colour on the current line */
+.board .calc { flex: none; justify-content: flex-start; padding: 16px 22px; gap: 10px; }
+.board .cline { grid-template-columns: 44px 1fr; column-gap: 16px; }
+.board .cline .num { width: 40px; height: 40px; font-size: 18px; }
+.board .cline .say { font-size: 22px; }
+.board .cline .math { font-size: 27px; }
+.board .cline.past .say { color: var(--mist); }
+.board .cline.past .math .katex { color: var(--mist); }
+.board .cline.past .res, .board .cline.past .res .katex { color: var(--ink); }
+.board .cline.now .lt.tc { color: var(--tc); }
+.board .wl { position: absolute; transform: translateX(-50%); white-space: nowrap; font: 600 18px var(--f-ui); color: var(--mist); line-height: 1.2; }
+.board .cline.now .wl { color: var(--ink); }
+/* a formula on its own line, and the assembled formula: numbers row, then symbols row with each term named */
+.board .fline { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
+.board .fline .say { font-size: 22px; }
+.board .fline .math, .board .asm .math { position: relative; min-width: 0; }
+.board .fline .math { font-size: 29px; }
+.board .asm { padding: 14px 24px 12px; display: flex; flex-direction: column; gap: 10px; }
+.board .asm .say { font-size: 22px; font-weight: 650; }
+.board .arow { display: grid; grid-template-columns: 148px minmax(0, 1fr); column-gap: 18px; align-items: center; }
+.board .arow .math { font-size: 30px; }
+.board .atag { font: 700 14px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tint); }
+.board .fline.now .lt.tc, .board .asm.now .lt.tc { color: var(--tc); }
+.board .fline.now .wl, .board .asm.now .wl { color: var(--ink); }
+.board .fline.past .say, .board .asm.past .say { color: var(--mist); }
+.board .fline.past .math .katex, .board .asm.past .math .katex { color: var(--mist); }
+.board .asm.past .res, .board .asm.past .res .katex { color: var(--ink); }
+.board .note { padding: 12px 18px; font-size: 22px; line-height: 1.38; flex: none; }
+.board .note.past { color: var(--mist); }
+.board .note.now, .board .hl { box-shadow: 4px 4px 0 var(--accent); }
+/* ==text== keeps the deck's orange underline; ==s1:text== is bold text in a term colour, with no underline */
+.s-board mark.hi.tc { color: var(--hc); text-decoration: none; }
+
+/* a parameter card: symbol (in its colour), value, plain name */
+.board .params { flex: none; padding: 12px 18px; display: grid; grid-template-columns: auto auto 1fr; column-gap: 12px; row-gap: 6px; align-items: center; }
+.board .params .ph { grid-column: 1 / -1; font-size: 20px; font-weight: 650; color: var(--ink); margin-bottom: 2px; }
+.board .params .pr { display: contents; }
+.board .params .ps { font-size: 25px; color: var(--tc); }
+.board .params .pv { font: 700 22px var(--f-ui); font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); }
+.board .params .pn { font-size: 18px; color: var(--mist); }
+.board .params.past .ph, .board .params.past .pv, .board .params.past .ps { color: var(--mist); }
+
+/* deck visuals (chart, image, …) in the picture column; a two-sided comparison and a matrix step in the text column */
+.board .bvis { flex: 1 1 0; min-height: 300px; display: flex; }
+.board .bvis > .vis { flex: 1; min-width: 0; }
+.board .bcmp { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.board .bcmp .side { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.board .bcmp h3 { margin: 0; font-size: 24px; }
+.board .bcmp .tone { display: inline-flex; align-items: center; gap: 10px; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+.board .bcmp .tone i { width: 26px; height: 26px; display: grid; place-items: center; font-style: normal; font-size: 16px; font-weight: 900; color: var(--on); }
+.board .bcmp .tone.good i { background: var(--good); }
+.board .bcmp .tone.bad i { background: var(--bad); }
+.board .bcmp .p { font-size: 21px; line-height: 1.38; }
+.board .bcmp .vis { min-height: 220px; }
+.board .bcmp .stat { flex: none; padding: 12px 20px 14px; gap: 8px; }
+.board .bcmp .stat .num { font-size: 72px; }
+.board .bcmp .stat .lab { font-size: 24px; }
+.board .bcmp .stat .sub { font-size: 20px; }
+.board .bcmp .vis:has(> .stat) { min-height: 0; }
+.board .bcmp.past h3, .board .bcmp.past .p { color: var(--mist); }
+.board .bops { flex: 1 1 auto; display: flex; min-height: 0; }
+.board .bops > .body { flex: 1; display: flex; gap: 22px; min-width: 0; }
+
+/* the plane */
+.board .plane { flex: 1 1 0; min-height: 340px; display: flex; flex-direction: column; gap: 6px; }
+.board .plegend { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 19px; color: var(--mist); flex: none; min-height: 26px; }
+.board .pk { display: inline-flex; align-items: center; gap: 8px; }
+.board .pk i { display: inline-block; width: 22px; height: 0; border-top: 4px solid var(--c); }
+.board .pk.dash i { border-top-style: dashed; border-top-width: 3px; }
+.board .pk.dot i { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--c); }
+.board .pk.area i { width: 18px; height: 14px; border: 0; background: color-mix(in srgb, var(--c) 35%, transparent); }
+.board .pwrap { position: relative; flex: 1; min-height: 0; }
+.board svg.pl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.board .pgrid line { stroke: var(--hair); stroke-width: 1.5; }
+.board .pbox { fill: none; stroke: var(--line); stroke-width: 2.5; }
+.board svg text { font-family: var(--f-ui); font-variant-numeric: tabular-nums; }
+.board svg .tick { font-size: 19px; fill: var(--haze); }
+.board svg .axt { font-size: 21px; fill: var(--mist); font-weight: 600; }
+.board svg .plab { font-size: 18px; fill: var(--mist); font-weight: 600; }
+.board svg circle { stroke: var(--bg); stroke-width: 2.5; }
+.board svg .pring { fill: none; stroke: var(--accent); stroke-width: 4; }
+.board .controls { margin-top: 0; }
+/* a run: a play button (a triangle; two bars while playing), the scrubber and the frame count; a toggle: two flat buttons */
+.board .ctl.run { gap: 14px; padding-left: 10px; }
+.board .ctl .play { flex: none; width: 40px; height: 40px; display: grid; place-items: center; background: var(--surf2); border: 2px solid var(--line); cursor: pointer; padding: 0; }
+.board .ctl .play::before { content: ''; width: 0; height: 0; margin-left: 4px; border-left: 15px solid var(--accent); border-top: 10px solid transparent; border-bottom: 10px solid transparent; }
+.board .ctl .play.on::before { width: 14px; height: 16px; margin: 0; border: 0; border-left: 5px solid var(--accent); border-right: 5px solid var(--accent); box-sizing: border-box; }
+.board .ctl.run output { min-width: 5ch; }
+.board .ctl.tog .seg2 { display: flex; }
+.board .ctl.tog button { font: 650 20px var(--f-ui); color: var(--mist); background: transparent; border: 2px solid var(--line); padding: 5px 14px; cursor: pointer; }
+.board .ctl.tog button + button { border-left: 0; }
+.board .ctl.tog button.on { color: var(--on); background: var(--accent); border-color: var(--accent); }
+
+/* the teacher band: one line per click, same height every click */
+.board .zs { display: flex; align-items: center; padding: 0 26px; border-left: 6px solid var(--accent); box-shadow: 6px 6px 0 var(--line-dim); }
+.board .tline { font-size: 25px; line-height: 1.3; font-weight: 500; color: var(--ink); }
+.board .tline.shown { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.board .tline .tsay { color: var(--mist); }
+.board .btag { flex: none; font: 700 15px var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--tint); padding: 4px 10px; border: 2px solid var(--tint-lo); }
+.board .btag.so { color: var(--accent); border-color: var(--accent); }
