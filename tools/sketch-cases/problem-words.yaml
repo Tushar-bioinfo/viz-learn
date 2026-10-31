@@ -1,0 +1,14 @@
+# expect: holds only text
+# base: clean-page
+sheets:
+  - beat: problem
+    title: Words where a picture goes
+    ratio: "16:5"
+    stop: {say: "The need", shape: "one idea"}
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A bright cell can be either kind.", at: [2, 3], width: 80, size: 3}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuild and check every example deck, recompute the example numbers, and check the manifests.
+# Rebuild and check every example deck, lesson and page, recompute the example numbers, and check the manifests.
 # Usage: tools/check-all.sh            Outputs: out/check/<example>/ (contact sheet, per-slide shots, numbers.txt)
 # Passing = every build "0 errors  0 warnings", every check "check: 0 warnings", every verify "ALL OK", manifests "OK".
 set -u
@@ -28,6 +28,18 @@ for l in "$C"/examples/*/lesson.yaml; do
   case "$b" in *" 0 errors  0 warnings"*) ;; *) fail=1 ;; esac
   [ "$code" = 0 ] || fail=1
 done
+# sketch pages: build in place and check like a deck
+K="$ROOT/plugins/viz-os/skills/sketch"
+for l in "$K"/examples/*/page.yaml; do
+  d=$(basename "$(dirname "$l")")
+  b=$(python3 "$K/scripts/sketch.py" "$l" 2>&1 | tail -1)
+  python3 "$S/scripts/check.py" "$(dirname "$l")/page.html" --out "$ROOT/out/check/sketch-$d" > "$ROOT/out/check-sketch-$d.log" 2>&1
+  code=$?
+  c=$(grep -m1 '^check:' "$ROOT/out/check-sketch-$d.log" | sed 's/ · .*//')
+  echo "sketch $d | ${b##*/} | ${c:-check did not run} (exit $code)"
+  case "$b" in *" 0 errors  0 warnings"*) ;; *) fail=1 ;; esac
+  [ "$code" = 0 ] || fail=1
+done
 # class cases: each says what it expects in "# expect:" lines (tools/check_class.py)
 cc=$(python3 "$ROOT/tools/check_class.py"); code=$?
 echo "$cc" | grep -v ' | ok$'
@@ -36,11 +48,19 @@ echo "$cc" | grep -v ' | ok$'
 mm=$(python3 "$ROOT/tools/check_memory.py"); code=$?
 echo "$mm" | grep -v ' | ok$'
 [ "$code" = 0 ] || fail=1
-# the class skill documents name every board field (tools/check_docs.py)
+# each skill's documents agree with its code and name only what ships (tools/check_docs.py)
 dd=$(python3 "$ROOT/tools/check_docs.py"); code=$?
 echo "$dd" | grep -v ' | ok$'
 [ "$code" = 0 ] || fail=1
-for v in "$S"/examples/*/verify_data.py "$C"/examples/*/verify_data.py; do
+# sketch cases, then its three whole-plugin tests (tools/check_sketch.py)
+ss=$(python3 "$ROOT/tools/check_sketch.py"); code=$?
+echo "$ss" | grep -v ' | ok$'
+[ "$code" = 0 ] || fail=1
+# each paper's inks against their bars (tools/check_palette.py)
+pp=$(python3 "$ROOT/tools/check_palette.py"); code=$?
+echo "$pp" | grep -E '  FAIL|^palette:'
+[ "$code" = 0 ] || fail=1
+for v in "$S"/examples/*/verify_data.py "$C"/examples/*/verify_data.py "$K"/examples/*/verify_data.py; do
   r=$(cd "$(dirname "$v")" && python3 verify_data.py 2>&1 | tail -1)
   echo "$(basename "$(dirname "$v")") verify | $r"
   case "$r" in *"ALL OK"*) ;; *) fail=1 ;; esac

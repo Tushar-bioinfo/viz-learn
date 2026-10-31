@@ -6,7 +6,7 @@ Only when the user asks for a release, a commit or a push.
 1. `tools/check-all.sh` passes (see `testing.md`). For a change to the skill files, a cold-start test has been run and judged.
 2. Bump the version in **every** manifest (semantic versioning: major = a deck written for the old version may break):
    `plugins/viz-os/.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `plugin.json`, `gemini-extension.json`, and a new `## X.Y.Z (date)` heading in `plugins/viz-os/CHANGELOG.md`.
-3. `tools/check_manifests.py` prints `OK`.
+3. `tools/check_manifests.py` prints `OK`, and the five validators in `testing.md` §3 pass. A new skill needs no new manifest: each harness finds it from `skills/<name>/SKILL.md`.
 4. Commit with a message that says what changed for the learner and what was verified, with counts from actual output. Push to `main`: every harness installs from the default branch.
 5. Update the installs (below) and check that each lists `viz-os` at the new version.
 

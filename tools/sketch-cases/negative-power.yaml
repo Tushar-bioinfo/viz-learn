@@ -1,0 +1,28 @@
+# expect: clean
+# base: clean-page
+abbr:
+  cDNA: complementary DNA
+sheets:
+  - beat: by-hand
+    title: Take a difference
+    ratio: "16:7"
+    stop: {say: "The difference, squared", shape: "one cDNA count"}
+    note:
+      shown: One difference and its square.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We subtracted and squared.
+    figure:
+      - {calc: {expr: "at(cd3,1) - at(cd3,0)", name: u, say: Subtract, fmt: 1}, at: [2, 3], width: 60}
+      - {calc: {expr: u*u, name: uu, say: Square it, fmt: 2}, at: [2, 20], width: 60}
+  - beat: formula
+    title: Square a difference
+    ratio: "16:5.2"
+    stop: {say: "The rule", shape: "one number"}
+    note:
+      shown: The same square, as a rule.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: Numbers became a rule.
+    figure:
+      - {assemble: {tex: "[u]^2", plug: "[u:1]^2", lhs: uu, say: The rule}, at: [2, 6], width: 60}

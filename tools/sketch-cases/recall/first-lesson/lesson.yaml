@@ -1,0 +1,7 @@
+# The lesson a recall case looks back at: recall reads only its data and review cards, so it holds nothing else.
+data: {n_cells: 6}
+slides:
+  - type: quiz
+    title: Say it before you turn it over
+    cards:
+      - {q: "What did the first lesson follow?", a: "{{n_cells}} cells, one row each."}

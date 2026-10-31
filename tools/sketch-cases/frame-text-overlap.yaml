@@ -1,0 +1,25 @@
+# expect: text overlaps
+# base: clean-page
+sheets:
+  - beat: run
+    title: Text over a frame line
+    ratio: "16:9"
+    stop: {say: "We build it up", shape: "one part at a time"}
+    cols: 2
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    frames:
+      - say: The first frame says this
+        add:
+          - {part: cell, at: [10, 10], size: 13}
+      - say: The second frame says this
+        add:
+          - {part: nucleus, at: [40, 10], size: 13}
+      - say: The third frame says this and it is long enough
+        think: {q: "What came first?", a: The cell.}
+        add:
+          - {part: gene, at: [10, 10], size: 13}
+          - {text: "These words land on the frame line", at: [3, 41], width: 94, size: 3}

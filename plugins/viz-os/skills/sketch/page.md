@@ -67,8 +67,8 @@ Every item takes `at: [x, y]`, `id` (needed to attach a label) and most take `wi
   - `bars: [names, values]`
 
   Any layer takes `color`, `nib`, `w` and `id`. Anchors: `plot.cells.c3` (`<id>.<layer id>.<name>`), `plot.cells.point.2`, `plot.fit.line`, `plot.fit.arrow`, `plot.h.bar.1`, `plot.origin`, and the four sides.
-- **`calc`**: `{expr, name, say, fmt}` works one line with its numbers and names the result, for later `{{name}}`.
-- **`assemble`**: `{tex, plug, lhs, say, fmt}` writes a formula with our numbers, then the same shape in symbols. In `plug`, `[mx:2]` puts in that number; in `tex`, `[mx]` puts in its symbol.
+- **`calc`**: `{expr, name, say, fmt}` works one line with its numbers and names the result, for `{{name}}` on this sheet and later ones.
+- **`assemble`**: `{tex, plug, lhs, say, fmt}` writes a formula with our numbers, then the same shape in symbols. In `plug`, `[mx:2]` puts in that number; in `tex`, `[mx]` puts in its symbol. `lhs` names a number from an earlier `calc`; a negative number before `^` gets brackets.
 - **`eqn`**: `{tex, lhs}` or plain TeX, with no `$`.
 - **`text`**: `text`, with `size` in units (default 2.2), `letter: true` for the hand font, `color`.
 - **`part`**: a drawing from the box, below.
@@ -90,17 +90,17 @@ label:
 |---|---|---|---|
 | `cell` | `plain`, `dividing`, `dead` | | `nucleus`, `membrane`, `a`, `b`, `waist` |
 | `nucleus` | | | `nucleolus` |
-| `dna` | `open` | | `start`, `end`, `middle` |
+| `dna` | `open` | `turns` (default 3) | `start`, `end`, `middle` |
 | `chromosome` | `single` | | `centromere`, `shortarm`, `longarm` |
 | `tissue` | `regions` | `other` (second colour) | `a`, `b` |
 | `spots` | `empty`, `captured` | `rows`, `cols`, `values` | `spot.r.c` |
 | `tube` | `empty`, `filled` | | `cap`, `liquid`, `tip` |
 | `plate` | `empty`, `filled` | `rows`, `cols`, `values` | `well.r.c` |
 | `gene` | `on`, `off` | `exons` | `exon.i`, `start`, `end` |
-| `read` | `short` | | `barcode`, `umi`, `insert` |
+| `read` | `short` | | `barcode`, `umi`, `insert`, `start`, `end` |
 | `droplet` | `empty`, `cell`, `bead`, `both` | | `cell`, `bead` |
-| `arrow` | `bent` | | `start`, `end` |
-| `bracket` | | | `middle` |
+| `arrow` | `bent` | | `start`, `end`, `middle` |
+| `bracket` | | | `start`, `end`, `middle` |
 | `lens` | | | `lens`, `handle` |
 
 `values` names a list in the data, so a plate or a spot grid shows computed numbers as shade.
@@ -117,7 +117,7 @@ frames:
     think: {q: "Which cell moves most?", a: "c5, because it sat furthest away."}
     add: [{plot: {...}, at: [10, 10], width: 80, height: 40}]
 ```
-Each frame is its own small sheet, 100 units wide, and repeats everything added before it. Only `add` the new part. The newest part draws in the accent colour. Keep each `say` to one change. Frames count toward the think stop rule: a sheet of 6 frames needs a `think` on one of them.
+Each frame is its own small sheet, 100 units wide, and repeats everything added before it. Only `add` the new part. Everything in a frame shrinks with it, so text there can fall below the size limit: put words in `say`. The newest part draws in the accent colour. Keep each `say` to one change. Frames count toward the think stop rule: a sheet of 6 frames needs a `think` on one of them.
 
 ## The thread
 ```yaml
@@ -179,6 +179,8 @@ On top of `C/lesson.md` §9, answer yes to each, or fix the YAML:
 3. Read only the stops, top to bottom. Is that the data's journey, in plain words, with the right shape at each stop?
 4. Is each red branch a rule the data really breaks?
 5. Do sheet sizes and papers vary with what each sheet holds?
+6. Does each sheet claim only what its numbers or its sources show? A simulated number shows the arithmetic, never how the world behaves. If a plot claims a difference, do its numbers show one?
+7. Follow one number worked by hand to the end of the page. Is it unchanged in every later table? Is the formula the rule you used by hand, not a rearrangement that needs the answer first?
 
 ## What the lint says
 | Message starts | What to do |
@@ -199,15 +201,18 @@ On top of `C/lesson.md` §9, answer yes to each, or fix the YAML:
 | `no part …`, `part … has no state …` | Use a name from the table above. |
 | `no goal`, `no limits sheet`, `no next sheet` | Add it. |
 | `… typed number …` | Replace it with `{{…}}`; the message names the matching value. |
+| `… is a typed number in braces` | Name it in the data; braces around a literal compute nothing. |
+| `N of M sheets are …` | Size each sheet to what it holds; see The review, question 5. |
+| `a problem sheet holds only text` | Show the need with a plot or two tables. |
 
 ## What the browser check says
 | Warning | What to do |
 |---|---|
-| `… sits on the thread` | The thread runs in the gutter; move the label with `dx`, `dy`. |
+| `… sits on the thread` | The thread runs in the gutter, the first 5 units of a sheet with a `stop`. Start items at `x` 6 or more; move a label with `dx`, `dy`. |
 | `label … covers a data mark` | Move it with `dx`, `dy`; a label longer than 5 units gets a leader line. |
-| `text overlaps` | Two labels sit on one place; move one or pick another anchor. |
+| `text overlaps` | Two pieces of text sit on one place; move one or pick another anchor. A table's `name` sits above it: leave room under the title. |
 | `… runs off the sheet` | Shorten the text, or narrow the item. |
-| `low contrast` | Use a palette `color` for this paper. |
+| `low contrast` | Use a palette `color` for this paper. If the text sits past the sheet's bottom, it is on the wall: lower `rh` or raise the ratio. |
 | `the figure is blank` | A figure drew nothing; check its data. |
 | `cannot be seen together at 1440×900` | Lower the ratio, or set `tall: true`. |
 | `… too small` | Widen the table, or raise `rh`. |

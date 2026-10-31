@@ -3,3 +3,4 @@ __pycache__/
 .DS_Store
 out/
 plugins/viz-os/skills/class/examples/*/lesson.html
+plugins/viz-os/skills/sketch/examples/*/page.html

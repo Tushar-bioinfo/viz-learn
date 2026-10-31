@@ -1,5 +1,6 @@
 """The rules of a sketch page (page.md). The teaching rules' numbers live in class/lesson_lint.py, so one fix reaches both."""
 import re
+from collections import Counter
 from pathlib import Path
 
 from lesson_lint import BEATS, CARDS, LINE_WORDS, SCENES, THINK_GAP, as_list, lint_cards, lint_controls, lint_order, lint_recall, lint_typed
@@ -16,10 +17,12 @@ QUOTED = re.compile(r"""(["'`])((?:\\.|(?!\1).)*)\1""")
 NUMBER = re.compile(r"(?<![\w.#])\d+(?:\.\d+)?(?![\w])")
 CUSTOM_LINES, CUSTOM_BLOCKS, CUSTOM_SHARE = 40, 3, .2
 RATIO = re.compile(r"^\d+(\.\d+)?:\d+(\.\d+)?$")
-CODE = re.compile(r"\b[A-Za-z]+_[A-Za-z0-9_]*\b|\b[a-z]+[A-Z][A-Za-z]*\b|\w\(\)|[=<>]{2}|\bdf\b|\bnp\.")   # pc_scores, pcScores, fit(), ==, np.
+CODE = re.compile(r"\b[A-Za-z]+_[A-Za-z0-9_]*\b|\b[a-z]+[A-Z][A-Za-z]*[a-z][A-Za-z]*\b|\w\(\)|[=<>]{2}|\bdf\b|\bnp\.")   # pc_scores, pcScores, fit(), ==, np.; not mRNA or cDNA
 HIDE = re.compile(r"\{\{[\s\S]*?\}\}|\$[^$]*\$")
 CHARS = set((Path(__file__).resolve().parent.parent / "kit" / "fonts" / "kevin-chars.txt").read_text(encoding="utf-8")) | {" "}
 SAME = .8      # two answers sharing this much of their words say the same thing
+SAME_FROM = 6  # from this many sheets on, more than half in one ratio means the sizes were not chosen
+BARE = re.compile(r"\{\{\s*[-+]?\d[\d.]*\s*(?:\|[^}]*)?\}\}")
 THREADED = ("by-hand", "run")
 
 
@@ -169,6 +172,12 @@ def lint_shape(Lx, deck, slides):
     lo, hi = SCENES
     if not lo <= len(sheets) <= hi:
         Lx.warn("page", f"{len(sheets)} sheets; a page is {lo}–{hi}: " + ("split it into a What / How / Why series" if len(sheets) > hi else "add the beats it is missing"))
+    ratio, most = Counter(str(s.get("ratio")) for _, s in sheets).most_common(1)[0]
+    if len(sheets) >= SAME_FROM and most > len(sheets) / 2:
+        Lx.warn("page", f"{most} of {len(sheets)} sheets are {ratio}: size each sheet to what it holds")
+    for i, s in sheets:
+        if s.get("beat") == "problem" and figures(s) and all("text" in x for x in figures(s)):
+            Lx.warn(where(i, s), "a `problem` sheet holds only text: show the need with a plot or two tables")
     beats = [s.get("beat") for _, s in sheets]
     if beats[0] != "plan":
         Lx.err(where(*sheets[0]), "the first sheet is a `plan` sheet: say what we will do, in order")
@@ -294,6 +303,9 @@ def make_lint(B, data, state):
         own = [s if s is not state.get("slide") else {"type": "quiz"} for s in slides]
         lint_order(B, Lx, {**deck, "slides": [as_board(s) for s in own]})
         lint_typed(Lx, {**deck, "slides": [as_prose(s) for s in own]}, data)
+        for i, s in enumerate(own):
+            for m in BARE.findall(" ".join(as_prose(s).get("text") or [])):
+                Lx.warn(where(i, s), f"{m} is a typed number in braces: name it in the data, or write the plain digit if it never changes")
         lint_cards(B, Lx, deck, data)
         lint_recall(Lx, deck, state)
         lint_custom(Lx, deck, data, sheets, state.get("size"))

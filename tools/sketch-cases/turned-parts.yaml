@@ -1,0 +1,16 @@
+# expect: clean
+# base: clean-page
+sheets:
+  - beat: aside
+    title: Turned parts
+    ratio: "16:8"
+    note:
+      shown: Two copies of a gene and of a chromosome.
+      read: One of each lies flat and one is turned.
+      why: The goal needs labels that stay on a turned part.
+      changed: We turned a part.
+    figure:
+      - {part: gene, at: [25, 14], size: 30, id: a}
+      - {part: gene, at: [70, 22], size: 30, rotate: 90, id: b}
+      - {part: chromosome, at: [25, 34], size: 10, id: c}
+      - {part: chromosome, at: [45, 34], size: 10, rotate: 30, id: d}

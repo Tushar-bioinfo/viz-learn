@@ -1,0 +1,102 @@
+# expect: sheets are 16:9
+# base: clean-page
+sheets:
+  - beat: by-hand
+    title: Average a
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step a.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step a.
+    figure:
+      - {calc: {expr: mean(cd3), name: ma, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average b
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step b.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step b.
+    figure:
+      - {calc: {expr: mean(cd3), name: mb, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average c
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step c.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step c.
+    figure:
+      - {calc: {expr: mean(cd3), name: mc, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average d
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step d.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step d.
+    figure:
+      - {calc: {expr: mean(cd3), name: md, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average e
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step e.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step e.
+    figure:
+      - {calc: {expr: mean(cd3), name: me, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average f
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step f.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step f.
+    figure:
+      - {calc: {expr: mean(cd3), name: mf, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average g
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step g.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step g.
+    figure:
+      - {calc: {expr: mean(cd3), name: mg, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average h
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step h.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step h.
+    figure:
+      - {calc: {expr: mean(cd3), name: mh, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
+  - beat: by-hand
+    title: Average i
+    ratio: "16:9"
+    stop: {say: "We add and divide", shape: "one number per marker"}
+    note:
+      shown: The six values added and divided by six, step i.
+      read: Left of the equals sign is the name, right is the sum.
+      why: The average tells us where the middle of the cells sits.
+      changed: Another number joined the row, step i.
+    figure:
+      - {calc: {expr: mean(cd3), name: mi, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}

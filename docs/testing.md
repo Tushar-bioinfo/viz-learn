@@ -4,29 +4,42 @@
 ```bash
 tools/check-all.sh
 ```
-It rebuilds the three examples in place, checks each in Chromium (output in `out/check/<example>/`), runs every `verify_data.py`, and checks the manifests. Passing looks like:
+It rebuilds every deck, lesson and page example in place, checks each in Chromium (output in `out/check/<example>/`), runs every `verify_data.py`, and checks the manifests. Passing looks like:
 ```
 gallery | deck.html … 0 errors  0 warnings | check: 0 warnings (exit 0)
 negative-binomial | … 0 errors  0 warnings | check: 0 warnings (exit 0)
 mageck-rra | … 0 errors  0 warnings | check: 0 warnings (exit 0)
 class variance | lesson.html … 0 errors  0 warnings | check: 0 warnings (exit 0)
 …                                         (one line per class example)
+sketch pca-what | page.html … 0 errors  0 warnings | check: 0 warnings (exit 0)
+class cases: 44/44 ok
+memory tests: 6/6 ok
+doc tests: 10/10 ok
+sketch cases: 38/38 ok
+sketch tests: 6/6 ok
+palette: 3 papers OK
 mageck-rra verify | ALL OK
-pca-3-why verify | ALL OK                  (one line per verify_data.py)
+pca-what verify | ALL OK                   (one line per verify_data.py)
 manifests: 5 plugin + 4 marketplace files · version X.Y.Z · OK
 ```
-It also runs `tools/check_class.py` (the lint cases in `tools/class-cases/`), `tools/check_memory.py` (series memory and home data in a throwaway home) and `tools/check_docs.py` (`board.md` names every board field); each prints only its failures.
+It also runs `tools/check_class.py` (the lint cases in `tools/class-cases/`), `tools/check_memory.py` (series memory and home data in a throwaway home) `tools/check_docs.py` (`board.md` and `page.md` name what the code knows; no shipped file names a folder that does not ship; every path in a `SKILL.md` exists; every description fits 1024 characters), `tools/check_sketch.py` (the page cases in `tools/sketch-cases/`, then recall, turned anchors, a bare copy and a missing sibling) and `tools/check_palette.py` (each paper's inks, and the thread's edge on paper and wall); each prints only its failures and its count.
 Anything else is a regression. A check exit of 2 means it could not run: report "not checked", never "passed". Each check takes about 20–30 s.
-After a visual change, open `out/check/<example>/desktop.png` (the contact sheet) and the per-slide `desktop-NN.png` shots. Rebuilt `deck.html` files in `examples/` are tracked: commit them with the kit change that produced them.
+After a visual change, open `out/check/<example>/desktop.png` (the contact sheet) and the per-slide `desktop-NN.png` shots. Rebuilt `deck.html` files in `examples/` are tracked: commit them with the kit change that produced them. `lesson.html` and `page.html` are not tracked.
 
-## 1b. The deck seam stays byte-identical (after any change to `deck/scripts/build.py`)
-The class skill reaches the deck through `build()`'s `ext` argument. With no `ext`, a deck must build exactly as before. Build each deck example with a base commit's `build.py` and with the changed one; `cmp` must print nothing:
+## 1b. The deck seam stays byte-identical (after any change to `deck/` or `class/` scripts or kit)
+The class and sketch skills reach the deck through `build()`'s `ext` argument. With no `ext`, a deck must build exactly as before, and a lesson must too when only sketch changed. Build each deck and class example with a base commit's code and with the changed code; `cmp` must print nothing:
 ```bash
 git worktree add out/base <base commit>
 mkdir -p out/ident
 for d in gallery negative-binomial mageck-rra; do
   python3 out/base/plugins/viz-os/skills/deck/scripts/build.py plugins/viz-os/skills/deck/examples/$d/deck.yaml -o out/ident/$d.base.html --quiet
   python3 plugins/viz-os/skills/deck/scripts/build.py plugins/viz-os/skills/deck/examples/$d/deck.yaml -o out/ident/$d.new.html --quiet
+  cmp out/ident/$d.base.html out/ident/$d.new.html
+done
+for y in plugins/viz-os/skills/class/examples/*/lesson.yaml; do
+  d=$(basename $(dirname $y))
+  python3 out/base/plugins/viz-os/skills/class/scripts/lesson.py out/base/$y -o out/ident/$d.base.html --quiet
+  python3 plugins/viz-os/skills/class/scripts/lesson.py $y -o out/ident/$d.new.html --quiet
   cmp out/ident/$d.base.html out/ident/$d.new.html
 done
 git worktree remove out/base
@@ -45,6 +58,10 @@ The real measure: a fresh agent with only the plugin builds a deck on a new topi
 4. Turn what it hit into `docs/backlog.md` items: kit bugs, docs that were unclear, missing visuals.
 
 For the class skill, start the agent at `./plugins/viz-os/skills/class/SKILL.md`, put the lesson in `./lessons/<slug>/`, and judge five gates: the four above plus pedagogy (`lesson.md`'s review).
+
+For the sketch skill, make the workspace **outside this repo** and copy only what ships: no `snaps/`, `__pycache__/`, `.DS_Store` or `page.html`. Start the agent at `./plugins/viz-os/skills/sketch/SKILL.md`, and put the page in `./pages/<slug>/`. In the prompt below, change the deck wording to match, and ask for step 8 too: "give the reply SKILL.md step 7 asks for, and run step 8". Judge the same five gates, and also: read every sheet with `lesson.md` §9 and `page.md`, The review; read every stop down the page; measure YAML size (guide 30 KB), `draw:` blocks (at most 3, at most 20% of the YAML) and built size (at most 1 MB); check `series/<name>.yaml` in `$VIZOS_HOME` lists the episode. A wrong sentence passes every gate, so read the sheets against `numbers.txt`. Check each biology claim against a source you actually read, and name any you cannot support.
+
+A cold start tests the skill's text and scripts, not the harness's plugin loader, because the prompt names `SKILL.md` by path. The agent-delegate workers run with no sandbox on the maintainer's machine, because Codex's sandboxes kill Chromium at launch. So "stay in the workspace" is a request, not a wall: look through the run's output for reads outside it.
 
 Prompt template:
 ```
@@ -67,9 +84,25 @@ At the end, give the reply SKILL.md step 7 asks for. Then add three short lists:
 3. Anything you think is a kit bug, with the slide number and the message.
 ```
 
+## 3. Harness validators (after adding a skill or changing a manifest, and before a release)
+These read the folder and install nothing. Each must exit 0.
+| Harness | Command | Pass |
+|---|---|---|
+| Antigravity | `agy plugin validate plugins/viz-os` | passed, `skills 3` |
+| Claude Code | `claude plugin validate plugins/viz-os` | passed |
+| Grok Build | `grok plugin validate plugins/viz-os` | passed |
+| Muse Code | `muse plugins validate plugins/viz-os` | valid, `skills=3` |
+| Gemini CLI | `gemini extensions validate plugins/viz-os` | passed |
+Codex and Cursor have no validator: their loader stays **not tested** until a real install after a release.
+
 ## Past results
 | Date | Version | Harness / model | Topic | Result |
 |---|---|---|---|---|
+| 2026-10-31 | same, round 2 fixes | Antigravity / gemini-3.8-flash-high (high) | droplet again, page, 13 slides, 16 min | **Failed eyes and pedagogy; stopped there, as the plan says.** 416 KB, 0/0, check 0 warnings, ALL OK, YAML 18,256 bytes, 0 `draw:`, 5 part types, recompute matched. Better: right protocol order, and the hand count 2 reaches matrix cell 2. Still wrong: circular `C = R/D`, a "distorted" table with the same zeros and reads per UMI 2.5–4.0, "true transcripts" with no capture loss, cDNA "attached to the bead" when the paper's beads dissolve, a doublet drawn as one cell, and quotes not in the paper. `backlog.md` 56, 60–63. |
+| 2026-10-31 | 2.1.1 + sketch, uncommitted | Codex / gpt-6-astra (medium) | k-means on the home table, page, 14 slides, 6 min | Lint, browser and verify passed; my recompute found all 103 numbers. Failed on reading: text over a frame line, `-3.8^2` without brackets, 10 of 14 sheets one shape, two text-only openers, `{{5\|0}}` printed. `backlog.md` 45–49. |
+| 2026-10-31 | same, round 2 fixes | Codex / gpt-6-astra (medium) | k-means again, page, 13 slides, 6 min | Passed all five gates on the judge's rerun: 415 KB, 0/0, check 0 warnings, ALL OK, recompute 72 numbers with none missing, YAML 16,316 bytes, 0 `draw:`, 0 parts, series file correct. Caveats: run strip dots not coloured by group, the run settles after one update, code-style names. `backlog.md` 57. |
+| 2026-10-31 | same | Antigravity / gemini-3.8-flash-high (high) | droplet reads to count matrix, page, 14 slides, 19 min | Lint, browser and verify passed. Science wrong: PCR cycles blamed for read depth, unrelated reads list, circular `r − d`, totals called a bulk average, rates typed in `make_data.py`. `backlog.md` 54. |
+| 2026-10-31 | same, round 1 fixes | Antigravity / gemini-3.8-flash-high (high) | droplet again, page, 12 slides, 17 min | 421 KB, 0/0, check 0 warnings, ALL OK, YAML 20,174 bytes, 0 `draw:`, 5 part types, Poisson and saturation recompute matched. Failed on reading: quotes in `sources.md` are in none of the papers, hand count 2 against matrix cell 7, a "distorts" title over equal ratios, circular `C = R/dup`. `backlog.md` 56, 58, 59. |
 | 2026-10-26 | 2.1.0 (class) | Antigravity / gemini-3.8-flash-high (high) | two-sample t-test lesson ("just build"), 16 slides, 26 min | All five gates passed on the judge's rerun (lint 0/0, check 0 warnings, data regenerates byte for byte, an independent scipy recompute matched every number: t = 16.68, SE = 0.254). Pedagogy weaker: the problem board shows no spread, `ss1` appears before its squares, limits name only doublets. `backlog.md` 35–39. |
 | 2026-10-26 | 2.1.0 (class) | Grok Build / grok-4.7 (high) | two-sample t-test lesson ("just build"), 15 slides, 33 min | All five gates passed on the judge's rerun (lint 0/0, check 0 warnings, data regenerates byte for byte, independent scipy Welch recompute matched: t = 14.30 on CD3, −0.49 on CD14). Stronger science: a CD14 contrast, circular gating and cells-as-samples named as limits. Caught the sum-over-slash line by eye. `backlog.md` 35–39. |
 | 2026-10-25 | 2.0.0 (class) | Grok Build / grok-4.7 (high) | z-score lesson ("just build"), 14 slides, 27 min | All five gates passed on the judge's rerun (lint 0/0, check 0 warnings, an independent numpy recompute matched every number, boards viewed). No image used, so AE4 passed. The judge found a missing-negative-bars kit bug and an empty what-if board; both fixed, along with the worker's `at()` bug and doc notes (`backlog.md` 28–34). On the fixed kit the lesson now gets 1 warning (what-if with no picture). |

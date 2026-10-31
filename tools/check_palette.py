@@ -8,6 +8,7 @@ gives the grain's lightest and darkest pixels (--no-pixels, or no Playwright, us
 Bars (the dark look's numbers, design.md):
   text, soft text and the four data colours  WCAG 4.5:1 on the worst grain
   thread colours (gold, red, pale)           WCAG 3:1 on the worst grain (a thick mark, and it has an edge)
+  the thread's edge ink, cord                WCAG 3:1 on the worst grain and on the wall (the thread crosses both)
   accent + three series, every pair          dE00 >= 31.5 normal, >= 15.9 protan and deutan, >= 10.7 tritan
   gold vs red                                the same three bars: they carry method against break
 Prints a table per paper and OK, or names the failing pair and exits 1.
@@ -20,6 +21,7 @@ CSS = ROOT / "plugins/viz-os/skills/sketch/kit/sketch.css"
 PAPERS = ("cream", "graph", "navy")
 TEXT = ("ink", "soft", "accent", "s1", "s2", "s3")
 THREAD = ("gold", "red", "pale")
+EDGE = "cord"
 DATA = ("accent", "s1", "s2", "s3")
 BARS = {"normal": 31.5, "protan": 15.9, "deutan": 15.9, "tritan": 10.7}
 # Machado, Oliveira & Fernandes 2009, severity 1.0, linear RGB
@@ -114,6 +116,10 @@ def palettes(css):
     return out
 
 
+def wall_colour(css):
+    return rgb(re.search(r"--wall:\s*(#[0-9a-fA-F]{6})", Path(css).read_text()).group(1))
+
+
 def grain():
     """The paper's real pixels: the 2% and 98% points of a small sheet's lightness (flecks and grid lines are thin, and text does not sit on one pixel) drawn by paper.js."""
     try:
@@ -143,7 +149,7 @@ def grain():
         return None
 
 
-def measure(pal, gr, flat):
+def measure(pal, gr, flat, wall):
     """Failures and the printed rows for one paper."""
     bad, rows = [], []
     worst = gr or [flat, flat]
@@ -158,6 +164,10 @@ def measure(pal, gr, flat):
         rows.append(f"  {k:7s} {r:5.2f}:1 (needs 3.0)")
         if r < 3:
             bad.append(f"{k} on paper {r:.2f}:1 < 3")
+    for where, r in (("paper", on(pal[EDGE])), ("wall", contrast(pal[EDGE], wall))):
+        rows.append(f"  {EDGE} on {where:5s} {r:5.2f}:1 (needs 3.0)")
+        if r < 3:
+            bad.append(f"{EDGE} on {where} {r:.2f}:1 < 3")
     for a, b in itertools.chain(itertools.combinations(DATA, 2), [("gold", "red")]):
         d = pair(pal[a], pal[b])
         rows.append(f"  {a:7s}{b:7s} " + "  ".join(f"{k} {v:5.1f}" for k, v in d.items()))
@@ -179,18 +189,20 @@ def main():
     if gr is None:
         print("palette: flat paper colours only (grain not sampled)")
     fail = 0
+    wall = wall_colour(a.css)
     for p in PAPERS:
         if p not in pals:
             print(f"{p}: FAIL no .paper-{p} block in {a.css}")
             fail = 1
             continue
-        bad, rows = measure(pals[p], gr and gr[p], pals[p]["paper"])
+        bad, rows = measure(pals[p], gr and gr[p], pals[p]["paper"], wall)
         print(f"{p}" + (f"  grain {gr[p][0]} .. {gr[p][1]}" if gr else ""))
         print("\n".join(rows))
         for b in bad:
             print(f"  FAIL {b}")
         print("  OK" if not bad else f"  FAIL {len(bad)}")
         fail |= bool(bad)
+    print(f"palette: {len(PAPERS)} papers " + ("FAIL" if fail else "OK"))
     return fail
 
 

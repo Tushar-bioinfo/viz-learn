@@ -1,7 +1,7 @@
-/* viz-os sketch: papers on a dark wall. Each paper's inks are measured by tools/check_palette.py (design.md). */
-.paper-cream { --paper: #f0e7d0; --ink: #2b2824; --soft: #4f483e; --accent: #a74a04; --s1: #265adf; --s2: #0e7461; --s3: #55092c; --gold: #958328; --gold2: #5f4f10; --red: #991b15; --red2: #ef9a8c; --pale: #7c7364; --edge: #3a2a14; --tag: #f8f0dc; --tagink: #2b2115; --wash: #ecd29b; --cord: #6d5a14; }
-.paper-graph { --paper: #f1f5f1; --ink: #1f2a2c; --soft: #43504f; --accent: #a74a04; --s1: #265adf; --s2: #0c705d; --s3: #55092c; --gold: #8d7d10; --gold2: #5f4f10; --red: #8e1a14; --red2: #ef9a8c; --pale: #76807d; --edge: #3a2a14; --tag: #fbfdfb; --tagink: #1f2a2c; --wash: #f4e2ad; --cord: #6d5a14; }
-.paper-navy { --paper: #192544; --ink: #efe6d2; --soft: #c9c3b2; --accent: #e56d41; --s1: #52f1f9; --s2: #a57afe; --s3: #fae91d; --gold: #ebc44a; --gold2: #f6ecd2; --red: #ea5448; --red2: #ffc4bb; --pale: #a9b4c9; --edge: #0d1428; --tag: #f8f0dc; --tagink: #2b2115; --wash: #33446f; --cord: #0d1428; }
+/* viz-os sketch: papers on a dark wall. Each paper's inks are measured on its real grain (design.md). */
+.paper-cream { --paper: #f0e7d0; --ink: #2b2824; --soft: #4f483e; --accent: #a74a04; --s1: #265adf; --s2: #0e7461; --s3: #55092c; --gold: #958328; --gold2: #5f4f10; --red: #991b15; --red2: #ef9a8c; --pale: #7c7364; --edge: #3a2a14; --tag: #f8f0dc; --tagink: #2b2115; --wash: #ecd29b; --cord: #7a6618; }
+.paper-graph { --paper: #f1f5f1; --ink: #1f2a2c; --soft: #43504f; --accent: #a74a04; --s1: #265adf; --s2: #0c705d; --s3: #55092c; --gold: #8d7d10; --gold2: #5f4f10; --red: #8e1a14; --red2: #ef9a8c; --pale: #76807d; --edge: #3a2a14; --tag: #fbfdfb; --tagink: #1f2a2c; --wash: #f4e2ad; --cord: #7a6618; }
+.paper-navy { --paper: #192544; --ink: #efe6d2; --soft: #c9c3b2; --accent: #e56d41; --s1: #52f1f9; --s2: #a57afe; --s3: #fae91d; --gold: #ebc44a; --gold2: #f6ecd2; --red: #ea5448; --red2: #ffc4bb; --pale: #a9b4c9; --edge: #0d1428; --tag: #f8f0dc; --tagink: #2b2115; --wash: #33446f; --cord: #8a7420; }
 
 /* the page takes over from the deck's fixed stage */
 html.sk-page, html.sk-page body { height: auto; overflow: auto; background: var(--wall); }
@@ -74,7 +74,7 @@ html.sk-page body { user-select: text; }
 .txt.lt { font-family: var(--letter); }
 .calc .say, .asm .say { display: block; color: var(--soft); font-size: .86em; }
 .calc .m, .asm .m { display: block; }
-.asm .syms { color: var(--accent); }
+.asm .syms { color: var(--accent); margin-top: .6em; }
 .panel { container-type: normal; }
 .fart { position: relative; width: 100%; height: 72%; }
 .fsay { position: absolute; left: 6px; right: 6px; top: 73%; bottom: 2px; font-size: 15px; line-height: 1.26; color: var(--ink); overflow: hidden; }

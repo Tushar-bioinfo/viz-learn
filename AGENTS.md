@@ -1,11 +1,11 @@
 # viz-learn: the viz-os workshop
 
-This repo builds **viz-os**, a plugin that turns "teach me X" into one self-contained HTML learning deck. The agent writes only `deck.yaml`; a fixed kit draws every slide; a lint and a browser check enforce the rules.
+This repo builds **viz-os**, a plugin that turns "teach me X" into one self-contained HTML page, through three skills: `deck` (slides), `class` (board lessons) and `sketch` (one long drawn page). The agent writes only YAML (`deck.yaml`, `lesson.yaml` or `page.yaml`); a fixed kit draws everything; a lint and a browser check enforce the rules.
 Work here improves the plugin. Do not make decks for learning a topic here: use the installed plugin in another folder. Put test decks and check output in `out/` (git-ignored).
 `CLAUDE.md` and `GEMINI.md` are links to this file, so every agent reads the same start-up notes.
 
 ## The goal
-An independent agent, on any harness, given only `plugins/viz-os/`, builds a deck that passes the four gates (lint, browser, numbers, eyes) and teaches from the ground up. Judge every change by that. The honest test is a cold start (`docs/testing.md`).
+An independent agent, on any harness, given only `plugins/viz-os/`, builds a deck that passes the four gates (lint, browser, numbers, eyes), or a lesson or page that passes five (those four and pedagogy), and teaches from the ground up. Judge every change by that. The honest test is a cold start (`docs/testing.md`).
 
 ## Who the decks are for
 A biologist and bioinformatician who learns visually. Each deck should show intuition from the ground up, transformations and dot products, row-wise / column-wise / whole-matrix steps with the rows or columns read and the shape made, distributions with their parameters, notation, assumptions, where each formula comes from and what it is related to, predict questions, and step tables with the why. Plots carry the story, not text. The look is proff-viz 5.0.0 (flat dark plates, thick grey borders, one orange). Decks are for a laptop or desktop screen; phone layout exists but is not checked. Pictures from an image model only when the user asks. Keep it token-efficient: YAML in, kit does the design.
@@ -19,10 +19,12 @@ A biologist and bioinformatician who learns visually. Each deck should show intu
 | `…/deck/kit/` | `vizos.css` + `core.js` (expressions, stats) + `chart.js` + `slides.js` + `ops.js` (matrix steps) + `deck.js` (navigation, fit, audit) |
 | `…/deck/scripts/` | `build.py` (lint, then yaml → html), `check.py` (Playwright desktop audit), `image.py` (opt-in picture) |
 | `…/deck/examples/` | three decks; they double as the regression tests |
+| `…/class/` | board lessons: `SKILL.md`, `lesson.md` (the teaching rules, which `sketch` reads too), `board.md`, `kit/`, `scripts/` (`lesson.py`, `home.py`, `memory.py`), `examples/` |
+| `…/sketch/` | one long drawn page: `SKILL.md`, `page.md`, `kit/` (papers, pens, parts, thread), `scripts/` (`sketch.py`, `page_lint.py`), `examples/pca-what/`. It needs `class` and `deck` beside it |
 | `plugins/viz-os/docs/design.md` | decisions and why, colour measurements, learning-science sources (ships, but skill files never point at it) |
 | manifests | one per agent family; see `docs/release.md` |
 | `docs/` | notes for people and agents working on the plugin; **not shipped** |
-| `tools/` | `check-all.sh` (the regression run), `check_manifests.py` |
+| `tools/` | `check-all.sh` (the regression run), `check_manifests.py`, `check_docs.py`, `check_class.py`, `check_memory.py`, `check_sketch.py`, `check_palette.py` |
 
 ## Read before you work
 | Doc | Read it when |
@@ -36,7 +38,7 @@ A biologist and bioinformatician who learns visually. Each deck should show intu
 ## Rules
 - **Keep the build green.** Run `tools/check-all.sh` after any change to `kit/`, `scripts/`, a skill file or an example. Report the counts it prints, from its actual output; if it could not run, say "not checked".
 - **Look at the contact sheets** (`out/check/<example>/desktop.png`) after a visual change. A clean check does not prove a deck teaches.
-- **Skill files ship; docs do not.** Never point a file under `skills/deck/` at `docs/` or the repo root. A rule the deck-building agent needs goes in `SKILL.md`, `probe.md`, `story.md` or `spec.md`. Notes for plugin builders go in `docs/`.
+- **Skill files ship; docs do not.** Never point a file under `skills/` at `docs/` or the repo root (`tools/check_docs.py` fails if one does). A rule the building agent needs goes in that skill's own files. Notes for plugin builders go in `docs/`.
 - **One rule, one place**, at the level that needs it. Prefer a lint or check over a prose rule: prose decays in long outputs, a linter does not.
 - **Every number is computed.** Example numbers come from a seeded `make_data.py`; `verify_data.py` recomputes them with separate code. Never type a number into a slide.
 - **Never hand-edit a built `deck.html`.** Change the YAML or the kit and rebuild.

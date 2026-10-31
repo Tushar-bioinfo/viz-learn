@@ -43,7 +43,7 @@ sheets:
       - {on: cells.row.2, say: the brightest T cell, dx: 3, dy: 0}
   - beat: by-hand
     title: Average the first marker
-    ratio: "16:4"
+    ratio: "16:5"
     stop: {say: "We add and divide", shape: "one number per marker"}
     note:
       shown: The six CD3 values added and divided by six.
@@ -57,7 +57,7 @@ sheets:
       - {calc: {expr: mean(cd3), name: mx, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}
   - beat: limits
     title: Two markers are not always enough
-    ratio: "16:4"
+    ratio: "16:4.5"
     stop: {say: "The clumps can overlap", shape: "same cells, more noise"}
     note:
       shown: Where two markers stop being enough.
@@ -89,7 +89,7 @@ sheets:
       - {on: plot.cells.c3, say: cell c3}
   - beat: summary
     title: Two markers, two clumps
-    ratio: "16:4"
+    ratio: "16:5.5"
     note:
       shown: The answer to the opening question.
       read: Read it as one sentence.
@@ -113,7 +113,7 @@ sheets:
       - {text: "The average is now {{shifted|2}}.", at: [2, 3], width: 80, size: 3, letter: true}
   - beat: next
     title: What about many markers?
-    ratio: "16:4"
+    ratio: "16:5"
     note:
       shown: The question for next time.
       read: Keep it in mind for the next page.

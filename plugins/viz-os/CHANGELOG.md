@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.0 (2026-10-31)
+
+Adds the `sketch` skill: one scrollable page of hand-drawn paper sheets on a dark wall, with a gold thread carrying the data from sheet to sheet. Deck and lesson output is unchanged.
+
+- Each sheet answers what, how, why and what changed beside its figure. Red branches show where a method breaks, and folds hold deeper answers.
+- The page uses `class`'s teaching rules and series memory, and can recall a page or a lesson. A lesson cannot yet recall a page.
+- Parts include cell, droplet, tube, read and arrow. An agent may write up to 3 short custom drawings, at most 20% of the YAML.
+- New lint rows and browser audits: text against text across a sheet, literals in braces, one sheet shape repeated, text-only problem sheets.
+- `sources.md` records each outside fact with its link and copied words. No check can verify these yet, so read them.
+- `sketch` needs `class` and `deck` beside it.
+
 ## 2.1.1 (2026-10-26)
 
 - Fixed: `mean()`, `var()`, `sum()` and `sd()` of a list whose name carries a label (`cd3_t`) crashed KaTeX with "Double subscript". The symbol now keeps the label beside the index, `cd3_{t,i}`, and the mean reads `\bar{cd3}_t`, so two groups stay apart on the page. Both 2026-10-26 cold starts hit it. Test case `mean-labelled-list`. No working deck changes: only symbols that used to fail take the new path.

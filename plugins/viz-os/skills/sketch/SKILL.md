@@ -18,8 +18,9 @@ You are the teacher, with a pen. The learner should reach the bottom of the page
    ```
    Ask question 2 once: after the first page the answer lives in memory and `home:`.
 2. **Spine.** Open `C/lesson.md`, sections 1–7. It holds the beats, their order, the voice, the pacing and the series rules; they apply here with "sheet" for "scene". Open `page.md`, Top level. Write the top of `page.yaml`: `title`, `question`, `answer`, `goal`, `learner`, `seed`, and the beat list as a comment, one line per sheet. For each method sheet add the thread stop in the reader's words: what the reader sees there, and the shape the data has. If the topic has more than about 7 new ideas, or needs more than 14 sheets, it becomes a series: write the top of each page's `page.yaml` in its own folder, show the questions to the user, and **wait for an OK** before you write any sheet.
-3. **Data.** Make the learner's home table once, seeded: `python3 C/scripts/home.py cells-x-markers --name cells --seed 7` (or `genes-x-samples`). It keeps its source's layout: a row per cell, or a row per gene. Then write `make_data.py` beside the page: seeded, it reads the home file, copies the rows the page uses into `data.json` with the file's `provenance` block under `home`, and computes every number the page shows, including each frame of a strip. Write `verify_data.py` as a second, independent program that recomputes the numbers from the rows and compares; if you can hand that to another agent that has not seen `make_data.py`, do.
+3. **Data.** Make the learner's home table once, seeded: `python3 C/scripts/home.py cells-x-markers --name cells --seed 7` (or `genes-x-samples`). It keeps its source's layout: a row per cell, or a row per gene. Then write `make_data.py` beside the page: seeded, it reads the home file, copies the rows the page uses into `data.json` with the file's `provenance` block under `home`, and computes every number the page shows, including each frame of a strip. A rate, percentage or curve comes from a stated model in `make_data.py`, such as Poisson loading, never a typed value. Write `verify_data.py` as a second, independent program that recomputes the numbers from the rows, compares, and prints `ALL OK` as its last line; if you can hand that to another agent that has not seen `make_data.py`, do.
 4. **Sheets.** Open `page.md`. Write the sheets under the spine in one pass. Every number is a `{{name|fmt}}` expression or a worked line, never typed. You choose each sheet's paper, ratio, width and where each thing sits. There are no layouts to pick from.
+   **Facts.** Numbers you made up prove arithmetic, not biology. Each claim about how an instrument, protocol or cell behaves needs a source you opened in this run. List them in `sources.md` beside the page: the claim, the link, and the words copied from the page you opened. Never write a quote from memory. If you cannot open a source, write `not read` on that line and say so in your reply. Cut a claim you cannot source, or say on the sheet that it is unsure.
 5. **Build and check.**
    ```bash
    python3 S/scripts/sketch.py pages/<slug>/page.yaml   # lint + one HTML file next to the yaml
@@ -32,9 +33,9 @@ You are the teacher, with a pen. The learner should reach the bottom of the page
    python3 C/scripts/memory.py episode <series> --part 1 --path pages/<slug>/page.yaml --gates "5/5" --title "<question>"
    python3 C/scripts/memory.py home <series> --name cells --template cells-x-markers --seed 7
    python3 C/scripts/memory.py loop <series> "<a question this page raised and did not answer>"
-   python3 C/scripts/memory.py learner --topic "<topic>" --note "<what clicked or confused>" --home ~/.viz-os/home/cells.json
+   python3 C/scripts/memory.py learner --topic "<topic>" --note "<what clicked or confused>" --home ~/.viz-os/home/cells.json   # the file home.py made
    ```
-   A one-off page is a series of one: name it after the topic. Pages and class lessons share this memory, so a series can mix both. Each command is safe to run twice.
+   A one-off page is a series of one: name it after the topic. Pages and class lessons share this memory: a page may recall a page or a lesson, but a lesson cannot yet recall a page. Each command is safe to run twice.
 
 ## Gates: a page is done only when all five pass
 | Gate | Pass when |
@@ -43,7 +44,7 @@ You are the teacher, with a pen. The learner should reach the bottom of the page
 | Browser | `check.py` prints `check: 0 warnings` (exit 0). Exit 2 means it could not run: report "not checked", never "passed". |
 | Numbers | Every number on a sheet is computed. `make_data.py` is seeded; `verify_data.py` agrees with `data.json`; `snaps/numbers.txt` shows the same values; no worked line reads ≈. |
 | Eyes | You opened the contact sheet and looked at every sheet, whole. |
-| Pedagogy | From the sheets alone you can read the beats in order, follow the thread from stop to stop, and trace each formula back to the numbers worked by hand. |
+| Pedagogy | From the sheets alone you can read the beats in order, follow the thread from stop to stop, trace each formula back to the numbers worked by hand, and follow one worked number unchanged to the last table. Each fact on the page has its line in `sources.md`. |
 
 Fix with small edits, not rewrites, and rerun. A warning that survives 3 rounds of honest fixes is probably a kit bug: report it with the sheet number and message. Never hide a warning by cutting the content that teaches.
 
@@ -62,7 +63,7 @@ Fix with small edits, not rewrites, and rerun. A warning that survives 3 rounds 
 - **Custom drawing is the last resort.** In this skill alone you may write a short `draw:` block when no part fits (`page.md`, Custom drawing). Never hand-write HTML or CSS, and never edit a built `page.html`: change the YAML and rebuild.
 
 ## Where you are running
-- **Shell available** (Claude Code, Codex, Cursor, Gemini CLI, Grok): run the scripts. They need `pip install pyyaml playwright pillow` and `playwright install chromium`; a verify script may need numpy. Without them, say "not checked".
+- **Shell available** (Claude Code, Codex, Cursor, Gemini CLI, Antigravity, Grok, Muse): run the scripts. They need `pip install pyyaml playwright pillow` and `playwright install chromium`; a verify script may need numpy. Without them, say "not checked".
 - **The class and deck skills must sit beside this one** (`skills/class`, `skills/deck`). If `sketch.py` says one is missing, reinstall viz-os.
 - **Sandbox without a browser:** build only, and say "not checked".
 - **No code at all:** reply with the spine and each sheet's four answers as text.
@@ -77,7 +78,6 @@ Read only the file the current step needs. Write `page.yaml` once and fix it wit
 | `C/lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, review cards, the review |
 | `page.md` | step 4: every field, the parts and their anchors, frames, the thread, custom drawing, and what each lint message means |
 | `examples/pca-what/` | one full page on the six-cell table, with `make_data.py` and `verify_data.py` |
-| `examples/tissue-to-counts/` | a page mostly of biology parts: how spatial counts are made |
 | `C/examples/home/cells.json` | what a home table looks like |
 | `D/spec.md` | the expression functions and number formats |
 Read the examples for patterns. If the user asks for an example's topic, build it fresh on the learner's own table: never copy an example's beats, sheets or numbers.

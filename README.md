@@ -1,6 +1,6 @@
 # viz-learn
 
-Home of **viz-os**, an agent plugin (Claude Code, Codex, Cursor, Grok, Muse, Antigravity, Gemini) that turns "teach me X" into a visual learning deck you can follow from the basics up, in a flat dark look (square blocks, thick grey borders, one orange), for a laptop or desktop screen.
+Home of **viz-os**, an agent plugin (Claude Code, Codex, Cursor, Grok, Muse, Antigravity, Gemini) that turns "teach me X" into a visual learning deck you can follow from the basics up, in a flat dark look (square blocks, thick grey borders, one orange), for a laptop or desktop screen. It also makes board lessons (`class`) and one long drawn page you scroll (`sketch`).
 
 Before it builds, it asks what you know and which comparisons click for you. Then it tells the story mostly with visuals. Every formula shows where it comes from and what it is related to. Matrix steps show which rows or columns are computed and how the shape changes. Every working step says what it does and why. Every number is computed from data and checked, and every deck is checked in a real browser on a desktop screen.
 
@@ -19,15 +19,17 @@ pip install pyyaml playwright pillow && playwright install chromium
 | Cursor | `cursor-agent plugin marketplace add https://github.com/Tushar-bioinfo/viz-learn`, then `/plugins` in Cursor Agent and install viz-os |
 | Antigravity CLI | `git clone https://github.com/Tushar-bioinfo/viz-learn` then `agy plugin install viz-learn/plugins/viz-os` |
 | Gemini CLI | `git clone https://github.com/Tushar-bioinfo/viz-learn` then `gemini extensions link viz-learn/plugins/viz-os` |
-| Anything else | point the agent at `plugins/viz-os/skills/deck/SKILL.md`; the skill needs only its own folder |
+| Anything else | point the agent at a `SKILL.md` under `plugins/viz-os/skills/`. `deck` needs only its own folder; `class` and `sketch` need all of `skills/` |
 
-Start a new session, then ask for a deck ("make me a viz-os deck on maximum likelihood"), or run `/viz-os:deck <topic>` in Claude Code.
+Start a new session, then ask for a deck ("make me a viz-os deck on maximum likelihood"), or run `/viz-os:deck <topic>`, `/viz-os:class <topic>` or `/viz-os:sketch <topic>` in Claude Code.
 
 ## What is here
 - Marketplaces for each agent: `.claude-plugin/`, `.agents/plugins/` (Codex), `.cursor-plugin/`, `.grok-plugin/`.
 - `plugins/viz-os/`: the plugin. Read its [README](plugins/viz-os/README.md) and [CHANGELOG](plugins/viz-os/CHANGELOG.md).
   - `skills/deck/`: the skill (rules, probe, story guide, deck reference), the kit that draws every slide, the build and check scripts, and three example decks (one of them about a real method, MAGeCK's RRA).
+  - `skills/class/`: board lessons on a small toy table, a series memory, and the teaching rules.
+  - `skills/sketch/`: one long drawn page: paper sheets, a gold thread that carries the data, and four short answers beside each figure.
   - `docs/design.md`: why it is built this way, with sources.
 - `AGENTS.md` (also `CLAUDE.md`, `GEMINI.md`): start-up notes for any agent working on the plugin.
 - `docs/`: architecture, testing (including the cold-start test), backlog and release notes for plugin builders. Not shipped.
-- `tools/check-all.sh`: rebuild and check every example; `tools/check_manifests.py`: keep the manifests in sync.
+- `tools/check-all.sh`: rebuild and check every example; `tools/check_manifests.py`: keep the manifests in sync; `tools/check_docs.py`, `check_class.py`, `check_memory.py`, `check_sketch.py`, `check_palette.py`: what the regression run calls.

@@ -58,6 +58,32 @@ lesson.yaml ──lesson.py──> deck build.py (ext: board fields, lesson lint
 
 **Adding a board item or mark:** draw it in `board.js`, add its fields to the `BOARD` field table in `lesson.py`, document it in `board.md` (`check_docs.py` checks this), add a scene to `examples/board-gallery/lesson.yaml`, then `tools/check-all.sh`. A lesson rule goes in `lesson_lint.py` with a case in `tools/class-cases/`.
 
+## The sketch skill
+`skills/sketch/` makes one long drawn page. It wraps class and deck the way class wraps deck: same expression engine, same typed-number lint, same browser check, with `deck.js` swapped for `page.js`.
+```
+page.yaml ──sketch.py──> deck build.py (ext: sheet fields, page lint, recall from class, sketch kit) ──> page.html
+                                                                                                         │
+                                                       deck check.py, with the tall-page branch ─────────┘
+```
+| Concern | File | Notes |
+|---|---|---|
+| The page loop, the five gates | `skills/sketch/SKILL.md` | reaches class as `C` and deck as `D` |
+| Beats, teaching moves, voice, pacing, series, review | `skills/class/lesson.md` | **one home for two skills**: an edit there changes pages too |
+| Every sheet field, figure item, part, anchor, lint and check message | `page.md` | `tools/check_docs.py` fails if a field, part, state or anchor is missing here |
+| Page rules (four answers, thread, frames, parts, custom drawing) | `scripts/page_lint.py` | run through `build.py`'s lint hook; takes its numbers from `lesson_lint.py` |
+| Build glue: sheets as slides, recall from a page or a lesson, the font | `scripts/sketch.py` | a private copy of `build.py` with `deck.js` out and `page.js` in |
+| Paper grain, pens | `kit/paper.js`, `kit/pens.js` | ported, MIT; `kit/NOTICE` ships |
+| The thread, tags, branches | `kit/marks.js` | one seed gives the same pixels |
+| The box of parts, custom drawing | `kit/parts.js` | a part draws in a -1..1 box, so size, rotation and anchors stay right |
+| Tables, plots, worked lines, formulas | `kit/figures.js` | data marks use exact pens |
+| The wall, thread joins, frames, the audit | `kit/page.js` | answers `check.py` as `deck.js` does |
+| Inks per paper | `kit/sketch.css` | `tools/check_palette.py` measures them; a colour change is a visual change |
+| The deck seam | `deck/scripts/check.py` | a tall-page branch and a size warning, both off for decks and lessons |
+
+**Adding a part:** draw it in `parts.js`, publish its anchors with `G.pub`, add it and its states to `PARTS` in `page_lint.py`, add a row to `page.md`'s table, add it to `tools/sketch-cases/parts-gallery.yaml`, then `tools/check-all.sh`.
+**Adding a figure item:** draw it in `figures.js`, add it to `FIGS` in `page_lint.py`, document it in `page.md`, add a case in `tools/sketch-cases/`.
+**Adding a page rule:** a lint check in `page_lint.py`, a row in `page.md`'s lint table, and a bad case with `# expect:` in `tools/sketch-cases/`. A rule that is about teaching, not about paper, goes in `lesson.md` and `lesson_lint.py`, so class gets it too.
+
 ## Packaging for each agent harness
 The plugin root is `plugins/viz-os/`. Each harness reads its own manifest; all must agree (`tools/check_manifests.py`).
 | Harness | Plugin manifest | Marketplace (repo root) |
@@ -69,4 +95,4 @@ The plugin root is `plugins/viz-os/`. Each harness reads its own manifest; all m
 | Muse Code | reads `.claude-plugin/plugin.json` | reads `.claude-plugin/marketplace.json` |
 | Antigravity CLI (`agy`) | `plugin.json` at the plugin root | none: install from a local clone |
 | Gemini CLI | `gemini-extension.json` | none: link from a local clone |
-The skill itself is harness-neutral: `SKILL.md` calls its own folder `S` and runs `python3 S/scripts/…`, so no harness variable is needed.
+The skills are harness-neutral: a `SKILL.md` calls its own folder `S` and runs `python3 S/scripts/…`, so no harness variable is needed. Each harness finds every folder under `skills/` by itself, so a new skill needs no new manifest.

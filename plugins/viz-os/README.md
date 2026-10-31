@@ -35,6 +35,15 @@ A second skill, for lessons taught the way a good classroom teacher works a boar
 - Lessons can form a series on one toy data table (`home.py`, seeded), and each part opens with review cards from the earlier parts (`recall:`). Series memory lives in `~/.viz-os/series/` (set `VIZOS_HOME` to keep the profile, home tables and series somewhere else).
 - Examples: `variance`, `perceptron-trick`, the three-part PCA series (`pca-1-what`, `pca-2-how`, `pca-3-why`) and `board-gallery` (every scene kind).
 
+## Sketch pages (the `sketch` skill)
+A third skill, for one long illustrated page you read by scrolling: paper sheets on a dark wall, a gold thread that carries the data from sheet to sheet with a tag saying its form and shape, and a red branch at each place the method breaks. Ask for "sketch <topic>" or run `/viz-os:sketch <topic>`.
+- The agent writes `page.yaml`: it sets each sheet's paper, ratio and width, and where each thing sits. The kit draws it with pens, papers and a box of 14 biology parts. No image model is needed.
+- Every figure sits beside four short answers (what is shown, how to read it, why we do this, what changed), each at most 24 words. Anything with 3 or more moving parts is a strip of frames.
+- `sketch.py` builds it with the deck's own build and lint, plus the page rules. The deck's `check.py` audits it, including labels on the thread and a second draw that must match the first.
+- The teaching rules are `class/lesson.md`, so a page has the same beats and five gates as a lesson, and shares its series memory. A page may recall a page or a lesson; a lesson cannot yet recall a page.
+- `sketch` needs `class` and `deck` beside it in `skills/`. Example: `pca-what`.
+- The drawing code is ported from [statechart-art](https://github.com/kevintngo/statechart-art) by Kevin T. Ngo, MIT; see `skills/sketch/kit/NOTICE`.
+
 ## Slide types
 `title` · `chapter` (shows the data's shape coming in and going out) · `predict` (guess, then reveal why) · `idea` (claim + visual) · `statement` · `equation` (where it comes from and its relatives beside it; each term named on the formula and run with numbers; said aloud and in code under "+ more") · `calc` (named arithmetic steps, each with what and why) · `ops` (matrix steps: row-wise, column-wise or whole-matrix, with the shape change) · `table` (one column, row or number per step; tap any number for its working) · `bridge` (analogy mapping + where it breaks) · `compare` · `quiz` (flip cards) · `recap` · `map` (how it connects).
 
@@ -75,11 +84,17 @@ plugins/viz-os/
     scripts/lesson.py   lesson.yaml -> lesson.html through the deck's build.py; lesson_lint.py holds the lesson rules
     scripts/home.py     seeded toy tables for a series; memory.py keeps series memory
     examples/           variance, perceptron-trick, pca-1-what / pca-2-how / pca-3-why, board-gallery, home/
+  skills/sketch/
+    SKILL.md            the page loop, the five gates and the rules
+    page.md             page.yaml reference: every sheet field, figure item, part and anchor, frames, the thread, custom drawing
+    kit/                paper.js + pens.js + marks.js + parts.js + figures.js + page.js + sketch.css, the Kevin Sans font, NOTICE
+    scripts/sketch.py   page.yaml -> page.html through the deck's build.py; page_lint.py holds the page rules
+    examples/pca-what/  one full page on the six-cell table
   docs/design.md        why it is built this way, with sources
   CHANGELOG.md
 ```
 
 ## Working on the plugin
-Start with the repository's `AGENTS.md`. `tools/check-all.sh` rebuilds and checks every deck and class example; each build should end with `0 errors  0 warnings`, each check with `check: 0 warnings`, and `verify_data.py` with `ALL OK`. Offline machines: `--katex-dir DIR` on `build.py` inlines KaTeX; `--vendor DIR` on `check.py` serves CDN files from disk. The fonts come from Google Fonts.
+Start with the repository's `AGENTS.md`. `tools/check-all.sh` rebuilds and checks every deck, class and sketch example; each build should end with `0 errors  0 warnings`, each check with `check: 0 warnings`, and `verify_data.py` with `ALL OK`. Offline machines: `--katex-dir DIR` on `build.py`, `lesson.py` or `sketch.py` inlines KaTeX; `--vendor DIR` on `check.py` serves CDN files from disk. The fonts come from Google Fonts.
 
 Built on the ideas of [proff-viz](https://github.com/Tushar-bioinfo/proff) L4: build from the ground, name every symbol with an example, audit in a real browser.

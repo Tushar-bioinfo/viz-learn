@@ -1,0 +1,14 @@
+# expect: is a typed number in braces
+# base: clean-page
+sheets:
+  - beat: by-hand
+    title: A literal in braces
+    ratio: "16:5"
+    stop: {say: "The count", shape: "one number"}
+    note:
+      shown: One row of {{5|0}} numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {calc: {expr: mean(cd3), name: mx2, say: Add and divide, fmt: 2}, at: [2, 3], width: 70}

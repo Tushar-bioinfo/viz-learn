@@ -121,7 +121,7 @@
   }
   function calc(it, spec, ctx, host, H) {
     const b = textBox('calc', it, host, H), sc = ctx.scope, f = spec.fmt;
-    const fill = () => { const v = L.try(spec.expr, sc, `sheet ${ctx.index + 1} calc`); if (spec.name) sc[spec.name] = v;
+    const fill = () => { const v = L.try(spec.expr, sc, `sheet ${ctx.index + 1} calc`); if (spec.name) sc[spec.name] = L.global[spec.name] = v;   // later sheets read it too
       const sym = L.tex(spec.expr, { sym: symOf(ctx) }), nums = L.tex(spec.expr, { val: n => (typeof sc[n] === 'number' ? sc[n] : null), fmtOf: fmtOf(ctx), sym: symOf(ctx) }), res = L.numTex(v, f ?? 's4');
       b.e.innerHTML = `${spec.say ? `<span class="say">${md(spec.say)}</span>` : ''}<span class="m">${md(`$${spec.name ? symOf(ctx)(spec.name) + ' = ' : ''}${sym} = ${nums} = ${res}$`)}</span>`; L.fill(b.e, sc); };
     fill();
@@ -130,7 +130,7 @@
   // the formula from the numbers just worked: a row of those numbers, then the same shape in symbols
   function assemble(it, spec, ctx, host, H) {
     const b = textBox('asm', it, host, H), sc = ctx.scope, sym = symOf(ctx), lhs = spec.lhs ? sym(spec.lhs) + ' = ' : '';
-    const fill = () => { const plug = String(spec.plug ?? spec.tex).replace(/\[([A-Za-z_]\w*)(?::([^\]]*))?\]/g, (_, n, f) => L.numTex(L.try(n, sc, `sheet ${ctx.index + 1} assemble`), f ? (/^\d+$/.test(f) ? +f : f) : fmtOf(ctx)(n, sc[n])));
+    const fill = () => { const plug = String(spec.plug ?? spec.tex).replace(/\[([A-Za-z_]\w*)(?::([^\]]*))?\]/g, (m, n, f, at, all) => { const v = L.try(n, sc, `sheet ${ctx.index + 1} assemble`), t = L.numTex(v, f ? (/^\d+$/.test(f) ? +f : f) : fmtOf(ctx)(n, sc[n])); return v < 0 && all[at + m.length] === '^' ? `(${t})` : t; });
       const tex = String(spec.tex).replace(/\[([A-Za-z_]\w*)\]/g, (_, n) => sym(n)), val0 = spec.lhs && typeof sc[spec.lhs] === 'number' ? ` = ${L.numTex(sc[spec.lhs], spec.fmt ?? 's4')}` : '';
       b.e.innerHTML = `${spec.say ? `<span class="say">${md(spec.say)}</span>` : ''}<span class="m nums">${md(`$\\displaystyle ${lhs}${plug}${val0}$`)}</span><span class="m syms">${md(`$\\displaystyle ${lhs}${tex}$`)}</span>`; L.fill(b.e, sc); };
     fill();
@@ -226,9 +226,10 @@
     }
     if (R.fig) sheet.querySelectorAll('.tbl .c').forEach(c => { if (c.scrollWidth > c.clientWidth + 2) out.push(`table cell ${name(c)} is wider than its column`); });
     // labels against labels, and labels against the other text on the figure
-    const labs = [...sheet.querySelectorAll('.lab, .tbl, .eq, .calc, .asm, .txt, .fsay, .plot .tk, .plot .axl')].filter(shown).map(e => ({ e, b: box(e) }));
+    const ink = e => [...e.children].map(box).reduce((p, q) => ({ x0: Math.min(p.x0, q.x0), y0: Math.min(p.y0, q.y0), x1: Math.max(p.x1, q.x1), y1: Math.max(p.y1, q.y1) }));   // a worked line's box runs past its last line
+    const labs = [...sheet.querySelectorAll('.ttl, .lead, .lab, .tbl, .eq, .calc, .asm, .txt, .fsay, .plot .tk, .plot .axl')].filter(shown).map(e => ({ e, b: e.matches('.calc, .asm') ? ink(e) : box(e) }));
     for (let i = 0; i < labs.length; i++) for (let j = i + 1; j < labs.length; j++) {
-      const a = labs[i], b = labs[j]; if (!a.e.matches('.lab') && !b.e.matches('.lab') && a.e.closest('.plot') === b.e.closest('.plot')) continue;
+      const a = labs[i], b = labs[j]; const plot = a.e.closest('.plot'); if (plot && !a.e.matches('.lab') && !b.e.matches('.lab') && plot === b.e.closest('.plot')) continue;
       if (a.e.contains(b.e) || b.e.contains(a.e)) continue;
       const ov = Math.max(0, Math.min(a.b.x1, b.b.x1) - Math.max(a.b.x0, b.b.x0) - 2) * Math.max(0, Math.min(a.b.y1, b.b.y1) - Math.max(a.b.y0, b.b.y0) - 2);
       if (ov > 30) out.push(`text overlaps: ${name(a.e)} × ${name(b.e)}`);
