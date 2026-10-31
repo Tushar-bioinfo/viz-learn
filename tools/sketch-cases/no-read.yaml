@@ -1,0 +1,14 @@
+# expect: sheet 1 (data “One sheet”): no `note.read`
+title: A small page
+question: Does it check?
+answer: It checks.
+goal: Test one rule.
+sheets:
+  - beat: data
+    title: One sheet
+    note:
+      shown: One row of six numbers.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A line of words.", at: [2, 3], width: 80, size: 3, letter: true}

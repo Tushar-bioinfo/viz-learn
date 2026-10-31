@@ -1,0 +1,16 @@
+# expect: text overlaps
+# base: clean-page
+sheets:
+  - beat: picture
+    title: Two labels on one place
+    ratio: "16:6"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A line of words.", at: [5, 5], width: 80, size: 3, letter: true}
+    label:
+      - {on: sheet.bottom, say: "the first label sits here", dx: 0, dy: -8}
+      - {on: sheet.bottom, say: "the second label sits here", dx: 0, dy: -8}

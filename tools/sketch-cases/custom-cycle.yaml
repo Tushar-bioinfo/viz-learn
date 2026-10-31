@@ -1,0 +1,30 @@
+# expect: clean
+# base: clean-page
+sheets:
+  - beat: picture
+    title: A custom drawing
+    ratio: "16:7"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - id: wheel
+        at: [20, 2]
+        width: 60
+        height: 38
+        draw: |
+          // a wheel of the six cells, with the average printed beside it
+          const n = data.ids.length, cx = w / 2, cy = h / 2, r = 13;
+          ring([cx, cy], r);
+          for (let i = 0; i < n; i++) {
+            const a = i / n * TAU - PI / 2;
+            const p = [cx + cos(a) * r, cy + sin(a) * r];
+            dot(p, 1, { color: 'accent' });
+            text(cx + cos(a) * (r + 4), cy + sin(a) * (r + 4), data.ids[i], { align: 'center' });
+            pub('cell' + i, p[0], p[1]);
+          }
+          arrow([cx + r + 9, cy + 5], [cx + r + 16, cy + 5], { color: 'accent' });
+          text(cx + r + 17, cy + 5, 'mean ' + fmt(data.mx, 2));
+          part('cell', { at: [cx, cy], size: 12, color: 's1' });

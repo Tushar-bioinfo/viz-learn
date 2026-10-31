@@ -1,0 +1,25 @@
+# expect: clean
+# base: clean-page
+data:
+  days: [1, 2, 3, 4, 5, 6, 7, 8]
+sheets:
+  - beat: run
+    title: A long timeline
+    paper: navy
+    ratio: "3:1"
+    stop: {say: "Eight days in a row", shape: "one height per day"}
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - id: line
+        at: [2, 2]
+        width: 94
+        height: 26
+        plot:
+          x: {label: day, min: 0, max: 9}
+          y: {label: height, min: 0, max: 9}
+          layers:
+            - {path: [days, days], color: accent}

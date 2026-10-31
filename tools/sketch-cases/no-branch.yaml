@@ -1,0 +1,25 @@
+# expect: no red branch
+title: A small page
+question: Does it check?
+answer: It checks.
+goal: Test one rule.
+sheets:
+  - beat: plan
+    title: Plan
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A line of words.", at: [2, 3], width: 80, size: 3, letter: true}
+  - beat: data
+    title: Data
+    stop: {say: "Cells", shape: "six rows"}
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A line of words.", at: [2, 3], width: 80, size: 3, letter: true}

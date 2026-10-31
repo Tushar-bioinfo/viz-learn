@@ -1,0 +1,57 @@
+# expect: clean
+# base: clean-page
+sheets:
+  - beat: data
+    title: A narrow sheet on graph paper
+    paper: graph
+    ratio: "4:3"
+    width: 60
+    stop: {say: "The same six cells", shape: "6 cells × 2 markers"}
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - id: cells
+        at: [10, 2]
+        width: 80
+        matrix: {rows: ids, cols: [{key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}]}
+  - beat: picture
+    title: No stop, so the thread stays in the gutter
+    paper: navy
+    ratio: "16:5"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A line of words.", at: [2, 3], width: 80, size: 3, letter: true}
+  - beat: what-if
+    title: The label follows the dot
+    ratio: "16:8"
+    stop: {say: "We slide one cell", shape: "the dot moves"}
+    tall: true
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    controls:
+      - {name: push, min: 0, max: 3, step: 0.5, value: 1, label: Push c3}
+    derive:
+      movedx: max(cd3) - push
+      movedy: min(cd19) + push
+    figure:
+      - id: plot
+        at: [14, 1]
+        width: 64
+        height: 42
+        plot:
+          x: {label: CD3, min: 0, max: 5}
+          y: {label: CD19, min: 0, max: 5}
+          layers:
+            - {dots: [movedx, movedy], names: [moved], color: accent, id: c}
+    label:
+      - {on: plot.c.moved, say: "the moved cell, at {{movedx|1}}"}

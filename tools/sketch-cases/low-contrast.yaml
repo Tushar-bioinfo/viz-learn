@@ -1,0 +1,14 @@
+# expect: low contrast
+# base: clean-page
+sheets:
+  - beat: picture
+    title: Ink close to the paper
+    ratio: "16:6"
+    paper: navy
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "These words hide in the paper.", at: [5, 5], width: 80, size: 3, letter: true, color: "#22304f"}

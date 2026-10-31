@@ -1,0 +1,43 @@
+# expect: 4 custom drawings
+# base: clean-page
+sheets:
+  - beat: picture
+    title: Custom 0
+    ratio: "16:4"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {draw: 'ring([20, 8], 4);', at: [5, 2], width: 40, height: 16}
+  - beat: picture
+    title: Custom 1
+    ratio: "16:4"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {draw: 'ring([20, 8], 4);', at: [5, 2], width: 40, height: 16}
+  - beat: picture
+    title: Custom 2
+    ratio: "16:4"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {draw: 'ring([20, 8], 4);', at: [5, 2], width: 40, height: 16}
+  - beat: picture
+    title: Custom 3
+    ratio: "16:4"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {draw: 'ring([20, 8], 4);', at: [5, 2], width: 40, height: 16}

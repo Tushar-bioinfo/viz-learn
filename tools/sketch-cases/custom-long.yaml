@@ -1,0 +1,58 @@
+# expect: custom drawing has 41 lines
+# base: clean-page
+sheets:
+  - beat: picture
+    title: A custom drawing
+    ratio: "16:7"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - id: wheel
+        at: [20, 2]
+        width: 60
+        height: 38
+        draw: |
+          line([[0, 0], [0, 5]]);
+          line([[1, 0], [1, 5]]);
+          line([[2, 0], [2, 5]]);
+          line([[3, 0], [3, 5]]);
+          line([[4, 0], [4, 5]]);
+          line([[5, 0], [5, 5]]);
+          line([[6, 0], [6, 5]]);
+          line([[7, 0], [7, 5]]);
+          line([[8, 0], [8, 5]]);
+          line([[9, 0], [9, 5]]);
+          line([[10, 0], [10, 5]]);
+          line([[11, 0], [11, 5]]);
+          line([[12, 0], [12, 5]]);
+          line([[13, 0], [13, 5]]);
+          line([[14, 0], [14, 5]]);
+          line([[15, 0], [15, 5]]);
+          line([[16, 0], [16, 5]]);
+          line([[17, 0], [17, 5]]);
+          line([[18, 0], [18, 5]]);
+          line([[19, 0], [19, 5]]);
+          line([[20, 0], [20, 5]]);
+          line([[21, 0], [21, 5]]);
+          line([[22, 0], [22, 5]]);
+          line([[23, 0], [23, 5]]);
+          line([[24, 0], [24, 5]]);
+          line([[25, 0], [25, 5]]);
+          line([[26, 0], [26, 5]]);
+          line([[27, 0], [27, 5]]);
+          line([[28, 0], [28, 5]]);
+          line([[29, 0], [29, 5]]);
+          line([[30, 0], [30, 5]]);
+          line([[31, 0], [31, 5]]);
+          line([[32, 0], [32, 5]]);
+          line([[33, 0], [33, 5]]);
+          line([[34, 0], [34, 5]]);
+          line([[35, 0], [35, 5]]);
+          line([[36, 0], [36, 5]]);
+          line([[37, 0], [37, 5]]);
+          line([[38, 0], [38, 5]]);
+          line([[39, 0], [39, 5]]);
+          line([[40, 0], [40, 5]]);

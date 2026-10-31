@@ -1,0 +1,87 @@
+# expect: clean
+# base: clean-page
+sheets:
+  - beat: picture
+    title: The box of parts on cream
+    paper: cream
+    ratio: "16:9"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {part: cell, at: [8, 9], size: 14}
+      - {part: cell, at: [25, 9], size: 14, state: dividing}
+      - {part: cell, at: [42, 9], size: 14, state: dead}
+      - {part: nucleus, at: [59, 9], size: 14}
+      - {part: dna, at: [76, 9], size: 14}
+      - {part: dna, at: [93, 9], size: 14, state: open}
+      - {part: chromosome, at: [8, 27], size: 14}
+      - {part: chromosome, at: [25, 27], size: 14, state: single}
+      - {part: tissue, at: [42, 27], size: 14, state: regions}
+      - {part: spots, at: [59, 27], size: 14, state: captured}
+      - {part: tube, at: [76, 27], size: 14, state: filled}
+      - {part: plate, at: [93, 27], size: 14}
+      - {part: gene, at: [8, 45], size: 14}
+      - {part: read, at: [25, 45], size: 14}
+      - {part: droplet, at: [42, 45], size: 14, state: both}
+      - {part: arrow, at: [59, 45], size: 14, state: bent}
+      - {part: bracket, at: [76, 45], size: 14}
+      - {part: lens, at: [93, 45], size: 14}
+  - beat: picture
+    title: The box of parts on graph
+    paper: graph
+    ratio: "16:9"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {part: cell, at: [8, 9], size: 14, rotate: 30}
+      - {part: cell, at: [25, 9], size: 14, state: dividing, rotate: 30}
+      - {part: cell, at: [42, 9], size: 14, state: dead, rotate: 30}
+      - {part: nucleus, at: [59, 9], size: 14, rotate: 30}
+      - {part: dna, at: [76, 9], size: 14, rotate: 30}
+      - {part: dna, at: [93, 9], size: 14, state: open, rotate: 30}
+      - {part: chromosome, at: [8, 27], size: 14, rotate: 30}
+      - {part: chromosome, at: [25, 27], size: 14, state: single, rotate: 30}
+      - {part: tissue, at: [42, 27], size: 14, state: regions, rotate: 30}
+      - {part: spots, at: [59, 27], size: 14, state: captured, rotate: 30}
+      - {part: tube, at: [76, 27], size: 14, state: filled, rotate: 30}
+      - {part: plate, at: [93, 27], size: 14, rotate: 30}
+      - {part: gene, at: [8, 45], size: 14, rotate: 30}
+      - {part: read, at: [25, 45], size: 14, rotate: 30}
+      - {part: droplet, at: [42, 45], size: 14, state: both, rotate: 30}
+      - {part: arrow, at: [59, 45], size: 14, state: bent, rotate: 30}
+      - {part: bracket, at: [76, 45], size: 14, rotate: 30}
+      - {part: lens, at: [93, 45], size: 14, rotate: 30}
+  - beat: picture
+    title: The box of parts on navy
+    paper: navy
+    ratio: "16:9"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {part: cell, at: [8, 9], size: 14}
+      - {part: cell, at: [25, 9], size: 14, state: dividing}
+      - {part: cell, at: [42, 9], size: 14, state: dead}
+      - {part: nucleus, at: [59, 9], size: 14}
+      - {part: dna, at: [76, 9], size: 14}
+      - {part: dna, at: [93, 9], size: 14, state: open}
+      - {part: chromosome, at: [8, 27], size: 14}
+      - {part: chromosome, at: [25, 27], size: 14, state: single}
+      - {part: tissue, at: [42, 27], size: 14, state: regions}
+      - {part: spots, at: [59, 27], size: 14, state: captured}
+      - {part: tube, at: [76, 27], size: 14, state: filled}
+      - {part: plate, at: [93, 27], size: 14}
+      - {part: gene, at: [8, 45], size: 14}
+      - {part: read, at: [25, 45], size: 14}
+      - {part: droplet, at: [42, 45], size: 14, state: both}
+      - {part: arrow, at: [59, 45], size: 14, state: bent}
+      - {part: bracket, at: [76, 45], size: 14}
+      - {part: lens, at: [93, 45], size: 14}

@@ -1,0 +1,15 @@
+# expect: nowhere.at.all
+# base: clean-page
+sheets:
+  - beat: picture
+    title: One sheet
+    ratio: "16:4"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A line of words.", at: [2, 3], width: 80, size: 3, letter: true}
+    label:
+      - {on: nowhere.at.all, say: lost}

@@ -1,0 +1,13 @@
+# expect: cannot be seen together at 1440×900
+# base: clean-page
+sheets:
+  - beat: picture
+    title: Too tall for the screen
+    ratio: "4:5"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A very tall figure.", at: [5, 5], width: 80, size: 3, letter: true}

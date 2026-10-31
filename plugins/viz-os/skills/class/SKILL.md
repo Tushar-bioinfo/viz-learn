@@ -78,3 +78,4 @@ Read only the file the current step needs. Write `lesson.yaml` once and fix it w
 | `examples/pca-1-what/`, `pca-2-how/`, `pca-3-why/` | a three-part series on one home table: `recall:`, each part's `next` scene feeding the next part's `problem` |
 | `D/spec.md` | a deck visual's fields (chart, dist, stat, parts, flow, image), the expression functions, number formats |
 Read the examples for patterns. If the user asks for an example's topic, build it fresh on the learner's own table: never copy an example's beats, scenes or numbers.
+For one long illustrated page the learner scrolls, use the sibling `sketch` skill (`C/../sketch`).

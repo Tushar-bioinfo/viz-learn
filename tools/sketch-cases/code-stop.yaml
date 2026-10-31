@@ -1,0 +1,16 @@
+# expect: pc_scores
+title: A small page
+question: Does it check?
+answer: It checks.
+goal: Test one rule.
+sheets:
+  - beat: data
+    title: One sheet
+    stop: {say: "pc_scores"}
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {text: "A line of words.", at: [2, 3], width: 80, size: 3, letter: true}

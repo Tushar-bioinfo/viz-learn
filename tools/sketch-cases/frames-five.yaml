@@ -1,0 +1,30 @@
+# expect: clean
+# base: clean-page
+sheets:
+  - beat: run
+    title: Five frames, each adds one
+    ratio: "16:8"
+    stop: {say: "We build it up", shape: "one part at a time"}
+    cols: 3
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    frames:
+      - say: Step 0 of the strip
+        add:
+          - {part: cell, at: [10, 26], size: 13}
+      - say: Step 1 of the strip
+        add:
+          - {part: nucleus, at: [26, 26], size: 13}
+      - say: Step 2 of the strip
+        add:
+          - {part: chromosome, at: [42, 26], size: 13}
+      - say: Step 3 of the strip
+        add:
+          - {part: dna, at: [58, 26], size: 13}
+      - say: Step 4 of the strip
+        think: {q: "What came first?", a: The cell.}
+        add:
+          - {part: gene, at: [74, 26], size: 13}

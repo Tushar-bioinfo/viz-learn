@@ -1,0 +1,14 @@
+# expect: no part `mitochondrion`
+# expect: part `cell` has no state `sleepy`
+# base: clean-page
+sheets:
+  - beat: picture
+    title: Two wrong parts
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {part: mitochondrion, at: [20, 20]}
+      - {part: cell, at: [50, 20], state: sleepy}

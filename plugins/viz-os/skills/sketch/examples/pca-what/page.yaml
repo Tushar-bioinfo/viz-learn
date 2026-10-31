@@ -1,0 +1,458 @@
+title: Turn the axes until two markers become one
+question: Can one number stand in for two markers?
+answer: Yes. One turned axis keeps {{share1|%}} of how the six cells differ.
+goal: Find the one direction that keeps the most of how six cells differ.
+seed: pca-what
+learner: {goal: read a PCA plot from first principles, knows: [mean, variance], anchors: [flow cytometry gates]}
+data_file: data.json
+# plan · problem · data · by-hand × 3 · formula · run · what-if · by-hand · limits · aside · summary · next · review
+abbr:
+  CD3: a surface marker on T cells
+  CD19: a surface marker on B cells
+  PC1: first principal component, the best line
+  PCA: principal component analysis
+symbols:
+  sum3: {tex: '\sum x_1', says: the CD3 values added up, fmt: 1}
+  sum19: {tex: '\sum x_2', says: the CD19 values added up, fmt: 1}
+  n: {tex: 'n', says: the number of cells, fmt: 0}
+  m1: {tex: '\bar{x}_1', says: mean CD3, fmt: 2}
+  m2: {tex: '\bar{x}_2', says: mean CD19, fmt: 2}
+  p1: {tex: 'p_1', says: the shadow of c1, fmt: 2}
+  s2u: {tex: 's_u^2', says: the spread of the shadows, fmt: 2}
+  sumsq: {tex: '\sum p_i^2', says: the squared shadows added up, fmt: 2}
+  df: {tex: 'n-1', says: cells less one, fmt: 0}
+  d1c1: {tex: 'd_{11}', says: c1 from the middle on CD3, fmt: 2}
+  d2c1: {tex: 'd_{12}', says: c1 from the middle on CD19, fmt: 2}
+  u1: {tex: 'u_1', says: the line's CD3 part, fmt: 1}
+  u2: {tex: 'u_2', says: the line's CD19 part, fmt: 1}
+sheets:
+  - beat: plan
+    title: Four stops down the page
+    ratio: "16:5"
+    note:
+      shown: Six cells come in at the top, and one number per cell comes out.
+      read: Follow the gold thread. Each tag says what the data looks like there.
+      why: The goal is one direction, so each stop moves us closer to it.
+    figure:
+      - {part: cell, at: [4.5, 14], size: 8.5, color: s1}
+      - {part: cell, at: [13, 14], size: 8.5, color: s2}
+      - {part: cell, at: [21.5, 14], size: 8.5, color: s3}
+      - {text: "Six cells, two markers", at: [1, 1], size: 2.4, letter: true}
+      - {part: arrow, at: [33, 14], size: 9}
+      - {text: "1. Find the middle", at: [40, 1], width: 40, size: 2.6, letter: true}
+      - {text: "2. Drop shadows on a line", at: [40, 7.5], width: 40, size: 2.6, letter: true}
+      - {text: "3. Turn the line", at: [40, 14], width: 40, size: 2.6, letter: true}
+      - {text: "4. Keep the best shadow", at: [40, 20.5], width: 40, size: 2.6, letter: true}
+      - {part: arrow, at: [80, 14], size: 9}
+      - {text: "One score per cell", at: [86, 10], width: 14, size: 2.6, letter: true, color: accent}
+
+  - beat: problem
+    title: Keeping one marker loses a kind of cell
+    paper: graph
+    ratio: "16:8"
+    note:
+      shown: The six cells drop straight onto one marker's axis, CD3 left and CD19 right.
+      read: Each dot is a cell. Its shadow on the axis is all that survives.
+      why: Dropping a marker fails, so the goal needs a new axis, not one of the old two.
+      changed: We asked what happens if we throw one marker away.
+    think: {q: "On CD3 alone, which two kinds of cell run together?", a: "B cells and monocytes. Both sit low on CD3, so only CD19 parts them."}
+    figure:
+      - id: a
+        at: [0, 1]
+        width: 49
+        height: 45
+        plot:
+          x: {label: CD3, min: 0, max: 5.5}
+          y: {label: CD19, min: 0, max: 5.5}
+          layers:
+            - {sticks: [cd3, cd19, cd3, zero], color: soft}
+            - {dots: [t3, t19], names: tids, color: s1, id: t}
+            - {dots: [b3, b19], names: bids, color: s2, id: b}
+            - {dots: [m3, m19], names: mids, color: s3, id: m}
+      - id: b
+        at: [51, 1]
+        width: 49
+        height: 45
+        plot:
+          x: {label: CD3, min: 0, max: 5.5}
+          y: {label: CD19, min: 0, max: 5.5}
+          layers:
+            - {sticks: [cd3, cd19, zero, cd19], color: soft}
+            - {dots: [t3, t19], names: tids, color: s1, id: t}
+            - {dots: [b3, b19], names: bids, color: s2, id: b}
+            - {dots: [m3, m19], names: mids, color: s3, id: m}
+    label:
+      - {on: a.t.c3, say: T cells, dx: -2, dy: -3, color: s1}
+      - {on: a.b.c5, say: B cells, dx: 2, dy: -2.6, color: s2}
+      - {on: a.m.c10, say: monocytes, dx: 2, dy: -3, color: s3}
+      - {on: b.t.c3, say: "these two land together", dx: -1, dy: -9, color: accent}
+
+  - beat: data
+    title: Six cells, three kinds, two markers
+    ratio: "16:7"
+    stop: {say: "The table we start from", shape: "{{n}} cells × {{m_kept}} markers"}
+    note:
+      shown: Two T cells, two B cells and two monocytes, each measured for CD3 and CD19.
+      read: One row is one cell. One column is one marker. Bigger means brighter.
+      why: The goal is about these exact cells, so every later number comes from this table.
+      changed: The two pictures went back to the plain numbers behind them.
+    figure:
+      - id: cells
+        at: [2, 1.5]
+        width: 54
+        table: {rows: ids, head: cell, cols: [{key: kinds, label: kind}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}], mark: {row: 2}}
+      - {part: cell, at: [64, 9], size: 12, color: s1, id: tc}
+      - {part: cell, at: [64, 22], size: 12, color: s2, id: bc}
+      - {part: cell, at: [64, 35], size: 12, color: s3, id: mc}
+    label:
+      - {on: tc.right, say: "T cell, CD3 high", dx: 1.5, dy: 0, color: s1}
+      - {on: bc.right, say: "B cell, CD19 high", dx: 1.5, dy: 0, color: s2}
+      - {on: mc.right, say: "monocyte, low on both", dx: 1.5, dy: 0, color: s3}
+
+  - beat: by-hand
+    title: Move the middle of the cloud to zero
+    paper: graph
+    ratio: "16:9"
+    stop: {say: "Distances from the middle", shape: "{{n}} cells × {{m_kept}} distances"}
+    note:
+      shown: Each marker's mean, taken off its column. The dots keep their shape, around a new zero.
+      read: A negative number means below the mean. Zero is the average cell.
+      why: A direction only makes sense from a centre, and the goal is a direction.
+      changed: Every number shifted by its column's mean. No distance between cells changed.
+    more:
+      - {ask: "Why does the mean have to go?", answer: "With the mean left in, the best line would point at the middle of the cloud, not along its spread."}
+    figure:
+      - {calc: {expr: sum3 / n, name: m1, say: The middle of CD3, fmt: 2}, at: [1, 0.5], width: 40, size: 1.9}
+      - {calc: {expr: sum19 / n, name: m2, say: The middle of CD19, fmt: 2}, at: [1, 10], width: 40, size: 1.9}
+      - id: dist
+        at: [1, 23]
+        width: 40
+        rh: 4.3
+        table: {rows: ids, head: cell, cols: [{key: d1, label: CD3, fmt: 2}, {key: d2, label: CD19, fmt: 2}]}
+      - id: cloud
+        at: [45, 1]
+        width: 54
+        height: 52
+        plot:
+          equal: true
+          x: {label: distance on CD3, min: -3.3, max: 3.3}
+          y: {label: distance on CD19, min: -3.3, max: 3.3}
+          layers: &cloud
+            - {dots: [td1, td2], names: tids, color: s1, id: t}
+            - {dots: [bd1, bd2], names: bids, color: s2, id: b}
+            - {dots: [md1, md2], names: mids, color: s3, id: m}
+    label:
+      - {on: cloud.t.c3, say: T cells, dx: 0, dy: -3, color: s1}
+      - {on: cloud.b.c5, say: B cells, dx: 2, dy: 0, color: s2}
+      - {on: cloud.m.c10, say: monocytes, dx: 2, dy: 3, color: s3}
+
+  - beat: by-hand
+    title: Drop each cell onto a tilted line
+    ratio: "16:8.6"
+    stop: {say: "Each cell drops to one shadow", shape: "{{n}} cells × {{kept}} shadow"}
+    note:
+      shown: One tilted line, and each cell's shadow on it. The matrices do it all at once.
+      read: Go across a row, times down the arrow, add. That sum is that cell's shadow.
+      why: The goal needs one number per cell, and a shadow is one number.
+      changed: Two distances per cell became one shadow per cell.
+    more:
+      - {ask: "Why these two numbers for the arrow?", answer: "They give an arrow of length one: {{u1}}² + {{u2}}² = {{u1^2 + u2^2|0}}. A longer arrow would stretch every shadow and fake a bigger spread."}
+    think: {q: "Which cell has the biggest shadow here, and why?", a: "c4, a monocyte, at {{at(p, 3)|2}}. Low on both markers is what this line points along."}
+    figure:
+      - id: d
+        at: [1, 4]
+        width: 25
+        rh: 4.3
+        matrix: {rows: ids, cols: [{key: d1, label: CD3, fmt: 2}, {key: d2, label: CD19, fmt: 2}], mark: {row: 0}, name: "distances"}
+      - {text: "×", at: [27.2, 16], size: 3.2}
+      - id: u
+        at: [31, 11]
+        width: 9
+        rh: 4.3
+        matrix: {cols: [{key: uvec, label: line, fmt: 1}], name: "arrow"}
+      - {text: "=", at: [41.3, 16], size: 3.2}
+      - id: s
+        at: [45, 4]
+        width: 13
+        rh: 4.3
+        matrix: {cols: [{key: p, label: shadow, fmt: 2}], mark: {row: 0}, name: "shadows"}
+      - {calc: {expr: u1 * d1c1 + u2 * d2c1, name: p1, say: "Cell c1, across its row and down the arrow"}, at: [1, 40], width: 58, size: 1.9}
+      - id: tilt
+        at: [60, 1]
+        width: 40
+        height: 40
+        plot:
+          equal: true
+          x: {label: CD3, min: -3.3, max: 3.3}
+          y: {label: CD19, min: -3.3, max: 3.3}
+          layers:
+            - {line: [["-rux", "-ruy"], [rux, ruy]], color: accent, id: line}
+            - {sticks: [d1, d2, footx, footy], color: soft}
+            - *cloud
+    label:
+      - {on: tilt.line.line, say: the line, dx: -2, dy: 1.5, color: accent}
+
+  - beat: by-hand
+    title: Score the line by how far its shadows spread
+    ratio: "16:8"
+    stop: {say: "The whole line gets a score", shape: "one number per line"}
+    note:
+      shown: Each shadow squared, then the average, using n minus one as for any variance.
+      read: A tall bar is a cell that lands far from the middle. Wide spread keeps cells apart.
+      why: The goal says keep how cells differ, and spread measures exactly that.
+      changed: Six shadows became one number that scores this line.
+    figure:
+      - id: tb
+        at: [1, 1.5]
+        width: 40
+        rh: 4.3
+        table:
+          rows: ids
+          head: cell
+          cols: [{key: p, label: shadow, fmt: 2}, {key: sq, label: squared, fmt: 2}]
+          foot: [{label: total, cols: {sq: "{{sumsq|2}}"}}]
+      - {calc: {expr: sumsq / df, name: s2u, say: "Spread along this line"}, at: [1, 37], width: 42, size: 1.9}
+      - id: h
+        at: [45, 1]
+        width: 54
+        height: 41
+        plot:
+          y: {label: squared shadow, min: 0}
+          layers:
+            - {bars: [ids, sq], color: s1, id: q}
+    label:
+      - {on: h.q.bar.3, say: "c4 does the most", dx: 3, dy: 2, color: accent}
+
+  - beat: formula
+    title: That sum, written for any line
+    ratio: "16:6"
+    note:
+      shown: The same steps, first with our numbers, then with symbols in the same places.
+      read: The dot means across a row, down the arrow, add. The sum runs over cells.
+      why: The goal needs a score for every line, so we write it once for all of them.
+      changed: Our numbers became symbols. Nothing new was added.
+    figure:
+      - assemble: {lhs: s2u, tex: '\frac{1}{[df]} \sum_{i=1}^{n} (\mathbf{u} \cdot \mathbf{d}_i)^2', plug: '\frac{[sumsq:2]}{[df:0]}', say: "Same sum, ours above, symbols below"}
+        at: [2, 2]
+        width: 56
+        size: 2.8
+      - {text: "$\\mathbf{u}$ is the line's arrow, of length one", at: [62, 8], width: 37, size: 2.3, letter: true}
+      - {text: "$\\mathbf{d}_i$ is one row, cell $i$", at: [62, 14], width: 37, size: 2.3, letter: true}
+      - {text: "The dot gives its shadow", at: [62, 20], width: 37, size: 2.3, letter: true}
+      - {text: "Square, add, share among $n-1$", at: [62, 26], width: 37, size: 2.3, letter: true}
+
+  - beat: run
+    title: Turn the line, and the score changes
+    paper: navy
+    ratio: "16:9.4"
+    cols: 3
+    stop: {say: "Each turn gives a new spread", shape: "{{len(ths)}} lines, one score each"}
+    note:
+      shown: One line turned step by step. Earlier lines stay, and the newest is orange.
+      read: Each frame's line says its angle and spread. A bigger number keeps more.
+      why: The goal is the best direction, so we try directions and compare.
+      changed: We stopped using one line and began trying many.
+    frames:
+      - say: "Lying flat on CD3, {{at(ths, 0)}} degrees: {{at(spl, 0)|2}}."
+        add:
+          - id: fan
+            at: [13, 1]
+            width: 74
+            height: 66
+            plot:
+              <<: &over {equal: true, axes: false, ml: 6, mb: 5, x: {min: -3.3, max: 3.3}, y: {min: -3.3, max: 3.3}}
+              layers:
+                - {hline: 0, color: soft}
+                - {vline: 0, color: soft}
+                - {dots: [d1, d2], color: ink, size: 1.5}
+          - {at: [13, 1], width: 74, height: 66, plot: {<<: *over, layers: [{line: [["-at(rx, 0)", "-at(ry, 0)"], ["at(rx, 0)", "at(ry, 0)"]]}]}}
+      - say: "{{at(ths, 6)}} degrees: {{at(spl, 6)|2}}."
+        add:
+          - {at: [13, 1], width: 74, height: 66, plot: {<<: *over, layers: [{line: [["-at(rx, 6)", "-at(ry, 6)"], ["at(rx, 6)", "at(ry, 6)"]]}]}}
+      - say: "{{at(ths, 12)}} degrees: {{at(spl, 12)|2}}. Near our tilt, and small."
+        think: {q: "Which way would you turn next, and why?", a: "Past straight up, to lie along the long side of the cloud, from the T cells to the B cells."}
+        add:
+          - {at: [13, 1], width: 74, height: 66, plot: {<<: *over, layers: [{line: [["-at(rx, 12)", "-at(ry, 12)"], ["at(rx, 12)", "at(ry, 12)"]]}]}}
+      - say: "Up CD19, {{at(ths, 18)}} degrees: {{at(spl, 18)|2}}."
+        add:
+          - {at: [13, 1], width: 74, height: 66, plot: {<<: *over, layers: [{line: [["-at(rx, 18)", "-at(ry, 18)"], ["at(rx, 18)", "at(ry, 18)"]]}]}}
+      - say: "{{at(ths, 24)}} degrees: {{at(spl, 24)|2}}. It is climbing."
+        add:
+          - {at: [13, 1], width: 74, height: 66, plot: {<<: *over, layers: [{line: [["-at(rx, 24)", "-at(ry, 24)"], ["at(rx, 24)", "at(ry, 24)"]]}]}}
+      - say: "{{at(ths, 30)}} degrees: {{at(spl, 30)|2}}. The biggest so far."
+        add:
+          - {at: [13, 1], width: 74, height: 66, plot: {<<: *over, layers: [{line: [["-at(rx, 30)", "-at(ry, 30)"], ["at(rx, 30)", "at(ry, 30)"]]}]}}
+
+  - beat: what-if
+    title: Find the peak yourself
+    paper: graph
+    ratio: "16:7"
+    note:
+      shown: The line and its shadows on the left. Its score on the curve of every angle, right.
+      read: Slide the angle. The orange mark follows. The top of the curve is the best line.
+      why: The goal is the top of this curve, and here you can see it is one peak.
+      changed: Six angles became all of them, and you are turning the line.
+    controls:
+      - {name: th, min: 0, max: 175, step: 5, value: 60, label: Angle of the line}
+    derive:
+      k: th / 5
+    figure:
+      - id: fig
+        at: [0, 1]
+        width: 42
+        height: 41
+        plot:
+          equal: true
+          x: {label: CD3, min: -3.3, max: 3.3}
+          y: {label: CD19, min: -3.3, max: 3.3}
+          layers:
+            - {line: [["-at(rx, k)", "-at(ry, k)"], ["at(rx, k)", "at(ry, k)"]], color: accent}
+            - {sticks: [d1, d2, "at(fx, k)", "at(fy, k)"], color: soft}
+            - *cloud
+      - id: curve
+        at: [44, 1]
+        width: 56
+        height: 41
+        plot:
+          x: {label: angle of the line, min: 0, max: 175}
+          y: {label: shadow spread, min: 0}
+          layers:
+            - {path: [ths, spl], color: s1}
+            - {vline: th_star, color: gold2, id: peak}
+            - {vline: th, color: accent}
+      - {text: "this line: {{at(spl, k)|2}}", at: [70, 30.5], size: 2.3, letter: true, color: accent}
+    label:
+      - {on: curve.peak.line, say: "best: {{th_star|1}} degrees", dx: -1.5, dy: 4.5, color: gold2}
+
+  - beat: by-hand
+    title: Read each cell's score off the best line
+    ratio: "16:8.6"
+    stop: {say: "Two markers became one score", shape: "{{n}} cells × {{kept}} score"}
+    note:
+      shown: The best line laid flat. Each cell's score is where it lands; the sticks are what we drop.
+      read: Left to right is the score. Height is what the score leaves out.
+      why: This is the goal. One number now keeps the T cells, monocytes and B cells apart.
+      changed: The line turned flat, so two distances became one score and a small leftover.
+    think: {q: "Why do monocytes land near zero?", a: "The arrow weighs CD3 and CD19 with opposite signs. Monocytes are low on both, so the parts cancel."}
+    more:
+      - {ask: "What is this called in a paper?", answer: "The direction is the first principal component, PC1, and the score is the cell's PC1 value."}
+    figure:
+      - id: dv
+        at: [1, 4]
+        width: 25
+        rh: 4.3
+        matrix: {rows: ids, cols: [{key: d1, label: CD3, fmt: 2}, {key: d2, label: CD19, fmt: 2}], name: distances}
+      - {text: "×", at: [27.2, 16], size: 3.2}
+      - id: vv
+        at: [31, 11]
+        width: 10
+        rh: 4.3
+        matrix: {cols: [{key: rowv, label: best, fmt: 2}], name: "best arrow"}
+      - {text: "=", at: [42.3, 16], size: 3.2}
+      - id: sc
+        at: [46, 4]
+        width: 13
+        rh: 4.3
+        matrix: {cols: [{key: score, label: score, fmt: 2}], name: scores}
+      - {text: "The score keeps {{share1|%}} of the spread; {{lost|%}} is the leftover height.", at: [1, 40], width: 56, size: 2.4, letter: true, color: accent}
+      - id: flat
+        at: [60, 3]
+        width: 40
+        height: 42
+        plot:
+          equal: true
+          x: {label: score along the best line, min: -3.4, max: 3.4}
+          y: {label: left out, min: -3.4, max: 3.4}
+          layers:
+            - {sticks: [score, left, score, zero], color: soft}
+            - {dots: [ts, tl], names: tids, color: s1, id: t}
+            - {dots: [bs, bl], names: bids, color: s2, id: b}
+            - {dots: [ms, ml], names: mids, color: s3, id: m}
+    label:
+      - {on: flat.t.c3, say: T cells, dx: 0.5, dy: 4, color: s1}
+      - {on: flat.b.c5, say: B cells, dx: -1, dy: 4, color: s2}
+      - {on: flat.m.c4, say: monocytes, dx: 1.5, dy: -2.6, color: s3}
+
+  - beat: limits
+    title: The line follows the biggest numbers
+    paper: navy
+    ratio: "16:7"
+    stop: {say: "Other units, other line", shape: "best line at {{th_b|0}} degrees"}
+    break: {rule: "Spread only means signal when the markers share a unit.", path: "Read CD3 in units {{big}} times smaller, and rerun."}
+    note:
+      shown: The same six cells with CD3 read in smaller units, both axes on one scale.
+      read: Every dot has been stretched along CD3. CD19 has nearly no room left.
+      why: The goal said how cells differ, and units can fake a difference.
+      changed: No cell moved, only CD3's unit. The score now keeps {{share_big|%}}, nearly all CD3.
+    figure:
+      - id: wide
+        at: [4, 1]
+        width: 92
+        height: 41
+        plot:
+          equal: true
+          x: {label: "CD3, in the smaller unit", min: -40, max: 520}
+          y: {label: CD19, min: -60, max: 60, ticks: 2}
+          layers:
+            - {dots: [bigx, cd19], color: s1, id: c, names: ids}
+            - {hline: m2, color: accent, id: pc}
+    label:
+      - {on: wide.c.c5, say: "CD19 is squashed flat, so the line lies on CD3", dx: 4, dy: -9, color: accent}
+
+  - beat: aside
+    title: Or give both markers one unit first
+    ratio: "16:5"
+    width: 80
+    stop: {say: "Each marker scaled", shape: "{{n}} cells × {{m_kept}} scaled"}
+    alt: {say: "Scale each marker before you turn the line.", why: "Divide each marker by its own standard deviation."}
+    note:
+      shown: The best line and what it keeps, under three choices of unit.
+      read: Each row is one choice. The scaled row does not care which unit you started in.
+      why: The goal is real differences, so we choose the units on purpose.
+      changed: We fixed the unit problem instead of only naming it.
+    more:
+      - {ask: "So should I always scale?", answer: "No. Scaling also lifts a noisy marker to the same footing as a clean one, so it is a choice to state."}
+    figure:
+      - id: rt
+        at: [2, 2]
+        width: 78
+        rh: 5
+        table: {rows: routes, head: units, cols: [{key: route_th, label: "angle", fmt: 1}, {key: route_share, label: "share kept", fmt: '%'}], mark: {row: 2}}
+
+  - beat: summary
+    title: Yes, one number can stand in for two markers
+    ratio: "16:4"
+    note:
+      shown: The answer to the opening question, on these six cells.
+      read: Read the line, then the three things to keep in mind beside it.
+      why: This is the goal reached, stated in the question's own words.
+      changed: We stopped working and said what we found.
+    figure:
+      - {text: "One turned axis keeps {{share1|%}} of how the six cells differ.", at: [2, 3], width: 96, size: 2.7, letter: true, color: accent}
+      - {text: "Centre first. Choose the line by its spread. Mind the units.", at: [2, 13], width: 92, size: 2.4, letter: true}
+
+  - beat: next
+    title: Do we have to try every angle?
+    ratio: "16:6.6"
+    width: 80
+    note:
+      shown: Four numbers worked out from the distances. Together, they already hold the best line.
+      read: The diagonal is each marker's spread. The other two say how they move together.
+      why: With thirty markers, the goal is out of reach by turning a line by hand.
+      changed: We turned from finding the line to finding a shortcut to it.
+    figure:
+      - id: cv
+        at: [20, 8]
+        width: 42
+        rh: 7
+        matrix: {rows: markers, cols: [{key: cov1, label: CD3, fmt: 2}, {key: cov2, label: CD19, fmt: 2}], name: "Hold these in mind"}
+
+  - beat: review
+    title: Say it before you turn it over
+    cards:
+      - {q: "What does a cell's shadow on a line stand for?", a: "One number: how far along that line the cell sits from the middle."}
+      - {q: "Why centre the markers first?", a: "A direction needs a starting point, and the mean is the shared one."}
+      - {q: "What makes one line better than another?", a: "Its shadows spread wider, so more of how the cells differ survives."}
+      - {q: "Where does the arrow's length matter?", a: "It must stay one, or a longer arrow would fake a bigger spread."}
+      - {q: "Why can units change PC1?", a: "Spread grows with the unit, so the biggest numbers pull the line."}
+      - {q: "What would you check before trusting a PCA plot from a paper?", a: "Whether the markers were centred and scaled, and what share PC1 keeps."}

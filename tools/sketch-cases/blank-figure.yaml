@@ -1,0 +1,13 @@
+# expect: the figure is blank
+# base: clean-page
+sheets:
+  - beat: picture
+    title: Nothing drawn
+    ratio: "16:6"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - {draw: '// not yet', at: [5, 2], width: 40, height: 16}

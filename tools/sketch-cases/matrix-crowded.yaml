@@ -1,0 +1,30 @@
+# expect: too small
+# base: clean-page
+data:
+  rows12: [r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11]
+  m0: [0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5, 3.5]
+  m1: [7.5, 0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5]
+  m2: [4.5, 7.5, 0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5]
+  m3: [1.5, 4.5, 7.5, 0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5]
+  m4: [8.5, 1.5, 4.5, 7.5, 0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5]
+  m5: [5.5, 8.5, 1.5, 4.5, 7.5, 0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5]
+  m6: [2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5, 3.5, 6.5, 9.5, 2.5, 5.5]
+  m7: [9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5, 3.5, 6.5, 9.5, 2.5]
+  m8: [6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5, 3.5, 6.5, 9.5]
+  m9: [3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5, 3.5, 6.5]
+  m10: [0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5, 3.5]
+  m11: [7.5, 0.5, 3.5, 6.5, 9.5, 2.5, 5.5, 8.5, 1.5, 4.5, 7.5, 0.5]
+sheets:
+  - beat: picture
+    title: Twelve by twelve, crammed
+    ratio: "16:5"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - id: big
+        at: [6, 1]
+        width: 30
+        matrix: {rows: rows12, cols: [{key: m0, label: m0, fmt: 1}, {key: m1, label: m1, fmt: 1}, {key: m2, label: m2, fmt: 1}, {key: m3, label: m3, fmt: 1}, {key: m4, label: m4, fmt: 1}, {key: m5, label: m5, fmt: 1}, {key: m6, label: m6, fmt: 1}, {key: m7, label: m7, fmt: 1}, {key: m8, label: m8, fmt: 1}, {key: m9, label: m9, fmt: 1}, {key: m10, label: m10, fmt: 1}, {key: m11, label: m11, fmt: 1}], rh: 1.1}

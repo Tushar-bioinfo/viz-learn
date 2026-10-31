@@ -126,9 +126,10 @@ def contrast_issues(png, bgpng, boxes, dpr):
     return out
 
 
-def sheet(page, shots, path, cols, w, h):
+def sheet(page, shots, path, cols, w, h, tall=False):
     rows = (len(shots) + cols - 1) // cols
-    imgs = "".join(f'<figure style="margin:6px;display:inline-block;position:relative"><img src="{Path(f).as_uri()}" style="width:{w}px;height:{h}px;display:block;border-radius:8px">'
+    top, high = (";vertical-align:top", "auto") if tall else ("", f"{h}px")   # a sketch page's sheets keep their own height
+    imgs = "".join(f'<figure style="margin:6px;display:inline-block;position:relative{top}"><img src="{Path(f).as_uri()}" style="width:{w}px;height:{high};display:block;border-radius:8px">'
                    f'<figcaption style="position:absolute;left:8px;top:6px;font:600 15px system-ui;color:#fff;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px">{lab}</figcaption></figure>'
                    for f, lab in shots)
     tmp = Path(path).with_suffix(".tmp.html")
@@ -141,6 +142,7 @@ def sheet(page, shots, path, cols, w, h):
 
 
 ZOOM = "(VizOS.slides[VizOS.i].zoom || 1)"
+PAGE_MAX = 1_000_000
 
 
 def check_deck(br, deck, out, args, report):
@@ -194,6 +196,10 @@ def check_deck(br, deck, out, args, report):
         zooms[i] = page.evaluate(ZOOM)
         nums.append(f"slide {i + 1}: " + " | ".join(page.evaluate(NUMBERS, i)))
         f = out / f"desktop-{i + 1:02d}.png"
+        if info.get("page"):   # a sheet can be taller than the screen: open the window to fit it, so all its text is seen and measured
+            page.set_viewport_size({"width": W, "height": max(H, page.evaluate("VizOS.sheetHeight()"))})
+            page.evaluate(f"VizOS.go({i},-1)")
+            settle(page)
         page.screenshot(path=str(f))
         boxes = page.evaluate("VizOS.textBoxes()")
         bgf = out / f".bg-{i + 1:02d}.png"
@@ -203,6 +209,8 @@ def check_deck(br, deck, out, args, report):
         page.evaluate("document.querySelectorAll('style[data-hide]').forEach(s => s.remove()); document.querySelectorAll('style').forEach(s => { if (s.textContent.startsWith('/*hide-text*/')) s.remove(); })")
         bad = contrast_issues(f, bgf, boxes, 1)
         bgf.unlink(missing_ok=True)
+        if info.get("page"):
+            page.set_viewport_size({"width": W, "height": H})
         if bad is None and i == 0:
             report.append((0, "contrast not checked (pip install pillow)"))
         for ratio, need, text in sorted(bad or [])[:3]:
@@ -233,7 +241,10 @@ def check_deck(br, deck, out, args, report):
     if nums:
         (out / "numbers.txt").write_text("\n".join(nums) + "\n")
     if shots:
-        sheet(page, shots, out / "desktop.png", 3, 480, 270)
+        sheet(page, shots, out / "desktop.png", 3, 480, 270, tall=bool(info.get("page")))
+    size = deck.stat().st_size
+    if info.get("page") and size > PAGE_MAX and "<img" not in deck.read_text(encoding="utf-8"):
+        report.append((0, f"the page is {size / 1e6:.2f} MB (≤ {PAGE_MAX / 1e6:g} MB with no picture)"))
     ctx.close()
     return shots
 

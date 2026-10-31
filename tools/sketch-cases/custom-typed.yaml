@@ -1,0 +1,21 @@
+# expect: custom drawing types the number 4.21
+# expect: that is `slope[1]`
+# base: clean-page
+data:
+  slope: [1.5, 4.21]
+sheets:
+  - beat: picture
+    title: A custom drawing
+    ratio: "16:7"
+    note:
+      shown: One row of six numbers.
+      read: Left to right, one number per cell.
+      why: The goal needs these numbers.
+      changed: We wrote them down.
+    figure:
+      - id: wheel
+        at: [20, 2]
+        width: 60
+        height: 38
+        draw: |
+          text(10, 10, "the slope is 4.21");

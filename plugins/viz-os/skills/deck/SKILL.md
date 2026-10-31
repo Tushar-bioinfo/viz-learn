@@ -66,3 +66,4 @@ Read only the file the current step needs. Write `deck.yaml` once and fix it wit
 | `examples/gallery/deck.yaml` | the syntax of one slide type, quickly |
 | `profile.example.yaml` | creating a learner profile for the first time |
 Read the examples for patterns; never reuse their topic.
+For one long illustrated page the learner scrolls, use the sibling `sketch` skill (`skills/sketch`).
