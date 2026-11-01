@@ -53,7 +53,7 @@ slides:
     title: Trying lines does not scale
     lead: We found the peak by brute force.
     steps:
-      - say: 'Last time we turned a line through {{last(ths)}} degrees and read the spread at each angle.'
+      - say: 'Last time: turn a line through {{last(ths)}} degrees, read the spread at each angle.'
         add:
           chart:
             x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}
@@ -66,9 +66,9 @@ slides:
       - think:
           q: 'Last time CD3 alone had spread {{v_cd3|3}}. What did PC1 have?'
           a: '{{lam1|3}}, which is {{100 * lam1 / (v_cd3 + v_cd19)|0}}% of the total {{v_cd3 + v_cd19|3}}.'
-      - say: 'That worked for two markers. Thirty markers would need more lines than any computer can try.'
+      - say: That worked for two markers. Thirty would need more lines than any computer tries.
       - think:
-          q: The whole curve came from six cells. What would you need to know to draw it without trying lines?
+          q: The curve came from six cells. What would draw it without trying lines?
           a: A few numbers about the cells. Today we find that three numbers draw the whole curve.
 
   - type: board
@@ -79,7 +79,7 @@ slides:
       from: cells
       cols: [{key: id, label: cell}, {key: type, label: type}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
     steps:
-      - say: 'Here are part 1''s six cells, each measured from the middle: ==s1:d₁== for CD3, ==s2:d₂== for CD19.'
+      - say: 'Part 1''s six cells: $d_1$ for CD3, $d_2$ for CD19.'
         add:
           plane:
             fill: true
@@ -92,7 +92,7 @@ slides:
       - say: T cells sit right and low. B cells sit left and high.
         mark: [col:d1, col:d2]
       - think:
-          q: When a cell's CD3 is above the middle, which way does its CD19 tend to go?
+          q: 'When a cell''s CD3 is above the middle, which way does CD19 go?'
           a: Down. High CD3 comes with low CD19, and the other way round. Can one number say how strongly?
 
   - type: board
@@ -103,7 +103,7 @@ slides:
       from: cells
       cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
     steps:
-      - say: Multiply each cell's two distances. Same direction gives a positive product, opposite directions a negative one.
+      - say: Same direction gives a positive product, opposite directions a negative one.
         add: {col: {key: prod, label: d₁ × d₂, expr: d1 * d2, fmt: 2}}
         mark: col:prod
       - say: 'Right-and-low or left-and-high gives a negative product. {{n_neg}} of the six cells do that.'
@@ -120,11 +120,11 @@ slides:
               - {text: product +, at: [-2.2, -2.2], color: good}
               - {text: product −, at: [-2.2, 2.6], color: bad}
               - {text: product −, at: [2.2, -2.2], color: bad}
-      - say: Add the products and divide by n − 1, as for a variance.
+      - say: Add the products and divide by $n - 1$, as for a variance.
         add: {calc: {say: The covariance of CD3 and CD19, expr: sum(d1 * d2) / (n - 1), name: c12, fmt: 3}}
       - think:
           q: 'Why do the two monocytes barely move the covariance?'
-          a: Both sit left and low, so their products are positive but small. The T and B cells' big negative products win.
+          a: 'Both sit left and low: small positive products. T and B cells'' big negatives win.'
         mark: col:prod
 
   - type: board
@@ -135,17 +135,17 @@ slides:
       from: cells
       cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
     steps:
-      - say: 'Take part 1''s tilted arrow, (==s1:{{u1}}==, ==s2:{{u2}}==). c1''s shadow on it is a dot product.'
+      - say: 'Part 1''s tilted arrow, (==s1:{{u1}}==, ==s2:{{u2}}==). c1''s shadow on it is a dot product.'
         add: {calc: {say: c1's shadow, row: 0, expr: u1 * d1 + u2 * d2, name: p0, fmt: 2}}
         mark: row:0
       - say: 'Square it the long way: (a + b)² is a² + 2ab + b².'
         add: {calc: {say: 'c1''s shadow squared, opened up', why: 'Each piece holds one kind of number: d₁², d₁d₂ or d₂².', row: 0, expr: u1^2 * d1^2 + 2 * u1 * u2 * d1 * d2 + u2^2 * d2^2, name: sq0, fmt: 3}}
         mark: row:0
-      - say: Add that over all six cells and divide by n − 1. Each piece turns into one of three numbers.
+      - say: Sum the six cells, divide by $n - 1$. Three numbers come out.
         add: {calc: {say: The spread along u from three numbers, expr: u1^2 * v_cd3 + 2 * u1 * u2 * c12 + u2^2 * v_cd19, name: s2u, fmt: 3}}
       - think:
-          q: 'Part 1 got {{s2u|3}} for this arrow by dropping all six cells. Which of the three numbers change when you turn the arrow?'
-          a: None of them. Only u₁ and u₂ change. The two spreads and the covariance give every line's spread.
+          q: 'Part 1 got {{s2u|3}} here. Turn the arrow: which of the three numbers change?'
+          a: 'None of them. Only $u_1$ and $u_2$ change. The two spreads and the covariance give every line''s spread.'
 
   - type: board
     beat: formula
@@ -159,24 +159,24 @@ slides:
             lhs: s2u
             tex: '[u1]^2 [v_cd3] + 2 [u1] [u2] [c12] + [u2]^2 [v_cd19]'
             plug: '[s2u:{{s2u|3}}] = [u1:{{u1}}]^2 \cdot [v_cd3:{{v_cd3|3}}] + 2 \cdot [u1:{{u1}}] \cdot [u2:{{u2}}] \cdot ([c12:{{c12|3}}]) + [u2:{{u2}}]^2 \cdot [v_cd19:{{v_cd19|3}}]'
-      - say: And in symbols. The arrow's parts mix the three numbers.
+      - say: 'In symbols. The arrow''s parts mix the three numbers.'
       - think:
           q: Why is there a 2 in front of the covariance?
-          a: 'The middle piece of (a + b)² is 2ab. Each cell''s d₁d₂ part comes in twice.'
+          a: 'The middle piece of (a + b)² is 2ab. Each cell''s $d_1 d_2$ part comes in twice.'
 
   - type: board
     beat: by-hand
     title: C times an arrow is a new arrow
     lead: Multiply C by u, row by row.
     steps:
-      - say: 'Box the three numbers: the covariance matrix C. Multiply each row by u''s parts and add.'
+      - say: 'Box the three numbers: the covariance matrix $C$.'
         add:
           ops:
             notation: false
             matrix: {name: covariance matrix C, from: cmat, cols: [cd3, cd19], rowKey: name, row: marker, col: marker, says: 'marker $i$ with marker $j$', fmt: 3, focus: CD3}
             steps:
               - {op: dot, with: uvec, wtex: 'u', withLabel: arrow u, name: cuv, tex: '(Cu)', label: C times u, fmt: 3, say: Multiply each row of C by u, why: 'Two parts come out, so C u is an arrow too.'}
-      - say: 'Draw both. u points at {{th_hand|0}} degrees, but C u points at {{cu_th|0}} degrees.'
+      - say: 'Draw both. $u$ points at {{th_hand|0}} degrees, but $C u$ points at {{cu_th|0}} degrees.'
         add:
           plane:
             x: {label: CD3 direction, min: -1.5, max: 1.5}
@@ -185,8 +185,8 @@ slides:
               - {vector: [u1, u2], color: ink, name: u, label: the arrow u}
               - {vector: [cu1, cu2], color: accent, name: C u, label: C times u}
       - think:
-          q: C turned this arrow. Is there an arrow that C does not turn, only stretches?
-          a: Find out next. Turn u and watch C u.
+          q: '$C$ turned this arrow. Does any arrow only stretch, not turn?'
+          a: Find out next. Turn $u$ and watch $C u$.
 
   - type: board
     beat: what-if
@@ -202,7 +202,7 @@ slides:
       cang: at(cth, th / 5)
       gp: at(gap, th / 5)
     steps:
-      - say: Drag the slider. The ink arrow is u, the orange one is C times u.
+      - say: 'Drag the slider. Ink arrow: $u$. Orange arrow: $C u$.'
         add:
           - {params: {say: The two arrows now, names: [th, cang, gp]}}
           - plane:
@@ -212,9 +212,9 @@ slides:
                 - {vector: [ex, ey], color: ink, name: u, label: the arrow u}
                 - {vector: [cx, cy], color: accent, name: C u, label: C times u}
       - think:
-          q: Find the angles where u and C u point along the same line. How many are there?
-          a: 'Two, near {{th_star|0}} and {{th_low|0}} degrees. At {{th_star|0}} C stretches u {{lam1|2}}-fold, at {{th_low|0}} only {{lam2|2}}-fold.'
-      - say: 'An arrow that C only stretches is called an eigenvector (eigenvector). Its stretch is its eigenvalue.'
+          q: Find angles where $u$ and $C u$ share a line. How many?
+          a: 'Two, near {{th_star|0}} and {{th_low|0}} degrees. At {{th_star|0}} $C$ stretches $u$ {{lam1|2}}-fold, at {{th_low|0}} only {{lam2|2}}-fold.'
+      - say: An arrow $C$ only stretches is an eigenvector (eigenvector). Its stretch is its eigenvalue.
       - think:
           q: 'Which of the two is PC1, and why?'
           a: 'The one at {{th_star|0}} degrees. Its stretch, {{lam1|3}}, is part 1''s peak spread. The other is PC2.'
@@ -225,7 +225,7 @@ slides:
     lead: Multiply by C, then shrink back to length 1.
     derive: {ca1: 'at(pcu1, 0)', ca2: 'at(pcu2, 0)'}
     steps:
-      - say: 'Start from the flat arrow a = (1, 0). C times it is C''s first column, ({{v_cd3|3}}, {{c12|3}}).'
+      - say: 'Start flat, $a$ = (1, 0). $C a$ is $C$''s first column, ({{v_cd3|3}}, {{c12|3}}).'
         add:
           plane:
             x: {label: CD3 direction, min: -1.5, max: 5}
@@ -236,10 +236,10 @@ slides:
               - {vector: ['at(pu1, 1)', 'at(pu2, 1)'], color: s1, name: new u, label: the new arrow, step: 3}
       - say: That arrow is too long. Find its length.
         add: {calc: {say: The length of C times a, expr: sqrt(ca1^2 + ca2^2), name: blen, fmt: 3}}
-      - say: 'Divide each part by the length. CD3 is shown; CD19 the same way gives {{at(pu2, 1)|3}}.'
+      - say: 'Divide each part by the length. CD19 the same way gives {{at(pu2, 1)|3}}.'
         add: {calc: {say: The new arrow's CD3 part, expr: ca1 / blen, name: nu1, fmt: 3}}
       - think:
-          q: 'The start pointed at 0 degrees. The new arrow points at {{at(pth, 1)|0}}. Is that closer to PC1?'
+          q: 'Start: 0 degrees. New arrow: {{at(pth, 1)|0}}. Is that closer to PC1?'
           a: 'Yes. PC1 is at {{th_star|0}} degrees. One repeat moved most of the way there.'
 
   - type: board
@@ -256,7 +256,7 @@ slides:
       qth: at(pth, t)
       qs: at(pq, t)
     steps:
-      - say: Start flat. Each repeat multiplies by C and shrinks the arrow back to length 1.
+      - say: Start flat. Each repeat multiplies by $C$ and shrinks back to length 1.
         frame: 0
         add:
           - {params: {say: After this many repeats, names: [qth, qs]}}
@@ -277,7 +277,7 @@ slides:
         frame: 7
       - think:
           q: Why does every repeat pull the arrow toward PC1?
-          a: 'C stretches its PC1 part {{lam1|1}}-fold, its PC2 part only {{lam2|1}}-fold. PC1 wins more each time.'
+          a: '$C$ stretches its PC1 part {{lam1|1}}-fold, its PC2 part only {{lam2|1}}-fold. PC1 wins more each time.'
         frame: 7
 
   - type: board
@@ -285,7 +285,7 @@ slides:
     title: How fast the repeats close in
     lead: The gap to the peak, repeat by repeat.
     steps:
-      - say: The gap between the spread now and PC1's spread, after each repeat, on a log scale.
+      - say: 'The gap is PC1''s spread minus the spread now, on a log scale.'
         add:
           chart:
             x: {label: repeats, min: 0, max: reps, ticks: [0, 1, 2, 3, 4, 5, 6, 7]}
@@ -303,7 +303,7 @@ slides:
     title: PC1 follows the units
     lead: C holds raw spreads, so units matter.
     steps:
-      - say: 'Read CD3 on a scale {{gain}} times as wide, say a brighter channel. Same cells, same biology.'
+      - say: 'Read CD3 on a scale {{gain}} times as wide. Same cells, same biology.'
         add:
           compare:
             a: {title: CD3 as measured, tone: good, verdict: as before, text: 'PC1 at {{th_star|0}} degrees.'}
@@ -311,8 +311,8 @@ slides:
       - think:
           q: Why does PC1 turn when nothing about the cells changed?
           a: 'CD3''s spread grew {{gain^2}}-fold, and PC1 chases the biggest spread.'
-      - say: 'Divide each marker by its SD first (standardise). Then PC1 sits at {{th_r|0}} degrees, whatever the units.'
-        add: {note: 'Standardised, C holds **correlations**: 1 on the diagonal, {{r12|2}} in the corners.'}
+      - say: 'Divide each marker by its SD (standardise). PC1 sits at {{th_r|0}} degrees, any units.'
+        add: {note: 'Standardised, $C$ holds **correlations**: 1 on the diagonal, {{r12|2}} in the corners.'}
       - say: And if the two stretches were nearly equal, the repeats would crawl.
 
   - type: recap
@@ -327,7 +327,7 @@ slides:
     title: Next, why this arrow is the best
     lead: Every arrow is a mix of PC1 and PC2.
     steps:
-      - say: 'C stretches PC1 by {{lam1|2}} and PC2 by {{lam2|2}}. Every line''s spread sits between the two.'
+      - say: '$C$ stretches PC1 by {{lam1|2}}, PC2 by {{lam2|2}}. Every line''s spread sits between.'
         add:
           chart:
             x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}
@@ -340,4 +340,4 @@ slides:
           caption: The whole curve stays inside the band.
       - think:
           q: If an arrow is part PC1 and part PC2, what would its spread be?
-          a: A mix of the two stretches. It can never beat PC1's. Next time we prove it, then add a third marker.
+          a: 'A mix of the two stretches, never above PC1''s. Next, the proof and a third marker.'

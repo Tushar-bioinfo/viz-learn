@@ -58,7 +58,7 @@ slides:
     title: Raindrops on two patios
     lead: Spread is not a cell idea. Rain on tiles has it too.
     steps:
-      - say: Two patios of six tiles after the same shower. Each stick is the raindrops on one tile.
+      - say: 'Two patios of six tiles, one shower. Each stick is one tile''s raindrops.'
         add:
           chart:
             x: {cats: [tile 1, tile 2, tile 3, tile 4, tile 5, tile 6], label: tile}
@@ -72,7 +72,7 @@ slides:
       - say: 'Both patios average ==accent:{{drops}}== drops a tile. Same middle, like our donors.'
       - think:
           q: Which patio is more uneven, and what would you measure to show it?
-          a: The patchy one. Measure how far each tile sits from the average. That is exactly what we do to cells.
+          a: 'The patchy one. Measure each tile''s distance from the average, as we will for cells.'
 
   - type: board
     beat: data
@@ -92,11 +92,11 @@ slides:
               - {name: B cells, kind: dots, x: 'cd3_b * 0 + 1.5', y: cd3_b, color: mist}
               - {name: monocytes, kind: dots, x: 'cd3_mono * 0 + 2.5', y: cd3_mono, color: haze}
           caption: Only the T cells carry much CD3.
-      - say: We gate on the ==s1:T cells==. Their six CD3 levels sit pinned on the left.
+      - say: 'We gate on the ==s1:T cells==. Their six CD3 levels are pinned left.'
         mark: col:cd3
       - think:
           q: Why not measure the spread of all twelve cells at once?
-          a: We would measure the gap between cell types, not how T cells vary. We test that at the end.
+          a: That measures the gap between cell types, not how T cells vary. Tested at the end.
 
   - type: board
     beat: by-hand
@@ -109,7 +109,7 @@ slides:
       - say: Add the six CD3 levels and divide by six. That is the mean.
         add: {calc: {say: The mean, expr: mean(cd3), name: xbar, fmt: 2}}
         mark: col:cd3
-      - say: 'Now c1. How far does it sit from the mean, {{xbar|2}}?'
+      - say: 'How far does c1 sit from the mean, {{xbar|2}}?'
         add: {calc: {say: How far c1 sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
         mark: row:0
       - say: Do the same for every cell. Cells below the mean get a minus sign.
@@ -129,11 +129,11 @@ slides:
       from: tcells
       cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: dev, label: distance, expr: cd3 - xbar, fmt: 2}]
     steps:
-      - say: Square each distance. The minus signs vanish, and every cell now adds to the spread.
+      - say: Square each distance. Minus signs vanish, and every cell adds to the spread.
         add: {col: {key: sq, label: squared, expr: (cd3 - xbar)^2, fmt: 4}}
         mark: col:sq
       - think:
-          q: 'c3 sits {{far_dev|2}} from the mean, c6 only {{abs(at(cd3, 2) - xbar)|2}}. How much bigger is c3''s square?'
+          q: 'c3 sits {{far_dev|2}} out, c6 only {{abs(at(cd3, 2) - xbar)|2}}. How much bigger is c3''s square?'
           a: '{{far_sq / at(sq, 2)|0}} times: {{far_sq|4}} against {{at(sq, 2)|4}}. Squares make far cells count much more.'
         mark: row:1
       - say: Add the six squares. This is the sum of squares.
@@ -147,7 +147,7 @@ slides:
     title: A squared distance is a real square
     lead: Squaring a distance gives an area you can see.
     steps:
-      - say: Each T cell at its CD3 level, spaced out so we can see them. The orange line is the mean.
+      - say: Each T cell at its CD3 level. The orange line is the mean.
         add:
           plane:
             x: {label: 'cells, spaced out (no units)', min: 0, max: slot_end}
@@ -168,7 +168,7 @@ slides:
               - {square: [['at(slots, 4)', xbar], ['at(slots, 4)', 'at(cd3, 4)']], color: s2, step: 3}
               - {square: [['at(slots, 5)', xbar], ['at(slots, 5)', 'at(cd3, 5)']], color: s2, step: 3}
       - say: Each grey drop is one cell's distance from the mean.
-      - say: Square a distance and you get a real square. Its area is that cell's squared distance.
+      - say: Each distance makes a real square. Its area is the squared distance.
       - think:
           q: Which squares make up most of the total area?
           a: '{{at(top_ids, 0)}} and {{at(top_ids, 1)}}, the two cells farthest out: {{100 * top_share|0}}% of the sum of squares.'
@@ -178,17 +178,17 @@ slides:
     title: The same steps, written as a formula
     lead: Every symbol in the formula is a number we already worked.
     steps:
-      - say: Here are our numbers, in the shape of the formula.
+      - say: Our numbers, in the shape of the formula.
         add:
           assemble:
             say: The variance of our six T cells
             lhs: s2
             tex: '\dfrac{\sum_{[i]} ([cd3] - [xbar])^2}{[n] - 1}'
             plug: '[s2:{{s2|3}}] = \dfrac{([cd3:{{at(cd3, 0)|1}}] - [xbar:{{xbar|2}}])^2 + ([cd3:{{at(cd3, 1)|1}}] - [xbar:{{xbar|2}}])^2 + \cdots + ([cd3:{{at(cd3, 5)|1}}] - [xbar:{{xbar|2}}])^2}{[n:{{n}}] - 1}'
-      - say: And the same thing in symbols. Each symbol keeps its number's colour.
+      - say: 'In symbols. Each symbol keeps its number''s colour.'
       - think:
-          q: Why divide by n − 1 and not by n?
-          a: The mean was fitted to these same six cells, so the distances come out a little small. The next scene tests it.
+          q: Why divide by $n - 1$ and not by $n$?
+          a: The mean was fitted to these six cells, so distances come out small. The next scene tests it.
 
   - type: board
     beat: run
@@ -201,7 +201,7 @@ slides:
       avg_n: at(run_n, t)
       avg_n1: at(run_n1, t)
     steps:
-      - say: 'Pretend we know the truth: T-cell CD3 spreads with variance {{sig2|2}}. Draw 3 cells, work their spread both ways.'
+      - say: 'Say the true variance is {{sig2|2}}. Draw 3 cells, work their spread both ways.'
         frame: 0
         add:
           - chart:
@@ -214,15 +214,15 @@ slides:
                 - {kind: hline, y: sig2, label: 'the truth {{sig2|2}}'}
             caption: Each bar is the average over every sample so far.
           - {params: {say: 'So far', names: [drawn, avg_n, avg_n1]}}
-      - say: One sample is noisy. Keep drawing samples of 3, and keep a running average of each.
+      - say: One sample is noisy. Keep drawing, and keep a running average of each.
         frame: 3
       - think:
           q: 'Predict: after {{last(draws)}} samples, which bar sits on the line?'
-          a: The ÷ (n − 1) bar. Dividing by n comes out low every time, so its average stays low.
-      - say: 'After {{last(draws)}} samples: ÷ (n − 1) gives {{last(run_n1)|3}}, ÷ n only {{last(run_n)|3}}. Drag to replay.'
+          a: The ÷ ($n - 1$) bar. Dividing by $n$ runs low, so its average stays low.
+      - say: 'After {{last(draws)}} samples: ÷ ($n - 1$) gives {{last(run_n1)|3}}, ÷ $n$ only {{last(run_n)|3}}. Drag to replay.'
         frame: 11
       - think:
-          q: Why does dividing by n land low?
+          q: Why does dividing by $n$ land low?
           a: A sample's own mean sits closer to its cells than the true middle, so distances run small.
 
   - type: board
@@ -268,11 +268,11 @@ slides:
             caption: The orange stick is c3; the dashed line is the mean.
           - {params: {say: 'With c3 where you put it', names: [x3, mw, s2w]}}
       - think:
-          q: Push c3 to the top of the slider. The mean moves a little. What does the variance do?
+          q: Push c3 to the top. The mean moves a little. And the variance?
           a: 'It shoots up, to {{var(where(seq(0, 5, 1) == far_k, 7, cd3)) / s2|0}}× today''s. One far cell, squared, swamps the rest.'
-      - say: Now say c3 was really two cells stuck in one droplet, a doublet. Flip the switch.
+      - say: Say c3 was two cells in one droplet, a doublet. Flip the switch.
       - think:
-          q: A doublet is one bad droplet out of six. How much does it move the variance?
+          q: One bad droplet out of six. How much does it move the variance?
           a: 'From {{s2|3}} to {{var(where(seq(0, 5, 1) == far_k, dbl, cd3))|3}}. The variance now mostly measures the mistake.'
 
   - type: board
@@ -280,11 +280,10 @@ slides:
     title: Where variance misleads
     lead: Three ways one number can fool you.
     steps:
-      - say: 'Units first. CD3 levels square into CD3², so a variance of {{s2|3}} is not on the data''s scale.'
-        add: {note: '**Squared units.** The variance is in CD3², not CD3. You cannot draw it on the same axis as the cells.'}
+      - say: 'Units first. A variance of {{s2|3}} is in CD3², not on the data''s scale.'
       - say: 'Squares favour far cells: {{at(top_ids, 0)}} and {{at(top_ids, 1)}} give {{100 * top_share|0}}% of the sum of squares.'
         add: {parts: {items: [{label: '{{at(top_ids, 0)}} and {{at(top_ids, 1)}}', value: top_sq, focus: true}, {label: the other four, value: ss - top_sq}], total: {label: sum of squares}, fmt: 3}}
-      - say: 'Mix the cell types and the variance of all twelve is {{s2_all|2}}, {{all_ratio|0}}× the T cells'' alone.'
+      - say: 'Mix the types: the variance of all twelve is {{s2_all|2}}, {{all_ratio|0}}× the T cells''.'
       - think:
           q: So is that big all-cell variance noise?
           a: No, it is groups. Variance assumes one group around one middle; gate first, then measure spread.
@@ -301,7 +300,7 @@ slides:
     title: Next, back to CD3 units
     lead: The square root undoes the squaring.
     steps:
-      - say: 'The square root of the variance is the standard deviation, back in CD3 units: {{sd|2}}.'
+      - say: 'The variance''s square root is the standard deviation, in CD3 units: {{sd|2}}.'
         add:
           - {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
           - chart:

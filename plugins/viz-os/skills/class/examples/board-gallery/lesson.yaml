@@ -119,7 +119,7 @@ slides:
       - say: '{{far_id}} sits {{far_dev|1}} above the mean: the drop to the line.'
       - say: 'Squared, that distance is the area of this square, {{far_dev^2|2}}.'
       - think:
-          q: One cell sits twice as far from the mean as another. How much bigger is its square?
+          q: One cell sits twice as far out. How much bigger is its square?
           a: Four times. Squaring makes far cells count much more than near ones.
 
   - type: board
@@ -127,19 +127,19 @@ slides:
     title: The same steps, written as a formula
     lead: Every symbol in the formula is a number we already worked.
     steps:
-      - say: Here are our numbers, in the shape of the formula.
+      - say: Our numbers, in the shape of the formula.
         add:
           assemble:
             say: The variance of our six cells
             lhs: s2
             tex: '\dfrac{\sum_{[i]} ([cd3] - [xbar])^2}{[n] - 1}'
             plug: '[s2:{{s2|2}}] = \dfrac{([cd3:{{at(cd3, 0)|1}}] - [xbar:{{xbar|1}}])^2 + ([cd3:{{at(cd3, 1)|1}}] - [xbar:{{xbar|1}}])^2 + \cdots + ([cd3:{{at(cd3, 5)|1}}] - [xbar:{{xbar|1}}])^2}{[n:{{n}}] - 1}'
-      - say: And the same thing in symbols. Each symbol keeps its number's colour.
+      - say: 'In symbols. Each symbol keeps its number''s colour.'
       - say: The square root puts the spread back in CD3 units.
         add: {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
       - think:
-          q: Why divide by n − 1 and not n?
-          a: The mean was fitted to these cells, so the distances run small. n − 1 makes up for it.
+          q: Why divide by $n - 1$ and not $n$?
+          a: The mean was fitted to these cells, so distances run small. $n - 1$ makes up for it.
 
   - type: board
     beat: compare
@@ -193,7 +193,7 @@ slides:
       pw1: at(w1_trace, t - (t > 0))
       pw2: at(w2_trace, t - (t > 0))
     steps:
-      - say: Eight cells and a first guess at the line. The ring marks a cell the line gets wrong.
+      - say: Eight cells, a first guess at the line. The ring marks a wrong cell.
         add:
           - {params: {say: 'The line, at this update', names: [w0, w1, w2]}}
           - plane:
@@ -206,12 +206,12 @@ slides:
                 - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev}
                 - {line: [w0, w1, w2], color: accent, label: the line now}
                 - {ring: ['at(next_x, t)', 'at(next_y, t)'], when: 'at(has_next, t)'}
-      - say: 'One update: each weight moves by η = {{eta}} times the ringed cell''s values, toward its right side.'
+      - say: 'One update: each weight moves by $\eta$ = {{eta}} times the ringed cell''s values.'
         add: {note: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$, with $x_0 = 1$ and $y = +1$ for a T cell, $-1$ for a B cell.'}
       - think:
-          q: Show the last line. The cell ringed one click ago moved it. Is that cell on its right side now?
+          q: Show the last line. Is the cell that moved it on its right side?
           a: 'Yes, each update fixes its own cell. But it can push another wrong: {{redo_id}} gets fixed {{redo_n}} times.'
-      - say: 'After {{updates}} updates no cell is wrong, so the line stops. Press play or drag to see every update.'
+      - say: 'After {{updates}} updates no cell is wrong and it stops. Press play or drag.'
 
   - type: board
     beat: picture
@@ -231,11 +231,11 @@ slides:
     title: Where variance misleads
     lead: Squares make far cells count most, for good and bad.
     steps:
-      - say: 'One cell, {{far_id}}, sits far out. How much of the sum of squares is it?'
+      - say: '{{far_id}} sits far out. How much of the sum of squares is it?'
         add:
           - {parts: {items: [{label: '{{far_id}}', value: 'far_dev^2', focus: true}, {label: the other cells, value: 'ss - far_dev^2'}], total: {label: sum of squares}, fmt: 2}}
           - {note: '**{{far_id}}** alone gives **{{100 * far_dev^2 / ss|0}}%** of the sum of squares, from one cell of {{n}}.'}
-      - say: If that cell were a doublet, two cells stuck together, the variance would mostly measure the mistake.
+      - say: As a doublet, two stuck cells, it would make the variance measure the mistake.
       - think:
           q: A sample mixes T cells and B cells. Is its large CD3 variance noise?
           a: No, it is two groups. Variance assumes one group around one middle.
@@ -259,4 +259,4 @@ slides:
             y: {label: CD19, min: 0, max: 10}
             marks:
               - points: {from: cells, x: cd3, y: cd19, label: id}
-      - say: The same move, distance from the mean, but multiplied across two markers. That is covariance.
+      - say: 'The same move, distance from the mean, multiplied across two markers: covariance.'

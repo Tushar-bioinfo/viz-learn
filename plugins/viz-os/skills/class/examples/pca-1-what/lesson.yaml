@@ -49,7 +49,7 @@ slides:
     title: Too many markers for one picture
     lead: A screen shows two markers. A panel has dozens.
     steps:
-      - say: A flow panel measures dozens of markers, but a plot shows only two at a time.
+      - say: Six of your cells on two markers, CD3 and CD19.
         add:
           plane:
             fill: true
@@ -57,15 +57,13 @@ slides:
             y: {label: CD19, min: 0, max: 5}
             marks:
               - points: {from: cells, x: cd3, y: cd19, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
-      - say: Here are six of your cells on two of them, CD3 and CD19.
       - think:
           q: If each cell could keep only one number, which would you keep?
-          a: CD3 alone is one choice. A mix of CD3 and CD19 might keep more. Today we find the best mix.
-      - say: 'The goal: one number per cell that loses as little of the spread as possible.'
-        add: {note: '**The goal:** one number per cell, keeping as much of the cells'' **spread** as we can.'}
+          a: CD3 alone is one choice. A mix might keep more. Today we find the best.
+      - say: 'The goal: one number per cell that keeps the most spread.'
       - think:
           q: The variance lesson squared each cell's distance from the mean. Why square it?
-          a: So cells below the mean do not cancel cells above it, and far cells count most. Spread here means the same thing.
+          a: So pluses and minuses do not cancel, and far cells count most. Same spread here.
 
   - type: board
     beat: data
@@ -75,7 +73,7 @@ slides:
       from: cells
       cols: [{key: id, label: cell}, {key: type, label: type}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}]
     steps:
-      - say: 'Six of the {{n_home}} cells in your home table, chosen so each kind shows twice.'
+      - say: 'Six of your {{n_home}} cells, picked so each kind shows twice.'
         add:
           plane:
             fill: true
@@ -83,11 +81,11 @@ slides:
             y: {label: CD19, min: 0, max: 5}
             marks:
               - points: {from: cells, x: cd3, y: cd19, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
-      - say: T cells are high in ==s1:CD3==, B cells high in ==s2:CD19==, monocytes low in both.
+      - say: 'T cells: high ==s1:CD3==. B cells: high ==s2:CD19==. Monocytes: low in both.'
         mark: col:cd3
       - think:
-          q: Draw one line that keeps T cells and B cells far apart along it. Which way does it run?
-          a: From top left to bottom right. Along that line the T cells and B cells sit at opposite ends.
+          q: One line should keep T and B cells far apart along it. Which way?
+          a: Top left to bottom right. Along it, T and B cells sit at opposite ends.
 
   - type: board
     beat: by-hand
@@ -114,14 +112,14 @@ slides:
               - {point: [m1, m2], name: middle, color: accent}
               - {line: ['-m1', 1, 0], color: mist, dash: true, label: new zero lines, step: 4}
               - {line: ['-m2', 0, 1], color: mist, dash: true, step: 4}
-      - say: Now measure every cell from the middle. Call these distances ==s1:d₁== and ==s2:d₂==.
+      - say: Measure every cell from the middle. Call these distances $d_1$ and $d_2$.
         add:
           - {col: {key: d1, label: d₁, expr: cd3 - m1, fmt: 2}}
           - {col: {key: d2, label: d₂, expr: cd19 - m2, fmt: 2}}
         mark: [col:d1, col:d2]
       - think:
           q: Why measure from the middle and not from zero?
-          a: Spread is distance from the middle, as with variance. Sliding the zero to the middle leaves the spread alone.
+          a: Spread is distance from the middle. Moving the zero there leaves the spread alone.
 
   - type: board
     beat: by-hand
@@ -143,7 +141,7 @@ slides:
               - {foot: {from: ['at(d1, 4)', 'at(d2, 4)'], dir: [1, 0]}, color: ink}
               - {foot: {from: ['at(d1, 5)', 'at(d2, 5)'], dir: [1, 0]}, color: ink}
               - {line: [0, 1, 0], color: s2, step: 3}
-      - say: On this line a cell's shadow is its CD3 distance. Their spread is CD3's variance.
+      - say: 'Here a cell''s shadow is its CD3 distance. Their spread is CD3''s variance.'
         add: {calc: {say: Spread of the shadows on the CD3 line, expr: var(d1), name: v_cd3, fmt: 3}}
       - say: The upright line does the same for CD19.
         add: {calc: {say: Spread on the CD19 line, expr: var(d2), name: v_cd19, fmt: 3}}
@@ -162,7 +160,7 @@ slides:
       cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
     derive: {p: u1 * d1 + u2 * d2}
     steps:
-      - say: 'Tilt the line. Its arrow u steps ==s1:{{u1}}== in CD3 and ==s2:{{u2}}== in CD19, a length of exactly 1.'
+      - say: 'Tilt the line. Arrow $u$ steps ==s1:{{u1}}== in CD3, ==s2:{{u2}}== in CD19, length 1.'
         add:
           plane:
             x: {label: CD3 from the middle, min: -3, max: 3.5}
@@ -183,11 +181,11 @@ slides:
       - say: Every cell the same way.
         add: {col: {key: p, label: shadow, expr: u1 * d1 + u2 * d2, fmt: 2}}
         mark: col:p
-      - say: The shadows sit around 0, so their spread is the sum of squares over n − 1.
+      - say: Shadows sit around 0, so their spread is the sum of squares over $n - 1$.
         add: {calc: {say: Spread along the tilted line, expr: sum(p^2) / (n - 1), name: s2u, fmt: 3}}
       - think:
           q: '{{s2u|3}} is less than CD3 alone. Why does this tilt keep so little?'
-          a: Along it, T cells and B cells cast shadows in the same place. The line runs along the gap, not across it.
+          a: T and B cells cast shadows in the same place. It runs along the gap, not across.
         mark: col:p
 
   - type: board
@@ -202,12 +200,12 @@ slides:
             lhs: s2u
             tex: '\dfrac{\sum_i ([u1] [d1] + [u2] [d2])^2}{[n] - 1}'
             plug: '[s2u:{{s2u|3}}] = \dfrac{([u1:{{u1}}] \cdot [d1:{{at(d1, 0)|2}}] + [u2:{{u2}}] \cdot ([d2:{{at(d2, 0)|2}}]))^2 + \cdots}{[n:{{n}}] - 1}'
-      - say: And in symbols. Each term keeps its number's colour.
+      - say: 'In symbols. Each term keeps its number''s colour.'
       - think:
-          q: Multiply the matching parts of u and d, then add. What is that called?
-          a: A dot product, u · d. With an arrow of length 1, it is how far the cell reaches along the line.
-        add: {note: '**Dot product:** $u \cdot d = u_1 d_1 + u_2 d_2$. Multiply matching parts, add. With $u$ of length 1, it is the shadow.'}
-      - say: So the question of PCA is which arrow u makes this spread biggest.
+          q: Multiply the matching parts of $u$ and $d$, then add. What is that called?
+          a: A dot product. With an arrow of length 1, it is the shadow.
+        add: {note: '**Dot product:** $u \cdot d = u_1 d_1 + u_2 d_2$.'}
+      - say: 'So PCA asks: which arrow $u$ makes this spread biggest?'
 
   - type: board
     beat: run
@@ -245,7 +243,7 @@ slides:
         frame: 29
       - say: 'At {{th_best}} degrees the spread is {{sp_best|3}}, more than CD3''s {{v_cd3|3}}.'
         frame: 29
-      - say: 'At {{last(ths)}} degrees the line is back where it started. Drag the slider to replay.'
+      - say: 'At {{last(ths)}} degrees the line is back at the start. Drag to replay.'
         frame: 36
       - think:
           q: 'Our hand tilt was {{th_hand|0}} degrees. Where does it sit in this sweep?'
@@ -274,7 +272,7 @@ slides:
       - say: Our hand tilt sits near the bottom of the valley.
       - say: The peak is PC1, the first principal component, the line with the most spread.
       - think:
-          q: 'The best line sits at {{th_star|1}} degrees, the worst at {{th_low|1}}. How far apart are they?'
+          q: 'Best line at {{th_star|1}} degrees, worst at {{th_low|1}}. How far apart?'
           a: '{{th_star - th_low|0}} degrees, a right angle. The worst line is always square to the best. It is PC2.'
 
   - type: board
@@ -286,7 +284,7 @@ slides:
     derive:
       spl_now: sum((alen * v1 * d1 + alen * v2 * d2)^2) / (n - 1)
     steps:
-      - say: Back on the best line. Stretch its arrow with the slider and watch the spread.
+      - say: The best line again. Stretch its arrow and watch the spread.
         add:
           - {params: {say: With the arrow you set, names: [alen, spl_now]}}
           - plane:
@@ -307,7 +305,7 @@ slides:
           a: 'It grows to {{4 * lam1|2}}, four times. Each dot product doubles, then gets squared.'
       - think:
           q: So what stops a line from winning with a longer arrow?
-          a: The rule that the arrow has length 1. Only then is a dot product a true distance along the line.
+          a: 'The rule: length 1. Only then is a dot product a true distance along the line.'
 
   - type: board
     beat: by-hand
@@ -318,11 +316,11 @@ slides:
       cols: [{key: id, label: cell}, {key: type, label: type}]
     derive: {z: v1 * d1 + v2 * d2}
     steps:
-      - say: 'PC1''s arrow is (==s1:{{v1|3}}==, ==s2:{{v2|3}}==). Each cell''s shadow on it, a dot product, is its PC1 score.'
+      - say: 'PC1''s arrow is (==s1:{{v1|3}}==, ==s2:{{v2|3}}==). Each cell''s shadow on it is its PC1 score.'
         add: {col: {key: z, label: PC1 score, expr: v1 * d1 + v2 * d2, fmt: 2}}
         mark: col:z
       - think:
-          q: Read down the scores. Where do the T cells, the B cells and the monocytes land?
+          q: Read down the scores. Where do T cells, B cells and monocytes land?
           a: T cells at the low end, B cells at the high end, monocytes near 0 in the middle.
         mark: col:z
       - say: The spread of the scores is the height of the peak.
@@ -346,9 +344,9 @@ slides:
             series:
               - {name: lines to try, kind: bars, x: '[0, 1, 2]', y: '[grid2, grid3, 10^log_grid30]', color: s1}
           caption: 'Each extra marker multiplies the lines by {{grid2}}.'
-      - say: 'A {{m_panel}}-marker panel needs a number of lines with {{log_grid30 + 1|0}} digits. No computer tries them all.'
+      - say: 'A {{m_panel}}-marker panel needs a {{log_grid30 + 1|0}}-digit count of lines. No computer tries that.'
       - say: Second, PC1 follows whatever varies most in the cells you give it.
-        add: {note: 'With the **{{n_t}} T cells** alone, PC1 turns to **{{th_t|0}}°** and keeps only {{lam1_t|2}} of spread: both markers rising together, not cell type.'}
+        add: {note: '**{{n_t}} T cells** alone: PC1 turns to **{{th_t|0}}°**, keeps {{lam1_t|2}} of spread: both markers rising together.'}
       - think:
           q: So does PC1 always mean T versus B?
           a: No. It is the biggest spread in this sample. Change which cells go in, and PC1 changes.
@@ -367,7 +365,7 @@ slides:
     steps:
       - say: 'Our hand tilt''s spread, {{s2u|3}}, comes back from three numbers.'
         add: {calc: {say: The hand tilt's spread from three numbers, expr: u1^2 * v_cd3 + 2 * u1 * u2 * c12 + u2^2 * v_cd19, name: chk, fmt: 3}}
-      - say: 'Two are the marker spreads. The third, {{c12|3}}, is new: the covariance of CD3 and CD19.'
+      - say: 'Two are marker spreads. The third, {{c12|3}}, is new: CD3 and CD19''s covariance.'
       - think:
-          q: The covariance is negative. What does that say about CD3 and CD19 in these cells?
-          a: When one is high the other tends to be low, T cells against B cells. Next time we work it by hand.
+          q: The covariance is negative. What does that say about these two markers?
+          a: When one is high the other tends low, T cells against B. Next, by hand.
