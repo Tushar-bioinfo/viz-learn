@@ -12,8 +12,10 @@ mageck-rra | … 0 errors  0 warnings | check: 0 warnings (exit 0)
 class variance | lesson.html … 0 errors  0 warnings | check: 0 warnings (exit 0)
 …                                         (one line per class example)
 sketch pca-what | page.html … 0 errors  0 warnings | check: 0 warnings (exit 0)
-class cases: 44/44 ok
+board ui tests: 138/138 ok
+class cases: 38/38 ok
 memory tests: 6/6 ok
+tidy tests: 20/20 ok
 doc tests: 10/10 ok
 sketch cases: 38/38 ok
 sketch tests: 6/6 ok
@@ -22,7 +24,7 @@ mageck-rra verify | ALL OK
 pca-what verify | ALL OK                   (one line per verify_data.py)
 manifests: 5 plugin + 4 marketplace files · version X.Y.Z · OK
 ```
-It also runs `tools/check_class.py` (the lint cases in `tools/class-cases/`), `tools/check_memory.py` (series memory and home data in a throwaway home) `tools/check_docs.py` (`board.md` and `page.md` name what the code knows; no shipped file names a folder that does not ship; every path in a `SKILL.md` exists; every description fits 1024 characters), `tools/check_sketch.py` (the page cases in `tools/sketch-cases/`, then recall, turned anchors, a bare copy and a missing sibling) and `tools/check_palette.py` (each paper's inks, and the thread's edge on paper and wall); each prints only its failures and its count.
+It also runs `tools/check_board_ui.py` (acts like a learner on the built lessons: Next and Back, think stops, sliders, scrolling, sizes at several windows), `tools/check_class.py` (the lint cases in `tools/class-cases/`), `tools/check_memory.py` (series memory and home data in a throwaway home), `tools/check_tidy.py` (the clean-up, on a copy of an example, in a throwaway home), `tools/check_docs.py` (`board.md` and `page.md` name what the code knows; no shipped file names a folder that does not ship; every path in a `SKILL.md` exists; every description fits 1024 characters), `tools/check_sketch.py` (the page cases in `tools/sketch-cases/`, then recall, turned anchors, a bare copy and a missing sibling) and `tools/check_palette.py` (each paper's inks, and the thread's edge on paper and wall); each prints only its failures and its count.
 Anything else is a regression. A check exit of 2 means it could not run: report "not checked", never "passed". Each check takes about 20–30 s.
 After a visual change, open `out/check/<example>/desktop.png` (the contact sheet) and the per-slide `desktop-NN.png` shots. Rebuilt `deck.html` files in `examples/` are tracked: commit them with the kit change that produced them. `lesson.html` and `page.html` are not tracked.
 

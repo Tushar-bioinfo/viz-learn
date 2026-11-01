@@ -13,7 +13,6 @@ Open problems, most important first. When you fix one, delete it here and add a 
 8. **`when:` works on plane marks only.** A chart mark or a worked line cannot yet appear for some frames and not others.
 9. **Dots on a category axis sit at the left edge of their band.** The deck's `chart.js` centres bars and lollipops (`sx(x + .5)`) but not `dots` (`sx(x)`). The gallery's problem scene adds 0.5 to x by hand. Deck behaviour; fixing it changes deck bytes.
 10. **The symbol ledger matches TeX as text.** A symbol written `d_{1}` in prose and `d_1` under `symbols` is not seen, so its "symbol before number" error is missed. A KaTeX parse of both sides would close it.
-11. **R22's "at least one card from an angle the lesson did not take" cannot be linted.** It stays a `lesson.md` rule and an eyes-gate check.
 12. **Recall cards do not say which lesson they came from.** With two lessons recalled, the quiz mixes their cards with no label. The deck's quiz has no per-card source line; a small `from:` on a card would need a deck kit change.
 13. **A lesson's `home:` key is not checked.** `board.md` sets the convention (`data.json` holds `"home": {name, provenance}` copied from the home file), but no lint ties `home: cells` to that block yet. U8 is its first real use; lint it after.
 14. **`home.py` clips negative marker draws to 0.0**, so a few cells read exactly 0.0 (as real cytometry exports often do). If a board looks odd with a bare 0.0, pick another seed rather than change the recipe (a recipe change needs a version bump in `home.py`).
@@ -21,7 +20,6 @@ Open problems, most important first. When you fix one, delete it here and add a 
 16. **A chart `highlight` on a y axis that does not start at 0 draws its box below the plot,** over the caption. The variance lesson colours the one stick as its own series instead. Deck behaviour.
 17. **A board chart in the picture column is short** (about 110px of plot in a 480px column) because the deck chart keeps its aspect from the width. Readable, but a run or what-if chart would teach better taller.
 18. **Plane points coloured `by:` a field show one legend entry per value, even when two values share a colour and only one has a label.** The thymocyte tease showed bare "SP8" and "DP" entries; it now colours by `y` (two values). Entries with the same colour and no label could be merged.
-19. **The fit zoom never grows back.** When a step stacks a worked line at full width, the deck's fit shrinks the whole scene, and it stays shrunk on later steps even when they would fit. Lessons avoid it with fewer worked lines per scene or shorter ones. Deck behaviour (`fitSlide`).
 20. **Log-axis tick labels mix styles**: "1e-2" beside "10⁻⁴" on the PCA part 2 gap chart. Deck `chart.js`.
 21. **`{{…}}` inside `$…$` in a `note` is not filled in**; KaTeX then fails to parse it. Put the number outside the maths, or in a worked line.
 22. **A worked line shows its inputs with extra digits** (4.4747², 2.7268²). The deck gives inputs up to 2 extra digits so a line adds up by hand (`design.md`); on a board the inputs then look noisier than the answer.
@@ -75,7 +73,6 @@ Open problems, most important first. When you fix one, delete it here and add a 
 - Phone (portrait) layout is unchecked since 2.0.0. If phones matter again, restore a portrait pass in `check.py`.
 
 ## From the sketch skill packaging (2026-10-31)
-41. **A class lesson cannot recall a sketch page.** `recall: ../../pages/p1` on a lesson fails with `not found`, because `lesson.recall` looks only for `lesson.yaml`. The fix sits in `class/scripts/lesson.py`, and it is the only direction missing: a page can recall a page or a lesson. `SKILL.md` states this.
 42. **An offline page passes the 1 MB guide.** With `--katex-dir` the PCA page is 1,063 KB, against 435 KB with the CDN, and `check.py` does not warn. The limit is written for a page with the CDN. Either raise the limit for an inlined page, or make it warn.
 43. **A leader line can vanish on navy.** On `pca-what`'s navy limits sheet the thin line from "CD19 is squashed flat" to its anchor is nearly the paper's colour. The contrast audit reads text, not leaders.
 44. **The deck's `vizos.css` names `docs/design.md` in a comment** (line 20). It is the one shipped path outside attributions, and `tools/check_docs.py` lets it through by name. Rewording it changes every deck's bytes, so do it with the next kit change.
@@ -86,7 +83,6 @@ Open problems, most important first. When you fix one, delete it here and add a 
 49. **Fixed: three page rules were prose only.** New lints: a literal in braces (`{{5|0}}`), more than half the sheets in one ratio, and a `problem` sheet with only text.
 50. **`memory.py learner` records `skill: class` for a sketch page.** Line 111 of `class/scripts/memory.py` writes it for every caller. Seen on both cold starts. It needs a `--skill` option, and the user's OK.
 51. **`numbers.txt` drops digits that stand alone in a formula** (exponents, denominators). `deck/scripts/check.py` skips them, so the numbers gate reads less than the page shows. Run A's sheets 8 and 9. Needs the user's OK.
-52. **`class/lesson.md` §9 says only the current item is coloured,** which conflicts with categorical plot colours on a sketch page. Run A's agent reported it. Needs the user's OK.
 53. **`class/lesson.md` and `class/SKILL.md` have no rule on sourcing facts.** Sketch now has one (`sources.md`), because Run B stated that more PCR cycles mean more reads and that UMI counts never change with depth. Its numbers were all right; its claims were not. Lessons can make the same mistake.
 54. **`make_data.py` can still type its numbers.** The lint reads `page.yaml` only, so a literal in the generator passes every gate. Run B's first page typed its rates and its read counts there. `verify_data.py` then agrees with a made-up value. No check catches this; only the judge's reading does.
 55. **Fixed: fraction lines in `assemble` ran into the symbol line above them.** Seen on Run B round 2, sheet 6. `.asm .syms` now has its own margin. `class`'s board has the same box: not checked.
@@ -98,3 +94,9 @@ Open problems, most important first. When you fix one, delete it here and add a 
 61. **Open: the `droplet` part cannot show two cells.** `state` is empty, bead or both. Run B round 3's sheet titled "Two cells in one droplet" draws one cell and a bead. The word "doublet" needs its own state.
 62. **Open: Run B round 3 doc notes.** `page.md` does not say `row.<r>` sits at the table's right edge; the `read` part's anchors have no positions; a colon in a note needs quotes in YAML; `SKILL.md` step 8 shows `~/.viz-os/home/cells.json` where `$VIZOS_HOME` may be set; a `red` table mark on cream reads 1.8:1, and only the check says so.
 63. **Not reproduced: Run B round 3's "double offset on table anchors".** The agent read `E.pub` as adding `at` twice. On its own sheets 2 and 10 the `.bottom` label sits inside the sheet and the check gives 0 warnings; a doubled anchor would land at 113% and 116%.
+
+## From the class scrolling page (2026-11-01)
+64. **`board.css` still has rules for quiz slides** (`.s-quiz`, `.quiz.dense`, lines 19 to 22). A lesson has no quiz now, so they do nothing. Stage 2 froze the look, so they stayed; delete them once the user has finished checking it.
+65. **The think stops that reach back are written by hand in three PCA examples.** The lint cannot tell whether a think stop near the start really reaches back to the last lesson. It stays a `lesson.md` rule and an eyes-gate check.
+66. **`docs/testing.md` §1b's lesson comparison needs a base from before stage 2,** or it will show every example changing: the quiz and recall removal changed their bytes on purpose.
+67. **The deck's four-across quiz has lost its test.** `tools/class-cases/review-8-cards.yaml` was the only case with 7 or 8 cards on a build, and a class lesson can no longer carry a quiz. Add a deck example or a deck case with 8 cards.

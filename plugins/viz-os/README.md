@@ -30,9 +30,9 @@ A deck is done only when four gates pass: lint (0 errors, 0 warnings), browser c
 
 ## Class lessons (the `class` skill)
 A second skill, for lessons taught the way a good classroom teacher works a board: a problem first, numbers worked by hand on a small table, the formula built from those numbers, then symbols, a "what if" slider, an iteration you can play, limits, and review cards. Ask for "a viz-os class on <topic>" or run `/viz-os:class <topic>`.
-- The agent writes `lesson.yaml`: a deck file whose scenes are `board` slides. Each scene is one board that grows click by click (table, worked lines, picture), and a teacher line says what each click does. `think` steps ask before they answer.
-- `lesson.py` builds it with the deck's own kit and lint, plus the lesson rules (numbers before symbols, a think stop at least every 6 clicks, no typed numbers, at most 24 words per teacher line). The deck's `check.py` audits it.
-- Lessons can form a series on one toy data table (`home.py`, seeded), and each part opens with review cards from the earlier parts (`recall:`). Series memory lives in `~/.viz-os/series/` (set `VIZOS_HOME` to keep the profile, home tables and series somewhere else).
+- The agent writes `lesson.yaml`: a deck file whose scenes are `board` slides. The lesson is one long page that fills up like a board (table, worked lines, pictures), with a teacher line for each step. A figure that changes has Back and Next. `think` steps ask before they answer.
+- `lesson.py` builds it with the deck's own kit and lint, plus the lesson rules (numbers before symbols, a think stop at least every 6 steps, no typed numbers, at most 24 words per teacher line). The deck's `check.py` audits it.
+- Lessons can form a series on one toy data table (`home.py`, seeded), and each part reaches back to the last with a think stop. `tidy.py` clears a finished lesson's folder to its page and its yaml, and can bring the rest back. Series memory lives in `~/.viz-os/series/` (set `VIZOS_HOME` to keep the profile, home tables and series somewhere else).
 - Examples: `variance`, `perceptron-trick`, the three-part PCA series (`pca-1-what`, `pca-2-how`, `pca-3-why`) and `board-gallery` (every scene kind).
 
 ## Sketch pages (the `sketch` skill)
@@ -40,7 +40,7 @@ A third skill, for one long illustrated page you read by scrolling: paper sheets
 - The agent writes `page.yaml`: it sets each sheet's paper, ratio and width, and where each thing sits. The kit draws it with pens, papers and a box of 14 biology parts. No image model is needed.
 - Every figure sits beside four short answers (what is shown, how to read it, why we do this, what changed), each at most 24 words. Anything with 3 or more moving parts is a strip of frames.
 - `sketch.py` builds it with the deck's own build and lint, plus the page rules. The deck's `check.py` audits it, including labels on the thread and a second draw that must match the first.
-- The teaching rules are `class/lesson.md`, so a page has the same beats and five gates as a lesson, and shares its series memory. A page may recall a page or a lesson; a lesson cannot yet recall a page.
+- The teaching rules are `class/lesson.md`, so a page has the same beats and five gates as a lesson, and shares its series memory. A page may recall a page, or an older lesson that still ends in review cards; a lesson never recalls.
 - `sketch` needs `class` and `deck` beside it in `skills/`. Example: `pca-what`.
 - The drawing code is ported from [statechart-art](https://github.com/kevintngo/statechart-art) by Kevin T. Ngo, MIT; see `skills/sketch/kit/NOTICE`.
 
@@ -78,11 +78,11 @@ plugins/viz-os/
     examples/gallery/            one of every slide type (regression test)
   skills/class/
     SKILL.md            the lesson loop, the five gates and the rules
-    lesson.md           beats, teaching moves, voice, pacing, series, review cards
+    lesson.md           beats, teaching moves, voice, pacing, series, the review
     board.md            lesson.yaml reference: every board field, item, plane mark and control
-    kit/                board.js + board.css (the board slide type, drawn with the deck's kit)
+    kit/                lesson.js (the scrolling page) + board.js + board.css (the board scene, drawn with the deck's kit)
     scripts/lesson.py   lesson.yaml -> lesson.html through the deck's build.py; lesson_lint.py holds the lesson rules
-    scripts/home.py     seeded toy tables for a series; memory.py keeps series memory
+    scripts/home.py     seeded toy tables for a series; memory.py keeps series memory; tidy.py clears a finished lesson
     examples/           variance, perceptron-trick, pca-1-what / pca-2-how / pca-3-why, board-gallery, home/
   skills/sketch/
     SKILL.md            the page loop, the five gates and the rules

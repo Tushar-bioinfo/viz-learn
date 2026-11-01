@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+A class lesson is now one long page that scrolls, in a new look. Decks and sketch pages are unchanged.
+
+- The page reads top to bottom, and what is written stays. Figures sit in a 70% column beside their lines in a 30% column and stay in view; a figure that changes has its own Back and Next.
+- Every figure owns its shape. A plane can say `fill: true` to fill its column when no right angle or length matters.
+- Quiz and recall cards are gone from lessons: `type: quiz` and `recall:` are lint errors. A later lesson reaches back with a think stop near its start. Sketch keeps its review cards.
+- New `class/scripts/tidy.py`, the last loop step: keeps `lesson.html` and `lesson.yaml`, and moves the working files to `attic/` in the viz-os home folder. `--restore` brings them back.
+- Next stays under the pointer when a think answer grows the text beside it, and the line by the buttons no longer repeats words already on screen.
+- `class/lesson.md` loses §8; the review is now §8. Review cards move to `sketch/page.md`.
+
 ## 2.2.0 (2026-10-31)
 
 Adds the `sketch` skill: one scrollable page of hand-drawn paper sheets on a dark wall, with a gold thread carrying the data from sheet to sheet. Deck and lesson output is unchanged.

@@ -50,9 +50,11 @@ lesson.yaml ──lesson.py──> deck build.py (ext: board fields, lesson lint
 | The lesson loop, the five gates | `skills/class/SKILL.md` | reaches the deck as its sibling folder `D` |
 | Beats, teaching moves, voice, pacing, series, review | `lesson.md` | pedagogy has one home |
 | Every board field, item, plane mark, control, lint message | `board.md` | `tools/check_docs.py` fails if a field `board.js` reads is missing here |
-| Lesson rules (beats, think stops, symbol before number, typed numbers, recall) | `scripts/lesson_lint.py` | run through `build.py`'s lint hook |
-| Build glue: runs and toggles become sliders, recall cards copied with their numbers | `scripts/lesson.py` | `prepare()`; never writes to the viz-os home |
-| The board: zones, worked lines, plane, controls, highlights, its audit | `kit/board.js`, `kit/board.css` | reuses the deck's chart, table, ops, compare, stat renderers |
+| Lesson rules (beats, think stops, symbol before number, typed numbers, no quiz or `recall:`) | `scripts/lesson_lint.py` | run through `build.py`'s lint hook; `lint_cards` and `lint_recall` stay for sketch |
+| Build glue: runs and toggles become sliders, the page runtime takes `deck.js`'s place | `scripts/lesson.py` | `prepare()`, `adopt()`; never writes to the viz-os home. `recall()` stays here for sketch |
+| The scrolling page: reading line, keys, scene rail, the page's audit | `kit/lesson.js` | answers to the same `VizOS` API as `deck.js`, so `check.py` walks it |
+| The board: layout, worked lines, plane, controls, highlights, Next and Back, its audit | `kit/board.js`, `kit/board.css` | reuses the deck's chart, table, ops, compare, stat renderers |
+| Clean-up after a lesson: working files to the attic and back | `scripts/tidy.py` | writes only to `attic/` in the viz-os home; tested by `tools/check_tidy.py` |
 | Series memory, seeded home tables | `scripts/memory.py`, `scripts/home.py` | `$VIZOS_HOME` or `~/.viz-os` |
 | The deck seam | `deck/scripts/build.py` (`ext`) | with no `ext` the deck builds exactly as before |
 
