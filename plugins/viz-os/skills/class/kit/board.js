@@ -12,7 +12,7 @@
   'use strict';
   const L = window.VizOS, h = L.h;
   // ==text== is the deck's orange underline; ==s1:text== (s2, s3, good, bad) is bold text in that colour, no underline
-  const md = s => L.md(s).replace(/<mark class="hi">(s1|s2|s3|good|bad|mist):/g, (_, c) => `<mark class="hi tc" style="--hc:var(--${c})">`);
+  const md = s => L.md(s).replace(/<mark class="hi">(accent|s1|s2|s3|good|bad|mist):/g, (_, c) => `<mark class="hi tc" style="--hc:var(--${c})">`);
   const SVG = 'http://www.w3.org/2000/svg';
   const sv = (tag, attrs, parent) => { const e = document.createElementNS(SVG, tag); for (const k in attrs || {}) if (attrs[k] != null) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const list = x => Array.isArray(x) ? x : x == null ? [] : [x];
@@ -512,12 +512,15 @@
       b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many);
       const w = Math.max(...b.figs.map(fg => fg.size(room))); b.fig.style.width = beside ? w + 'px' : ''; });
       node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / 1.6) + 'px'; }); };
+    // a worked line too long to sit beside the table sends the table above the work: a formula is never shrunk or cut
+    const widen = () => { if (!pair || pair.classList.contains('stacked')) return; const edge = pair.getBoundingClientRect().right;
+      if ([...pair.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1)) { pair.classList.add('stacked'); place(); drawLines(); } };
     // anything sticky taller than the window would hide its own foot
     const stick = () => node.querySelectorAll('.tcol, .ffig').forEach(e => e.classList.toggle('nostick', e.offsetHeight > innerHeight - 48));
 
     const R = {
       node, steps: n, stages, stick,
-      layout: () => { drawTable(); place(); drawLines(); drawAsm(); drawParams(); figs.forEach(fg => fg.layout && fg.layout()); vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
+      layout: () => { drawTable(); place(); drawLines(); widen(); drawAsm(); drawParams(); figs.forEach(fg => fg.layout && fg.layout()); vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
       // what the page shows now, after a redraw or a move
       repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); },
       // everything up to click k, as the check and the printer see it

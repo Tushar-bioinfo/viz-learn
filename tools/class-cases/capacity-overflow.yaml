@@ -1,8 +1,8 @@
-# expect: split
-# A board with more worked lines than one scene holds: the audit must tell the author to split the scene.
-title: Too much on one board
-question: Does an overfull board warn?
-answer: Yes, it asks for a split.
+# expect: builds
+# A board with many worked lines: a page scrolls, so a long scene just runs on, and the check stays clean.
+title: A long board
+question: Does a long board still check clean?
+answer: Yes, it scrolls.
 data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}, {cell: c3, cd3: 5}, {cell: c4, cd3: 9}], cd3: [4, 6, 5, 9]}
 abbr: {CD3: a T-cell surface marker}
 symbols:
@@ -31,4 +31,4 @@ slides:
           - {calc: {say: c4 squared, row: 3, expr: (cd3 - xbar)^2}}
           - {col: {key: sq, label: squared, expr: (cd3 - xbar)^2}}
   - type: recap
-    answer: Yes, it asks for a split.
+    answer: Yes, it scrolls.

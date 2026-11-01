@@ -59,6 +59,7 @@ slides:
     steps:
       - say: One stick per cell. Its height is the cell's ==s1:CD3== level.
         add:
+          ratio: '2:1'
           chart:
             x: {cats: [c1, c2, c3, c4, c5, c6], label: cell}
             y: {label: CD3 level, min: 0, max: 10}

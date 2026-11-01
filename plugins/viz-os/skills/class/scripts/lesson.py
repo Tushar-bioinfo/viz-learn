@@ -160,6 +160,7 @@ def ext(B):
 def adopt(B):
     """A lesson is a page that scrolls: its runtime takes the place of deck.js. Only here: sketch has its own."""
     B.KIT_JS = [KIT / "lesson.js" if Path(f).name == "deck.js" else f for f in B.KIT_JS]
+    B.VISUAL, B.CHART, B.DIST_KEYS = B.VISUAL | {"ratio"}, B.CHART | {"ratio"}, B.DIST_KEYS | {"ratio"}   # a figure's shape (board.md)
 
 
 def build(path, out=None, katex_dir=None, quiet=False):

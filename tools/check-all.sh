@@ -28,6 +28,10 @@ for l in "$C"/examples/*/lesson.yaml; do
   case "$b" in *" 0 errors  0 warnings"*) ;; *) fail=1 ;; esac
   [ "$code" = 0 ] || fail=1
 done
+# act like a learner on the built lessons: buttons, sliders, scrolling, shapes (tools/check_board_ui.py)
+uu=$(python3 "$ROOT/tools/check_board_ui.py"); code=$?
+echo "$uu" | grep -v ' | ok$'
+[ "$code" = 0 ] || fail=1
 # sketch pages: build in place and check like a deck
 K="$ROOT/plugins/viz-os/skills/sketch"
 for l in "$K"/examples/*/page.yaml; do

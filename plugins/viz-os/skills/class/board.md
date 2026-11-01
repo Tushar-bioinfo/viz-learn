@@ -214,6 +214,8 @@ add:
     marks: [{kind: hline, y: xbar, label: 'mean {{xbar|1}}', step: 2}]
   caption: The tallest stick sits farthest above the line.
 ```
+`ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 3:2; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
+
 A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows on the scene's second step. Dots on a category axis sit at the left edge of their band: add 0.5 to `x` to centre them.
 
 An `image` is only for when the user asks for a picture (`D/scripts/image.py`). The picture has no text; put labels on it: `labels: [{text: c1, at: [0.08, 0.88]}]` (fractions from the top left, ≤ 4 words), and always `alt`.
