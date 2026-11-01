@@ -461,9 +461,9 @@
     // would drop with it, and the next click would miss Next. So the figure holds its place, and lets go as the reader scrolls back
     const held = new Map();
     const hold = fn => { const fs = [...node.querySelectorAll('.fb.beside > .ffig:not(.nostick)')], was = fs.map(f => f.getBoundingClientRect().top), out = fn();
-      fs.forEach((f, i) => { if (was[i] < STUCK && f.getBoundingClientRect().top > was[i] + .5) { f.style.top = was[i] + 'px'; held.set(f, { y: was[i], deep: scrollY }); } });
+      fs.forEach((f, i) => { if (was[i] < STUCK && f.getBoundingClientRect().top > was[i] + .5) { f.style.top = was[i] + 'px'; held.set(f, [was[i], scrollY]); } });
       return out; };
-    const letGo = () => held.forEach((p, f) => { p.deep = Math.max(p.deep, scrollY); const y = p.y + p.deep - scrollY; if (y < STUCK) f.style.top = y + 'px'; else { f.style.top = ''; held.delete(f); } });
+    const letGo = () => held.forEach((p, f) => { p[1] = Math.max(p[1], scrollY); const y = p[0] + p[1] - scrollY; if (y < STUCK) f.style.top = y + 'px'; else { f.style.top = ''; held.delete(f); } });   // p: where it holds, the deepest scroll since
     const stages = [];
     const makeStage = (host, stops0, paint, zoneOf, frames) => {
       const uniq = [...new Set(stops0)].sort((a, b) => a - b); if (uniq.length < 2) return null;

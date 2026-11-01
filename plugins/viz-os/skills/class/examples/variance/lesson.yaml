@@ -247,7 +247,7 @@ slides:
     lead: One far cell can drag the variance a long way.
     controls:
       - {name: c3v, label: CD3 of c3, min: 3, max: 7, step: 0.1, value: 4.9}
-      - {name: doublet, toggle: [one cell, a doublet], label: c3 is, step_at: 3}
+      - {name: doublet, toggle: [one cell, a doublet], label: c3 is}
     derive:
       idx: seq(0, 5, 1)
       x3: where(doublet, dbl, c3v)
@@ -314,18 +314,3 @@ slides:
                 - {kind: hline, y: xbar, label: 'mean {{xbar|2}}'}
             caption: Now the spread sits on the same axis as the cells.
       - say: 'Next time: c3 sits {{z_far|1}} SDs above the mean. That count is its z-score.'
-
-  - type: quiz
-    cards:
-      - q: Why square the distances from the mean?
-        a: So cells below the mean do not cancel cells above it, and far cells count most.
-      - q: What do the plain distances from the mean add up to?
-        a: 'Zero, always: that is what makes it the mean.'
-      - q: Why n − 1 in the bottom?
-        a: The mean is fitted to the same cells, so their squared distances run a little small.
-      - q: 'One cell sits {{sqrt(ratio)|0}}× as far from the mean as another. How much bigger is its square?'
-        a: '{{ratio|0}}× as big. That is why one far cell can own the variance.'
-      - q: 'In R, var() of our six T cells gives {{s2|3}}. What does numpy''s np.var() give?'
-        a: '{{ss / n|3}}. numpy divides by n unless you pass ddof=1; R divides by n − 1.'
-      - q: A sample mixes T cells and B cells. Is its big CD3 variance noise?
-        a: No, it is two groups. Gate first, then measure spread.

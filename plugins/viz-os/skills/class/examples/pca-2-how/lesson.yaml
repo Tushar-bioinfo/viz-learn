@@ -4,7 +4,6 @@ question: 'Last time we tried {{n_lines}} lines to find PC1. Can we go straight 
 answer: Pack the spreads and the covariance into a matrix C. PC1 is the arrow C only stretches, found by multiplying by C again and again.
 series: pca
 episode: 2
-recall: [../variance, ../pca-1-what]
 home: cells
 data_file: data.json
 abbr: {PCA: principal component analysis, PC1: the first principal component, PC2: the second principal component, CD3: a T-cell surface marker, CD19: a B-cell surface marker, SD: standard deviation}
@@ -63,6 +62,9 @@ slides:
             marks:
               - {kind: point, x: th_star, y: lam1, label: PC1, place: t, color: accent}
           caption: The curve from part 1.
+      - think:
+          q: 'Last time CD3 alone had spread {{v_cd3|3}}. What did PC1 have?'
+          a: '{{lam1|3}}, which is {{100 * lam1 / (v_cd3 + v_cd19)|0}}% of the total {{v_cd3 + v_cd19|3}}.'
       - say: 'That worked for two markers. Thirty markers would need more lines than any computer can try.'
       - think:
           q: The whole curve came from six cells. What would you need to know to draw it without trying lines?
@@ -336,20 +338,3 @@ slides:
       - think:
           q: If an arrow is part PC1 and part PC2, what would its spread be?
           a: A mix of the two stretches. It can never beat PC1's. Next time we prove it, then add a third marker.
-
-  - type: quiz
-    cards:
-      - q: What is PC1, in terms of the covariance matrix C?
-        a: The arrow C only stretches, with the biggest stretch. The stretch is PC1's spread.
-      - q: Which three numbers give the spread along any line through two markers?
-        a: The two markers' spreads and their covariance.
-      - q: 'Why was our covariance negative?'
-        a: 'T cells are high in CD3 and low in CD19, B cells the other way. Their products are negative.'
-      - q: How does the repeat move work?
-        a: Multiply the arrow by C, then divide by its length. Do it again until it stops turning.
-      - q: 'What sets how fast the repeats close in?'
-        a: 'The ratio of PC2''s stretch to PC1''s. Here the gap shrinks about {{1 / ratio2|0}}-fold per repeat.'
-      - q: You log-transform one marker but not another. What can happen to PC1?
-        a: It can turn toward whichever marker has the bigger spread. Standardise, or transform both the same way.
-      - q: Does a positive covariance mean two markers are made by the same cells?
-        a: No. It says they rise and fall together in this sample. It can come from mixing cell types.

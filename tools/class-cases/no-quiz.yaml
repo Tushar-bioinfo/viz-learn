@@ -1,0 +1,15 @@
+# expect: a class lesson has no quiz cards
+# A quiz slide at the end: a lesson keeps its questions as think stops.
+title: A lesson with a quiz
+question: Can a lesson end in cards?
+answer: No.
+slides:
+  - type: title
+  - type: board
+    beat: next
+    title: The tease
+    steps:
+      - say: Next time we ask a new question.
+  - type: quiz
+    cards:
+      - {q: 'A question?', a: An answer.}

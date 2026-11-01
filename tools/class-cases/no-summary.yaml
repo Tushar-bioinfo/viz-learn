@@ -10,15 +10,3 @@ slides:
     title: A short plan
     steps:
       - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
-  - type: quiz
-    cards:
-      - q: What is the first thing?
-        a: The plan.
-      - q: What is the second thing?
-        a: The working.
-      - q: What is the third thing?
-        a: The formula.
-      - q: What is the fourth thing?
-        a: The limit.
-      - q: What is the fifth thing?
-        a: The summary.

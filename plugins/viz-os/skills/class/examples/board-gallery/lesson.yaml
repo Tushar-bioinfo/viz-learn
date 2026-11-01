@@ -183,7 +183,7 @@ slides:
     lead: One wrong cell per update. Run it and watch the line settle.
     controls:
       - {name: t, run: 12, label: updates, stops: [0, 1, 2, 11]}
-      - {name: prev, toggle: [hide, show], label: last line, step_at: 3}
+      - {name: prev, toggle: [hide, show], label: last line}
     derive:
       w0: at(w0_trace, t)
       w1: at(w1_trace, t)
@@ -259,16 +259,3 @@ slides:
             marks:
               - points: {from: cells, x: cd3, y: cd19, label: id}
       - say: The same move, distance from the mean, but multiplied across two markers. That is covariance.
-
-  - type: quiz
-    cards:
-      - q: Why square the distances?
-        a: So cells below the mean do not cancel cells above it, and far cells count most.
-      - q: What do the plain distances from the mean add up to?
-        a: 'Zero, always: that is what makes it the mean.'
-      - q: Why n − 1 in the bottom?
-        a: The mean is fitted to the same cells, so the squared distances run a little small.
-      - q: What does the SD add over the variance?
-        a: It is in the marker's own units, so it can sit on the same axis as the data.
-      - q: Two donors share a mean. What can still differ?
-        a: How spread out their cells are.

@@ -16,7 +16,7 @@ KIT = CLASS / "kit"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lesson_lint import EXPRS, FMT, as_list, items_of, make_lint  # noqa: E402
 
-# a board scene: one board that grows click by click beside a pinned table (board.md)
+# a board scene: one stretch of the page, its steps written beside a pinned table or a figure (board.md)
 BOARD = {"beat", "table", "steps", "assemble"}
 TOP_EXTRA = {"series", "episode", "recall", "home"}
 NOT_PROSE_EXTRA = {"mark", "beat", "col", "row", "lhs", "toggle", "when"}
@@ -64,7 +64,7 @@ def prepare(deck, data, path):
 
 
 def recall(B, deck, data, path, state):
-    """R23, KTD17: copy the review cards of the lessons named under `recall:` into a quiz right after the title.
+    """Sketch's: a lesson never calls this. R23, KTD17: copy the review cards named under `recall:` into a quiz right after the title.
     Each data name inside a card's {{}} gets the prefix r<k>_ (k = its place in `recall:`), and its value is copied
     from that lesson's data, so the card shows the numbers that lesson showed even when this lesson reuses the name.
     The last lesson listed is the latest: it gives the first cards, and each older lesson adds its first card."""
@@ -136,12 +136,10 @@ def recall(B, deck, data, path, state):
 
 
 def ext(B):
-    data = {}   # data.json, kept for the lint (typed numbers, review cards)
-    state = {"errs": [], "made": set(), "slide": None}   # what recall did, for the lint
+    data = {}   # data.json, kept for the lint (typed numbers)
 
     def prep(deck, d, path):
-        data.update(d or {})   # this lesson's own data only: recalled values are not checked as its numbers
-        d = recall(B, deck, d, path, state)
+        data.update(d or {})
         return prepare(deck, d, path)
     return {
         "fields": {"board": BOARD},
@@ -149,7 +147,7 @@ def ext(B):
         "top": TOP_EXTRA,
         "not_prose": NOT_PROSE_EXTRA,
         "scope": board_names,
-        "lint": make_lint(B, data, state),
+        "lint": make_lint(B, data),
         "prepare": prep,
         "js": [KIT / "board.js"],
         "css": [KIT / "board.css"],
@@ -163,7 +161,17 @@ def adopt(B):
     B.VISUAL, B.CHART, B.DIST_KEYS = B.VISUAL | {"ratio"}, B.CHART | {"ratio"}, B.DIST_KEYS | {"ratio"}   # a figure's shape (board.md)
 
 
+def data_there(path):
+    """tidy.py moves data.json to the attic: say how to get it back, before the deck's build trips on the missing file."""
+    m = re.search(r"^data_file:\s*(\S+)", path.read_text(encoding="utf-8"), re.M)
+    name = m.group(1).strip("'\"") if m else None
+    if name and not (path.parent / name).exists():
+        sys.exit(f"lesson: {name} is missing beside {path.name}. If the lesson was tidied, bring it back with "
+                 f"`python3 {Path(__file__).with_name('tidy.py')} {path.parent} --restore`; if not, run its make_data.py")
+
+
 def build(path, out=None, katex_dir=None, quiet=False):
+    data_there(Path(path))
     B = deck_build()
     adopt(B)
     return B.build(path, out, katex_dir, quiet, ext=ext(B))

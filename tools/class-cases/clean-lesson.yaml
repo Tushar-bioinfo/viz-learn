@@ -118,16 +118,3 @@ slides:
       - say: Next we ask how far each cell sits from the mean.
         add: {note: Distance from this middle is the next question.}
       - say: Square those distances and average them.
-
-  - type: quiz
-    cards:
-      - q: What do you add to get the mean?
-        a: Each cell CD3 level.
-      - q: What do you divide that sum by?
-        a: The number of cells.
-      - q: A cell sits far above the others. What happens to the mean?
-        a: The mean moves up toward that cell.
-      - q: Two groups of cells share one mean. What is wrong?
-        a: The middle can fall between the groups, where no cell sits.
-      - q: Why is the mean in the same units as the cells?
-        a: Dividing the sum by the count returns a level, not a total.

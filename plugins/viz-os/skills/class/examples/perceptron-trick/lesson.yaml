@@ -242,7 +242,7 @@ slides:
     lead: Each epoch visits all eight cells in a shuffled order.
     controls:
       - {name: t, run: 13, label: updates}
-      - {name: prev, toggle: [hide, show], label: last line, step_at: 4}
+      - {name: prev, toggle: [hide, show], label: last line}
     derive:
       w0: at(w0_trace, t)
       w1: at(w1_trace, t)
@@ -394,20 +394,3 @@ slides:
           q: Single-positive cells sit in two opposite corners. Can one straight line put both corners on one side?
           a: 'No. The best line still gets {{xor_best}} of {{n_thymo}} cells wrong: a whole group.'
       - say: This is the XOR problem. Next lesson stacks perceptrons, so several lines can work together.
-
-  - type: quiz
-    cards:
-      - q: A B cell sits on the T side. Add its values to the weights, or subtract them?
-        a: 'Subtract: w − η (1, CD3, CD19). It pushes the line past the cell.'
-      - q: Why put a 1 in front of every cell?
-        a: So the offset w0 learns like the other weights. It moves by η times 1.
-      - q: What does w0 do to the line? And w1 and w2?
-        a: w0 slides it without turning it. w1 and w2 turn it.
-      - q: In w ← w + η (y − ŷ) x, what happens on a cell the line already gets right?
-        a: y − ŷ = 0, so nothing moves.
-      - q: 'Final weights {{wf0|2}}, {{wf1|2}} and {{wf2|2}}. Where does the line cross the CD19 axis?'
-        a: 'At −w0 / w2 = {{icept|2}}.'
-      - q: Two labs run the trick on the same cells and get two different lines. Is one of them wrong?
-        a: Not if both get every cell right. The start and the shuffle order decide where it stops.
-      - q: When does the perceptron trick never stop?
-        a: When no line can split the cells, like one T cell typed B in the middle of the T cells.

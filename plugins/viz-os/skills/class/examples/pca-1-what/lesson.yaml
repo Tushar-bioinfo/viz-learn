@@ -4,7 +4,6 @@ question: If each cell could keep only one number, which mix of its markers lose
 answer: Its shadow on PC1, the line through the middle along which the shadows spread out most.
 series: pca
 episode: 1
-recall: [../variance]
 home: cells
 data_file: data.json
 abbr: {PCA: principal component analysis, PC1: the first principal component, PC2: the second principal component, CD3: a T-cell surface marker, CD19: a B-cell surface marker}
@@ -63,6 +62,9 @@ slides:
           a: CD3 alone is one choice. A mix of CD3 and CD19 might keep more. Today we find the best mix.
       - say: 'The goal: one number per cell that loses as little of the spread as possible.'
         add: {note: '**The goal:** one number per cell, keeping as much of the cells'' **spread** as we can.'}
+      - think:
+          q: The variance lesson squared each cell's distance from the mean. Why square it?
+          a: So cells below the mean do not cancel cells above it, and far cells count most. Spread here means the same thing.
 
   - type: board
     beat: data
@@ -366,20 +368,3 @@ slides:
       - think:
           q: The covariance is negative. What does that say about CD3 and CD19 in these cells?
           a: When one is high the other tends to be low, T cells against B cells. Next time we work it by hand.
-
-  - type: quiz
-    cards:
-      - q: What is PC1?
-        a: The line through the middle along which the cells' shadows spread out most.
-      - q: How do you get a cell's shadow on a line with arrow u?
-        a: 'A dot product: multiply each centred marker by the arrow''s part for it, then add.'
-      - q: Why must the arrow have length 1?
-        a: A longer arrow stretches every shadow, so the spread grows with no change in the line.
-      - q: 'CD3 alone had spread {{v_cd3|3}}. What did PC1 have?'
-        a: '{{lam1|3}}, which is {{100 * share1|0}}% of the total {{tot|3}}.'
-      - q: Where does the worst line sit, relative to PC1?
-        a: At a right angle to it. That line is PC2.
-      - q: Gate on T cells only and rerun PCA. Is PC1 still the T-versus-B axis?
-        a: No. PC1 follows the biggest spread in the cells you give it.
-      - q: Does scikit-learn's PCA centre your data for you? Does it scale it?
-        a: It centres each column on its mean. It does not scale the columns unless you do it first.

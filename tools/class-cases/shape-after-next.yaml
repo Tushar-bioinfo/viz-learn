@@ -1,8 +1,8 @@
-# expect: after the `next` tease only the review cards follow
-# A recap sits after the next-lesson tease, where only the review cards may follow.
+# expect: the `next` tease is the last scene
+# A recap sits after the next-lesson tease, which must be the last scene.
 title: A slide after the tease
 question: What may follow the next-lesson tease?
-answer: Only the review cards.
+answer: Nothing.
 slides:
   - type: title
   - type: board

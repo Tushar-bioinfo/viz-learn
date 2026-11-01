@@ -1,7 +1,8 @@
 """The lesson lint: the rules a viz-os class lesson keeps on top of the deck's own (lesson.md has the why).
 
 lesson.py runs it through the deck build's lint hook. Scene rules check each board on its own; whole-lesson rules check
-the beats in order, that every symbol shows after its number, that numbers are computed, and the review cards.
+the beats in order, that every symbol shows after its number, and that numbers are computed. A lesson has no quiz or
+recall cards; `lint_cards` and `lint_recall` stay here for sketch, whose pages keep their review cards.
 """
 import re
 
@@ -54,7 +55,7 @@ def lint_controls(Lx, where, s, steps):
         if "toggle" in c and not (isinstance(c["toggle"], list) and len(c["toggle"]) == 2 and all(isinstance(x, str) for x in c["toggle"])):
             Lx.err(where, f"control `{c.get('name')}`: `toggle` is two labels, [off, on]: the name is 0 for the first and 1 for the second")
     if len(runs) > 1:
-        Lx.err(where, "one run per scene: the clicks stop on its frames, so two would fight")
+        Lx.err(where, "one run per scene: Next stops on its frames, so two would fight")
     framed = [st for st in steps if isinstance(st, dict) and "frame" in st]
     if framed and not runs:
         Lx.err(where, "a step sets `frame:` but the scene has no run control (`controls: [{name: t, run: 12}]`)")
@@ -64,7 +65,7 @@ def lint_controls(Lx, where, s, steps):
             if not isinstance(st["frame"], int) or not 0 <= st["frame"] < n:
                 Lx.err(where, f"`frame: {st['frame']!r}` is not a frame of the run (0..{n - 1})")
         if not framed and len(steps) < len(as_list(runs[0].get("stops"))):
-            Lx.err(where, f"the run stops on {len(as_list(runs[0].get('stops')))} frames, one per click, but the scene has {len(steps)} steps: add steps or give each its `frame:`")
+            Lx.err(where, f"the run stops on {len(as_list(runs[0].get('stops')))} frames, one per step, but the scene has {len(steps)} steps: add steps or give each its `frame:`")
 
 
 # plane marks: what each takes (numbers or expressions; a point is [x, y])
@@ -178,7 +179,7 @@ def lint_scenes(B, Lx, deck, glob):
                 B.check_expr(Lx, f"{where} table", tb["from"], names)
         steps = as_list(s.get("steps"))
         if not steps:
-            Lx.err(where, "a board needs `steps`: one teacher line per click")
+            Lx.err(where, "a board needs `steps`: one teacher line each")
         lint_controls(Lx, where, s, steps)
         if s.get("beat") == "what-if" and not any(k in it for _, it in items_of(s) if isinstance(it, dict) for k in ("chart", "plane", "compare", "image")):
             Lx.warn(where, "a what-if scene with no picture: add a `chart` or `plane` that the change moves, so the learner sees what moves")
@@ -192,7 +193,7 @@ def lint_scenes(B, Lx, deck, glob):
             if s.get("beat") == "plan" and st.get("say"):
                 Lx.err(w, "the plan is its picture, so it has no lines of text: delete this `say` and keep the `flow`")
             elif not st.get("say") and not st.get("think") and not (s.get("beat") == "plan" and st.get("add")):
-                Lx.err(w, "a step needs `say`: the teacher's one line for this click")
+                Lx.err(w, "a step needs `say`: the teacher's one line for this step")
             for it in as_list(st.get("add")):
                 kind = [k for k in it if k in ITEMS] if isinstance(it, dict) else []
                 if len(kind) != 1:
@@ -220,7 +221,7 @@ def lint_scenes(B, Lx, deck, glob):
                 if a is not None:
                     lint_formula(B, Lx, w, a, "assemble", names, symbols)
                     if j == len(steps) - 1:
-                        Lx.err(w, "`assemble` shows its symbols row on the next click: add a step after it that says what the symbols are")
+                        Lx.err(w, "`assemble` has a line between its numbers and its symbols: add a step after it that says what the symbols are")
                     if isinstance(a, dict) and a.get("lhs"):
                         names.add(a["lhs"])
                 cp = it.get("compare")
@@ -239,7 +240,7 @@ def lint_scenes(B, Lx, deck, glob):
                         names |= B.lint_ops(Lx, f"{w} ops", op, names, {})
                         need = len(as_list(op.get("steps")))
                         if j + need >= len(steps):
-                            Lx.err(w, f"`ops` has {need} steps and each one takes the next click: add {j + need + 1 - len(steps)} more board step(s) after it, one teacher line per matrix step")
+                            Lx.err(w, f"`ops` has {need} steps and each one takes a board step: add {j + need + 1 - len(steps)} more board step(s) after it, one teacher line per matrix step")
                 c = it.get("calc")
                 if isinstance(c, dict):
                     row = c.get("row")
@@ -258,7 +259,7 @@ def lint_scenes(B, Lx, deck, glob):
 
 
 
-# ---- whole-lesson rules (lesson.md): the shape, the order numbers and symbols show in, typed numbers, and the cards
+# ---- whole-lesson rules (lesson.md): the shape, the order numbers and symbols show in, and typed numbers
 
 EXEMPT = ("operator", "index")   # a symbol of this `kind` has no number to show first
 LINE_WORDS = 24                  # one teacher line, one breath
@@ -291,17 +292,20 @@ def slide_where(i, s):
 
 def lint_shape(B, Lx, slides):
     """R1, R2, R6 and the lead rule: the beats in order, the size of the lesson, and a think stop every few steps."""
+    for i, s in enumerate(slides):
+        if s.get("type") == "quiz":
+            Lx.err(slide_where(i, s), "a class lesson has no quiz cards: delete this slide, and keep any question worth asking as a `think` stop on a step")
     scenes = [(i, s, beat_of(s)) for i, s in enumerate(slides) if (s.get("type") or "idea") not in ("title", "quiz")]
     if not scenes:
         return
     lo, hi = SCENES
     if not lo <= len(scenes) <= hi:
-        Lx.warn("lesson", f"{len(scenes)} scenes; a lesson is {lo}–{hi}, not counting the title and quizzes: "
+        Lx.warn("lesson", f"{len(scenes)} scenes; a lesson is {lo}–{hi}, not counting the title: "
                 + ("split it into a What / How / Why series" if len(scenes) > hi else "add the beats it is missing (plan, problem, by-hand, formula, limits, summary, next)"))
     beats = [b for _, _, b in scenes]
     i0, s0, b0 = scenes[0]
     if b0 != "plan":
-        Lx.warn(slide_where(i0, s0), "the first scene after the title (and any recall quiz) is a `plan` scene: say what we will do, in order")
+        Lx.warn(slide_where(i0, s0), "the first scene after the title is a `plan` scene: say what we will do, in order")
     first = lambda b: next((k for k, x in enumerate(beats) if x == b), None)
     fo, pr, nx = first("formula"), first("problem"), first("next")
     if fo is not None and (pr is None or pr > fo):
@@ -319,19 +323,10 @@ def lint_shape(B, Lx, slides):
         i = scenes[nx][0]
         for k, s in enumerate(slides[i + 1:], i + 1):
             if (s.get("type") or "idea") != "quiz":
-                Lx.warn(slide_where(k, s), "after the `next` tease only the review cards follow: move this slide before it")
-    last = slides[-1]
-    if (last.get("type") or "idea") != "quiz":
-        Lx.warn("lesson", f"end with the review cards: one `quiz` slide of {CARDS[0]}–{CARDS[1]} cards")
-    elif not CARDS[0] <= len(as_list(last.get("cards"))) <= CARDS[1]:
-        nc = len(as_list(last.get("cards")))
-        Lx.warn(slide_where(len(slides) - 1, last), f"{nc} review card{'s' if nc != 1 else ''}; use {CARDS[0]}–{CARDS[1]}, one at least from an angle the lesson did not take")
+                Lx.warn(slide_where(k, s), "the `next` tease is the last scene: move this slide before it")
     gap, planned = 0, False
     for i, s in enumerate(slides):
-        t = s.get("type") or "idea"
-        if t == "quiz":
-            gap = 0
-        if t != "board":
+        if (s.get("type") or "idea") != "board":
             continue
         w = slide_where(i, s)
         if planned and not s.get("lead"):
@@ -339,7 +334,7 @@ def lint_shape(B, Lx, slides):
         planned = planned or s.get("beat") == "plan"
         steps = as_list(s.get("steps"))
         if len(steps) > STEP_CAP:
-            Lx.warn(w, f"{len(steps)} steps (≤ {STEP_CAP}): a full board must fit the stage, so split the scene in two")
+            Lx.warn(w, f"{len(steps)} steps (≤ {STEP_CAP}): a scene that long is hard to hold in mind, so split it in two")
         for j, st in enumerate(steps):
             if not isinstance(st, dict):
                 continue
@@ -620,13 +615,10 @@ def lint_recall(Lx, deck, state):
         Lx.warn("recall", f"episode {ep} has no `recall:`: name the earlier lesson, so this one opens with its review cards")
 
 
-def make_lint(B, data, state=None):
-    state = state if state is not None else {}
-
+def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
-        slides = deck.get("slides") or []
-        own = {**deck, "slides": [s if s is not state.get("slide") else {"type": "quiz"} for s in slides]}   # recall cards were linted in their own lesson
-        lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, slides); lint_order(B, Lx, own)
-        lint_typed(Lx, own, data); lint_cards(B, Lx, deck, data); lint_known(B, Lx, deck, glob)
-        lint_recall(Lx, deck, state)
+        if deck.get("recall"):
+            Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
+        lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_order(B, Lx, deck)
+        lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob)
     return lesson_lint

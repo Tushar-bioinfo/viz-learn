@@ -1,0 +1,13 @@
+# expect: a class lesson has no recall cards
+# `recall:` at the top: a series reaches back with a think stop near the start.
+title: A lesson that recalls
+question: Can a lesson open with cards?
+answer: No.
+recall: [../variance]
+slides:
+  - type: title
+  - type: board
+    beat: next
+    title: The tease
+    steps:
+      - say: Next time we ask a new question.
