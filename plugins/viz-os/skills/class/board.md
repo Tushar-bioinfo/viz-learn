@@ -30,7 +30,7 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 | `says` | its meaning in plain words (about 6 words) |
 | `short` | 2–3 words, the label under the symbol in a formula and on a parameter card |
 | `fmt` | how its number is shown in working (`2`, `s3`, `,`) |
-| `color` | a fixed colour for the symbol, its number and its table column: `s1`, `s2`, `s3`, `good`, `bad`. Without it, the inputs of each line take s1, s2, s3 in order |
+| `color` | a fixed colour for the symbol, its number, its table column and every place it shows in math: `s1` to `s5`, `good`, `bad`. A symbol keeps one colour across the page. Without `color` it takes the next unused colour at the start, in the order listed, and `ink` once they run out; a `kind: operator` symbol takes none. Set it to pair symbols that belong together, like `w_1` and `x_1` |
 | `kind` | `index` (i, j) or `operator` (Σ): no number to show first, so the symbol ledger skips it |
 
 A symbol shows only after its number (`lesson.md` §3). A table column, a worked line, a `{{name}}` in text, or a parameter card all count as showing the number.
@@ -60,8 +60,8 @@ A symbol shows only after its number (`lesson.md` §3). A table column, a worked
 A lesson is one long page, a scene after a scene. You give the order; the kit places everything, never by coordinates. A scene is a head (beat label, title, lead), then its steps in order. What is written stays, and the learner scrolls back to it. Only a think answer waits.
 
 - **Lines**: steps before the first figure run down the page in one column.
-- **Figure block**: a figure (`plane`, `chart`, `image`, `stat`, `units`) starts a block. It holds the figure and the steps after it, until the next figure or a wide item. The figure is centred in the left 70% of the page and stays in view while its lines scroll past in the right 30%. Side by side needs 520 px of figure and 300 px of text. A narrower window, or a formula too long for the text column, puts that figure above its lines.
-- **Wide items** (`assemble`, `compare`, `ops`, `dist`, `parts`, `flow`) run the full width and end the block. `parts` and `dist` stop at 1060 px and sit centred.
+- **Figure block**: a figure (`plane`, `chart`, `image`, `stat`, `units`) starts a block. It holds the figure and the steps after it, until the next figure or a wide item. The figure sits at the left of the page and stays in view while its lines scroll past beside it, 20 px away. The figure is sized first, from 70% of the page; the text takes all that is left, never under 30%. Side by side needs 520 px of figure and 300 px of text. A narrower window, or a formula too long for the text column at 20 px, puts that figure above its lines, in one centred column.
+- **Wide items** (`assemble`, `compare`, `ops`, `dist`, `parts`, `flow`) run the full width and end the block. They share the reading column's edges, `min(1100 px, page)`; a wide figure may reach 1280 on a big window, and the lines match it.
 - **Table scene**: the table stays in view in the left 30%, then any `note` or `params` with `side: true` under it. The rest of the scene sits to its right. A table too wide for 30% takes the room it needs; if that leaves under 520 px, it goes on top and does not stay in view.
 - **Reading**: as a step passes the reading line, 45% down the window, it lights up, the table's next column fills in and the row in use lights. Hovering a step does the same. Scrolling never changes a figure.
 - **Next and Back**: a figure gets them only if it changes: a mark, series or label with `step`, a run's frames (`frame:` or `stops`), an `ops` step. With one state it has no buttons. It starts at its first stop. A click on a line goes to its stop, and the ← → keys step the figure nearest the reading line.
@@ -81,7 +81,7 @@ table:
 ## Steps
 ```yaml
 steps:
-  - say: Start from the mean. How far does c1 sit from it?       # the teacher's line, ≤ 24 words
+  - say: Start from the mean. How far does c1 sit from it?       # the teacher's line, ≤ 14 words
     add: {calc: {say: How far c1 sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
     mark: row:0
   - think:
@@ -90,7 +90,7 @@ steps:
 ```
 | Field | What it does |
 |---|---|
-| `say` | one teacher line for this step, at most 24 words |
+| `say` | one teacher line for this step, at most 14 words |
 | `add` | one item, or a list of items, written with this step |
 | `mark` | lights a table row, column, cell or item while this step is lit (see Marks) |
 | `think` | a pause-and-think stop: `{q, a}`. The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer |
@@ -109,7 +109,7 @@ A think step's `say` is optional; its question is the line. At least one think s
 `mark` takes one target or a list. It lights for one step; a think step's mark lights on its question and its answer. A target not yet on the board is ignored, and the check warns `mark target not found`. A `calc` with `row:` lights its row, and the cells it reads, by itself.
 
 ### Highlights in text
-- `==s1:CD3==`: the words in bold, in that colour (`s1`, `s2`, `s3`, `good`, `bad`, `mist`). Match a term's symbol and column colour. A few words per scene.
+- `==s1:CD3==`: the words in bold, in that colour (`s1` to `s5`, `good`, `bad`, `mist`). Match a term's symbol and column colour. A few words per scene.
 - `**3.1×**`: bold, for a result.
 - `==text==`: an orange underline. Rare: once or twice a lesson, for the line to remember.
 - `$…$`: maths, in KaTeX.
@@ -145,7 +145,7 @@ Adds a column worked on every row. It keeps its place, with its row lines, and f
 ```yaml
 add: {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
 ```
-`lhs` is the name on the left; `expr` (an expression, drawn as TeX) or `tex` (TeX with `[name]` terms, as in `assemble`) is the right. Each term takes its colour and its `short` name under it. No numbers: use it after the numbers are known.
+`lhs` is the name on the left; `expr` (an expression, drawn as TeX) or `tex` (TeX with `[name]` terms, as in `assemble`) is the right. Each term takes its colour and its `short` name under it; when two names would touch, or the formula has a fraction, they move to one key row under the formula. No numbers: use it after the numbers are known.
 
 ### `assemble`: the formula built from our numbers
 The formula scene's core (`lesson.md` §3). One full-width plate holds **Our numbers**, then the next step's line, then **In symbols**, each term in the same colour and named. So the step after it must say what the symbols are.
@@ -222,9 +222,9 @@ A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows 
 An `image` is only for when the user asks for a picture (`D/scripts/image.py`). The picture has no text; put labels on it: `labels: [{text: c1, at: [0.08, 0.88]}]` (fractions from the top left, ≤ 4 words), and always `alt`.
 
 ### `plane`: geometry with equal scales
-A coordinate plane with one scale for both axes, so a slope, a right angle and a square look like what they are.
+A coordinate plane with one scale for both axes, so a slope, a right angle and a square look like what they are. It fills its room by showing more of the plane: both axes widen on both sides at one scale, and ticks, grid and shading follow. The `x` and `y` ranges you write are the least it shows.
 
-Add `fill: true` to a plane that is a scatter, a line or a shaded side, with no right angle or length the lesson relies on. It takes the chart shape, with its own scale per axis, and fills its column. It cannot hold a `vector`, `foot` or `square`.
+Add `fill: true` to a plane that is a scatter, a line or a shaded side, with no right angle or length the lesson relies on. It takes the chart shape, 16:9 (up to 2:1 on a short window), with its own scale per axis, and fills its column. It cannot hold a `vector`, `foot` or `square`.
 ```yaml
 add:
   plane:
@@ -254,7 +254,7 @@ Every mark also takes:
 | Field | What it does |
 |---|---|
 | `step` | the board step it appears on (default: the step that adds the plane) |
-| `color` | `accent`, `s1`, `s2`, `s3`, `ink`, `mist`, `good`, `bad`, … |
+| `color` | `accent`, `s1` to `s5`, `ink`, `mist`, `good`, `bad`, … |
 | `label` | its legend entry above the plane |
 | `name` | a label beside the mark itself (point, segment, vector, foot) |
 | `dash` | `true` for a dashed line or segment |
@@ -353,7 +353,7 @@ The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [
 | `the run stops on N frames, one per step, but the scene has M steps` | one stop per step, or `frame:` on the steps |
 | `one run per scene` | split the scene |
 
-The browser check adds: `a plane is N wide per 1 tall` (change its ranges, or the spacing of what it shows), `a chart is W × H px` (set its `ratio`), `a plane is only W × H px` (give it more room, or split the scene), `a formula renders under 26px`, `a table cell renders under 18px`, `mark target not found`, `a worked line … reads ≈` (finer `fmt` on the inputs), `point … is outside the picture` / `plane mark N is outside the box` (widen the box), `the plane label … overlaps` (shorter names, or move a mark), `a formula is wider than its box` (split it), and `X works out to … on the board but the data says …` (`make_data.py` and the page disagree: fix one).
+The browser check adds: `a plane is N wide per 1 tall` (change its ranges, or the spacing of what it shows), `a chart is W × H px` (set its `ratio`), `a plane is only W × H px` (give it more room, or split the scene), `a formula renders under 20px`, `a table cell renders under 18px`, `mark target not found`, `a worked line … reads ≈` (finer `fmt` on the inputs), `point … is outside the picture` / `plane mark N is outside the box` (widen the box), `the plane label … overlaps` (shorter names, or move a mark), `a formula is wider than its box` (split it: at 20 px, above its text, it still does not fit), and `X works out to … on the board but the data says …` (`make_data.py` and the page disagree: fix one).
 
 ## YAML gotchas
 - Quote any value that starts with `{{` or holds `{{…}}` inside a `{ }` mapping: `label: 'mean {{xbar|1}}'`.

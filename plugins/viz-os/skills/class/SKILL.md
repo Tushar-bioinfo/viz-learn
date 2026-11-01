@@ -55,7 +55,7 @@ Fix with small edits, not rewrites, and rerun. A warning that survives 3 rounds 
 ## Rules that never bend
 - **Numbers before symbols.** Work the method by hand on the table first. The formula scene then builds the formula from those numbers (`assemble`): our numbers, then the symbols under them, each term named. A symbol never appears before its number.
 - **Every number is computed.** It comes from `data.json` (made by `make_data.py`), a worked line, or a `{{…}}` expression. The lint flags a typed number and names the data value it matches.
-- **One line per step.** Each step has one teacher line of at most 24 words, said the way a teacher says it at the board.
+- **One line per step.** Each step has one teacher line of at most 14 words, said the way a teacher says it at the board.
 - **Pause and think.** At least one think stop in any 6 steps in a row. It shows its question with a Show answer button. The answer takes no room until pressed. On a figure with Next, the first press asks and the second answers.
 - **The table keeps its shape.** A cells × markers table has a row per cell in every scene and every lesson; genes × samples has a row per gene. Never flip it to make a calculation easier.
 - **Need before name.** Show the problem before the method, and the method by hand before its formula.

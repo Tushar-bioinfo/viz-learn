@@ -75,7 +75,9 @@ Pick the moves the topic needs; this is a menu, not a template. Each line says w
 ## 5. Voice
 You are a teacher at a whiteboard talking to one student. Each step's `say:` is the one line you would say while writing.
 
-- **One breath per step**: at most 24 words. Short sentences. Active voice.
+- **One breath per step**: on a board, a line or a think question has at most 14 words, a note at most 16, a think answer at most 18. The lint counts them (a sketch note has its own limit in `page.md`). Short sentences. Active voice. Keep lines about even in length.
+- **Say only what helps.** Cut "Here is", "Now" and "as we did". Cut a line that only repeats the title or the card under it, and a note that repeats its line. If a step has nothing left to say, merge it with the next.
+- **On a board, write a symbol as math**: `$w_0$`, not w0, so it takes its colour. The lint warns on a bare name.
 - **Say what you are doing, then why**: "Square each distance. Now every one counts, and far cells count most."
 - **Use the learner's words**: "cells", "CD3 level", "counts", not "observations" or "the random variable".
 - **Define a term once**, the first time, as plain words then the term: "how far a cell sits from the mean (its deviation)".

@@ -96,7 +96,10 @@ Open problems, most important first. When you fix one, delete it here and add a 
 63. **Not reproduced: Run B round 3's "double offset on table anchors".** The agent read `E.pub` as adding `at` twice. On its own sheets 2 and 10 the `.bottom` label sits inside the sheet and the check gives 0 warnings; a doubled anchor would land at 113% and 116%.
 
 ## From the class scrolling page (2026-11-01)
-64. **`board.css` still has rules for quiz slides** (`.s-quiz`, `.quiz.dense`, lines 19 to 22). A lesson has no quiz now, so they do nothing. Stage 2 froze the look, so they stayed; delete them once the user has finished checking it.
 65. **The think stops that reach back are written by hand in three PCA examples.** The lint cannot tell whether a think stop near the start really reaches back to the last lesson. It stays a `lesson.md` rule and an eyes-gate check.
 66. **`docs/testing.md` §1b's lesson comparison needs a base from before stage 2,** or it will show every example changing: the quiz and recall removal changed their bytes on purpose.
 67. **The deck's four-across quiz has lost its test.** `tools/class-cases/review-8-cards.yaml` was the only case with 7 or 8 cards on a build, and a class lesson can no longer carry a quiz. Add a deck example or a deck case with 8 cards.
+68. **Open: five colours run out on the PCA lessons.** Symbols past the fifth stay ink (`lam1`, `score`, `eta` and others). A symbol is still one colour, but ink tells it from nothing. More colours would be hard to tell apart; marking only the symbols a scene works on would be a bigger change.
+69. **Open: a formula too wide even above its text fails in the browser check, not in `lesson.py`.** The width is only known in a browser. So `tools/check-all.sh` fails on it, while a plain build still reports 0 errors.
+70. **Open: `fill` planes with tilted lines.** The perceptron and gallery planes had `fill` before this stage and were not in its list, so they keep it. Their line's tilt is drawn at each axis's own scale. The lint only stops `vector`, `foot` and `square`.
+71. **Recap cards are not word-limited or checked for bare symbols.** `w0` and `η` in recap points stay plain text. The lint reads steps only.

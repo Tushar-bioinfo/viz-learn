@@ -4,8 +4,11 @@
 
 A class lesson is now one long page that scrolls, in a new look. Decks and sketch pages are unchanged.
 
-- The page reads top to bottom, and what is written stays. Figures sit in a 70% column beside their lines in a 30% column and stay in view; a figure that changes has its own Back and Next.
-- Every figure owns its shape. A plane can say `fill: true` to fill its column when no right angle or length matters.
+- The page reads top to bottom, and what is written stays. Text, formulas and wide figures share one centred column up to 1100 px. A figure is sized first and stays in view, and its lines take the rest of the page beside it, 20 px away; a figure that changes has its own Back and Next.
+- Every figure owns its shape. An equal plane now fills its room by widening both axes at one scale. A plane can say `fill: true` to take a chart's shape when no right angle or length matters.
+- Formulas stay on one row and shrink to 20 px; term labels that would stack become one key row.
+- A symbol keeps one colour across the page, from its `symbols` entry; `s4` and `s5` join the palette. A bare symbol name in a line warns.
+- A lesson's say and think question stop at 14 words, a note at 16, a think answer at 18. All six examples were rewritten to fit.
 - Quiz and recall cards are gone from lessons: `type: quiz` and `recall:` are lint errors. A later lesson reaches back with a think stop near its start. Sketch keeps its review cards.
 - New `class/scripts/tidy.py`, the last loop step: keeps `lesson.html` and `lesson.yaml`, and moves the working files to `attic/` in the viz-os home folder. `--restore` brings them back.
 - Next stays under the pointer when a think answer grows the text beside it, and the line by the buttons no longer repeats words already on screen.
