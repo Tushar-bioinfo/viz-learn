@@ -9,4 +9,4 @@ slides:
     beat: plan
     title: The plan
     steps:
-      - say: We start with a plan and never reach the cards.
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}

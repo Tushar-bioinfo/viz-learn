@@ -1,0 +1,13 @@
+# expect: the plan is its picture
+# A plan scene with a line of text: the plan shows only its Track.
+title: A plan with words
+question: What if a plan scene has a say line?
+answer: The lint asks to delete it.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - say: First we say what we will do.
+        add: {flow: {nodes: [one thing, the next], verbs: [then]}}

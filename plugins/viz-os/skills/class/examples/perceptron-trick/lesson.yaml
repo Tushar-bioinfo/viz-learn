@@ -36,9 +36,7 @@ slides:
     beat: plan
     title: The plan for today
     steps:
-      - say: A perceptron is a line through your cells. One side is called T, the other B.
-        add: {flow: {nodes: [{label: a bad line, sub: to start}, {label: one wrong cell, sub: nudges it}, {label: one rule, sub: every case}, {label: many epochs, sub: until none wrong}, its limits], verbs: [pick, write, run, test]}}
-      - say: Today we watch how it finds that line by itself, one wrong cell at a time.
+      - add: {flow: {nodes: [{label: a bad line, sub: to start}, {label: one wrong cell, sub: nudges it}, {label: one rule, sub: every case}, {label: many epochs, sub: until none wrong}, its limits], verbs: [pick, write, run, test]}}
 
   - type: board
     beat: data

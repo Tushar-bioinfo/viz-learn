@@ -26,12 +26,10 @@ slides:
     beat: plan
     title: The plan for today
     steps:
-      - say: One question today. Where does the mean of three cells sit?
-        add:
+      - add:
           flow:
             nodes: [three cells, by hand, a formula, its limits]
             verbs: [see, add, test]
-      - say: Work it by hand, write the formula, then test the edges.
       - think:
           q: What should that one number do?
           a: Sit in the middle of the three levels.

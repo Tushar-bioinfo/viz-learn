@@ -306,6 +306,7 @@ lessons/
 - `home: <name>` names the home table (`C/scripts/home.py`, written to `~/.viz-os/home/<name>.json`, or under `$VIZOS_HOME` when it is set). `make_data.py` reads that file and writes the rows it uses into `data.json`, plus `"home": {"name": …, "provenance": {…}}` copied from the file, so each lesson keeps its own copy and says where it came from. The build does not read the home file; it reads only `data.json`.
 
 The plan and recall quiz come first: title, recall quiz, then the `plan` scene.
+The plan is its picture: a `plan` scene has one step, `add` with a `flow`, and no `say`. The `flow` draws as a row of numbered squares, the first one filled, with each `title` under its square and any `sub` under that.
 
 ## Review cards
 The last slide:
@@ -328,6 +329,7 @@ The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [
 |---|---|
 | `N scenes; a lesson is 8–14` | add the missing beats, or split into a series |
 | `the first scene after the title … is a plan scene` | start with `beat: plan` |
+| `the plan is its picture, so it has no lines of text` | delete the `say` and keep the `flow` |
 | `a formula scene before any problem scene` | show the problem first |
 | `no limits scene` / `limits comes after next` | add one, before `next` |
 | `a what-if scene with no picture` | add a `chart` or `plane` whose marks read the slider |

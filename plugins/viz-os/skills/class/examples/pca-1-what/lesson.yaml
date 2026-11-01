@@ -43,9 +43,7 @@ slides:
     beat: plan
     title: The plan for today
     steps:
-      - say: One question today. If each cell could keep only one number, which number loses the least?
-        add: {flow: {nodes: [{label: six cells, sub: two markers}, {label: the middle, sub: centre}, {label: a shadow, sub: one cell}, {label: turn the line, sub: find the peak}, its limits], verbs: [centre, drop, sweep, test]}}
-      - say: We centre the cells, drop each onto a line, then turn the line until the shadows spread most.
+      - add: {flow: {nodes: [{label: six cells, sub: two markers}, {label: the middle, sub: centre}, {label: a shadow, sub: one cell}, {label: turn the line, sub: find the peak}, its limits], verbs: [centre, drop, sweep, test]}}
 
   - type: board
     beat: problem

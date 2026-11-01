@@ -49,9 +49,7 @@ slides:
     beat: plan
     title: The plan for today
     steps:
-      - say: Part 2 found PC1 as the arrow C only stretches. Today we see why nothing beats it.
-        add: {flow: {nodes: [{label: split an arrow, sub: PC1 + PC2}, {label: its spread, sub: a mix}, {label: a third marker, sub: CD14}, {label: three PCs, sub: 3 × 3 C}, {label: how many, sub: to keep}], verbs: [square, add, rebuild, count]}}
-      - say: Then a third marker joins, and the stretches tell us how many PCs to keep.
+      - add: {flow: {nodes: [{label: split an arrow, sub: PC1 + PC2}, {label: its spread, sub: a mix}, {label: a third marker, sub: CD14}, {label: three PCs, sub: 3 × 3 C}, {label: how many, sub: to keep}], verbs: [square, add, rebuild, count]}}
 
   - type: board
     beat: problem

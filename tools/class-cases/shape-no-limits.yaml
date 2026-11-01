@@ -9,4 +9,4 @@ slides:
     beat: plan
     title: The plan
     steps:
-      - say: A plan, and no place where the method breaks.
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}

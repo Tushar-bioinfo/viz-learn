@@ -14,7 +14,7 @@ slides:
     beat: plan
     title: The plan
     steps:
-      - say: We will meet a symbol too early.
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
   - type: board
     beat: problem
     title: The problem

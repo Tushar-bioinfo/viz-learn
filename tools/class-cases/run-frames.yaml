@@ -22,7 +22,7 @@ slides:
           - {params: {say: Where it is, names: [pos]}}
           - plane:
               x: {label: x, min: 0, max: 6}
-              y: {label: y, min: 0, max: 3}
+              y: {label: y, min: 0, max: 4}
               marks:
                 - {point: [pos, 1], name: p}
                 - {segment: [[0, 1], [pos, 1]], color: mist, dash: true, label: the path, when: show}

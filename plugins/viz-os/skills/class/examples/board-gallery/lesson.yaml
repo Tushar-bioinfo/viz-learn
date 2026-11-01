@@ -24,9 +24,7 @@ slides:
     beat: plan
     title: The plan for today
     steps:
-      - say: One question today. How do we put one number on how spread out cells are?
-        add: {flow: {nodes: [{label: six cells, sub: one marker}, by hand, a formula, its limits], verbs: [look, write, test]}}
-      - say: We look at the cells, work it out by hand, write the formula, then see where it breaks.
+      - add: {flow: {nodes: [{label: six cells, sub: one marker}, by hand, a formula, its limits], verbs: [look, write, test]}}
 
   - type: board
     beat: problem

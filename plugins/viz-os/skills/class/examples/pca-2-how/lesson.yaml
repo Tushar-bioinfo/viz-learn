@@ -46,9 +46,7 @@ slides:
     beat: plan
     title: The plan for today
     steps:
-      - say: 'Last time we found PC1 by trying {{n_lines}} lines. Today we find it straight from the data.'
-        add: {flow: {nodes: [{label: a new number, sub: covariance}, {label: three numbers, sub: every line}, {label: a matrix, sub: C}, {label: C times u, sub: a new arrow}, {label: repeat, sub: PC1}], verbs: [add, pack, multiply, repeat]}}
-      - say: One new number, a box that holds three numbers, and one move repeated until it stops changing.
+      - add: {flow: {nodes: [{label: a new number, sub: covariance}, {label: three numbers, sub: every line}, {label: a matrix, sub: C}, {label: C times u, sub: a new arrow}, {label: repeat, sub: PC1}], verbs: [add, pack, multiply, repeat]}}
 
   - type: board
     beat: problem

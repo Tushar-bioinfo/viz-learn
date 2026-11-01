@@ -9,7 +9,7 @@ slides:
     beat: plan
     title: The plan
     steps:
-      - say: First we say what we will do.
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
   - type: board
     beat: problem
     title: The problem

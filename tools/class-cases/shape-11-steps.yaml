@@ -6,7 +6,7 @@ answer: The lint says to split it.
 slides:
   - type: title
   - type: board
-    beat: plan
+    beat: problem
     title: Too many steps
     steps:
       - say: Count one.

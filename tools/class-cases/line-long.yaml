@@ -6,7 +6,7 @@ answer: The lint counts the words.
 slides:
   - type: title
   - type: board
-    beat: plan
+    beat: problem
     title: Too many words
     steps:
       - say: The mean of these cells is the sum of every marker level divided by how many cells we measured in this small set today here

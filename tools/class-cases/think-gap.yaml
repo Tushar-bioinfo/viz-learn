@@ -6,7 +6,7 @@ answer: The lint asks for a think stop.
 slides:
   - type: title
   - type: board
-    beat: plan
+    beat: problem
     title: Six steps and no pause
     steps:
       - say: Count one.

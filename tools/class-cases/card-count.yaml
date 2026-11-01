@@ -9,7 +9,7 @@ slides:
     beat: plan
     title: A short plan
     steps:
-      - say: One scene, then too few cards.
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
   - type: quiz
     cards:
       - q: What is the first thing?
