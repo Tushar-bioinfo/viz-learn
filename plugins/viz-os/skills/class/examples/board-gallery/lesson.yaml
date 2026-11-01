@@ -5,12 +5,13 @@ answer: Take each value's distance from the mean, square it, add the squares, an
 data_file: data.json
 abbr: {SD: standard deviation, CD3: a T-cell surface marker, CD19: a B-cell surface marker, CD4: a helper T-cell marker}
 symbols:
-  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i}
-  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean, fmt: 2}
+  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i, color: s1}
+  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean, color: s2, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
-  i: {tex: 'i', says: which cell, kind: index}
+  i: {tex: 'i', says: which cell, color: s4, kind: index}
+  j: {tex: 'j', says: which marker, color: s5, kind: index}
   ss: {tex: 'SS', says: the sum of squared distances, short: sum of squares, fmt: 2}
-  s2: {tex: 's^2', says: the variance, short: variance, fmt: 2}
+  s2: {tex: 's^2', says: the variance, short: variance, color: s3, fmt: 2}
   sd: {tex: 's', says: the standard deviation, short: SD, fmt: 2}
   d1: {tex: 'd_1', says: how far c1 sits from the mean, short: distance of c1, fmt: 2}
   sq: {tex: 'd^2', says: squared distance of each cell, short: squared distance, fmt: 2}

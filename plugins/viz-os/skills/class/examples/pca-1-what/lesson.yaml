@@ -16,8 +16,8 @@ symbols:
   d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
   i: {tex: 'i', says: which cell, kind: index}
-  v_cd3: {tex: 's_1^2', says: the spread of the shadows on the CD3 line, short: CD3 spread, fmt: 3}
-  v_cd19: {tex: 's_2^2', says: the spread of the shadows on the CD19 line, short: CD19 spread, fmt: 3}
+  v_cd3: {tex: 's_1^2', says: the spread of the shadows on the CD3 line, short: CD3 spread, color: s1, fmt: 3}
+  v_cd19: {tex: 's_2^2', says: the spread of the shadows on the CD19 line, short: CD19 spread, color: s2, fmt: 3}
   tot: {tex: 'S', says: the total spread of both markers, short: total spread, fmt: 3}
   u1: {tex: 'u_1', says: how much the arrow moves in CD3, short: arrow's CD3 part, color: s1}
   u2: {tex: 'u_2', says: how much the arrow moves in CD19, short: arrow's CD19 part, color: s2}
@@ -33,7 +33,7 @@ symbols:
   z: {tex: 'z', says: a cell's score on PC1, short: PC1 score, fmt: 2}
   lam1: {tex: 's_{\text{PC1}}^2', says: the spread of the PC1 scores, short: PC1 spread, fmt: 3}
   share1: {tex: 'f_1', says: the share of the total spread PC1 keeps, short: share kept, fmt: '%'}
-  c12: {tex: 'c_{12}', says: 'the covariance of CD3 and CD19', short: covariance, fmt: 3}
+  c12: {tex: 'c_{12}', says: 'the covariance of CD3 and CD19', short: covariance, color: s3, fmt: 3}
   chk: {tex: 's_u^2', says: the hand tilt's spread from three numbers, short: spread along u, fmt: 3}
 slides:
   - type: title

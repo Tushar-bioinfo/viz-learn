@@ -8,9 +8,9 @@ home: cells
 data_file: data.json
 abbr: {DN: double-negative, DP: double-positive, XOR: exclusive or, CD3: a T-cell surface marker, CD19: a B-cell surface marker, CD4: a helper T-cell marker, CD8: a killer T-cell marker}
 symbols:
-  cd3: {tex: 'x_1', says: a cell's CD3 level, short: CD3, fmt: 1}
-  cd19: {tex: 'x_2', says: a cell's CD19 level, short: CD19, fmt: 1}
-  x0: {tex: 'x_0', says: a 1 put in front of every cell, short: always 1}
+  cd3: {tex: 'x_1', says: a cell's CD3 level, short: CD3, color: s1, fmt: 1}
+  cd19: {tex: 'x_2', says: a cell's CD19 level, short: CD19, color: s2, fmt: 1}
+  x0: {tex: 'x_0', says: a 1 put in front of every cell, short: always 1, color: s3}
   y: {tex: 'y', says: 'the cell''s true type: 1 for T, 0 for B', short: true type}
   call: {tex: '\hat{y}', says: 'what the line calls it: 1 for T, 0 for B', short: called}
   score: {tex: 's', says: 'a cell''s score: 0 or more is called T', short: score, fmt: 2}

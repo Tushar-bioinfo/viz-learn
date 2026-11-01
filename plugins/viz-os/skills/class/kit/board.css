@@ -1,7 +1,7 @@
 /* viz-os class: one long page, a scene after a scene, in the class look: thin lines, soft frames, bright data colours.
    Nothing is scaled: every size here is a real pixel, and every figure owns its shape (board.js). Decks and sketch pages
    do not load this file. These tokens are read at boot for the drawings, so a colour changed here reaches the SVGs too. */
-:root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #8ec5ff; --s2: #6ff0d0; --s3: #f29ac8;
+:root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #8ec5ff; --s2: #6ff0d0; --s3: #f29ac8; --s4: #f2c14e; --s5: #b79cff;
   --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315; }
 
 /* the page: the deck's fixed stage lets go, so the window scrolls and the text can be selected */
@@ -111,7 +111,8 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board table.t td[data-step]:not(.shown) .cv, .board table.t [data-wait]:not(.open) .cv { visibility: hidden; }
 .board table.t tr.wrow td:first-child { color: var(--accent); font-weight: 750; }
 .board table.t td.src, .board table.t tr.wrow td.src { background: var(--surf2); box-shadow: none; color: var(--tc); font-weight: 750; }
-.board table.t .hcol { color: var(--accent); font-weight: 750; }
+.board table.t th.tsy { color: var(--sc); }
+.board table.t th.hcol, .board table.t td.hcol { color: var(--accent); font-weight: 750; }
 
 /* worked lines: the deck's calc look; term colours stay on all the time */
 .board .cline { grid-template-columns: 38px minmax(0, 1fr); gap: 14px; }
@@ -212,6 +213,12 @@ html.ls-page .board .datatoggle { background: transparent; border: 1px solid var
 .board .bops .opcard .of { font-size: 28px; }
 .board .bops .opcard .ow { font-size: 26px; }
 .board .bops .opcard .owhy { font-size: 19px; }
+
+/* rows take i's colour and columns j's, in the labels and in the "row i, column j" line */
+.board .mxbox .mr:not(.vlab, .on) { color: var(--ci, var(--mist)); }
+.board .mxbox .mh:not(.corner, .on) { color: var(--cj, var(--mist)); }
+.board .mkey b:nth-of-type(1) { color: var(--ci, var(--ink)); }
+.board .mkey b:nth-of-type(2) { color: var(--cj, var(--ink)); }
 
 /* the plan: numbered squares on one line, the first filled, a title under each and a sub-label under that */
 .board .track { position: relative; display: grid; padding: 22px 0 6px; }

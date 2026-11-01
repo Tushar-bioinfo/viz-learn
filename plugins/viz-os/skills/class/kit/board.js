@@ -6,29 +6,53 @@
    an image's from the image. The layout gives each a width and a height limit, never a box to fill.
    Next and Back appear only on a figure that really changes: marks that come in on a step, a run's frames, a matrix step.
    A step with `think` shows its question with a Show answer button. The answer takes no room until pressed: the card grows
-   and its top stays. What the step adds waits behind the answer, in its own space. Attention goes by text colour on the thing itself: a worked line's terms take the
-   deck's term colours on the symbol, on its number and on the table cell it came from. */
+   and its top stays. What the step adds waits behind the answer, in its own space. Attention goes by text colour on the thing itself: a symbol has one colour on the
+   whole page, on its TeX, on its number, on its table column and on the table cell it came from. */
 (function () {
   'use strict';
   const L = window.VizOS, h = L.h;
-  // ==text== is the deck's orange underline; ==s1:text== (s2, s3, good, bad) is bold text in that colour, no underline
-  const md = s => L.md(s).replace(/<mark class="hi">(accent|s1|s2|s3|good|bad|mist):/g, (_, c) => `<mark class="hi tc" style="--hc:var(--${c})">`);
+  // ==text== is the deck's orange underline; ==s1:text== (s2 to s5, good, bad) is bold text in that colour, no underline
+  const md = s => L.md(s).replace(/<mark class="hi">(accent|s1|s2|s3|s4|s5|good|bad|mist):/g, (_, c) => `<mark class="hi tc" style="--hc:var(--${c})">`);
   const SVG = 'http://www.w3.org/2000/svg';
   // what follows the window on every board: a held figure lets go, and the line by the buttons steps aside
   let watching = false;
   addEventListener('scroll', () => { if (watching) return; watching = true; requestAnimationFrame(() => { watching = false; (L.slides || []).forEach(sl => sl.r.watch && sl.r.watch()); }); }, { passive: true });
   const sv = (tag, attrs, parent) => { const e = document.createElementNS(SVG, tag); for (const k in attrs || {}) if (attrs[k] != null) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const list = x => Array.isArray(x) ? x : x == null ? [] : [x];
-  const COLOR = { accent: 1, tint: 1, s1: 1, s2: 1, s3: 1, ink: 1, mist: 1, haze: 1, line: 1, good: 1, bad: 1 };
+  const COLOR = { accent: 1, tint: 1, s1: 1, s2: 1, s3: 1, s4: 1, s5: 1, ink: 1, mist: 1, haze: 1, line: 1, good: 1, bad: 1 };
   const col = c => COLOR[c] ? `var(--${c})` : c || 'var(--mist)';
+  // ---------- one colour per symbol: a notation keeps its colour wherever it appears, so the eye can track it ----------
+  // A symbol's own `color` wins. One with none takes the next unused colour at boot, in the order the lesson lists them;
+  // operators are left out, a symbol that is a whole expression stays ink, and when the five run out the rest stay ink. An ink symbol is
+  // still ink everywhere: it does not take the grey of the card it stands on
+  const PALETTE = ['s1', 's2', 's3', 's4', 's5'], ARGS = new Set(['\\htmlClass', '\\text', '\\textbf', '\\mathrm', '\\operatorname', '\\begin', '\\end', '\\color']);
+  const atomic = t => !/[\s+=]|.-/.test(t);
+  let book = null;
+  const bookOf = () => { const S = L.deck && L.deck.symbols; if (!S) return null; if (book && book.S === S) return book;
+    const texOf = q => S[q].tex || L.autoSym(q), used = new Set(Object.values(S).map(x => x.color)), free = PALETTE.filter(c => !used.has(c));
+    Object.keys(S).forEach(q => { if (!S[q].color && S[q].kind !== 'operator') S[q].color = atomic(texOf(q)) && free.length ? free.shift() : 'ink'; });
+    const names = Object.keys(S).filter(q => S[q].color && S[q].kind !== 'operator' && atomic(texOf(q)));
+    book = { S, list: names.map(q => ({ q, tex: texOf(q) })).sort((a, b) => b.tex.length - a.tex.length), index: Object.fromEntries(names.filter(q => S[q].kind === 'index').map(q => [texOf(q), q])) };
+    return book; };
+  const closeOf = (t, i) => { if (t[i] !== '{') return i; for (let d = 0, j = i; j < t.length; j++) { if (t[j] === '\\') j++; else if (t[j] === '{') d++; else if (t[j] === '}' && !--d) return j + 1; } return t.length; };
+  // each symbol's TeX, wrapped in a class: the longest match first, never inside a command's name or a word, and index letters inside _{ij}
+  const paint = tex => { const B = bookOf(); if (!B || !B.list.length) return tex; let out = '', i = 0; const cls = (q, t) => `\\htmlClass{sy sy-${q}}{${t}}`;
+    while (i < tex.length) {
+      const hit = B.list.find(x => tex.startsWith(x.tex, i)); if (hit) { out += cls(hit.q, hit.tex); i += hit.tex.length; continue; }
+      if (tex[i] === '\\') { const w = /^\\(?:[A-Za-z]+\*?|[\s\S])/.exec(tex.slice(i))[0]; out += w; i += w.length; if (ARGS.has(w)) { const e = closeOf(tex, i); out += tex.slice(i, e); i = e; } continue; }
+      const m = tex[i] === '_' && /^_(?:\{([a-z](?:,?[a-z])*)\}|([a-z]))/.exec(tex.slice(i));
+      if (m && [...(m[1] ?? m[2])].every(c => c === ',' || B.index[c])) { out += `_{${[...(m[1] ?? m[2])].map(c => B.index[c] ? cls(B.index[c], c) : c).join('')}}`; i += m[0].length; continue; }
+      out += tex[i++]; }
+    return out; };
+  // all math on the page comes through here, the deck's matrix cards too
+  const renderTex = L.renderTex;
+  L.renderTex = (el, tex, display) => { const ok = renderTex(el, paint(tex), display); const B = bookOf();
+    if (B) el.querySelectorAll('.sy').forEach(e => { const x = B.S[[...e.classList].find(c => c.startsWith('sy-')).slice(3)]; if (x) e.style.color = col(x.color); }); return ok; };
   const BEAT = { 'by-hand': 'By hand', 'what-if': 'What if', misconception: 'A common mix-up' };
   const beatLabel = b => BEAT[b] || (b ? b[0].toUpperCase() + b.slice(1).replace(/-/g, ' ') : '');
 
   // ---------- worked lines: formula = numbers = result, each input in its colour ----------
-  // A symbol's `color` wins; otherwise the table columns a line reads take s1, s2, s3 in order. The symbol, its number
-  // and the table cell it came from are written in that colour while the line is the one being worked; once it is past,
-  // the colour goes and the line turns grey. Restraint: colour the text, never box or underline it.
-  const TERMC = ['s1', 's2', 's3'];
+  // The symbol, its number and the table cell it came from are written in the symbol's colour. Restraint: colour the text, never box or underline it.
   const symOf = (ctx, n) => { const s = (ctx.symbols || {})[n]; return s && s.tex ? s.tex : L.autoSym(n); };
   const shortOf = (ctx, n) => { const s = (ctx.symbols || {})[n]; return (s && (s.short || s.says)) || n; };
   const subFmt = (ctx, n, v, own) => own ?? (((ctx.symbols || {})[n] || {}).fmt) ?? (Number.isInteger(v) ? ',' : 's4');   // as the deck's calc
@@ -223,7 +247,7 @@
 
   // ---------- the board ----------
   L.types.board = (s, ctx) => {
-    const node = h('section', 'slide s-board'); node.appendChild(L.head(s, beatLabel(s.beat)));
+    bookOf(); const node = h('section', 'slide s-board'); node.appendChild(L.head(s, beatLabel(s.beat)));
     const steps = list(s.steps);
     // each step's clicks: a think step counts as two (its question, its answer), so the check sees both
     let n = 0; const map = steps.map(st => st && st.think ? { q: ++n, at: ++n } : { at: ++n });
@@ -242,6 +266,7 @@
     const block = () => { const b = { node: h('div', 'fb'), fig: h('div', 'ffig'), side: h('div', 'fside'), figs: [] }; b.node.append(b.fig, b.side); column().appendChild(b.node); blocks.push(b); return b; };
 
     const lines = [], cols = [], vis = [], asm = [], thinks = [], stepEls = [], figs = [];
+    const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
     const isFig = it => it && (it.plane || SIDEVIS.some(k => it[k] != null));
     const isWide = it => it && (it.assemble || it.compare || it.ops || WIDEVIS.some(k => it[k] != null));
@@ -322,6 +347,7 @@
         lines.push({ el: e, at }); slot.appendChild(e); }
       // a matrix step from the deck's ops renderer: its steps land on this step and the next ones, with its own Back and Next
       else if (it.ops) { const O = L.types.ops({ ...it.ops, title: '' }, ctx), T = O.steps - 1, clk = t => clickOf(j + 1 + t), body = O.node.querySelector('.body');
+        ['i', 'j'].forEach(q => { const c = symColor(q); if (c) body.style.setProperty(`--c${q}`, c); });   // rows take i's colour, columns j's
         const e = h('div', 'bops bi'); if (it.ops.id) e.dataset.id = it.ops.id; e.appendChild(body); body.querySelectorAll('.opsw, .opcard').forEach(q => q.classList.add('fr')); lines.push({ el: e, at });
         const stops = Array.from({ length: T + 1 }, (_, t) => clk(t)), rows = list(L.val(it.ops.matrix && (it.ops.matrix.values ?? it.ops.matrix.from), ctx.scope, 'ops')).length || 4;
         const w = { wide: true, figs: [] }; zone = w; const fg = { node: e, O, kind: 'ops', issues: [], stops: stops.slice(1), w: 0, h: 0 };
@@ -351,7 +377,6 @@
     const tcols = s.table ? list(s.table.cols).map(c => typeof c === 'string' ? { key: c } : c).concat(cols) : [];
     const tkeys = new Set(tcols.map(c => c.key));
     const rowsOf = () => s.table ? list(L.val(s.table.from, ctx.scope, `slide ${ctx.index + 1} table.from`)) : [];
-    const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const kindOf = q => ((ctx.symbols || {})[q] || {}).kind;
     // a value data.json (or the top-level derive) already holds must come out the same on the board (KTD21)
     const given = Object.getPrototypeOf(ctx.scope) || {}, clash = [];
@@ -364,8 +389,6 @@
       lines.forEach(ln => { if (!ln.c) return; const c = ln.c, where = `slide ${ctx.index + 1} board line`;
         ln.sc = c.row != null && rows[c.row] ? L.scope(ctx.scope, rows[c.row]) : ctx.scope;
         ln.val = c.expr ? L.try(c.expr, ln.sc, where) : null; store(c.name, ln.val);
-        const fromTable = L.names(c.expr || '').filter(q => c.row != null && tkeys.has(q) && !symColor(q));
-        ln.color = q => q === c.name ? null : symColor(q) || (fromTable.includes(q) ? col(TERMC[Math.min(2, fromTable.indexOf(q))]) : null);
         ln.reads = L.names(c.expr || '').filter(q => c.row != null && tkeys.has(q));
       });
     };
@@ -378,27 +401,25 @@
       if (f.expr) ids.push(...L.names(f.expr));
       return { tex: f.lhs ? `${lt(f.lhs, sym(f.lhs))} = ${body}` : body, ids: ids.filter(q => q !== f.lhs) };
     };
-    // a symbol's own colour wins; the other inputs take s1, s2, s3 in reading order; the result and indices stay ink
-    const termColor = ids => { const free = ids.filter(q => !symColor(q) && !kindOf(q)); return q => symColor(q) || (free.indexOf(q) >= 0 && free.indexOf(q) < 3 ? col(TERMC[free.indexOf(q)]) : null); };
-    const keyRow = colorOf => (math, items) => { const e = h('div', 'wkey', items.map(({ text }) => `<span class="wk"><span class="wm"></span>${L.esc(text)}</span>`).join('')); math.appendChild(e);
-      e.querySelectorAll('.wm').forEach((m, i) => { L.renderTex(m, lt(items[i].n, sym(items[i].n)), false); tint(m, colorOf); }); };
+    const keyRow = (math, items) => { const e = h('div', 'wkey', items.map(({ text }) => `<span class="wk"><span class="wm"></span>${L.esc(text)}</span>`).join('')); math.appendChild(e);
+      e.querySelectorAll('.wm').forEach((m, i) => { L.renderTex(m, lt(items[i].n, sym(items[i].n)), false); tint(m, symColor); }); };
     const termNames = (ids, skip) => ids.filter(q => !kindOf(q) && !(skip && skip.has(q))).map(q => { if (skip) skip.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; });
     const drawAsm = () => asm.forEach(A => {
-      const a = A.a, [nm, sy] = A.e.querySelectorAll('.arow .math'), { tex, ids } = formTex(a), colorOf = termColor(ids);
+      const a = A.a, [nm, sy] = A.e.querySelectorAll('.arow .math'), { tex, ids } = formTex(a);
       let nums;
       if (a.expr) { const v = L.try(a.expr, ctx.scope, `slide ${ctx.index + 1} assemble`); store(a.lhs, v);
         const { tex: sub, eq } = L.work(a.expr, { slash: true, val: q => typeof ctx.scope[q] === 'number' ? ctx.scope[q] : null, arr: q => Array.isArray(ctx.scope[q]) ? ctx.scope[q] : null, wrap: lt, fmt: a.fmt, lit: null, fmtOf: (q, x) => subFmt(ctx, q, x) }, v, a.fmt, ctx.scope);
         nums = `${sub} ${eq} \\htmlClass{res}{${L.numTex(v, a.fmt)}}`; }
       else nums = L.interp(String(a.plug || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*):([^\]]*)\]/g, (_, q, x) => q === a.lhs ? `\\htmlClass{res}{${x}}` : lt(q, x)).replace(/\[([A-Za-z_]\w*)\]/g, (_, q) => lt(q, sym(q)));
-      L.renderTex(nm, nums, false); L.renderTex(sy, tex, false); tint(nm, colorOf); tint(sy, colorOf); fitMath([nm, sy]);
-      names(sy, termNames(ids), keyRow(colorOf));   // every term gets its plain name here (R4), even one named earlier in the scene
+      L.renderTex(nm, nums, false); L.renderTex(sy, tex, false); tint(nm, symColor); tint(sy, symColor); fitMath([nm, sy]);
+      names(sy, termNames(ids), keyRow);   // every term gets its plain name here (R4), even one named earlier in the scene
     });
     // write each worked line: symbol = formula, = numbers, = result (stacked at the = signs when too long for a row)
     const drawLines = () => {
       work();
       const named = new Set(), shownFmt = {};
       lines.forEach(ln => {
-        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, termColor(ids)); fitMath([m]); names(m, termNames(ids, named), keyRow(termColor(ids))); return; }
+        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, symColor); fitMath([m]); names(m, termNames(ids, named), keyRow); return; }
         if (!ln.c) return; const c = ln.c, math = ln.row.querySelector('.math'); math.innerHTML = ''; math.classList.remove('wrapped');
         if (!c.expr) return;
         const f = L.tex(c.expr, { sym, wrap: (q, tx) => lt(q, tx) });
@@ -406,9 +427,9 @@
           fmt: c.fmt, lit: null, fmtOf: (q, x) => subFmt(ctx, q, x, shownFmt[q]) }, ln.val, c.fmt, ln.sc);
         const parts = [[c.name ? `${sym(c.name)} = ${f}` : f, 'f'], [`= ${sub}`, 'sub'], [`${eq} \\htmlClass{res}{${L.numTex(ln.val, c.fmt)}}`, 'r']];
         parts.forEach(([tx, cls]) => { const sp = h('span', 'part ' + cls); math.appendChild(sp); L.renderTex(sp, tx, false); });
-        const ps = [...math.children]; ps.slice(0, 2).forEach(q => tint(q, ln.color)); fitMath([math]); if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
+        const ps = [...math.children]; ps.slice(0, 2).forEach(q => tint(q, symColor)); fitMath([math]); if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
         if (c.name) shownFmt[c.name] = c.fmt;
-        names(ps[0], L.names(c.expr).filter(q => !named.has(q) && q !== c.name).map(q => { named.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; }), keyRow(ln.color));
+        names(ps[0], L.names(c.expr).filter(q => !named.has(q) && q !== c.name).map(q => { named.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; }), keyRow);
       });
     };
     // a parameter card: each named number with its symbol in its colour, its value now and its name (it follows the sliders)
@@ -526,10 +547,10 @@
     // the pinned table: the given columns, plus any column a step adds: it holds its place, and fills in when the reading gets there
     const drawTable = () => {
       if (!zt) return;
-      const rows = rowsOf();
+      const rows = rowsOf(), colHead = q => ((ctx.symbols || {})[q] || {}).color === 'ink' ? null : symColor(q);
       const cell = (c, r) => { let v = r[c.key]; if (c.expr) v = L.try(c.expr, L.scope(ctx.scope, r), `slide ${ctx.index + 1} column ${c.key}`); return typeof v === 'number' ? L.fmt(v, c.fmt) : md(v); };
       const stp = c => (c.at ? ` data-step="${c.at}"` : '') + (waits.has(c.at) ? ` data-wait="${c.at}"` : ''), wt = c => waits.has(c.at) ? ` data-wait="${c.at}"` : '';
-      zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}"${wt(c)}><span class="cv">${md(c.label || c.key)}</span></th>`).join('')}</tr></thead>
+      zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der' : ''}${colHead(c.key) ? ' tsy' : ''}"${colHead(c.key) ? ` style="--sc:${colHead(c.key)}"` : ''} data-col="${L.esc(c.key)}"${wt(c)}><span class="cv">${md(c.label || c.key)}</span></th>`).join('')}</tr></thead>
         <tbody>${rows.map((r, i) => `<tr data-r="${i}">${tcols.map(c => `<td class="${c.expr ? 'der' : ''}" data-r="${i}" data-col="${L.esc(c.key)}"${stp(c)}><span class="cv">${cell(c, r)}</span></td>`).join('')}</tr>`).join('')}</tbody></table>`;
       // the table fills its 30%; one too wide for that takes what it needs, and if that leaves the work too little it goes above it
       if (pair) { pair.classList.add('stacked'); const W = pair.clientWidth, w = Math.max(zt.offsetWidth, sideOf(W)); pair.style.setProperty('--tcw', w + 'px'); pair.classList.toggle('stacked', W - w - GAP < FIG); }
@@ -552,7 +573,7 @@
       missing = [];
       lines.forEach(ln => { if (!ln.c || ln.at !== k || ln.c.row == null || !zt) return;
         zt.querySelector(`tbody tr[data-r="${ln.c.row}"]`)?.classList.add('wrow');
-        ln.reads.forEach(q => { const td = zt.querySelector(`td[data-r="${ln.c.row}"][data-col="${CSS.escape(q)}"]`), c = ln.color(q);
+        ln.reads.forEach(q => { const td = zt.querySelector(`td[data-r="${ln.c.row}"][data-col="${CSS.escape(q)}"]`), c = symColor(q);
           if (td && c) { td.classList.add('src'); td.style.setProperty('--tc', c); } }); });
       marksAt(k).forEach(t => { const { els, cls } = targetOf(t); if (!els.length) { missing.push(t); return; }
         els.forEach(e => { e.classList.add(cls); if (cls === 'src') e.style.setProperty('--tc', 'var(--accent)'); }); });

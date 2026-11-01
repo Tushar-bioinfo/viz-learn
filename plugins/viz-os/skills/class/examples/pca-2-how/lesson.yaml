@@ -11,13 +11,14 @@ symbols:
   d1: {tex: 'd_1', says: CD3 measured from the middle, short: CD3 from the middle, color: s1, fmt: 2}
   d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
-  i: {tex: 'i', says: which cell, kind: index}
+  i: {tex: 'i', says: which cell, color: s4, kind: index}
+  j: {tex: 'j', says: which marker, color: s5, kind: index}
   prod: {tex: 'd_1 d_2', says: a cell's two distances multiplied, short: product, fmt: 2}
   c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 3}
   v_cd3: {tex: 's_1^2', says: the spread of CD3, short: CD3 spread, color: s1, fmt: 3}
   v_cd19: {tex: 's_2^2', says: the spread of CD19, short: CD19 spread, color: s2, fmt: 3}
-  u1: {tex: 'u_1', says: the arrow's CD3 part, short: arrow's CD3 part}
-  u2: {tex: 'u_2', says: the arrow's CD19 part, short: arrow's CD19 part}
+  u1: {tex: 'u_1', says: the arrow's CD3 part, short: arrow's CD3 part, color: s1}
+  u2: {tex: 'u_2', says: the arrow's CD19 part, short: arrow's CD19 part, color: s2}
   p0: {tex: 'p_{c1}', says: c1's shadow on the tilted line, short: c1's shadow, fmt: 2}
   sq0: {tex: 'p_{c1}^2', says: c1's shadow squared, short: shadow squared, fmt: 3}
   s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: spread along u, fmt: 3}

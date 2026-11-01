@@ -12,17 +12,18 @@ symbols:
   d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
   d3: {tex: 'd_3', says: CD14 measured from the middle, short: CD14 from the middle, color: s3, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
-  i: {tex: 'i', says: which cell, kind: index}
-  u1: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3 part}
-  u2: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19 part}
-  v1: {tex: 'v_1', says: PC1's arrow, CD3 part, short: PC1's CD3 part, fmt: 3}
-  v2: {tex: 'v_2', says: PC1's arrow, CD19 part, short: PC1's CD19 part, fmt: 3}
+  i: {tex: 'i', says: which cell, color: s4, kind: index}
+  j: {tex: 'j', says: which marker, color: s5, kind: index}
+  u1: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3 part, color: s1}
+  u2: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19 part, color: s2}
+  v1: {tex: 'v_1', says: PC1's arrow, CD3 part, short: PC1's CD3 part, color: s1, fmt: 3}
+  v2: {tex: 'v_2', says: PC1's arrow, CD19 part, short: PC1's CD19 part, color: s2, fmt: 3}
   w1: {tex: 'w_1', says: PC2's arrow, CD3 part, short: PC2's CD3 part, fmt: 3}
   w2: {tex: 'w_2', says: PC2's arrow, CD19 part, short: PC2's CD19 part, fmt: 3}
   a: {tex: 'a', says: how much of u points along PC1, short: PC1 part, color: accent, fmt: 3}
   b: {tex: 'b', says: how much of u points along PC2, short: PC2 part, color: s3, fmt: 3}
   v_cd3: {tex: 's_1^2', says: the spread of CD3, short: CD3 spread, color: s1, fmt: 3}
-  c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, fmt: 3}
+  c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 3}
   lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, fmt: 3}
   lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, fmt: 3}
   s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: spread along u, fmt: 3}

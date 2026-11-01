@@ -8,14 +8,14 @@ home: cells
 data_file: data.json
 abbr: {SD: standard deviation, CD3: a T-cell surface marker}
 symbols:
-  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i, fmt: 1}
-  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean, fmt: 2}
+  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i, color: s1, fmt: 1}
+  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean, color: s2, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
   i: {tex: 'i', says: which cell, kind: index}
-  d1: {tex: 'd_1', says: how far c1 sits from the mean, short: distance of c1, fmt: 2}
+  d1: {tex: 'd_1', says: how far c1 sits from the mean, short: distance of c1, color: s1, fmt: 2}
   sq: {tex: 'd^2', says: squared distance of each cell, short: squared distance, fmt: 4}
   ss: {tex: 'SS', says: the sum of squared distances, short: sum of squares, fmt: 3}
-  s2: {tex: 's^2', says: the variance, short: variance, fmt: 3}
+  s2: {tex: 's^2', says: the variance, short: variance, color: s5, fmt: 3}
   sd: {tex: 's', says: the standard deviation, short: SD, fmt: 2}
   drawn: {tex: 'k', says: samples of 3 cells drawn so far, short: samples drawn}
   avg_n: {tex: '\div n', says: average spread so far when we divide by n, short: average with ÷ n, fmt: 3}

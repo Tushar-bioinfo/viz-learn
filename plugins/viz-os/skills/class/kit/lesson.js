@@ -12,7 +12,7 @@
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
-    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid'), pill: v('pill'), line: v('line'), surf: v('surf'), surf2: v('surf2') };
+    L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), s4: v('s4'), s5: v('s5'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid'), pill: v('pill'), line: v('line'), surf: v('surf'), surf2: v('surf2') };
     L.fontUI = v('f-ui'); L.fontMono = v('f-mono');
   }
 
