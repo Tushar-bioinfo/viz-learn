@@ -19,12 +19,12 @@ A biologist and bioinformatician who learns visually. Each deck should show intu
 | `…/deck/kit/` | `vizos.css` + `core.js` (expressions, stats) + `chart.js` + `slides.js` + `ops.js` (matrix steps) + `deck.js` (navigation, fit, audit) |
 | `…/deck/scripts/` | `build.py` (lint, then yaml → html), `check.py` (Playwright desktop audit), `image.py` (opt-in picture) |
 | `…/deck/examples/` | three decks; they double as the regression tests |
-| `…/class/` | board lessons: `SKILL.md`, `lesson.md` (the teaching rules, which `sketch` reads too), `board.md`, `kit/`, `scripts/` (`lesson.py`, `home.py`, `memory.py`), `examples/` |
+| `…/class/` | board lessons: `SKILL.md`, `lesson.md` (the teaching rules, which `sketch` reads too), `board.md`, `kit/`, `scripts/` (`lesson.py`, `home.py`, `memory.py`, `tidy.py`), `examples/` |
 | `…/sketch/` | one long drawn page: `SKILL.md`, `page.md`, `kit/` (papers, pens, parts, thread), `scripts/` (`sketch.py`, `page_lint.py`), `examples/pca-what/`. It needs `class` and `deck` beside it |
 | `plugins/viz-os/docs/design.md` | decisions and why, colour measurements, learning-science sources (ships, but skill files never point at it) |
 | manifests | one per agent family; see `docs/release.md` |
 | `docs/` | notes for people and agents working on the plugin; **not shipped** |
-| `tools/` | `check-all.sh` (the regression run), `check_manifests.py`, `check_docs.py`, `check_class.py`, `check_memory.py`, `check_sketch.py`, `check_palette.py` |
+| `tools/` | `check-all.sh` (the regression run), `check_manifests.py`, `check_docs.py`, `check_class.py`, `check_board_ui.py`, `check_memory.py`, `check_tidy.py`, `check_sketch.py`, `check_palette.py` |
 
 ## Read before you work
 | Doc | Read it when |
