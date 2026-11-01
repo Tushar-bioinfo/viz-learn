@@ -75,7 +75,7 @@
   }
 
   function plane(p, ctx, clickOf, at) {
-    const node = h('div', p.fill ? 'bi plane fill' : 'bi plane'); node.dataset.at = at;
+    const node = h('div', p.fill ? 'bi plane fr fill' : 'bi plane fr'); node.dataset.at = at;
     if (p.id) node.dataset.id = p.id;
     const leg = h('div', 'plegend'); node.appendChild(leg);
     const wrap = h('div', 'pwrap'); node.appendChild(wrap);
@@ -252,7 +252,7 @@
       // a legend that only repeats the x-axis labels gives its room to the plot
       if (v.chart && v.chart.x && list(v.chart.x.cats).length) { const nm = list(v.chart.series).filter(q => q.name).map(q => q.name); if (nm.length && nm.every(q => v.chart.x.cats.includes(q))) v.chart.legend = false; }
       if (v.chart && (v.chart.legend === false || list(v.chart.series).filter(q => q.name && q.legend !== false).length < 2)) e.classList.add('bare');   // no legend, so no legend row
-      const V = visual(v), body = V.node; e.appendChild(body);
+      const V = visual(v), body = V.node; e.appendChild(body); if (kind !== 'flow') body.classList.add('fr');
       const fg = { node: e, V, kind, issues: [], w: 0, h: 0, stops: [...stepsIn((v.chart || {}).series), ...stepsIn((v.chart || {}).marks), ...stepsIn(v.labels)] };
       const pick = sel => body.querySelector(sel), rr = ratioOf(ratio ?? (v.chart || v.dist || {}).ratio, SHAPE);
       // the widest size that keeps the shape: `over` is what sits round the shape inside the plate (a caption, a legend)
@@ -295,7 +295,7 @@
       else if (it.eqn) { const e = tag(h('div', 'fline bi'), at, it.eqn.id);
         e.innerHTML = `${it.eqn.say ? `<div class="say">${md(it.eqn.say)}</div>` : ''}<div class="math"></div>`; lines.push({ f: it.eqn, at, el: e }); slot.appendChild(e); }
       // the formula built from our numbers (R4): the numbers row, the next step's line, then the symbols row with each term named
-      else if (it.assemble) { const a = it.assemble, e = tag(h('div', 'asm bi g'), at, a.id);
+      else if (it.assemble) { const a = it.assemble, e = tag(h('div', 'asm bi g fr'), at, a.id);
         e.innerHTML = `${a.say ? `<div class="say">${md(a.say)}</div>` : ''}<div class="arow nums"><span class="atag">Our numbers</span><div class="math"></div></div><div class="abridge"></div>` +
           `<div class="arow syms"><span class="atag">In symbols</span><div class="math"></div></div>`;
         asm.push({ a, e }); slot.appendChild(e); pending = e.querySelector('.abridge'); }
@@ -303,7 +303,7 @@
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
-      else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g'), at, pr.id);
+      else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g rl'), at, pr.id);
         e.innerHTML = (pr.say ? `<div class="ph">${md(pr.say)}</div>` : '') + list(pr.names).map(q => `<div class="pr" data-n="${L.esc(q)}"><span class="ps"></span><b class="pv"></b><span class="pn">${md(shortOf(ctx, q))}</span></div>`).join('');
         lines.push({ params: e, at, el: e }); (pr.side && zl ? zl : slot).appendChild(e); }
       else if (it.compare) { const cp = it.compare, e = tag(h('div', 'bcmp bi'), at, cp.id);
@@ -314,14 +314,14 @@
         lines.push({ el: e, at }); slot.appendChild(e); }
       // a matrix step from the deck's ops renderer: its steps land on this step and the next ones, with its own Back and Next
       else if (it.ops) { const O = L.types.ops({ ...it.ops, title: '' }, ctx), T = O.steps - 1, clk = t => clickOf(j + 1 + t), body = O.node.querySelector('.body');
-        const e = h('div', 'bops bi'); if (it.ops.id) e.dataset.id = it.ops.id; e.appendChild(body); lines.push({ el: e, at });
+        const e = h('div', 'bops bi'); if (it.ops.id) e.dataset.id = it.ops.id; e.appendChild(body); body.querySelectorAll('.opsw, .opcard').forEach(q => q.classList.add('fr')); lines.push({ el: e, at });
         const stops = Array.from({ length: T + 1 }, (_, t) => clk(t)), rows = list(L.val(it.ops.matrix && (it.ops.matrix.values ?? it.ops.matrix.from), ctx.scope, 'ops')).length || 4;
         const w = { wide: true, figs: [] }; zone = w; const fg = { node: e, O, kind: 'ops', issues: [], stops: stops.slice(1), w: 0, h: 0 };
         fg.paint = c => O.show(1 + stops.slice(1).filter(q => q <= c).length);
         fg.size = room => { fg.w = room.w; body.style.height = ''; O.layout(); const vecs = list(it.ops.steps).length; fg.h = Math.max(body.offsetHeight, Math.round(46 * (rows + 3 + Math.min(vecs, 2)))); body.style.height = fg.h + 'px'; return fg.w; };
         holder(fg, at, it.ops); w.figs.push(fg); blocks.push(w); slot.appendChild(fg.wrap); }
       else if (it.note != null) { const nt = typeof it.note === 'string' ? { text: it.note } : it.note;
-        const e = tag(h('div', 'bi note g', md(nt.text || '')), at, nt.id); lines.push({ note: e, at, el: e }); (nt.side && zl ? zl : slot).appendChild(e); }
+        const e = tag(h('div', 'bi note g rl', md(nt.text || '')), at, nt.id); lines.push({ note: e, at, el: e }); (nt.side && zl ? zl : slot).appendChild(e); }
     };
 
     steps.forEach((st, j) => { if (!st) return;

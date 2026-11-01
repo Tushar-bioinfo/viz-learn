@@ -408,6 +408,134 @@ def no_repeat(page):
     return not bad, "; ".join(bad[:3]) or f"{seen} lines"
 
 
+FIVE = ((1100, 800), (1280, 720), (1480, 800), (1728, 1000), (1920, 1080))
+FORMULAS = ".cline .math, .fline .math, .asm .math"
+# a part of a worked line whose pieces go back to the left has broken across rows
+BROKEN = """() => { const out = []; document.querySelectorAll('.cline .part, .fline .math, .asm .math').forEach(p => { const bs = [...p.querySelectorAll('.katex-html > .base')].map(b => b.getBoundingClientRect()).filter(r => r.width);
+  if (bs.some((r, i) => i && r.left < bs[i - 1].right - 2)) out.push([p.closest('.slide').id, p.textContent.slice(0, 30)]); }); return out; }"""
+
+
+def one_row(page):
+    """A piece of a formula never breaks across rows, at five windows."""
+    bad = []
+    for w, h in FIVE:
+        sized(page, w, h)
+        bad += [f"{w}: {x}" for x in page.evaluate(BROKEN)]
+    sized(page, 1440, 900)
+    return not bad, "; ".join(bad[:3]) or "5 windows"
+
+
+FLOOR = """s => { const out = []; document.querySelectorAll(s).forEach(m => { const fs = parseFloat(getComputedStyle(m).fontSize), b = m.closest('.st, .asm, .slide').getBoundingClientRect(), k = [...m.querySelectorAll('.katex')].filter(e => !e.closest('.wkey')).map(e => e.getBoundingClientRect());
+  if (!k.length) return; if (fs < 20 || Math.max(...k.map(r => r.right)) > b.right + 2) out.push([m.closest('.slide').id, fs, Math.round(Math.max(...k.map(r => r.right)) - b.right)]); });
+  return [out, [...document.querySelectorAll(s)].filter(m => m.style.fontSize).length]; }"""
+
+
+def formula_floor(page):
+    """A formula shrinks to fit its box, and never under 20 px."""
+    bad, shrunk = [], 0
+    for w, h in FIVE:
+        sized(page, w, h)
+        r = page.evaluate(FLOOR, FORMULAS)
+        bad += [f"{w}: {x}" for x in r[0]]; shrunk += r[1]
+    sized(page, 1440, 900)
+    return not bad and (shrunk > 0 or "perceptron" not in page.url), "; ".join(bad[:3]) or f"{shrunk} shrunk"
+
+
+def no_stack(page):
+    """Term labels sit on one row, clear of each other; if not, the formula has a key row instead."""
+    bad = []
+    for w, h in FIVE:
+        sized(page, w, h)
+        bad += [f"{w}: {x}" for x in page.evaluate("""() => { const out = []; document.querySelectorAll('.cline .part, .fline .math, .asm .math').forEach(p => { const ls = [...p.querySelectorAll(':scope > .wl')].map(e => e.getBoundingClientRect());
+          if (ls.some(a => ls.some(b => a !== b && (Math.abs(a.top - b.top) > 2 || (a.left < b.right && b.left < a.right))))) out.push(p.closest('.slide').id); if (ls.length && p.querySelector('.mfrac')) out.push(p.closest('.slide').id + ' fraction'); }); return out; }""")]
+    sized(page, 1440, 900)
+    return not bad, "; ".join(bad[:3]) or "5 windows"
+
+
+def side_gap(page):
+    """Beside a figure the text starts 20 px from it, whatever the figure's width."""
+    sized(page, 1480, 800)
+    r = page.evaluate("""() => { const rc = e => e.getBoundingClientRect(); return [...document.querySelectorAll('.fb.beside')].map(b => [b.closest('.slide').id, rc(b.querySelector('.fside')).left - rc(b.querySelector('.ffig')).right, rc(b.querySelector('.ffig')).left - rc(b).left, rc(b.querySelector('.fside')).width / rc(b).width]); }""")
+    sized(page, 1440, 900)
+    bad = [x for x in r if abs(x[1] - 20) > 2 or abs(x[2]) > 2 or x[3] < .295]
+    return not bad, f"{len(r)} scenes" + (f", off: {bad[:2]}" if bad else "")
+
+
+ROOMS = """() => { const rc = e => e.getBoundingClientRect(), out = [];
+  document.querySelectorAll('.fg').forEach(g => { const p = g.querySelector(':scope > .bi.plane, :scope > .bvis.chart, :scope > .bvis.dist, :scope > .bvis.parts, :scope > .bvis.flow, :scope > .track'); if (!p || !rc(p).width || g.closest('.many')) return;
+    const beside = g.closest('.fb.beside'), pair = g.closest('.bpair:not(.stacked)'), w = rc(p).width, id = g.closest('.slide').id;
+    if (beside) out.push([id, 'beside', Math.round(w), Math.round(rc(beside).width * .7 - 10), .85]);
+    else if (pair) out.push([id, 'table', Math.round(w), Math.round(rc(pair.querySelector('.lines')).width), .85]);
+    else if (!g.querySelector(':scope > .bops')) out.push([id, 'column', Math.round(w), 1060, 1]); }); return out; }"""
+
+
+def fills_room(page):
+    """At 1480 x 800 a figure beside text or a table takes 85% of its room, and a wide figure 1060 px."""
+    sized(page, 1480, 800)
+    r = page.evaluate(ROOMS)
+    sized(page, 1440, 900)
+    bad = [x for x in r if x[2] < x[3] * x[4]]
+    return bool(r) and not bad, f"{len(r)} figures" + (f", small: {bad[:3]}" if bad else "")
+
+
+# one unit on each axis, read off the drawn ticks: the data keep one scale however far the range widens
+UNITS = """() => { const num = t => +t.textContent.replace('−', '-'), out = []; document.querySelectorAll('.bi.plane:not(.fill)').forEach(n => { const ts = [...n.querySelectorAll('.pgrid text')], xs = ts.filter(t => t.getAttribute('text-anchor') === 'middle'), ys = ts.filter(t => t.getAttribute('text-anchor') === 'end');
+  if (xs.length < 2 || ys.length < 2) { out.push([n.closest('.slide').id, 9]); return; } const a = xs[0], b = xs[xs.length - 1], c = ys[0], d = ys[ys.length - 1], ux = Math.abs((+b.getAttribute('x') - +a.getAttribute('x')) / (num(b) - num(a))), uy = Math.abs((+d.getAttribute('y') - +c.getAttribute('y')) / (num(d) - num(c)));
+  out.push([n.closest('.slide').id, Math.abs(ux / uy - 1)]); }); return out; }"""
+
+
+def equal_units(page):
+    """An equal plane keeps 1 unit in x equal to 1 unit in y within 1%, at five windows."""
+    bad, n = [], 0
+    for w, h in FIVE:
+        sized(page, w, h)
+        r = page.evaluate(UNITS); n += len(r)
+        bad += [f"{w}: {x}" for x in r if x[1] > .01]
+    sized(page, 1440, 900)
+    return not bad, "; ".join(bad[:3]) or f"{n} planes"
+
+
+EDGES = """() => { const rc = e => e.getBoundingClientRect(), bad = [], SEL = '.st > .say, .think, .asm, .bi.note, .bi.params, .bcmp, .track, .bi.plane, .bvis.chart, .bvis.dist, .bvis.parts, .bvis.flow';
+  document.querySelectorAll('.board').forEach(b => { const broad = b.classList.contains('broad'), es = [...b.querySelectorAll(SEL)].filter(e => rc(e).width && !e.closest('.fb.beside, .fb.many, .bpair:not(.stacked), .tcol, .abridge, .bcmp .side') && !(e.matches('.say') && e.closest('.bcmp')));
+    if (!es.length) return; const L = es.map(e => rc(e).left), R = es.map(e => rc(e).right);
+    if (Math.max(...L) - Math.min(...L) > 2 || (!broad && Math.max(...R) - Math.min(...R) > 2)) bad.push([b.closest('.slide').id, Math.round(Math.min(...L)), Math.round(Math.max(...L)), Math.round(Math.min(...R)), Math.round(Math.max(...R))]); }); return bad; }"""
+
+
+def edges(page):
+    """Everything in the reading column shares its left and right edges."""
+    bad = []
+    for w, h in ((1480, 800), (1920, 1080)):
+        sized(page, w, h)
+        bad += [f"{w}: {x}" for x in page.evaluate(EDGES)]
+    sized(page, 1440, 900)
+    return not bad, "; ".join(bad[:3]) or "2 windows"
+
+
+COLOURS = """() => { const seen = {}; VizOS.slides.forEach((sl, i) => Object.keys(sl.ctx.symbols || {}).forEach(q => sl.r.node.querySelectorAll(`.lt-${CSS.escape(q)}, .sy-${CSS.escape(q)}`).forEach(e => { const c = getComputedStyle(e).color; (seen[q] = seen[q] || {})[c] = i + 1; })));
+  return Object.entries(seen).filter(([q, m]) => Object.keys(m).length > 1).map(([q, m]) => [q, Object.keys(m).length]); }"""
+
+
+def one_colour(page):
+    """A symbol has one colour in every scene of a lesson."""
+    bad = page.evaluate(COLOURS)
+    return not bad, f"{bad[:4]}" if bad else "one each"
+
+
+def frames(page):
+    """Formula cards and matrix panels wear the figure's frame; callouts and number cards a line above and below; the chips are orange."""
+    r = page.evaluate("""() => { const bad = []; document.querySelectorAll('.asm, .bops .opsw, .bops .opcard').forEach(e => { const c = getComputedStyle(e), a = getComputedStyle(e, '::after'); if (c.backgroundColor !== 'rgba(0, 0, 0, 0)' || c.borderLeftWidth !== '0px' || c.borderBottomWidth !== '0px' || a.width !== '64px' || a.height !== '3px' || c.boxShadow === 'none') bad.push(e.className); });
+      document.querySelectorAll('.bi.note, .bi.params').forEach(e => { const c = getComputedStyle(e); if (e.closest('.hl') || c.backgroundColor !== 'rgba(0, 0, 0, 0)' || c.borderTopColor !== 'rgb(44, 45, 43)' || c.borderTopWidth !== '1px' || c.borderBottomWidth !== '1px' || c.borderLeftWidth !== '0px' || c.boxShadow !== 'none' || c.paddingTop !== '12px' || c.paddingLeft !== '16px') bad.push(e.className); });
+      const ac = getComputedStyle(document.documentElement).getPropertyValue('--accent'); document.querySelectorAll('.s-board .head .eyebrow').forEach(e => { if (getComputedStyle(e).borderTopColor !== 'rgb(255, 90, 54)') bad.push('chip'); }); return bad; }""")
+    return not r, f"{r[:3]}" if r else "frames ok"
+
+
+def legend_room(page):
+    """A legend sits 10 px under the frame's top line (8 px padding, 2 px more)."""
+    r = page.evaluate("""() => [...document.querySelectorAll('.bi.plane > .plegend, .bvis .vhead')].filter(e => e.offsetHeight).map(e => { const f = e.closest('.vis, .plane'), k = e.querySelector('.pk, .legend span'); return k ? Math.round(k.getBoundingClientRect().top - f.getBoundingClientRect().top) : null; }).filter(x => x != null)""")
+    bad = [x for x in r if x < 10]
+    return not bad, f"{len(r)} legends" + (f", tight: {bad[:4]}" if bad else "")
+
+
 TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a line goes to its stop", click_line), ("a think step's stop opens it", think_stop),
          ("Show answer grows its card from a fixed top", show_answer), ("a slider changes a number", slider), ("a run's scrubber moves the lit line", scrubber),
          ("scrolling lights steps and fills columns, figures stay", scrolling), ("no sideways scroll; planes equal; charts and images keep their ratio", widths),
@@ -416,7 +544,10 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("Next onto a think step takes two presses", two_presses),
          ("every row fits its figure at five widths", rows_fit), ("every row is on screen at three windows", rows_on_screen), ("a beside scene is 70 / 30", columns),
          ("a filled plane fills its room", plane_fills), ("a table fills its column", table_fills), ("the first stop has no line by the buttons", first_stop_quiet),
-         ("Next stays under the pointer", stays_put), ("the line by the buttons never repeats words on screen", no_repeat)]
+         ("Next stays under the pointer", stays_put), ("the line by the buttons never repeats words on screen", no_repeat),
+         ("no piece of a formula on two rows", one_row), ("a formula shrinks to fit, never under 20 px", formula_floor), ("term labels never stack", no_stack),
+         ("the text sits 20 px from its figure", side_gap), ("figures fill their room at 1480 x 800", fills_room), ("equal planes keep one scale", equal_units),
+         ("the reading column's edges line up", edges), ("a symbol has one colour", one_colour), ("cards wear the figure's frame", frames), ("legends have room above them", legend_room)]
 
 
 def main(names):

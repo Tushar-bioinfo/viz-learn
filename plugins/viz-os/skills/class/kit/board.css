@@ -16,10 +16,8 @@ html.ls-page .s-title .display { font-size: 64px; }
 html.ls-page .s-title .subtitle { font-size: 26px; }
 html.ls-page .s-title .question .qt { font-size: 26px; }
 html.ls-page .s-recap .recap { flex: none; }
-html.ls-page .s-quiz .quiz { flex: none; max-height: none; }
-html.ls-page .quiz.dense .flip .face .hint { font-size: 15px; }
 /* a deck slide between scenes expects a tall box */
-html.ls-page .slide:not(.s-board, .s-title, .s-recap, .s-quiz) { height: 720px; }
+html.ls-page .slide:not(.s-board, .s-title, .s-recap) { height: 720px; }
 .lsmore { padding: 16px 24px; font-size: 20px; line-height: 1.4; display: flex; flex-direction: column; gap: 8px; }
 
 /* the top bar shows how far down the page you are; the rail steps a scene at a time */
@@ -33,7 +31,7 @@ html.ls-page button:focus-visible, html.ls-page input:focus-visible { outline: 3
 
 /* a scene's head: the beat chip and the title on one row, the bridge line under them */
 .s-board .head { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "eb title" "lead lead"; gap: 8px 16px; align-items: center; }
-.s-board .head .eyebrow { grid-area: eb; font-size: 15px; }
+.s-board .head .eyebrow { grid-area: eb; font-size: 15px; border-color: var(--accent); }
 .s-board .head .h1 { grid-area: title; font-size: 34px; max-width: none; }
 .s-board .head .lead { grid-area: lead; font-size: 21px; max-width: none; }
 .s-board .head .purpose { grid-column: 1 / -1; font-size: 20px; max-width: none; }
@@ -76,7 +74,7 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 .board .st { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding-left: 16px; border-left: 4px solid transparent; transition: border-color .25s var(--ease); }
 .board .st.wide { padding-left: 0; border-left: 0; }
 .board .st.now, .board .st.atstop { border-left-color: var(--accent); }
-.board .st.wide.now .asm { border-color: var(--accent); }
+.board .st.wide.now .asm::before { background: var(--accent); }
 .board .st.line { cursor: pointer; }
 .board .st .say, .board p.say { margin: 0; font-size: 18px; line-height: 1.42; color: var(--ink); }
 .board .abridge { padding: 2px 0; }
@@ -133,14 +131,15 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .arow { display: grid; grid-template-columns: 132px minmax(0, 1fr); column-gap: 16px; align-items: center; }
 .board .arow .math { font-size: 32px; }
 .board .atag { font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tint); }
-.board .note { padding: 6px 12px; font-size: 18px; line-height: 1.4; }
-.board .params { padding: 6px 12px; }
+.board .note { font-size: 18px; line-height: 1.5; }
 .board .hl { box-shadow: 4px 4px 0 var(--accent); }
 /* ==text== keeps the deck's orange underline; ==s1:text== is bold text in a term colour, with no underline */
 .s-board mark.hi.tc { color: var(--hc); text-decoration: none; }
 
-/* text cards: a thin line, no shadow */
-html.ls-page .board .g:not(.vis, .ctl, .hl, .think, .tcard) { background: var(--card); border: 1px solid var(--line-dim); box-shadow: none; }
+/* text cards: a thin line, no shadow. A callout and a number card (.rl) take a line above and below instead: a tab on each would be noise */
+html.ls-page .board .g:not(.vis, .ctl, .hl, .think, .tcard, .fr, .rl) { background: var(--card); border: 1px solid var(--line-dim); box-shadow: none; }
+html.ls-page .board .rl { background: transparent; border: 0; border-top: 1px solid var(--thin); border-bottom: 1px solid var(--thin); box-shadow: none; padding: 12px 16px; }
+html.ls-page .board .fr.hl, html.ls-page .board .rl.hl { box-shadow: 4px 4px 0 var(--accent); }
 
 /* a parameter card: symbol (in its colour), value, plain name */
 .board .params { display: grid; grid-template-columns: auto auto 1fr; column-gap: 12px; row-gap: 6px; align-items: center; }
@@ -167,6 +166,7 @@ html.ls-page .board .datatoggle { background: transparent; border: 1px solid var
 .board .chart .axt { font-size: 16px; }
 .board .chart .lbl { font-size: 21px; }
 .board .legend { font-size: 20px; }
+.board .bvis .vhead { padding-top: 2px; box-sizing: content-box; }
 .board .bvis.bare .vhead { display: none; }
 .board .flow .node { padding: 8px 12px; }
 .board .flow .node .nl { font-size: 22px; }
@@ -209,16 +209,17 @@ html.ls-page .board .datatoggle { background: transparent; border: 1px solid var
 .board .tkt { font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
 .board .tku { font-size: 19px; color: var(--mist); }
 
-/* every figure, chart or plane, wears one frame: no box, a thin line along the top with an orange tick, a soft shadow.
-   The padding sits outside the plot (board.js adds it on) */
-html.ls-page .board .bvis:not(.flow) > .vis, html.ls-page .board .bi.plane { position: relative; background: transparent; border: 0; box-shadow: 0 10px 34px rgba(0, 0, 0, .55); padding: 8px; }
+/* every figure, formula card and matrix panel wears one frame (.fr): no box, a thin line along the top with an orange tick,
+   a soft shadow. A figure's padding sits outside the plot (board.js adds it on) */
+html.ls-page .board .fr { position: relative; background: transparent; border: 0; box-shadow: 0 10px 34px rgba(0, 0, 0, .55); }
+html.ls-page .board .vis.fr, html.ls-page .board .bi.plane { padding: 8px; }
 html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
-.board .bvis:not(.flow) > .vis::before, .board .bi.plane::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--thin); pointer-events: none; }
-.board .bvis:not(.flow) > .vis::after, .board .bi.plane::after { content: ""; position: absolute; left: 0; top: -1px; width: 64px; height: 3px; background: var(--accent); pointer-events: none; }
+.board .fr::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--thin); pointer-events: none; }
+.board .fr::after { content: ""; position: absolute; left: 0; top: -1px; width: 64px; height: 3px; background: var(--accent); pointer-events: none; }
 
 /* the plane */
 .board .plane { flex: none; display: flex; flex-direction: column; gap: 6px; }
-.board .plegend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 20px; color: var(--mist); flex: none; min-height: 24px; }
+.board .plegend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 20px; color: var(--mist); flex: none; min-height: 24px; padding-top: 2px; }
 .board .pk { display: inline-flex; align-items: center; gap: 8px; }
 .board .pk i { display: inline-block; width: 22px; height: 0; border-top: 4px solid var(--c); }
 .board .pk.dash i { border-top-style: dashed; border-top-width: 3px; }
