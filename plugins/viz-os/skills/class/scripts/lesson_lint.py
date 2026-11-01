@@ -262,7 +262,9 @@ def lint_scenes(B, Lx, deck, glob):
 # ---- whole-lesson rules (lesson.md): the shape, the order numbers and symbols show in, and typed numbers
 
 EXEMPT = ("operator", "index")   # a symbol of this `kind` has no number to show first
-LINE_WORDS = 24                  # one teacher line, one breath
+LINE_WORDS = 24                  # one teacher line, one breath (sketch's limit)
+SAY_WORDS, NOTE_WORDS, ANSWER_WORDS = 14, 16, 18   # a lesson's limits: a say or a think question, a note, a think answer
+PLAIN = {"a", "A", "I", "an", "as", "at", "be", "by", "do", "go", "if", "in", "is", "it", "no", "of", "on", "or", "so", "to", "up", "us", "we"}   # short symbol names that are also words
 STEP_CAP, THINK_GAP = 10, 6      # steps in one scene; steps in a row with no think stop
 SCENES = (8, 14)
 CARDS = (5, 8)
@@ -288,6 +290,44 @@ def slide_where(i, s):
     t = s.get("type") or "idea"
     title = str(s.get("title") or s.get("q") or s.get("text") or "")[:38]
     return f"slide {i + 1} ({t}{' “' + title + '”' if title else ''})"
+
+
+def step_lines(st):
+    """(field, text, word limit) for every line a learner reads in a step."""
+    out = [("say", st.get("say"), SAY_WORDS)]
+    t = st.get("think")
+    if isinstance(t, dict):
+        out += [("think q", t.get("q"), SAY_WORDS), ("think a", t.get("a"), ANSWER_WORDS)]
+    elif isinstance(t, str):
+        out.append(("think q", t, SAY_WORDS))
+    for it in as_list(st.get("add")):
+        if not isinstance(it, dict):
+            continue
+        for k in ("calc", "eqn", "assemble", "params"):
+            if isinstance(it.get(k), dict):
+                out.append((f"{k} say", it[k].get("say"), SAY_WORDS))
+        if "note" in it:
+            out.append(("note", it["note"].get("text") if isinstance(it["note"], dict) else it["note"], NOTE_WORDS))
+    return out
+
+
+def lint_bare(Lx, deck):
+    """A symbol's name in plain words stays grey: written as $w_0$ it takes its colour."""
+    names = [k for k, v in (deck.get("symbols") or {}).items() if isinstance(v, dict) and (len(k) <= 2 or re.search(r"\d", k)) and k not in PLAIN]
+    if not names:
+        return
+    bare = re.compile(r"(?<![\w$.'’-])(" + "|".join(map(re.escape, sorted(names, key=len, reverse=True))) + r")(?![\w'’-])")
+    for i, s in enumerate(deck.get("slides") or []):
+        if s.get("type") != "board":
+            continue
+        for j, st in enumerate(as_list(s.get("steps"))):
+            if not isinstance(st, dict):
+                continue
+            for k, v, _ in step_lines(st):
+                m = isinstance(v, str) and bare.search(re.sub(r"==\w+:", " ", HIDE.sub(" ", v)))
+                if m:
+                    t = (deck["symbols"][m.group(1)].get("tex") or m.group(1))
+                    Lx.warn(f"{slide_where(i, s)} step {j + 1}", f"`{k}` writes {m.group(1)} in plain words: write ${t}$ so it takes its colour")
 
 
 def lint_shape(B, Lx, slides):
@@ -342,12 +382,9 @@ def lint_shape(B, Lx, slides):
             if gap >= THINK_GAP:
                 Lx.warn(f"{w} step {j + 1}", f"{THINK_GAP} steps in a row with no `think` stop: ask the learner something before going on")
                 gap = 0
-            lines = [("say", st.get("say"))]
-            if isinstance(st.get("think"), dict):
-                lines += [("think q", st["think"].get("q")), ("think a", st["think"].get("a"))]
-            for k, v in lines:
-                if isinstance(v, str) and B.words(v) > LINE_WORDS:
-                    Lx.warn(f"{w} step {j + 1}", f"`{k}` has {B.words(v)} words (≤ {LINE_WORDS}): one teacher line is one breath; move the rest to the next step")
+            for k, v, cap in step_lines(st):
+                if isinstance(v, str) and B.words(v) > cap:
+                    Lx.warn(f"{w} step {j + 1}", f"`{k}` has {B.words(v)} words (≤ {cap}): one teacher line is one breath; cut it, or move the rest to the next step")
 
 
 def prose(node, key=None):
@@ -619,6 +656,6 @@ def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
-        lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_order(B, Lx, deck)
+        lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob)
     return lesson_lint

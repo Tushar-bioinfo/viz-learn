@@ -1,0 +1,14 @@
+# expect: `say` writes w0 in plain words: write $w_0$ so it takes its colour
+# A symbol's name in plain words stays grey; written as math it takes its colour.
+title: A bare symbol
+question: What if a line names a symbol in plain words?
+answer: The lint asks for math.
+symbols:
+  w0: {tex: 'w_0', says: the offset}
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: A bare name
+    steps:
+      - say: The offset w0 has no marker beside it.
