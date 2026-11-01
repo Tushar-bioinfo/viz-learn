@@ -5,8 +5,8 @@
    Every figure owns its shape: a plane's comes from its axis ranges (one scale for both axes), a chart's from its `ratio`,
    an image's from the image. The layout gives each a width and a height limit, never a box to fill.
    Next and Back appear only on a figure that really changes: marks that come in on a step, a run's frames, a matrix step.
-   A step with `think` shows its question with a Show answer button; what the step adds waits behind the answer, in its
-   space, so the page never jumps. Attention goes by text colour on the thing itself: a worked line's terms take the
+   A step with `think` shows its question with a Show answer button. The answer takes no room until pressed: the card grows
+   and its top stays. What the step adds waits behind the answer, in its own space. Attention goes by text colour on the thing itself: a worked line's terms take the
    deck's term colours on the symbol, on its number and on the table cell it came from. */
 (function () {
   'use strict';
@@ -36,7 +36,7 @@
   function names(part, items) {
     part.style.paddingBottom = '';
     part.querySelectorAll(':scope > .wl').forEach(e => e.remove());
-    const base = part.getBoundingClientRect(), top0 = base.height + 14, placed = [];
+    const base = part.getBoundingClientRect(), top0 = base.height + 14, placed = [], edge = part.closest('.slide').getBoundingClientRect().right - base.left;   // a name stays on the page
     items.forEach(({ n, text }) => {
       const sp = part.querySelector(`.lt-${CSS.escape(n)}`); if (!sp) return; const r = sp.getBoundingClientRect(); if (!r.width) return;
       const lab = h('div', 'wl', L.esc(text)); part.appendChild(lab);
@@ -45,7 +45,7 @@
       let row = 0, x = cx;
       for (; row < 3; row++) { const prev = placed.filter(b => b.row === row).reduce((m, b) => Math.max(m, b.cx + b.w / 2 + 10), -1e9);
         if (prev <= cx - w / 2) { x = cx; break; } if (prev - (cx - w / 2) <= w / 3) { x = prev + w / 2; break; } }
-      const y = top0 + row * (hh + 2), cxp = x; placed.push({ cx: cxp, w, row, bottom: y + hh });
+      const y = top0 + row * (hh + 2), cxp = Math.min(x, edge - w / 2); placed.push({ cx: cxp, w, row, bottom: y + hh });
       Object.assign(lab.style, { left: cxp + 'px', top: y + 'px' });
     });
     if (placed.length) part.style.paddingBottom = Math.max(...placed.map(b => b.bottom)) - base.height + 4 + 'px';
@@ -77,17 +77,18 @@
     const leg = h('div', 'plegend'); node.appendChild(leg);
     const wrap = h('div', 'pwrap'); node.appendChild(wrap);
     const svg = sv('svg', { class: 'pl' }, wrap);
-    const R = { node, issues: [], kind: 'plane', w: 0, h: 0 };
+    const R = { node, issues: [], kind: 'plane', w: 0, h: 0, leg: LEG };
     const num = (x, where) => L.val(x, ctx.scope, where);
     const m = { l: 62, r: 18, t: 14, b: 60 }, boxOf = () => { const X = p.x || {}, Y = p.y || {}; return [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)]; };
     // the widest picture that fits the room at one scale for both axes: its ranges alone set its shape
-    R.size = room => { const b = boxOf(), xs = b[1] - b[0], ys = b[3] - b[2], u = Math.min((room.w - m.l - m.r) / xs, (room.h - m.t - m.b) / ys);
-      R.w = Math.round(u * xs + m.l + m.r); R.h = Math.round(u * ys + m.t + m.b); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w; };
+    R.size = room => { const b = boxOf(), xs = b[1] - b[0], ys = b[3] - b[2], u = Math.min((room.w - PAD - m.l - m.r) / xs, (room.h - PAD - R.leg - m.t - m.b) / ys);
+      R.w = Math.round(u * xs + m.l + m.r); R.h = Math.round(u * ys + m.t + m.b); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
     R.layout = () => {
       svg.innerHTML = ''; leg.innerHTML = ''; R.issues = [];
       const W = R.w, H = R.h; if (W < 40 || H < 40) { R.issues.push('the picture has no room'); return; }
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-      const X = p.x || {}, Y = p.y || {}, box = boxOf();
+      const X = p.x || {}, Y = p.y || {}, box = boxOf(), shape = (box[1] - box[0]) / (box[3] - box[2]);
+      if (shape < .6 || shape > 1.75) R.issues.push(`a plane is ${shape.toFixed(2)} wide per 1 tall: its width over height must stay between 0.6 and 1.75, so change its x and y ranges or the spacing of what it shows`);
       const pw = W - m.l - m.r, ph = H - m.t - m.b;
       const u = Math.min(pw / (box[1] - box[0]), ph / (box[3] - box[2]));      // pixels per unit, the same on both axes
       const gw = u * (box[1] - box[0]), gh = u * (box[3] - box[2]), ox = m.l + (pw - gw) / 2, oy = m.t + (ph - gh) / 2;
@@ -106,9 +107,9 @@
       const cross = (b, [X0, Y0, X1, Y1]) => { const n = Math.ceil(Math.hypot(X1 - X0, Y1 - Y0) / 4);
         for (let q = 0; q <= n; q++) { const x = X0 + (X1 - X0) * q / n, y = Y0 + (Y1 - Y0) * q / n; if (x > b.x0 - 3 && x < b.x1 + 3 && y > b.y0 - 3 && y < b.y1 + 3) return true; } return false; };
       const hit = b => placed.some(q => b.x0 < q.x1 && b.x1 > q.x0 && b.y0 < q.y1 && b.y1 > q.y0) || dots.some(([cx, cy, r = 11]) => cx + r > b.x0 && cx - r < b.x1 && cy + r > b.y0 && cy - r < b.y1) || segs.some(sg => cross(b, sg));
-      const name = (t, cx, cy, g, cls, free) => { t = L.plain(String(t ?? ''), ctx.scope); if (!t) return; const tw = t.length * 10.5 + 4;
+      const name = (t, cx, cy, g, cls, free) => { t = L.plain(String(t ?? ''), ctx.scope); if (!t) return; const tw = t.length * 13 + 4;
         const opts = [...(free ? [[-tw / 2, 6, 2]] : []), [14, -10, 0], [14, 24, 0], [-14, -10, 1], [-14, 24, 1], [-tw / 2, -18, 2], [-tw / 2, 36, 2], [27, -18, 0], [27, 32, 0], [-27, -18, 1], [-27, 32, 1], [-tw / 2, -30, 2], [-tw / 2, 48, 2]].map(([dx, dy, a]) => {
-          const x0 = a === 1 ? cx + dx - tw : cx + dx; return { x0, x1: x0 + tw, y0: cy + dy - 16, y1: cy + dy + 3, a, dx, dy }; });
+          const x0 = a === 1 ? cx + dx - tw : cx + dx; return { x0, x1: x0 + tw, y0: cy + dy - 19, y1: cy + dy + 4, a, dx, dy }; });
         let b = opts.find(o => !hit(o)); if (!b) { b = opts[0]; R.issues.push(`the plane label "${t}" overlaps another label or dot`); } placed.push(b);
         sv('text', { class: cls || 'plab', x: b.a === 1 ? cx + b.dx : b.x0, y: cy + b.dy, 'text-anchor': b.a === 1 ? 'end' : 'start' }, g).textContent = t; };
       const seg = (a, b, g, c, dash, w) => sv('line', { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]), style: `stroke:${c};stroke-width:${w || (dash ? 3 : 4.5)}${dash ? ';stroke-dasharray:10 8' : ''}` }, g);
@@ -182,15 +183,17 @@
       leg.style.paddingLeft = `${Math.max(0, ox - 8)}px`;   // the legend starts where the plot does
       legend.forEach(e => { const it = h('span', 'pk ' + e.kind); it.style.setProperty('--c', e.c); it.innerHTML = `<i></i>${md(e.text)}`; if (e.st > at) it.dataset.step = e.st; leg.appendChild(it); });
       L.fill(leg, ctx.scope);
+      const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was;   // a legend on two rows takes its room from the plot: the caller sizes again
     };
     return R;
   }
 
   // ---------- how much room a figure gets ----------
-  const FIG = 520, SIDE = 460, GAP = 36;                  // a figure sits beside its lines only when both keep a good width
-  const figH = () => Math.min(640, innerHeight - 170);    // a figure and its buttons fit on one laptop screen
+  const FIG = 520, SIDE = 360, GAP = 24, UNDER = 1060;    // a figure sits beside its 360 px of lines when it keeps a good width; a figure over its lines stops at 1060
+  const FOOT = 46;                                        // one row of buttons and its gap, already counted in figH
+  const figH = () => Math.min(720, innerHeight - 190);    // with a scene's head at the top of the window, the buttons stay on it
   const ratioOf = (r, dflt) => { if (typeof r === 'number' && r > 0) return r; const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(r ?? '')); return m && +m[2] ? +m[1] / +m[2] : dflt; };
-  const PAD = 58;   // a plate's side padding and borders
+  const PAD = 16, LEG = 38;   // a figure's frame: its padding, both sides; a plane's legend row
   const PROSE = new Set(['label', 'name', 'caption', 'alt', 'text', 'say', 'title', 'verdict']);
   // the expressions in a figure's spec: all its strings, but only the {{…}} parts of its words
   const exprsOf = o => typeof o === 'string' ? o : Array.isArray(o) ? o.map(exprsOf).join(' ')
@@ -198,10 +201,10 @@
 
   // a stepped figure: Back, a dot per stop, Next
   function stageBar(stops, go) {
-    const bar = h('div', 'stage', `<button type="button" class="sb back">‹ Back</button><span class="dots">${stops.map((_, i) => `<button type="button" class="sdot" aria-label="stop ${i + 1}"></button>`).join('')}</span><button type="button" class="sb next">Next ›</button>`);
+    const bar = h('div', 'stage', `<button type="button" class="sb back">‹ Back</button><span class="dots">${stops.map((_, i) => `<button type="button" class="sdot" aria-label="stop ${i + 1}"></button>`).join('')}</span><button type="button" class="sb next">Next ›</button>`), line = h('div', 'stopl');
     const bs = bar.querySelectorAll('.sb'), ds = [...bar.querySelectorAll('.sdot')];
     bs[0].onclick = () => go(-1, true); bs[1].onclick = () => go(1, true); ds.forEach((d, i) => { d.onclick = () => go(i, false); });
-    return { bar, set: i => { bs[0].disabled = i === 0; bs[1].disabled = i === stops.length - 1; ds.forEach((d, q) => { d.classList.toggle('on', q < i); d.classList.toggle('now', q === i); }); } };
+    return { bar, line, set: (i, asking) => { bs[0].disabled = i === 0 && !asking; bs[1].disabled = i === stops.length - 1; ds.forEach((d, q) => { d.classList.toggle('on', q < i); d.classList.toggle('now', q === i); }); } };
   }
 
   // ---------- the board ----------
@@ -237,9 +240,12 @@
     // a deck visual on the board: its shape comes from its `ratio` (an image's from the image); the room only limits its size
     const figure = (it, at) => { const { id, ratio, ...v0 } = it, v = JSON.parse(JSON.stringify(v0)), kind = [...SIDEVIS, ...WIDEVIS].find(k => v[k] != null), e = h('div', `bi bvis ${kind}`); if (id) e.dataset.id = id;
       if (v.parts) delete v.parts.build; if (v.flow) delete v.flow.build;   // both are shown complete
+      // a legend that only repeats the x-axis labels gives its room to the plot
+      if (v.chart && v.chart.x && list(v.chart.x.cats).length) { const nm = list(v.chart.series).filter(q => q.name).map(q => q.name); if (nm.length && nm.every(q => v.chart.x.cats.includes(q))) v.chart.legend = false; }
+      if (v.chart && (v.chart.legend === false || list(v.chart.series).filter(q => q.name && q.legend !== false).length < 2)) e.classList.add('bare');   // no legend, so no legend row
       const V = visual(v), body = V.node; e.appendChild(body);
       const fg = { node: e, V, kind, issues: [], w: 0, h: 0, stops: [...stepsIn((v.chart || {}).series), ...stepsIn((v.chart || {}).marks), ...stepsIn(v.labels)] };
-      const pick = sel => body.querySelector(sel), rr = ratioOf(ratio ?? (v.chart || v.dist || {}).ratio, 3 / 2);
+      const pick = sel => body.querySelector(sel), rr = ratioOf(ratio ?? (v.chart || v.dist || {}).ratio, 16 / 10);
       // the widest size that keeps the shape: `over` is what sits round the shape inside the plate (a caption, a legend)
       const fit = (room, r, over) => { const hh = Math.round(Math.min((room.w - PAD) / r, room.h - over)); return [Math.round(hh * r) + PAD, hh]; };
       fg.size = room => {
@@ -250,18 +256,22 @@
         else if (kind === 'image') { const im = pick('img'), r = im && im.naturalWidth ? im.naturalWidth / im.naturalHeight : rr; [fg.w, fg.h] = fit(room, r, 0); e.style.width = fg.w + 'px'; if (im) { im.style.width = fg.w - PAD + 'px'; im.style.height = fg.h + 'px'; } }
         else if (kind === 'stat') { fg.w = Math.min(room.w, 460); fg.h = 240; e.style.width = fg.w + 'px'; }
         else if (kind === 'flow') { fg.w = room.w; fg.h = 196; e.style.width = fg.w + 'px'; pick('.flow').style.height = fg.h + 'px'; }
-        else if (kind === 'parts') { fg.w = Math.min(room.w, 1040); fg.h = v.parts.rows ? 74 + 96 * v.parts.rows.length : 286; e.style.width = fg.w + 'px'; pick('.parts').style.height = fg.h + 'px'; }
+        else if (kind === 'parts') { fg.w = room.w; fg.h = v.parts.rows ? 74 + 96 * v.parts.rows.length : 286; e.style.width = fg.w + 'px'; pick('.parts').style.height = fg.h + 'px'; }
         else { const card = pick('.famcard'), cw = card ? card.offsetWidth + 30 : 0; [fg.w, fg.h] = fit({ w: room.w - cw, h: room.h }, rr, 0); fg.w = room.w; e.style.width = fg.w + 'px'; pick('.chart').style.height = fg.h + 'px'; }
         return fg.w; };
       const im = pick('img'); if (im && !im.complete) im.addEventListener('load', () => ctx.refresh());
       fg.paint = c => { shown(e, c); V.show(c); };
       return holder(fg, at, it); };
+    // the plan is its picture: numbered squares on one line, a title under each and a sub-label under that
+    const track = (f, at) => { const N = list(f.nodes).map(x => typeof x === 'string' ? { label: x } : x), n = N.length, e = h('div', 'bi track', `<div class="tkl" style="left:${50 / n}%;right:${50 / n}%"></div>${N.map((x, i) => `<div class="tkc"><div class="tks${i ? '' : ' on'}">${i + 1}</div><div class="tkt">${md(x.label || '')}</div>${x.sub ? `<div class="tku">${md(x.sub)}</div>` : ''}</div>`).join('')}`);
+      e.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+      return holder({ node: e, kind: 'track', issues: [], stops: [], w: 0, h: 0, size: room => { e.style.width = room.w + 'px'; return room.w; }, paint: () => {} }, at, f); };
     const planeFig = (p, at) => { const fg = plane(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => shown(fg.node, c); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
       if (st.say) el.appendChild(h('p', 'say', md(st.say)));
-      if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin', `<div class="tq"><span class="btag">Pause · think</span><span class="tqt">${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
+      if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin', `<div class="tq"><span class="btag">Think</span><span class="tqt">${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
         e.dataset.at = c.at; e.querySelector('.tb').onclick = () => answer(e); el.appendChild(e); thinks.push(e); }
       stepEls.push(el); el.addEventListener('mouseenter', () => R.hover(c.at)); el.addEventListener('mouseleave', () => R.hover(null));
       el.addEventListener('click', e => { if (e.target.closest('button, input, label, a') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
@@ -282,7 +292,7 @@
         asm.push({ a, e }); slot.appendChild(e); pending = e.querySelector('.abridge'); }
       else if (it.plane) { const fg = planeFig(it.plane, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
-      else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
+      else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g'), at, pr.id);
         e.innerHTML = (pr.say ? `<div class="ph">${md(pr.say)}</div>` : '') + list(pr.names).map(q => `<div class="pr" data-n="${L.esc(q)}"><span class="ps"></span><b class="pv"></b><span class="pn">${md(shortOf(ctx, q))}</span></div>`).join('');
@@ -310,6 +320,7 @@
       if (fig) { cur = block(); zone = cur; }
       const el = makeStep(st, j); let slot = el;
       // the line that leads from the numbers to the symbols stands between the two rows; what it adds comes after the plate
+      if (fig && st.say && !bridge) el.classList.add('intro');   // a figure above its lines keeps this one above it
       if (bridge) { bridge.appendChild(el); slot = fig ? cur.side : wide ? root : (cur ? cur.side : items.length ? column() : el); }
       else if (fig) cur.side.appendChild(el);
       else if (wide) { root.appendChild(el); el.classList.add('wide'); }
@@ -440,22 +451,39 @@
     const stages = [];
     const makeStage = (host, stops0, paint, zoneOf, frames) => {
       const uniq = [...new Set(stops0)].sort((a, b) => a - b); if (uniq.length < 2) return null;
-      const S = { node: host, stops: uniq, i: 0, frames };
+      const S = { node: host, stops: uniq, i: 0, frames, ask: null };
       const stopOf = at => { let i = 0; uniq.forEach((c, q) => { if (c <= at) i = q; }); return i; };
-      const go = (v, rel) => { const j = rel ? S.i + v : v; if (j < 0 || j >= uniq.length || j === S.i) return false; S.to(j); return true; };
+      const unanswered = c => thinks.some(e => +e.dataset.at === c && !e.classList.contains('open'));
+      const stepAt = c => stepEls.find(e => +e.dataset.at === c);
+      // a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it
+      const asked = j => { S.ask = j; S.show(); const c = j == null ? uniq[S.i] : +stepAt(uniq[j]).dataset.q; light(c); mark(c); };
+      const go = (v, rel) => {
+        if (rel && v < 0 && S.ask != null) { asked(null); return true; }
+        const j = rel ? S.i + v : v; if (j < 0 || j >= uniq.length || j === S.i) return false;
+        if (j > S.i && S.ask !== j && unanswered(uniq[j])) { if (j > S.i + 1) S.to(j - 1); asked(j); return true; }
+        S.to(j); return true; };
       const ui = stageBar(uniq, go);
-      S.show = () => { paint(uniq[S.i]); ui.set(S.i); S.lines.forEach(e => e.classList.toggle('atstop', stopOf(+e.dataset.at) === S.i)); };
+      // the line by the buttons: the step's own words, or for a think step its question and then its answer
+      const lineOf = (c, answered) => { const e = stepAt(c), ta = e && e.querySelector('.ta > span:last-child'), q = e && e.querySelector('.tqt'), say = e && e.querySelector(':scope > .say');
+        return (answered ? ta || say : say || q) || q; };
+      S.show = () => { const on = S.ask != null, c = uniq[on ? S.ask : S.i], e = lineOf(c, !on && !unanswered(c));
+        paint(uniq[S.i]); ui.set(S.i, on); ui.line.innerHTML = e ? e.innerHTML : '';
+        S.lines.forEach(q => q.classList.toggle('atstop', on ? +q.dataset.at === c : stopOf(+q.dataset.at) === S.i)); };
+      // its room is the tallest words it will hold, so the page under it does not jump
+      S.fit = () => { const l = ui.line; if (!l.clientWidth) return; const now = l.innerHTML; l.style.minHeight = ''; let most = 0;
+        uniq.forEach(c => [true, false].forEach(a => { const e = lineOf(c, a); if (e) { l.innerHTML = e.innerHTML; most = Math.max(most, l.offsetHeight); } }));
+        l.innerHTML = now; l.style.minHeight = most + 'px'; };
       // go to a stop: the run takes its frame, the think stop there opens, the table lights up for that step
-      S.to = j => { S.i = j; const c = uniq[j];
+      S.to = j => { S.i = j; S.ask = null; const c = uniq[j];
         if (frames) { stop(); const f = frameAt(c); if (f != null && f !== ctx.scope[run.c.name]) ctx.ctl[run.c.name](f); }
         thinks.forEach(e => { if (+e.dataset.at === c) setThink(e, true); });
         S.show(); light(c); mark(c); };
       S.move = d => go(d, true);
-      S.jump = at => { const j = stopOf(at); if (j !== S.i) S.to(j); };
+      S.jump = at => go(stopOf(at), false);
       S.stopOf = stopOf;
       S.lines = stepEls.filter(e => (zoneOf && e.zone === zoneOf) || uniq.includes(+e.dataset.at));
       S.lines.forEach(e => { e.stages.push(S); e.classList.add('line'); });
-      host.appendChild(ui.bar); stages.push(S); return S;
+      host.append(ui.bar, ui.line); stages.push(S); return S;
     };
     const setThink = (e, on) => { e.classList.toggle('open', on); e.querySelector('.tb').textContent = on ? 'Hide answer' : 'Show answer'; node.querySelectorAll(`[data-wait="${e.dataset.at}"]`).forEach(x => x.classList.toggle('open', on)); };
     // Show answer brings in all the step adds, a stage stop too; Hide answer takes it away again
@@ -472,8 +500,8 @@
       const rows = rowsOf();
       const cell = (c, r) => { let v = r[c.key]; if (c.expr) v = L.try(c.expr, L.scope(ctx.scope, r), `slide ${ctx.index + 1} column ${c.key}`); return typeof v === 'number' ? L.fmt(v, c.fmt) : md(v); };
       const stp = c => (c.at ? ` data-step="${c.at}"` : '') + (waits.has(c.at) ? ` data-wait="${c.at}"` : ''), wt = c => waits.has(c.at) ? ` data-wait="${c.at}"` : '';
-      zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}"${wt(c)}>${md(c.label || c.key)}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map((r, i) => `<tr data-r="${i}">${tcols.map(c => `<td class="${c.expr ? 'der' : ''}" data-r="${i}" data-col="${L.esc(c.key)}"${stp(c)}>${cell(c, r)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}"${wt(c)}><span class="cv">${md(c.label || c.key)}</span></th>`).join('')}</tr></thead>
+        <tbody>${rows.map((r, i) => `<tr data-r="${i}">${tcols.map(c => `<td class="${c.expr ? 'der' : ''}" data-r="${i}" data-col="${L.esc(c.key)}"${stp(c)}><span class="cv">${cell(c, r)}</span></td>`).join('')}</tr>`).join('')}</tbody></table>`;
       // a table too wide to leave good room for the work goes above it
       if (pair) { pair.classList.remove('stacked'); pair.classList.toggle('stacked', zt.offsetWidth > pair.clientWidth * .56); }
     };
@@ -506,21 +534,32 @@
     // the figures: how each sizes itself. Two figures on one step stand in a row above their lines
     const place = () => { blocks.forEach(b => {
       const room = { w: 0, h: figH() };
-      if (b.wide) { room.w = root.clientWidth; b.figs.forEach(fg => fg.size(room)); return; }
-      const W = b.node.clientWidth, many = b.figs.length > 1, beside = !many && b.side.children.length > 0 && W >= FIG + GAP + SIDE;
-      room.w = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - SIDE - GAP : W;
+      if (b.wide) { room.w = root.clientWidth; b.figs.forEach(fg => fg.size(fg.kind === 'parts' || fg.kind === 'dist' ? { w: Math.min(room.w, UNDER), h: room.h } : room)); return; }
+      b.node.style.maxWidth = ''; const W = b.node.clientWidth, many = b.figs.length > 1, inPair = b.node.closest('.bpair:not(.stacked)');
+      const beside = !b.over && !inPair && !many && b.side.children.length > 0 && W >= FIG + GAP + SIDE;
+      room.w = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - SIDE - GAP : Math.min(W, UNDER);
       b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many);
-      const w = Math.max(...b.figs.map(fg => fg.size(room))); b.fig.style.width = beside ? w + 'px' : ''; });
+      const size = () => { const w = Math.max(...b.figs.map(fg => fg.size(room))); b.fig.style.width = many ? '' : w + 'px'; b.node.style.maxWidth = beside || many ? '' : w + 'px'; };
+      // what the figure must share the window with: the line above it, and whatever under it is more than one row of buttons
+      const shared = () => { const say = beside ? null : b.side.querySelector(':scope > .st.intro > .say'); let foot = 0;
+        b.figs.forEach(fg => { if (fg.stage) fg.stage.fit(); foot = Math.max(foot, fg.wrap.offsetHeight - fg.node.offsetHeight - FOOT); });
+        return (say ? say.offsetHeight + 18 : 0) + Math.max(0, foot); };
+      size(); for (let pass = 0; pass < 3; pass++) { room.h = figH() - shared(); size(); } });
       node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / 1.6) + 'px'; }); };
     // a worked line too long to sit beside the table sends the table above the work: a formula is never shrunk or cut
     const widen = () => { if (!pair || pair.classList.contains('stacked')) return; const edge = pair.getBoundingClientRect().right;
       if ([...pair.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1)) { pair.classList.add('stacked'); place(); drawLines(); } };
     // anything sticky taller than the window would hide its own foot
+    // a formula that runs past the text column sends that one figure above its text; a formula is never cut or shrunk
+    const overrun = () => { let moved = false; blocks.forEach(b => { if (b.wide) return; const long = edge => [...b.side.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1);
+      if (b.node.classList.contains('beside')) { if (long(b.side.getBoundingClientRect().right)) b.over = moved = true; }
+      else if (b.node.style.maxWidth && long(b.node.getBoundingClientRect().right)) b.node.style.maxWidth = ''; });   // under a figure, the text may outgrow it
+      if (moved) { place(); drawLines(); } };
     const stick = () => node.querySelectorAll('.tcol, .ffig').forEach(e => e.classList.toggle('nostick', e.offsetHeight > innerHeight - 48));
 
     const R = {
       node, steps: n, stages, stick,
-      layout: () => { drawTable(); place(); drawLines(); widen(); drawAsm(); drawParams(); figs.forEach(fg => fg.layout && fg.layout()); vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
+      layout: () => { blocks.forEach(b => { b.over = false; }); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
       // what the page shows now, after a redraw or a move
       repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); },
       // everything up to click k, as the check and the printer see it
@@ -538,7 +577,7 @@
           if (['plane', 'chart', 'image', 'units'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
         node.querySelectorAll('.board .vis .chart').forEach(c => { const r = c.getBoundingClientRect(), q = r.width / (r.height || 1); if (q < 1 || q > 2.2) out.push(`a chart is ${Math.round(r.width)} × ${Math.round(r.height)} px: its shape must stay between 1:1 and 2.2:1, so set its \`ratio\``); });
         root.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { if (parseFloat(getComputedStyle(m).fontSize) < 26) out.push('a formula renders under 26px'); });
-        node.querySelectorAll('table.t td').forEach(c => { if (parseFloat(getComputedStyle(c).fontSize) < 20) out.push('a table cell renders under 20px'); });
+        node.querySelectorAll('table.t td').forEach(c => { if (parseFloat(getComputedStyle(c).fontSize) < 18) out.push('a table cell renders under 18px'); });
         vis.forEach(V => out.push(...V.audit())); figs.forEach(fg => fg.O && out.push(...fg.O.audit()));
         root.querySelectorAll('.approx').length && out.push('a worked line does not add up by hand at the rounding shown (it reads ≈): give its inputs a finer fmt');
         root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = m.closest('.st, .asm'); if (kx && box && kx.getBoundingClientRect().right > box.getBoundingClientRect().right + 2) out.push('a formula is wider than its box: shorten it or split the line'); });

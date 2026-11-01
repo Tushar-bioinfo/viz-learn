@@ -1,6 +1,8 @@
-/* viz-os class: one long page, a scene after a scene. Same palette, plates and borders as a deck, but nothing is scaled:
-   every size here is a real pixel, and every figure owns its shape (board.js). */
-:root { --page-w: min(1320px, calc(100vw - 64px)); }
+/* viz-os class: one long page, a scene after a scene, in the class look: thin lines, soft frames, bright data colours.
+   Nothing is scaled: every size here is a real pixel, and every figure owns its shape (board.js). Decks and sketch pages
+   do not load this file. These tokens are read at boot for the drawings, so a colour changed here reaches the SVGs too. */
+:root { --page-w: min(1500px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #8ec5ff; --s2: #6ff0d0; --s3: #f29ac8;
+  --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315; }
 
 /* the page: the deck's fixed stage lets go, so the window scrolls and the text can be selected */
 html.ls-page, html.ls-page body { height: auto; min-height: 100%; overflow: visible; }
@@ -22,10 +24,10 @@ html.ls-page .slide:not(.s-board, .s-title, .s-recap, .s-quiz) { height: 720px; 
 
 /* the top bar shows how far down the page you are; the rail steps a scene at a time */
 #lsbar { position: fixed; top: 0; left: 0; height: 4px; width: 0; background: var(--accent); z-index: 20; }
-#lsrail { position: fixed; right: 12px; bottom: 12px; z-index: 20; display: flex; align-items: center; gap: 4px; padding: 3px; background: var(--surf); border: 2px solid var(--line); font: 600 15px var(--f-mono); color: var(--mist); }
-#lsrail button { width: 30px; height: 30px; background: var(--surf2); color: var(--ink); border: 0; font-size: 20px; line-height: 1; cursor: pointer; }
+#lsrail { position: fixed; right: 2px; bottom: 10px; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 1px; box-sizing: border-box; width: 22px; padding: 2px 0; background: var(--bg); border: 1px solid var(--line-dim); font: 600 12px var(--f-mono); color: var(--mist); }
+#lsrail button { width: 20px; height: 24px; padding: 0; background: transparent; color: var(--ink); border: 0; font-size: 16px; line-height: 1; cursor: pointer; }
 #lsrail button:disabled { color: var(--haze); cursor: default; }
-#lsrail .rn { padding: 0 6px; }
+#lsrail .rn { writing-mode: vertical-rl; padding: 4px 0; }
 .no-anim #lsrail { display: none; }
 html.ls-page button:focus-visible, html.ls-page input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
@@ -38,57 +40,77 @@ html.ls-page button:focus-visible, html.ls-page input:focus-visible { outline: 3
 
 /* where things go */
 html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: column; gap: 26px; min-height: auto; align-items: stretch; }
-.board .lines { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.board .bpair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 36px; align-items: start; }
+.board .lines { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.board .lines > .st:not(.wide), .board .st.wide > .say { max-width: 980px; }
+.board .st.wide > .say { padding-left: 20px; }
+.board .bpair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: start; }
 .board .bpair.stacked { display: flex; flex-direction: column; gap: 22px; align-items: stretch; }
 .board .tcol { display: flex; flex-direction: column; gap: 14px; min-width: 280px; position: sticky; top: 24px; align-self: start; }
 .board .bpair.stacked .tcol, .board .tcol.nostick { position: static; }
 .board .bpair.stacked .tcol { align-self: flex-start; }
 .board .tcol > .note { width: 0; min-width: 100%; box-sizing: border-box; }
-.board .tcard { padding: 12px 8px 8px; flex: none; }
+html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: var(--card); border: 1px solid var(--thin); box-shadow: none; }
 .board .fb { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.board .ffig, .board .fside { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.board .fb.beside { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 36px; align-items: start; }
+.board .ffig { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.board .fside { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.board .fb.beside { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: start; }
+/* a figure above its lines: the line that brings it in stays above it, and the rest of that step stays under it */
+.board .fb:not(.beside) > .fside, .board .fb:not(.beside) > .fside > .st.intro { display: contents; }
+.board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; padding-left: 20px; }
 .board .fb.beside .ffig { position: sticky; top: 24px; }
 .board .fb.beside .ffig.nostick { position: static; }
-.board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 36px; align-items: flex-start; }
-.board .fg { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; max-width: 100%; }
+.board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+/* a figure, then its slider and its Back and Next on one row, centred under it */
+.board .fg { display: flex; flex-flow: row wrap; justify-content: center; align-items: center; gap: 10px 20px; max-width: 100%; }
+.board .fg::after { content: ""; flex: 0 0 100%; height: 0; order: 1; margin-top: -10px; }
+.board .fg > .bvis, .board .fg > .bi { order: 0; flex: 0 0 auto; }
+.board .fg > .controls, .board .fg > .stage { order: 2; }
+.board .fg > .controls { justify-content: center; min-width: 0; max-width: 100%; }
+.board .stopl { order: 3; flex: 0 0 100%; font-size: 17px; line-height: 1.32; color: var(--mist); text-align: center; }
+.board .fb.beside .stopl { display: none; }
+/* wide pictures sit centred; their line of text stays lined up with the other lines */
+.board .st.wide .fg, .board > .fg { flex-flow: column nowrap; align-self: center; }
+.board .st.wide .fg::after, .board > .fg::after { content: none; }
+.board .st.wide .stopl, .board > .fg > .stopl { flex: none; width: 100%; }
 
 /* a step: the teacher's line, then what it adds. The one being read is lit; nothing goes grey once it is past */
-.board .st { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-left: 16px; border-left: 4px solid transparent; transition: border-color .25s var(--ease); }
+.board .st { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding-left: 16px; border-left: 4px solid transparent; transition: border-color .25s var(--ease); }
 .board .st.wide { padding-left: 0; border-left: 0; }
 .board .st.now, .board .st.atstop { border-left-color: var(--accent); }
 .board .st.wide.now .asm { border-color: var(--accent); }
 .board .st.line { cursor: pointer; }
-.board .st .say, .board p.say { margin: 0; font-size: 20px; line-height: 1.42; color: var(--ink); }
+.board .st .say, .board p.say { margin: 0; font-size: 18px; line-height: 1.42; color: var(--ink); }
 .board .abridge { padding: 2px 0; }
 .board .abridge .st { padding-left: 0; border-left: 0; }
 
-/* a think stop: a tag, the one-line question and a button. The answer and all the step adds keep their space until it opens */
-.board .think { display: flex; flex-direction: column; gap: 10px; padding: 12px 18px; }
-.board .tq { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 14px; font-size: 21px; font-weight: 600; line-height: 1.34; }
-.board .tqt { flex: 1 1 280px; }
-.board .tb { flex: none; width: 150px; white-space: nowrap; font: 650 17px var(--f-ui); color: var(--ink); background: var(--surf2); border: 2px solid var(--line); padding: 5px 12px; cursor: pointer; }
+/* a think stop: the word Think, the question, a button under it. The answer takes no room until pressed: the card grows
+   and its top stays. What the step adds waits behind the answer, in its own space */
+html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: #0f1012; border: 0; border-top: 1px solid var(--thin); border-bottom: 1px solid var(--thin); box-shadow: none; }
+.board .tq { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.board .tqt { font-size: 19px; font-weight: 500; line-height: 1.34; color: var(--ink); }
+.board .tb { flex: none; white-space: nowrap; font: 650 16px var(--f-ui); color: var(--ink); background: transparent; border: 1px solid var(--thin); box-shadow: none; padding: 5px 12px; cursor: pointer; }
 .board .tb:hover { border-color: var(--accent); }
-.board .ta { display: flex; align-items: baseline; gap: 14px; font-size: 20px; line-height: 1.4; }
-.board .think:not(.open) .ta { visibility: hidden; }
-.s-board [data-wait]:not(.open), .s-board [data-wait]:not(.open) * { visibility: hidden !important; }
-.board .btag { flex: none; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tint); padding: 3px 9px; border: 2px solid var(--tint-lo); }
-.board .btag.so { color: var(--accent); border-color: var(--accent); }
+.board .ta { display: flex; flex-direction: column; gap: 4px; font-size: 18px; line-height: 1.42; }
+.board .think:not(.open) .ta { display: none; }
+.s-board [data-wait]:not(.open):not(td, th), .s-board [data-wait]:not(.open):not(td, th) * { visibility: hidden !important; }
+.board .btag { flex: none; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 
-/* a figure that changes: Back, a dot per stop, Next */
-.board .stage { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.board .sb { font: 650 18px var(--f-ui); color: var(--ink); background: var(--surf2); border: 2px solid var(--line); padding: 6px 14px; cursor: pointer; }
+/* a figure that changes: Back, a dot per stop, Next. All of this row's look is in this block */
+.board .stage { display: flex; align-items: center; gap: 12px; }
+.board .sb { font: 650 18px var(--f-ui); color: var(--ink); background: transparent; border: 1px solid var(--thin); box-shadow: none; padding: 6px 14px; cursor: pointer; }
 .board .sb.next { color: var(--on); background: var(--accent); border-color: var(--accent); }
-.board .sb:disabled { color: var(--haze); background: transparent; border-color: var(--line-dim); cursor: default; }
+.board .sb:disabled { color: var(--haze); background: transparent; border-color: var(--thin); cursor: default; }
 .board .dots { display: flex; gap: 6px; }
 .board .sdot { width: 16px; height: 16px; padding: 0; background: transparent; border: 2px solid var(--haze); cursor: pointer; }
 .board .sdot.on { background: var(--haze); }
 .board .sdot.now { background: var(--accent); border-color: var(--accent); }
 
 /* the table: the row in use is lit with its name in orange, the cells a worked line reads take its term colours */
-.board table.t th { font-size: 16px; padding: 6px 12px 9px; }
-.board table.t td { font-size: 21px; padding: 7px 12px; transition: background .3s var(--ease), color .3s var(--ease); }
+.board table.t th { font-size: 16px; padding: 6px 12px 9px; color: #9fe6d8; }
+.board table.t td { font-size: 18px; padding: 7px 12px; transition: background .3s var(--ease), color .3s var(--ease); }
+/* a column not filled in yet keeps its row lines; only its text waits */
+.board table.t td[data-step] { opacity: 1; transform: none; }
+.board table.t td[data-step]:not(.shown) .cv, .board table.t [data-wait]:not(.open) .cv { visibility: hidden; }
 .board table.t tr.wrow td:first-child { color: var(--accent); font-weight: 750; }
 .board table.t td.src, .board table.t tr.wrow td.src { background: var(--surf2); box-shadow: none; color: var(--tc); font-weight: 750; }
 .board table.t .hcol { color: var(--accent); font-weight: 750; }
@@ -97,13 +119,13 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .cline { grid-template-columns: 38px minmax(0, 1fr); column-gap: 14px; }
 .board .cline .num { width: 36px; height: 36px; font-size: 16px; }
 .board .st.now .cline .num { background: var(--accent); border-color: var(--accent); color: var(--on); }
-.board .cline .say { font-size: 20px; }
+.board .cline .say { font-size: 18px; }
 .board .cline .cwhy { font-size: 18px; }
 .board .cline .math { font-size: 29px; }
 .board .lt.tc { color: var(--tc); }
 .board .wl { position: absolute; transform: translateX(-50%); white-space: nowrap; font: 600 16px var(--f-ui); color: var(--ink); line-height: 1.2; }
 .board .fline { display: flex; flex-direction: column; gap: 6px; }
-.board .fline .say { font-size: 20px; }
+.board .fline .say { font-size: 18px; }
 .board .fline .math, .board .asm .math { position: relative; min-width: 0; }
 .board .fline .math { font-size: 30px; }
 .board .asm { padding: 14px 24px; display: flex; flex-direction: column; gap: 12px; }
@@ -112,13 +134,17 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .arow { display: grid; grid-template-columns: 132px minmax(0, 1fr); column-gap: 16px; align-items: center; }
 .board .arow .math { font-size: 32px; }
 .board .atag { font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tint); }
-.board .note { padding: 11px 18px; font-size: 20px; line-height: 1.4; }
+.board .note { padding: 6px 12px; font-size: 18px; line-height: 1.4; }
+.board .params { padding: 6px 12px; }
 .board .hl { box-shadow: 4px 4px 0 var(--accent); }
 /* ==text== keeps the deck's orange underline; ==s1:text== is bold text in a term colour, with no underline */
 .s-board mark.hi.tc { color: var(--hc); text-decoration: none; }
 
+/* text cards: a thin line, no shadow */
+html.ls-page .board .g:not(.vis, .ctl, .hl, .think, .tcard) { background: var(--card); border: 1px solid var(--line-dim); box-shadow: none; }
+
 /* a parameter card: symbol (in its colour), value, plain name */
-.board .params { padding: 12px 18px; display: grid; grid-template-columns: auto auto 1fr; column-gap: 12px; row-gap: 6px; align-items: center; }
+.board .params { display: grid; grid-template-columns: auto auto 1fr; column-gap: 12px; row-gap: 6px; align-items: center; }
 .board .params .ph { grid-column: 1 / -1; font-size: 20px; font-weight: 650; color: var(--ink); margin-bottom: 2px; }
 .board .params .pr { display: contents; }
 .board .params .ps { font-size: 24px; color: var(--tc); }
@@ -133,10 +159,16 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .bvis .distchart { flex: 1 1 0; }
 .board .bvis .imgbox img { max-width: none; max-height: none; object-fit: fill; box-sizing: border-box; }
 .board .bvis .units svg { flex: 1; }
-.board .cap { font-size: 18px; line-height: 1.36; }
-.board .chart .tick { font-size: 16px; }
-.board .chart .axt { font-size: 18px; }
-.board .chart .lbl { font-size: 17px; }
+.board .cap { font-size: 17px; line-height: 1.36; color: var(--ink); }
+.board .bvis .vfoot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-dim); }
+html.ls-page .board .datatoggle { background: transparent; border: 1px solid var(--thin); box-shadow: none; }
+.board .chart .grid { stroke: #1f2021; stroke-width: 1; }
+.board .chart .base { stroke: var(--line); stroke-width: 1.5; }
+.board .chart .tick { font-size: 15px; }
+.board .chart .axt { font-size: 16px; }
+.board .chart .lbl { font-size: 21px; }
+.board .legend { font-size: 20px; }
+.board .bvis.bare .vhead { display: none; }
 .board .flow .node { padding: 8px 12px; }
 .board .flow .node .nl { font-size: 22px; }
 .board .flow .node .ns { font-size: 17px; }
@@ -169,9 +201,25 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .bops .opcard .ow { font-size: 26px; }
 .board .bops .opcard .owhy { font-size: 19px; }
 
+/* the plan: numbered squares on one line, the first filled, a title under each and a sub-label under that */
+.board .track { position: relative; display: grid; padding: 22px 0 6px; }
+.board .tkl { position: absolute; top: 44px; height: 3px; background: var(--line); }
+.board .tkc { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 0 12px; }
+.board .tks { width: 44px; height: 44px; box-sizing: border-box; margin-bottom: 10px; display: grid; place-items: center; background: var(--bg); border: 3px solid var(--accent); color: var(--accent); font: 700 20px var(--f-mono); }
+.board .tks.on { background: var(--accent); color: var(--on); }
+.board .tkt { font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.board .tku { font-size: 19px; color: var(--mist); }
+
+/* every figure, chart or plane, wears one frame: no box, a thin line along the top with an orange tick, a soft shadow.
+   The padding sits outside the plot (board.js adds it on) */
+html.ls-page .board .bvis:not(.flow) > .vis, html.ls-page .board .bi.plane { position: relative; background: transparent; border: 0; box-shadow: 0 10px 34px rgba(0, 0, 0, .55); padding: 8px; }
+html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
+.board .bvis:not(.flow) > .vis::before, .board .bi.plane::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--thin); pointer-events: none; }
+.board .bvis:not(.flow) > .vis::after, .board .bi.plane::after { content: ""; position: absolute; left: 0; top: -1px; width: 64px; height: 3px; background: var(--accent); pointer-events: none; }
+
 /* the plane */
-.board .plane { flex: none; display: flex; flex-direction: column; gap: 6px; max-width: 100%; }
-.board .plegend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 17px; color: var(--mist); flex: none; min-height: 24px; }
+.board .plane { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.board .plegend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 20px; color: var(--mist); flex: none; min-height: 24px; }
 .board .pk { display: inline-flex; align-items: center; gap: 8px; }
 .board .pk i { display: inline-block; width: 22px; height: 0; border-top: 4px solid var(--c); }
 .board .pk.dash i { border-top-style: dashed; border-top-width: 3px; }
@@ -179,29 +227,30 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .pk.area i { width: 18px; height: 14px; border: 0; background: color-mix(in srgb, var(--c) 35%, transparent); }
 .board .pwrap { position: relative; flex: none; }
 .board svg.pl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.board .pgrid line { stroke: var(--hair); stroke-width: 1.5; }
-.board .pbox { fill: none; stroke: var(--line); stroke-width: 2.5; }
+.board .pgrid line { stroke: #1f2021; stroke-width: 1; }
+.board .pbox { fill: none; stroke: var(--line); stroke-width: 1.5; }
 .board svg text { font-family: var(--f-ui); font-variant-numeric: tabular-nums; }
-.board svg.pl .tick { font-size: 16px; fill: var(--haze); }
-.board svg.pl .axt { font-size: 18px; fill: var(--mist); font-weight: 600; }
-.board svg .plab { font-size: 17px; fill: var(--mist); font-weight: 600; }
+.board svg.pl .tick { font-size: 15px; fill: var(--haze); }
+.board svg.pl .axt { font-size: 16px; fill: var(--mist); font-weight: 600; }
+.board svg .plab { font-size: 21px; fill: var(--mist); font-weight: 600; }
 .board svg circle { stroke: var(--bg); stroke-width: 2.5; }
 .board svg .pring { fill: none; stroke: var(--accent); stroke-width: 4; }
 
 /* controls, under the figure they drive */
 .board .controls { margin-top: 0; gap: 10px 18px; }
-.board .ctl { padding: 6px 14px; gap: 12px; }
+html.ls-page .board .ctl.g { background: transparent; border: 1px solid var(--thin); box-shadow: none; }
+.board .ctl { padding: 2px 12px; gap: 12px; }
 .board .ctl label { font-size: 18px; }
 .board .ctl output { font-size: 19px; }
-.board .ctl input[type=range] { width: 210px; }
+.board .ctl input[type=range] { width: 180px; }
 /* a run: a play button (a triangle; two bars while playing), the scrubber and the frame count; a toggle: two flat buttons */
 .board .ctl.run { padding-left: 8px; }
-.board .ctl .play { flex: none; width: 36px; height: 36px; display: grid; place-items: center; background: var(--surf2); border: 2px solid var(--line); cursor: pointer; padding: 0; }
+.board .ctl .play { flex: none; width: 32px; height: 32px; display: grid; place-items: center; background: transparent; border: 1px solid var(--thin); cursor: pointer; padding: 0; }
 .board .ctl .play::before { content: ''; width: 0; height: 0; margin-left: 4px; border-left: 14px solid var(--accent); border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
 .board .ctl .play.on::before { width: 14px; height: 16px; margin: 0; border: 0; border-left: 5px solid var(--accent); border-right: 5px solid var(--accent); box-sizing: border-box; }
 .board .ctl.run output { min-width: 5ch; }
 .board .ctl.tog .seg2 { display: flex; }
-.board .ctl.tog button { font: 650 17px var(--f-ui); color: var(--mist); background: transparent; border: 2px solid var(--line); padding: 4px 12px; cursor: pointer; }
+.board .ctl.tog button { font: 650 17px var(--f-ui); color: var(--mist); background: transparent; border: 1px solid var(--thin); padding: 4px 12px; cursor: pointer; }
 .board .ctl.tog button + button { border-left: 0; }
 .board .ctl.tog button.on { color: var(--on); background: var(--accent); border-color: var(--accent); }
 
@@ -219,9 +268,10 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 /* print: the last stop of every figure and every answer open */
 @media print {
   html.ls-page, html.ls-page body { background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  #lsbar, #lsrail, .board .stage, .board .tb, .board .controls { display: none; }
+  #lsbar, #lsrail, .board .stage, .board .stopl, .board .tb, .board .controls { display: none; }
   .board .tcol, .board .fb.beside .ffig { position: static; }
   html.ls-page .slide { break-inside: avoid-page; }
-  .board .think .ta, .s-board [data-wait], .s-board [data-wait] * { visibility: visible !important; }
+  .board .think .ta { display: flex; }
+  .s-board [data-wait], .s-board [data-wait] * { visibility: visible !important; }
   .s-board [data-step] { opacity: 1; transform: none; }
 }

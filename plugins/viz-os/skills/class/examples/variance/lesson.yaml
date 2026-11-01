@@ -30,9 +30,7 @@ slides:
     beat: plan
     title: The plan for today
     steps:
-      - say: One question today. How do we put one number on how spread out cells are?
-        add: {flow: {nodes: [{label: two donors, sub: same mean}, {label: six T cells, sub: by hand}, a picture, a formula, its limits], verbs: [ask, work, see, test]}}
-      - say: We start with a puzzle, work it by hand on your cells, draw it, write the formula, then break it.
+      - add: {flow: {nodes: [{label: two donors, sub: same mean}, {label: six T cells, sub: by hand}, a picture, a formula, its limits], verbs: [ask, work, see, test]}}
 
   - type: board
     beat: problem
@@ -152,8 +150,8 @@ slides:
       - say: Each T cell at its CD3 level, spaced out so we can see them. The orange line is the mean.
         add:
           plane:
-            x: {label: 'cells, spaced out (no units)', min: 0, max: 4.9}
-            y: {label: CD3 level, min: 3.8, max: 5.1}
+            x: {label: 'cells, spaced out (no units)', min: 0, max: slot_end}
+            y: {label: CD3 level, min: 3.7, max: 5.2}
             marks:
               - points: {from: tcells, x: slot, y: cd3, label: id}
               - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|2}}'}

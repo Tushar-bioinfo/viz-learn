@@ -21,12 +21,18 @@ types = HOME["row_info"]["type"]
 allcells = [{"id": cid, "type": t, "cd3": row[j3]} for cid, t, row in zip(HOME["row_ids"], types, HOME["values"])]
 # gate on T cells: the six the lesson works by hand
 tcells = [dict(c) for c in allcells if c["type"] == "T"]
-for k, c in enumerate(tcells):
-    c["slot"] = round(0.7 * (k + 1), 1)   # where the cell sits along x in the picture
 cd3 = [c["cd3"] for c in tcells]
 n = len(cd3)
 xbar = mean(cd3)
 dev = [x - xbar for x in cd3]
+# where each cell sits along x in the picture: its square stands to the left of a cell above the mean and to the right of
+# one below, so walk along leaving a fixed gap between squares; then no two overlap and the plane stays a good shape
+SLOT_GAP = 0.15
+at = SLOT_GAP
+for c, d in zip(tcells, dev):
+    c["slot"] = at + max(d, 0)
+    at = c["slot"] + max(-d, 0) + SLOT_GAP
+slot_end = at
 sq = [d * d for d in dev]
 ss = sum(sq)
 s2 = ss / (n - 1)
@@ -64,7 +70,7 @@ sd = math.sqrt(s2)
 
 data = {
     "home": {"name": HOME["name"], "provenance": HOME["provenance"]},
-    "allcells": allcells, "tcells": tcells, "cd3": cd3, "slots": [c["slot"] for c in tcells], "n": n, "n_all": len(allcells),
+    "allcells": allcells, "tcells": tcells, "cd3": cd3, "slots": [c["slot"] for c in tcells], "slot_end": slot_end, "n": n, "n_all": len(allcells),
     "xbar": xbar, "sum_dev": round(sum(dev), 10), "ss": ss, "s2": s2,
     "far_id": tcells[far]["id"], "far_k": far, "far_dev": dev[far], "far_sq": sq[far],
     "near_id": tcells[min(range(n), key=lambda i: sq[i])]["id"], "near_sq": min(sq),

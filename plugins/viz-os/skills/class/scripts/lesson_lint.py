@@ -187,7 +187,9 @@ def lint_scenes(B, Lx, deck, glob):
                 continue
             for k in set(st) - STEP:
                 Lx.err(w, f"unknown step field `{k}` (use {', '.join(sorted(STEP))})")
-            if not st.get("say") and not st.get("think"):
+            if s.get("beat") == "plan" and st.get("say"):
+                Lx.err(w, "the plan is its picture, so it has no lines of text: delete this `say` and keep the `flow`")
+            elif not st.get("say") and not st.get("think") and not (s.get("beat") == "plan" and st.get("add")):
                 Lx.err(w, "a step needs `say`: the teacher's one line for this click")
             for it in as_list(st.get("add")):
                 kind = [k for k in it if k in ITEMS] if isinstance(it, dict) else []
