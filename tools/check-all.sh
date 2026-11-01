@@ -52,6 +52,10 @@ echo "$cc" | grep -v ' | ok$'
 mm=$(python3 "$ROOT/tools/check_memory.py"); code=$?
 echo "$mm" | grep -v ' | ok$'
 [ "$code" = 0 ] || fail=1
+# the clean-up after a lesson, in a throwaway home (tools/check_tidy.py)
+tt=$(python3 "$ROOT/tools/check_tidy.py"); code=$?
+echo "$tt" | grep -v ' | ok$'
+[ "$code" = 0 ] || fail=1
 # each skill's documents agree with its code and name only what ships (tools/check_docs.py)
 dd=$(python3 "$ROOT/tools/check_docs.py"); code=$?
 echo "$dd" | grep -v ' | ok$'
