@@ -151,6 +151,47 @@ The user chose this on a live options sheet built on real lessons. **Where this 
 
 **Report**: the commits; counts from the real run; paths to window-sized screenshots of variance scenes 2, 3, 5, 8 and 13 and perceptron scene 5; anything you changed from this plan and why; what you are unsure of.
 
+## Stage 1c: the user's picks and a 70 / 30 page (visual; user reviews after it)
+The user tried the Stage 1b look on the options sheet and sent these. **Where this section and anything above differ, this section wins.** It is the class look only. `out/look-options/recipe/play.css` and `play.js` hold the newest sheet code as a recipe; the end of `play.css` has the Back and Next and slider rules.
+
+### New values
+| Part | Value |
+|---|---|
+| Page | width `min(1400px, 100vw - 64px)`. Gap between columns 20 px |
+| Chart shape | 16:9 unless the item has a `ratio` |
+| Figure height | at most 820 px, and still leaves the row on screen with the scene's head at the top. A figure with no slider or button row gets that row's room back |
+| Figure with text under it | up to 1280 px wide. `parts` and `dist` keep 1060 px |
+| Think card | clear ground, 1 px `#353634` lines above and below only, question weight 400, main text colour. The rest stays |
+| Back and Next row | a 1 px `#2c2d2b` line above it, 10 px below that line, no space from the figure. Row is the figure's width: Back at the left end, Next at the right end, the step bars stretch between them with 24 px either side. Buttons show only `‹` and `›`, 17 px, weight 650, padding 4 / 16; give each an `aria-label` of Back or Next. Back: no box, `#f2f2f0`. Next: 1.5 px `#ff5a36` outline, orange `›`, clear ground. Both have hard shadow `3px 3px 0 #2c2d2b`, except when disabled, when they drop to 38% opacity. Bars 3 px tall: done `--haze`, now orange, to come `#2c2d2b` |
+| Slider rows | one slider per line, each the figure's full width: name, line, value. A 1 px `#2c2d2b` line above the group, 8 px below it, 2 px between sliders, no boxes, padding 1 / 0. Line 3 px, filled `#ff5a36`, empty `#2c2d2b`. Knob a 20 px ring: 3 px `#ff5a36` round the page ground, no shadow. Name 16 px `#a29f97`. Value 17 px mono bold orange. Run and toggle controls take the same line and box-free style |
+
+`out/look-options/play-perceptron.html?s=` with the look shown in `out/look-options/recipe/look-3.json` shows this look.
+
+### The 70 / 30 page
+1. **Two columns everywhere**: a figure column of 70% of the page and a side column of 30%, gap included. The side column holds the text in a text scene and the pinned table in a table scene.
+2. **The figure is centred in its 70%**, with its row at its own width. When the window height stops it short of 70%, it stays centred and the side column stays 30%. Remove the Stage 1b behaviour where the text column grows into spare room.
+3. **Table scenes**: the table stretches to fill its 30% column, so its rows run the full width and no blank column is left. A table too wide for 30% takes the room it needs and never squeezes; the figure takes the rest. The figure is centred in what is left, with its text under it at its own width. This replaces "the figure sits at the left of its column".
+4. Narrow windows: side by side needs at least 520 px of figure and 300 px of side column. Below that, the figure goes above its text. The long-formula rule stands.
+
+### A plane may fill its column
+A plane is small because equal units tie its width to its height. Add **`fill: true`** to `plane`. Such a plane takes the chart shape (16:9 or narrower, as the room allows) with its own scale per axis, so it fills the column.
+- Keep equal units as the default. A plain scatter stretched by mistake is harmless, but a stretched geometry picture is wrong, so the safe failure is the default.
+- `fill` with a `vector`, `foot` or `square` mark is an error with a plain message: these only read true at equal scale.
+- In a filled plane, marks map with separate x and y scales, a ring stays round and labels still avoid dots and lines.
+- The plane-shape audit reads the drawn shape and allows up to 1.8.
+- Add `fill: true` to all ten planes in `perceptron-trick`, and to the planes in `board-gallery` scenes 10 and 14. Every plane in the three PCA lessons and in `variance` stays at equal units, because their directions and squares are the point. Leave their numbers and marks alone.
+- `board.md` `plane` section: say when to use `fill` in one or two plain lines: a scatter, a line or a shaded side, with no right angle or length that the lesson relies on.
+
+### Checks
+- `tools/check_board_ui.py`: add the checks from `out/look-options/recipe/real_scan.py` as tests over all six lessons at 1100, 1280, 1440, 1728 and 1920 wide: a row never wider than its figure or under the text, a row and a wide picture centred, nothing sideways. Its "cut off" count covers 1280 × 720, 1440 × 900 and 1920 × 1080. The Stage 1b report said the row could not be proved at every size, so make this pass, not just run.
+- New tests: figure column is 70% ± 1% at 1440 wide in a beside scene; a filled plane reaches 70% of the page or the height limit at 1440 × 900; a table fills its column; `fill` with `square` fails the lint (a class case).
+- Update the audits and the sizes the skill text states if these numbers break them.
+- In `plugins/viz-os/docs/design.md`, record: 70 / 30 and why; `fill` and why equal units stay the default. Change the rows on equal scales and on controls so they agree.
+
+**Done when**: `tools/check-all.sh` exits 0 with every example and sketch at 0 warnings; the deck diff is empty; a real window-sized screenshot of perceptron scenes 5 and 10 at 1440 × 900 shows a plot clearly bigger than the user's pictures, centred in its column, with the look above. Commit on this branch; do not push.
+
+**Report**: commits; real counts; paths to window-sized screenshots of perceptron scenes 5, 6 and 10 and variance scenes 3, 5 and 8, plus pca-2-how scene 5; plot sizes in px for those; anything you changed from this plan and why; what you are unsure of.
+
 ## Stage 2: quiz removal, clean-up, words (after the user has seen stage 1)
 The user confirmed both: quiz cards and recall cards go. Sketch keeps its own review cards, as "What sketch needs" says.
 
