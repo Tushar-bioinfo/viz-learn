@@ -10,7 +10,8 @@ fills columns but never moves a figure; no sideways scroll; every plane without 
 Then the look's own rules: a long formula sends its figure above its text; the plan shows no lines of text; the scene counter
 stays in the margin; a column not filled in keeps its row lines; Next stays on screen; the line by the buttons stays on
 screen after every Next; Next onto a think step takes two presses; rows fit their figures at five widths and stay on
-screen at three windows; a beside scene is 70 / 30; a filled plane and a table fill their room; the first stop has no line.
+screen at three windows; a beside scene is 70 / 30; a filled plane and a table fill their room; the first stop has no line;
+Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen.
 """
 import importlib.util, sys
 from pathlib import Path
@@ -218,6 +219,11 @@ def next_on_screen(page):
     return not bad, "; ".join(bad) or f"{len(firsts)} scenes"
 
 
+# the line's box, its words if they show, and scrollY. When it steps aside for the same words elsewhere, those words count, and must be on screen
+WORDS_SEEN = """e => { const r = e.getBoundingClientRect(), t = e.textContent.replace(/\\s+/g, ' ').trim(), same = [...e.closest('.slide').querySelectorAll('.say, .tqt, .ta > span:last-child, .note')].filter(q => q.textContent.replace(/\\s+/g, ' ').trim() === t && q.getBoundingClientRect().height && q.getBoundingClientRect().top >= 0 && q.getBoundingClientRect().bottom <= innerHeight);
+  return [r.top, r.bottom, innerHeight, getComputedStyle(e).visibility === 'visible' ? t.length : same.length, scrollY]; }"""
+
+
 def stop_line(page):
     """Text under a figure: after every Next the line by the buttons shows, without scrolling."""
     page.evaluate("VizOS.slides.forEach(sl => sl.r.reset && sl.r.reset())")
@@ -234,7 +240,7 @@ def stop_line(page):
             if nx.is_disabled():
                 break
             nx.click(); page.wait_for_timeout(40); seen += 1
-            r = host.locator(".stopl").evaluate("e => { const r = e.getBoundingClientRect(); return [r.top, r.bottom, innerHeight, e.textContent.trim().length, scrollY]; }")
+            r = host.locator(".stopl").evaluate(WORDS_SEEN)
             if r[1] > r[2] or r[0] < 0 or not r[3] or r[4] != y0:
                 bad.append(f"scene {i + 1}: {[round(x) for x in r]}"); break
     return not bad, "; ".join(bad[:3]) or f"{seen} presses"
@@ -329,6 +335,79 @@ def first_stop_quiet(page):
     return bool(r) and not any(r), f"{len(r)} stages"
 
 
+# scenes by title, since their numbers move: a think answer here grows the text column past a figure that was held by the block's foot
+STAY = {"pca-2-how": "Repeat until it stops turning", "board-gallery": "A line that learns, one cell at a time"}
+REPEAT = {"pca-2-how": "C times an arrow is a new arrow"}
+SCENE = "t => VizOS.slides.findIndex(sl => sl.s.title === t)"
+
+
+def stays_put(page):
+    """Next stays under the pointer: scroll a scene's top to -200 and keep pressing, and the button moves under 2 px."""
+    title, name = next(((t, n) for n, t in STAY.items() if n in page.url), (None, None))
+    if not title:
+        return True, "no such scene here"
+    sized(page, 1480, 800)
+    page.evaluate("VizOS.slides.forEach(sl => sl.r.reset && sl.r.reset())")
+    i = page.evaluate(SCENE, title)
+    head_top(page, i)
+    page.evaluate("scrollBy({ top: 200, behavior: 'instant' })"); page.wait_for_timeout(80)
+    nx, ys = page.locator(f"#scene-{i + 1} .stage .next").first, []
+    for _ in range(14):
+        ys.append(round(nx.evaluate("e => e.getBoundingClientRect().top")))
+        if nx.is_disabled():
+            break
+        box = nx.bounding_box()
+        page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2); page.wait_for_timeout(60)
+    done = nx.is_disabled()
+    page.evaluate("VizOS.slides.forEach(sl => sl.r.reset && sl.r.reset())")
+    sized(page, 1440, 900)
+    return done and len(ys) > 2 and max(ys) - min(ys) <= 2, f"{name} Next at y {ys}"
+
+
+COPIES = """() => { const seen = e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && getComputedStyle(e).visibility === 'visible'; }, same = e => e.textContent.replace(/\\s+/g, ' ').trim();
+  return [...document.querySelectorAll('.stopl')].filter(l => same(l) && l.getBoundingClientRect().top < innerHeight && l.getBoundingClientRect().bottom > 0).map(l => { const n = l.closest('.slide');
+    return [n.id, same(l).slice(0, 40), seen(l), [...n.querySelectorAll('.say, .tqt, .ta > span:last-child, .note')].filter(e => same(e) === same(l) && seen(e)).length]; }); }"""
+
+
+def no_repeat(page):
+    """The line by the buttons shows only when its words are not on screen elsewhere: seen once, not twice, as the window moves."""
+    title = next((t for n, t in REPEAT.items() if n in page.url), None)
+    bad, seen = [], 0
+    page.evaluate("VizOS.slides.forEach(sl => sl.r.reset && sl.r.reset())")
+    n = page.evaluate("VizOS.slides.length")
+    for (w, h) in ((1440, 2400), (1440, 900)):
+        sized(page, w, h)
+        for i in range(n):
+            for j in range(page.evaluate(f"(VizOS.slides[{i}].r.stages || []).length")):
+                last = page.evaluate(f"VizOS.slides[{i}].r.stages[{j}].stops.length")
+                for k in range(1, last):
+                    page.evaluate(f"VizOS.slides[{i}].r.stages[{j}].to({k})")
+                    head_top(page, i)
+                    for r in page.evaluate(COPIES):
+                        seen += 1
+                        if r[2] and r[3]:
+                            bad.append(f"{w}x{h} {r[0]}: {r[1]!r} twice")
+                page.evaluate(f"VizOS.slides[{i}].r.stages[{j}].to(0)")
+    page.evaluate("VizOS.slides.forEach(sl => sl.r.reset && sl.r.reset())")
+    if title:                  # the case that was found: the words are in the next block, so the line goes only while they are on screen
+        sized(page, 1440, 2400)
+        i = page.evaluate(SCENE, title)
+        last = page.evaluate(f"VizOS.slides[{i}].r.stages[0].stops.length") - 1
+        page.evaluate(f"VizOS.slides[{i}].r.stages[0].to({last})")
+        head_top(page, i)
+        tall = page.evaluate(COPIES)
+        sized(page, 1440, 700)
+        head_top(page, i)
+        short = page.evaluate(COPIES)
+        page.evaluate("VizOS.slides.forEach(sl => sl.r.reset && sl.r.reset())")
+        if not any(not r[2] and r[3] for r in tall):
+            bad.append(f"tall window: {tall}")
+        if not any(r[2] and not r[3] for r in short):
+            bad.append(f"short window: {short}")
+    sized(page, 1440, 900)
+    return not bad, "; ".join(bad[:3]) or f"{seen} lines"
+
+
 TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a line goes to its stop", click_line), ("a think step's stop opens it", think_stop),
          ("Show answer grows its card from a fixed top", show_answer), ("a slider changes a number", slider), ("a run's scrubber moves the lit line", scrubber),
          ("scrolling lights steps and fills columns, figures stay", scrolling), ("no sideways scroll; planes equal; charts and images keep their ratio", widths),
@@ -336,7 +415,8 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("a column not filled in keeps its row lines", row_lines), ("Back and Next stay on screen", next_on_screen), ("the line by the buttons stays on screen", stop_line),
          ("Next onto a think step takes two presses", two_presses),
          ("every row fits its figure at five widths", rows_fit), ("every row is on screen at three windows", rows_on_screen), ("a beside scene is 70 / 30", columns),
-         ("a filled plane fills its room", plane_fills), ("a table fills its column", table_fills), ("the first stop has no line by the buttons", first_stop_quiet)]
+         ("a filled plane fills its room", plane_fills), ("a table fills its column", table_fills), ("the first stop has no line by the buttons", first_stop_quiet),
+         ("Next stays under the pointer", stays_put), ("the line by the buttons never repeats words on screen", no_repeat)]
 
 
 def main(names):

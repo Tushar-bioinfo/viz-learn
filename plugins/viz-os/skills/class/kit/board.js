@@ -14,6 +14,9 @@
   // ==text== is the deck's orange underline; ==s1:text== (s2, s3, good, bad) is bold text in that colour, no underline
   const md = s => L.md(s).replace(/<mark class="hi">(accent|s1|s2|s3|good|bad|mist):/g, (_, c) => `<mark class="hi tc" style="--hc:var(--${c})">`);
   const SVG = 'http://www.w3.org/2000/svg';
+  // what follows the window on every board: a held figure lets go, and the line by the buttons steps aside
+  let watching = false;
+  addEventListener('scroll', () => { if (watching) return; watching = true; requestAnimationFrame(() => { watching = false; (L.slides || []).forEach(sl => sl.r.watch && sl.r.watch()); }); }, { passive: true });
   const sv = (tag, attrs, parent) => { const e = document.createElementNS(SVG, tag); for (const k in attrs || {}) if (attrs[k] != null) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const list = x => Array.isArray(x) ? x : x == null ? [] : [x];
   const COLOR = { accent: 1, tint: 1, s1: 1, s2: 1, s3: 1, ink: 1, mist: 1, haze: 1, line: 1, good: 1, bad: 1 };
@@ -195,6 +198,9 @@
   const SHAPE = 16 / 9, FIGH = 820;                                   // a chart's shape unless it has a ratio; the tallest figure
   const ratioOf = (r, dflt) => { if (typeof r === 'number' && r > 0) return r; const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(r ?? '')); return m && +m[2] ? +m[1] / +m[2] : dflt; };
   const PAD = 16, LEG = 38;   // a figure's frame: its padding, both sides; a plane's legend row
+  const STUCK = 24;           // where a sticky figure stops, as board.css has it
+  const WORDS = '.say, .tqt, .ta > span:last-child, .note', same = e => e.textContent.replace(/\s+/g, ' ').trim();   // the lines the line by the buttons could repeat
+  const inWindow = e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && getComputedStyle(e).visibility === 'visible'; };
   const PROSE = new Set(['label', 'name', 'caption', 'alt', 'text', 'say', 'title', 'verdict']);
   // the expressions in a figure's spec: all its strings, but only the {{…}} parts of its words
   const exprsOf = o => typeof o === 'string' ? o : Array.isArray(o) ? o.map(exprsOf).join(' ')
@@ -451,6 +457,13 @@
 
     // ---------- figures that change ----------
     const shown = (nd, c) => nd.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= c));
+    // a sticky figure past its top is held up by the foot of its block. When the text column grows the foot drops and the figure
+    // would drop with it, and the next click would miss Next. So the figure holds its place, and lets go as the reader scrolls back
+    const held = new Map();
+    const hold = fn => { const fs = [...node.querySelectorAll('.fb.beside > .ffig:not(.nostick)')], was = fs.map(f => f.getBoundingClientRect().top), out = fn();
+      fs.forEach((f, i) => { if (was[i] < STUCK && f.getBoundingClientRect().top > was[i] + .5) { f.style.top = was[i] + 'px'; held.set(f, { y: was[i], deep: scrollY }); } });
+      return out; };
+    const letGo = () => held.forEach((p, f) => { p.deep = Math.max(p.deep, scrollY); const y = p.y + p.deep - scrollY; if (y < STUCK) f.style.top = y + 'px'; else { f.style.top = ''; held.delete(f); } });
     const stages = [];
     const makeStage = (host, stops0, paint, zoneOf, frames) => {
       const uniq = [...new Set(stops0)].sort((a, b) => a - b); if (uniq.length < 2) return null;
@@ -460,18 +473,20 @@
       const stepAt = c => stepEls.find(e => +e.dataset.at === c);
       // a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it
       const asked = j => { S.ask = j; S.show(); const c = j == null ? uniq[S.i] : +stepAt(uniq[j]).dataset.q; light(c); mark(c); };
-      const go = (v, rel) => {
+      const go = (v, rel) => hold(() => {
         if (rel && v < 0 && S.ask != null) { asked(null); return true; }
         const j = rel ? S.i + v : v; if (j < 0 || j >= uniq.length || j === S.i) return false;
         if (j > S.i && S.ask !== j && unanswered(uniq[j])) { if (j > S.i + 1) S.to(j - 1); asked(j); return true; }
-        S.to(j); return true; };
+        S.to(j); return true; });
       const ui = stageBar(uniq, go);
       // the line by the buttons, from the second stop on (the first is the line just read): the step's own words, or for a think step its question and then its answer
       const lineOf = (c, answered) => { const e = stepAt(c), ta = e && e.querySelector('.ta > span:last-child'), q = e && e.querySelector('.tqt'), say = e && e.querySelector(':scope > .say');
         return (answered ? ta || say : say || q) || q; };
       S.show = () => { const on = S.ask != null, c = uniq[on ? S.ask : S.i], e = lineOf(c, !on && !unanswered(c));
         paint(uniq[S.i]); ui.set(S.i, on); ui.line.innerHTML = e && (on || S.i) ? e.innerHTML : '';
-        S.lines.forEach(q => q.classList.toggle('atstop', on ? +q.dataset.at === c : stopOf(+q.dataset.at) === S.i)); };
+        S.lines.forEach(q => q.classList.toggle('atstop', on ? +q.dataset.at === c : stopOf(+q.dataset.at) === S.i)); S.quiet(); };
+      // the line is there for when a step's own words are out of sight: with those words on screen it steps aside, and keeps its room
+      S.quiet = () => { const l = ui.line, t = same(l); l.style.visibility = t && [...node.querySelectorAll(WORDS)].some(e => same(e) === t && inWindow(e)) ? 'hidden' : ''; };
       // its room is the tallest words it will hold, so the page under it does not jump
       S.fit = () => { const l = ui.line; if (!l.clientWidth) return; const now = l.innerHTML; l.style.minHeight = ''; let most = 0;
         uniq.slice(1).forEach(c => [true, false].forEach(a => { const e = lineOf(c, a); if (e) { l.innerHTML = e.innerHTML; most = Math.max(most, l.offsetHeight); } }));
@@ -490,9 +505,9 @@
     };
     const setThink = (e, on) => { e.classList.toggle('open', on); e.querySelector('.tb').textContent = on ? 'Hide answer' : 'Show answer'; node.querySelectorAll(`[data-wait="${e.dataset.at}"]`).forEach(x => x.classList.toggle('open', on)); };
     // Show answer brings in all the step adds, a stage stop too; Hide answer takes it away again
-    function answer(e) { const on = !e.classList.contains('open'), at = +e.dataset.at; setThink(e, on);
+    function answer(e) { hold(() => { const on = !e.classList.contains('open'), at = +e.dataset.at; setThink(e, on);
       stages.forEach(S => { const j = S.stops.indexOf(at); if (j < 0) return; if (on && S.i < j) S.to(j); else if (!on && S.i >= j && j > 0) { S.to(j - 1); setThink(e, false); } });
-      fill(Math.max(read, on ? at : 0)); }
+      fill(Math.max(read, on ? at : 0)); }); }
     // the run's stage follows the scrubber: the line and the dot of the frame on show
     function follow() { const S = stages.find(x => x.frames); if (!S) return; let i = 0; S.stops.forEach((c, q) => { if (frameAt(c) <= ctx.scope[run.c.name]) i = q; }); S.i = i; S.show(); }
 
@@ -563,7 +578,9 @@
     const stick = () => node.querySelectorAll('.tcol, .ffig').forEach(e => e.classList.toggle('nostick', e.offsetHeight > innerHeight - 48));
 
     const R = {
-      node, steps: n, stages, stick,
+      node, steps: n, stages,
+      stick: () => { held.forEach((_, f) => { f.style.top = ''; }); held.clear(); stick(); stages.forEach(S => S.quiet()); },
+      watch: () => { letGo(); stages.forEach(S => S.quiet()); },
       layout: () => { blocks.forEach(b => { b.over = false; }); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
       // what the page shows now, after a redraw or a move
       repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); },
