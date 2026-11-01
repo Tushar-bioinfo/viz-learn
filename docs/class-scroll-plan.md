@@ -101,7 +101,59 @@ Files: `class/kit/lesson.js` (written, committed, unused so far), `class/kit/boa
 
 **Report**: the commits; counts from the real run; paths to the contact sheets for `board-gallery`, `variance` and `pca-1-what`; anything you changed from this plan and why; what you are unsure of.
 
+## Stage 1b: the user's look (visual; user reviews after it)
+The user chose this on a live options sheet built on real lessons. **Where this section and anything above differ, this section wins**, including "thick grey borders" and the sizes table. It is the class look only: decks and sketch pages keep theirs.
+
+`out/look-options/recipe/` holds the sheet's CSS and layout patches. That code is throwaway but it works: read it as a recipe and write it cleanly into `board.css` and `board.js`. Do not ship the panel, the `PLAY` object or the options the user did not pick. The recipe's defaults are older than the table below, so the table wins. `out/look-options/reference/` has pictures of the chosen look at 1440 × 900, built from the sheet.
+
+### The look
+| Part | Value |
+|---|---|
+| Page | width `min(1500px, 100vw - 64px)`, ground `#0b0c0e` |
+| Figure and text | figure left and sticky, text right. Text column 360 px, gap 24 px, tallest figure 720 px. Side by side needs at least 520 px of figure |
+| Chart shape | 16:10 unless the item has a `ratio`. A plane keeps its own shape from its axis ranges |
+| Figure frame (charts and planes alike) | no box: clear ground, a 1 px `#2c2d2b` line along the top with a 64 × 3 px orange tick at its left end, soft shadow `0 10px 34px rgba(0,0,0,.55)`, 8 px padding all round. The padding sits outside the plot, not taken from it |
+| Inside the plot | grid `#1f2021` 1 px, axis line 1.5, axis numbers 15 px, axis titles 16, labels on the plot 21, legend 20 |
+| Data colours | `--s1 #8ec5ff`, `--s2 #6ff0d0`, `--s3 #f29ac8`. The orange stays `#ff5a36` |
+| Text colours | main `#f2f2f0`, quiet (`--mist`) `#a29f97`, caption `#f2f2f0`, table headers `#9fe6d8` |
+| Caption | on its own strip under the plot: 16 px above, a 1 px `--line-dim` line, 12 px below. LOOK tag stays. 17 px. DATA is a thin box |
+| Text | 18 px, 24 px between lines, longest line 980 px |
+| Text cards | ground `#121315`, 1 px `#353634`, no shadow, 6 px / 12 px padding |
+| Table card | ground `#121315`, 1 px `#2c2d2b`, no shadow, numbers 18 px |
+| Buttons | slider and Back / Next on one row, centred under the figure. Thin box: clear ground, 1 px `#2c2d2b`, no shadow. Next keeps its orange ground |
+| Think card | the word `Think` in plain orange capitals above the question, no box round it. Question 19 px, weight 500, `#f2f2f0`. Button under the question, a thin box as above. Ground `#0f1012`, 1 px `#2c2d2b` lines above and below only, 12 px padding top and foot, 16 px at the sides. `So` is the same plain word |
+| Wide pictures (`parts`, `dist`) | at most 1060 px wide, centred. Their line of text stays lined up with the other lines |
+
+### The layout rules
+1. **Think answers take no room until pressed**: the card grows and its top does not move. What a think step adds to a figure or table still waits for the answer, as before.
+2. **A scene with a table and a figure**: table left and sticky, figure to its right, at most 1060 px wide, its lines under it at the figure's own width. The figure sits at the left of its column and the buttons centre under it.
+3. **A formula too long for the text column** sends that one figure above its text. Check after drawing, using the rendered formula's real edge; a formula is never cut or shrunk. The recipe has this.
+4. **The plan is its picture**: a `flow` in a `plan` scene draws as a Track, in a class-owned renderer in `board.js`. Numbered squares on one line, the first filled orange, title under each, sub-label under that. No small verbs, no plate. The plan scene has no lines of text: take the `say` lines out of the examples and make a `say` in a plan scene a lint error with a plain message. Put that one rule in `board.md`.
+
+### The fixes
+1. The scene counter moves into the page margin as a slim upright strip and never covers text at 1280, 1440 or 1920 wide.
+2. A table column that has not filled in yet keeps its row lines. Only its text waits.
+3. Buttons fit the screen: with a scene's head at the top of a 1440 × 900 window, the figure's Back and Next are fully on screen. Set the height limit to do that (about `innerHeight - 190`).
+4. Text under a figure: pressing Next must never leave the learner's line out of sight. Keep the line that introduces the figure above it, and repeat the current stop's line in one quiet line by the buttons. Count that line's height in the limit above. After every Next in such a block, that line is on screen without scrolling at 1440 × 900.
+5. Next onto a think step takes two presses: the first shows the question and leaves the figure alone, the second opens the answer and moves the figure.
+6. Variance scene 8, "A squared distance is a real square", is squashed (its plane is 3.77 wide per 1 tall). Change its data range or spacing so its squares stay true squares, do not overlap and the plane reads well. Every number stays computed.
+7. Drop a chart's legend when it only repeats the x-axis labels, as in "Two donors, the same mean". That room goes to the plot. Skip this if it needs a deck edit, and say so.
+
+### Checks
+- Audit: table cells fail under 18 px, not 20 (the user's choice). New: a plane fails when its width over height is outside 0.6–1.75, with a plain message. The other audits stay.
+- `tools/check_board_ui.py`: update "Show answer opens without moving anything below it" to rule 1. Add tests for: rule 3 at a narrow width, the plan showing no lines of text, fixes 1 to 5.
+
+**Trap**: `L.colors` is read once at boot from the page's colour tokens, so the new colours must be set before that read, or SVG drawings keep the old ones. Sketch does not load `board.css`, but check it stays unchanged.
+
+**Checkpoints**: commit when `variance` builds and checks clean, then again when all six examples do.
+
+**Done when**: `tools/check-all.sh` exits 0, with every example and sketch at 0 warnings and board ui tests passing; the deck diff is empty; a built `variance/lesson.html` at 1440 × 900 matches `out/look-options/reference/` apart from the fixes above. Look at the contact sheets and at real window-sized screenshots yourself.
+
+**Report**: the commits; counts from the real run; paths to window-sized screenshots of variance scenes 2, 3, 5, 8 and 13 and perceptron scene 5; anything you changed from this plan and why; what you are unsure of.
+
 ## Stage 2: quiz removal, clean-up, words (after the user has seen stage 1)
+The user confirmed both: quiz cards and recall cards go. Sketch keeps its own review cards, as "What sketch needs" says.
+
 1. **Lint**: in a class lesson `type: quiz` and `recall:` are errors with a plain message (delete it; keep questions as `think` stops). `next` is the last scene. `make_lint` drops `lint_cards` and `lint_recall`. Replace the "must fit the stage" wording.
 2. `lesson.py`: remove the `recall()` call from `ext`'s `prep`.
 3. **Examples**: delete every `quiz` slide and `recall:` line. A series continues through memory, `lead`, the `next` scene, and a think stop near the start that reaches back to the last lesson, using only that lesson's data. Remove `step_at`.
