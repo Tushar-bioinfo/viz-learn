@@ -157,8 +157,14 @@ def ext(B):
     }
 
 
+def adopt(B):
+    """A lesson is a page that scrolls: its runtime takes the place of deck.js. Only here: sketch has its own."""
+    B.KIT_JS = [KIT / "lesson.js" if Path(f).name == "deck.js" else f for f in B.KIT_JS]
+
+
 def build(path, out=None, katex_dir=None, quiet=False):
     B = deck_build()
+    adopt(B)
     return B.build(path, out, katex_dir, quiet, ext=ext(B))
 
 

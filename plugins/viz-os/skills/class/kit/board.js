@@ -1,12 +1,13 @@
-/* viz-os class: the board scene. One board grows click by click: a pinned table on the left, worked lines and
-   pictures in the work area, the teacher's one line per click in a band at the foot. Items reveal by opacity
-   (data-step), so the board never reflows as it grows and the deck's fit measures it once, full.
-   The current item is orange (`now`), earlier ones turn grey (`past`). Attention goes by text colour on the thing itself:
-   a worked line's terms take the deck's term colours on the symbol, on its number and on the table cell it came from,
-   and `mark:` lights a table row, column, cell or item for one click. Nothing is drawn over the board; underlines stay
-   for plain ==text== only. A scene that builds a formula gets a strip under both columns: its numbers row first,
-   its symbols row (each term named) on the next click.
-   A step with `think` takes two clicks: the question, then the answer (with whatever the step adds). */
+/* viz-os class: the board scene, on a page that scrolls. A scene is written top to bottom and stays written, the way a
+   teacher fills a tablet page: each step is its teacher line and what it adds, and nothing is hidden behind a click.
+   A table is pinned beside the work; its derived columns fill in as the reading line reaches the step that adds them, and
+   the row in use is lit. A picture sits beside the lines that talk about it and stays in view while they scroll past.
+   Every figure owns its shape: a plane's comes from its axis ranges (one scale for both axes), a chart's from its `ratio`,
+   an image's from the image. The layout gives each a width and a height limit, never a box to fill.
+   Next and Back appear only on a figure that really changes: marks that come in on a step, a run's frames, a matrix step.
+   A step with `think` shows its question with a Show answer button; what the step adds waits behind the answer, in its
+   space, so the page never jumps. Attention goes by text colour on the thing itself: a worked line's terms take the
+   deck's term colours on the symbol, on its number and on the table cell it came from. */
 (function () {
   'use strict';
   const L = window.VizOS, h = L.h;
@@ -28,18 +29,18 @@
   const symOf = (ctx, n) => { const s = (ctx.symbols || {})[n]; return s && s.tex ? s.tex : L.autoSym(n); };
   const shortOf = (ctx, n) => { const s = (ctx.symbols || {})[n]; return (s && (s.short || s.says)) || n; };
   const subFmt = (ctx, n, v, own) => own ?? (((ctx.symbols || {})[n] || {}).fmt) ?? (Number.isInteger(v) ? ',' : 's4');   // as the deck's calc
-  const scaleOf = e => e.getBoundingClientRect().width / (e.offsetWidth || 1) || 1;
-  // every \htmlClass{lt lt-<name>} span of a part takes its colour (the CSS shows it on the current line only)
+  // every \htmlClass{lt lt-<name>} span of a part takes its colour
   const tint = (part, colorOf) => part.querySelectorAll('.lt').forEach(sp => {
     const c = colorOf([...sp.classList].find(x => x.startsWith('lt-')).slice(3)); if (c) { sp.classList.add('tc'); sp.style.setProperty('--tc', c); } });
   // names under the formula's symbols: centred on the symbol, sliding or dropping a row to clear each other
   function names(part, items) {
     part.style.paddingBottom = '';
-    const base = part.getBoundingClientRect(), sc = scaleOf(part), top0 = (base.height / sc) + 14, placed = [];
+    part.querySelectorAll(':scope > .wl').forEach(e => e.remove());
+    const base = part.getBoundingClientRect(), top0 = base.height + 14, placed = [];
     items.forEach(({ n, text }) => {
       const sp = part.querySelector(`.lt-${CSS.escape(n)}`); if (!sp) return; const r = sp.getBoundingClientRect(); if (!r.width) return;
       const lab = h('div', 'wl', L.esc(text)); part.appendChild(lab);
-      const w = lab.offsetWidth, hh = lab.offsetHeight, cx = (r.left + r.width / 2 - base.left) / sc;
+      const w = lab.offsetWidth, hh = lab.offsetHeight, cx = r.left + r.width / 2 - base.left;
       // the first row where it fits, sliding right by up to a third of its width past the name before it
       let row = 0, x = cx;
       for (; row < 3; row++) { const prev = placed.filter(b => b.row === row).reduce((m, b) => Math.max(m, b.cx + b.w / 2 + 10), -1e9);
@@ -47,7 +48,7 @@
       const y = top0 + row * (hh + 2), cxp = x; placed.push({ cx: cxp, w, row, bottom: y + hh });
       Object.assign(lab.style, { left: cxp + 'px', top: y + 'px' });
     });
-    if (placed.length) part.style.paddingBottom = Math.max(...placed.map(b => b.bottom)) - base.height / sc + 4 + 'px';
+    if (placed.length) part.style.paddingBottom = Math.max(...placed.map(b => b.bottom)) - base.height + 4 + 'px';
   }
 
   // ---------- plane: one scale for both axes, so a slope and a right angle look like what they are ----------
@@ -71,19 +72,23 @@
   }
 
   function plane(p, ctx, clickOf, at) {
-    const node = h('div', 'bi plane'); node.dataset.at = at; node.dataset.step = at;
+    const node = h('div', 'bi plane'); node.dataset.at = at;
     if (p.id) node.dataset.id = p.id;
     const leg = h('div', 'plegend'); node.appendChild(leg);
     const wrap = h('div', 'pwrap'); node.appendChild(wrap);
     const svg = sv('svg', { class: 'pl' }, wrap);
-    const R = { node, issues: [] };
+    const R = { node, issues: [], kind: 'plane', w: 0, h: 0 };
     const num = (x, where) => L.val(x, ctx.scope, where);
+    const m = { l: 62, r: 18, t: 14, b: 60 }, boxOf = () => { const X = p.x || {}, Y = p.y || {}; return [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)]; };
+    // the widest picture that fits the room at one scale for both axes: its ranges alone set its shape
+    R.size = room => { const b = boxOf(), xs = b[1] - b[0], ys = b[3] - b[2], u = Math.min((room.w - m.l - m.r) / xs, (room.h - m.t - m.b) / ys);
+      R.w = Math.round(u * xs + m.l + m.r); R.h = Math.round(u * ys + m.t + m.b); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w; };
     R.layout = () => {
       svg.innerHTML = ''; leg.innerHTML = ''; R.issues = [];
-      const W = wrap.clientWidth, H = wrap.clientHeight; if (W < 40 || H < 40) { R.issues.push('the picture has no room'); return; }
+      const W = R.w, H = R.h; if (W < 40 || H < 40) { R.issues.push('the picture has no room'); return; }
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-      const X = p.x || {}, Y = p.y || {}, box = [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)];
-      const m = { l: 62, r: 18, t: 14, b: 60 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
+      const X = p.x || {}, Y = p.y || {}, box = boxOf();
+      const pw = W - m.l - m.r, ph = H - m.t - m.b;
       const u = Math.min(pw / (box[1] - box[0]), ph / (box[3] - box[2]));      // pixels per unit, the same on both axes
       const gw = u * (box[1] - box[0]), gh = u * (box[3] - box[2]), ox = m.l + (pw - gw) / 2, oy = m.t + (ph - gh) / 2;
       const sx = x => ox + (x - box[0]) * u, sy = y => oy + gh - (y - box[2]) * u;
@@ -181,268 +186,370 @@
     return R;
   }
 
+  // ---------- how much room a figure gets ----------
+  const FIG = 520, SIDE = 460, GAP = 36;                  // a figure sits beside its lines only when both keep a good width
+  const figH = () => Math.min(640, innerHeight - 170);    // a figure and its buttons fit on one laptop screen
+  const ratioOf = (r, dflt) => { if (typeof r === 'number' && r > 0) return r; const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(r ?? '')); return m && +m[2] ? +m[1] / +m[2] : dflt; };
+  const PAD = 58;   // a plate's side padding and borders
+  const PROSE = new Set(['label', 'name', 'caption', 'alt', 'text', 'say', 'title', 'verdict']);
+  // the expressions in a figure's spec: all its strings, but only the {{…}} parts of its words
+  const exprsOf = o => typeof o === 'string' ? o : Array.isArray(o) ? o.map(exprsOf).join(' ')
+    : o && typeof o === 'object' ? Object.entries(o).map(([k, v]) => PROSE.has(k) && typeof v === 'string' ? (v.match(/\{\{.*?\}\}/g) || []).join(' ') : exprsOf(v)).join(' ') : '';
+
+  // a stepped figure: Back, a dot per stop, Next
+  function stageBar(stops, go) {
+    const bar = h('div', 'stage', `<button type="button" class="sb back">‹ Back</button><span class="dots">${stops.map((_, i) => `<button type="button" class="sdot" aria-label="stop ${i + 1}"></button>`).join('')}</span><button type="button" class="sb next">Next ›</button>`);
+    const bs = bar.querySelectorAll('.sb'), ds = [...bar.querySelectorAll('.sdot')];
+    bs[0].onclick = () => go(-1, true); bs[1].onclick = () => go(1, true); ds.forEach((d, i) => { d.onclick = () => go(i, false); });
+    return { bar, set: i => { bs[0].disabled = i === 0; bs[1].disabled = i === stops.length - 1; ds.forEach((d, q) => { d.classList.toggle('on', q < i); d.classList.toggle('now', q === i); }); } };
+  }
+
   // ---------- the board ----------
   L.types.board = (s, ctx) => {
     const node = h('section', 'slide s-board'); node.appendChild(L.head(s, beatLabel(s.beat)));
     const steps = list(s.steps);
-    // each step's clicks: a think step asks on one click (q) and answers on the next (at)
+    // each step's clicks: a think step counts as two (its question, its answer), so the check sees both
     let n = 0; const map = steps.map(st => st && st.think ? { q: ++n, at: ++n } : { at: ++n });
     const clickOf = j => (map[Math.max(1, Math.min(steps.length, j)) - 1] || { at: 1 }).at;
-    const firstOf = j => { const m = map[Math.max(1, Math.min(steps.length, j)) - 1] || { at: 1 }; return m.q || m.at; };
-    const strip = steps.some(st => list(st && st.add).some(it => it && it.assemble));
-    // the strip sits under the work it sums up, or on top when the scene opens with it (its later lines then read below it)
-    const first = steps.flatMap(st => list(st && st.add)).find(it => it && typeof it === 'object'), top = strip && !!(first && first.assemble);
-    const root = h('div', 'body board' + (s.table ? '' : ' no-table') + (strip ? ' has-strip' : '') + (top ? ' strip-top' : '')); node.appendChild(root);
-    const zl = s.table ? h('div', 'zone zl') : null, zt = s.table ? h('div', 'tcard g plate enter') : null;   // the left column: the table, then side notes
-    if (zl) { zl.appendChild(zt); root.appendChild(zl); }
-    const zw = h('div', 'zone zw'); root.appendChild(zw);
-    const wtext = h('div', 'wcol wtext'), wpic = h('div', 'wcol wpic');
-    const zf = strip ? h('div', 'zone zf') : null; if (zf) root.appendChild(zf);   // the formula strip, full width
-    const zs = h('div', 'zone zs g'); root.appendChild(zs);
+    const waits = new Set(steps.flatMap((st, j) => st && st.think ? [map[j].at] : []));   // what a think step adds waits for its answer
+    const root = h('div', 'body board'); node.appendChild(root);
+    const zl = s.table ? h('div', 'tcol') : null, zt = s.table ? h('div', 'tcard g plate') : null;   // the pinned column: the table, then side notes
+    if (zl) zl.appendChild(zt);
 
-    // the teacher band: one line per click
-    steps.forEach((st, j) => {
-      if (!st) return; const c = map[j];
-      const line = (k, html, cls) => { const e = h('div', 'tline ' + (cls || ''), html); e.dataset.only = k; zs.appendChild(e); };
-      if (st.think) {
-        const t = typeof st.think === 'string' ? { q: st.think } : st.think;
-        line(c.q, `${st.say ? `<span class="tsay">${md(st.say)}</span> ` : ''}<span class="btag">Pause · think</span><span>${md(t.q || '')}</span>`, 'ask');
-        line(c.at, `<span class="btag so">So</span><span>${md(t.a || '')}</span>`, 'ans');
-      } else line(c.at, `<span>${md(st.say || '')}</span>`);
-    });
+    // where steps go. `seg` is the running column: beside the table until something full-width ends it, then the full width
+    let seg = null, cur = null, pending = null, zone = null, pair = null; const blocks = [];
+    const column = () => { if (seg) return seg; seg = h('div', 'lines');
+      if (zl && !pair) { pair = h('div', 'bpair'); pair.append(zl, seg); root.appendChild(pair); } else root.appendChild(seg); return seg; };
+    const block = () => { const b = { node: h('div', 'fb'), fig: h('div', 'ffig'), side: h('div', 'fside'), figs: [] }; b.node.append(b.fig, b.side); column().appendChild(b.node); blocks.push(b); return b; };
 
-    // items, in reading order: worked lines, formulas, notes, comparisons and matrix steps in the text column; pictures
-    // (planes, charts, images) in the picture column; an assembled formula in the strip under both
-    const lines = [], planes = [], cols = [], vis = [], asm = [], opsl = [];
-    const VIS = ['chart', 'image', 'dist', 'stat', 'units', 'parts', 'flow'];
-    const tag = (e, at, id, until) => { e.dataset.at = e.dataset.step = at; if (until > at) e.dataset.until = until; if (id) e.dataset.id = id; return e; };
+    const lines = [], cols = [], vis = [], asm = [], thinks = [], stepEls = [], figs = [];
+    const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
+    const isFig = it => it && (it.plane || SIDEVIS.some(k => it[k] != null));
+    const isWide = it => it && (it.assemble || it.compare || it.ops || WIDEVIS.some(k => it[k] != null));
+    const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
       if (c.chart) { list(c.chart.series).forEach(m); list(c.chart.marks).forEach(m); } list(c.labels).forEach(m); return c; };
-    const visual = v => { const V = L.visual(clicks(v), ctx); vis.push(V); return V.node; };
-    steps.forEach((st, j) => list(st && st.add).forEach(it => {
-      const at = map[j].at, next = map[j + 1] ? (map[j + 1].q || map[j + 1].at) : at;
+    const visual = v => { const V = L.visual(clicks(v), ctx); vis.push(V); return V; };
+    const stepsIn = o => list(o).map(m => m && m.step).filter(x => x != null).map(clickOf);
+    // a figure and what goes under it: its Back and Next, then its controls
+    const holder = (fg, at, spec) => { fg.wrap = tag(h('div', 'fg'), at); fg.wrap.appendChild(fg.node); fg.at = at; fg.spec = spec; fg.zone = zone; figs.push(fg); return fg; };
+    // a deck visual on the board: its shape comes from its `ratio` (an image's from the image); the room only limits its size
+    const figure = (it, at) => { const { id, ratio, ...v0 } = it, v = JSON.parse(JSON.stringify(v0)), kind = [...SIDEVIS, ...WIDEVIS].find(k => v[k] != null), e = h('div', `bi bvis ${kind}`); if (id) e.dataset.id = id;
+      if (v.parts) delete v.parts.build; if (v.flow) delete v.flow.build;   // both are shown complete
+      const V = visual(v), body = V.node; e.appendChild(body);
+      const fg = { node: e, V, kind, issues: [], w: 0, h: 0, stops: [...stepsIn((v.chart || {}).series), ...stepsIn((v.chart || {}).marks), ...stepsIn(v.labels)] };
+      const pick = sel => body.querySelector(sel), rr = ratioOf(ratio ?? (v.chart || v.dist || {}).ratio, 3 / 2);
+      // the widest size that keeps the shape: `over` is what sits round the shape inside the plate (a caption, a legend)
+      const fit = (room, r, over) => { const hh = Math.round(Math.min((room.w - PAD) / r, room.h - over)); return [Math.round(hh * r) + PAD, hh]; };
+      fg.size = room => {
+        const shaped = (sel, r) => { const box = pick(sel); [fg.w, fg.h] = fit(room, r, 0); e.style.width = fg.w + 'px'; box.style.height = fg.h + 'px';
+          const over = e.offsetHeight - fg.h; if (over + fg.h > room.h) { [fg.w, fg.h] = fit(room, r, over); e.style.width = fg.w + 'px'; box.style.height = fg.h + 'px'; } };
+        if (kind === 'chart') shaped('.chart', rr);
+        else if (kind === 'units') shaped('.units', rr);
+        else if (kind === 'image') { const im = pick('img'), r = im && im.naturalWidth ? im.naturalWidth / im.naturalHeight : rr; [fg.w, fg.h] = fit(room, r, 0); e.style.width = fg.w + 'px'; if (im) { im.style.width = fg.w - PAD + 'px'; im.style.height = fg.h + 'px'; } }
+        else if (kind === 'stat') { fg.w = Math.min(room.w, 460); fg.h = 240; e.style.width = fg.w + 'px'; }
+        else if (kind === 'flow') { fg.w = room.w; fg.h = 196; e.style.width = fg.w + 'px'; pick('.flow').style.height = fg.h + 'px'; }
+        else if (kind === 'parts') { fg.w = Math.min(room.w, 1040); fg.h = v.parts.rows ? 74 + 96 * v.parts.rows.length : 286; e.style.width = fg.w + 'px'; pick('.parts').style.height = fg.h + 'px'; }
+        else { const card = pick('.famcard'), cw = card ? card.offsetWidth + 30 : 0; [fg.w, fg.h] = fit({ w: room.w - cw, h: room.h }, rr, 0); fg.w = room.w; e.style.width = fg.w + 'px'; pick('.chart').style.height = fg.h + 'px'; }
+        return fg.w; };
+      const im = pick('img'); if (im && !im.complete) im.addEventListener('load', () => ctx.refresh());
+      fg.paint = c => { shown(e, c); V.show(c); };
+      return holder(fg, at, it); };
+    const planeFig = (p, at) => { const fg = plane(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => shown(fg.node, c); return holder(fg, at, p); };
+
+    const makeStep = (st, j) => {
+      const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
+      if (st.say) el.appendChild(h('p', 'say', md(st.say)));
+      if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin', `<div class="tq"><span class="btag">Pause · think</span><span class="tqt">${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
+        e.dataset.at = c.at; e.querySelector('.tb').onclick = () => answer(e); el.appendChild(e); thinks.push(e); }
+      stepEls.push(el); el.addEventListener('mouseenter', () => R.hover(c.at)); el.addEventListener('mouseleave', () => R.hover(null));
+      el.addEventListener('click', e => { if (e.target.closest('button, input, label, a') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
+      return el;
+    };
+
+    const addItem = (it, j, slot, b) => {
+      const at = map[j].at;
       if (it.calc) { const row = tag(h('div', 'cline bi'), at, it.calc.id);
         row.innerHTML = `<div class="num">${lines.filter(x => x.c).length + 1}</div><div class="say">${md(it.calc.say || '')}${it.calc.why ? `<span class="cwhy">${md(it.calc.why)}</span>` : ''}</div><div class="math"></div>`;
-        lines.push({ c: it.calc, at, row, el: row }); }
+        lines.push({ c: it.calc, at, row, el: row }); slot.appendChild(row); }
       else if (it.eqn) { const e = tag(h('div', 'fline bi'), at, it.eqn.id);
-        e.innerHTML = `${it.eqn.say ? `<div class="say">${md(it.eqn.say)}</div>` : ''}<div class="math"></div>`; lines.push({ f: it.eqn, at, el: e }); }
-      // the formula built from our numbers (R4): the numbers row on this click, the symbols row and the names on the next
-      else if (it.assemble) { const a = it.assemble, e = tag(h('div', 'asm bi g'), at, a.id, next);
-        e.innerHTML = `${a.say ? `<div class="say">${md(a.say)}</div>` : ''}<div class="arow nums"><span class="atag">Our numbers</span><div class="math"></div></div>` +
-          `<div class="arow syms" data-step="${next}"><span class="atag">In symbols</span><div class="math"></div></div>`;
-        asm.push({ a, e }); }
-      else if (it.plane) planes.push(plane(it.plane, ctx, clickOf, at));
-      else if (VIS.some(k => it[k] != null)) { const { id, ...v } = it, e = tag(h('div', 'bi bvis'), at, id); e.appendChild(visual(v)); planes.push({ node: e, issues: [] }); }
+        e.innerHTML = `${it.eqn.say ? `<div class="say">${md(it.eqn.say)}</div>` : ''}<div class="math"></div>`; lines.push({ f: it.eqn, at, el: e }); slot.appendChild(e); }
+      // the formula built from our numbers (R4): the numbers row, the next step's line, then the symbols row with each term named
+      else if (it.assemble) { const a = it.assemble, e = tag(h('div', 'asm bi g'), at, a.id);
+        e.innerHTML = `${a.say ? `<div class="say">${md(a.say)}</div>` : ''}<div class="arow nums"><span class="atag">Our numbers</span><div class="math"></div></div><div class="abridge"></div>` +
+          `<div class="arow syms"><span class="atag">In symbols</span><div class="math"></div></div>`;
+        asm.push({ a, e }); slot.appendChild(e); pending = e.querySelector('.abridge'); }
+      else if (it.plane) { const fg = planeFig(it.plane, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
+      else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
+      else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g'), at, pr.id);
-        e.innerHTML = (pr.say ? `<div class="ph">${md(pr.say)}</div>` : '') + list(pr.names).map(n => `<div class="pr" data-n="${L.esc(n)}"><span class="ps"></span><b class="pv"></b><span class="pn">${md(shortOf(ctx, n))}</span></div>`).join('');
-        lines.push({ params: e, at, el: e, side: !!pr.side && !!zl }); }
+        e.innerHTML = (pr.say ? `<div class="ph">${md(pr.say)}</div>` : '') + list(pr.names).map(q => `<div class="pr" data-n="${L.esc(q)}"><span class="ps"></span><b class="pv"></b><span class="pn">${md(shortOf(ctx, q))}</span></div>`).join('');
+        lines.push({ params: e, at, el: e }); (pr.side && zl ? zl : slot).appendChild(e); }
       else if (it.compare) { const cp = it.compare, e = tag(h('div', 'bcmp bi'), at, cp.id);
         ['a', 'b'].forEach(k => { const x = cp[k] || {}, side = h('div', 'side g');
           side.innerHTML = `${x.tone ? `<div class="tone ${x.tone}"><i>${x.tone === 'good' ? '✓' : '✗'}</i>${md(x.verdict || (x.tone === 'good' ? 'works' : 'fails'))}</div>` : ''}<h3>${md(x.title || '')}</h3>${x.text ? `<div class="p">${md(x.text)}</div>` : ''}`;
-          if (x.visual) side.appendChild(visual(x.visual));
+          if (x.visual) side.appendChild(visual(x.visual).node);
           e.appendChild(side); });
-        lines.push({ el: e, at }); }
-      // a matrix step from the deck's ops renderer: its own steps land on this click and the next ones, one per click
-      else if (it.ops) { const O = L.types.ops({ ...it.ops, title: '' }, ctx), T = O.steps - 1, clk = t => clickOf(j + 1 + t);
-        const e = tag(h('div', 'bops bi'), at, it.ops.id, clk(T)); e.appendChild(O.node.querySelector('.body'));
-        opsl.push({ O, k: k => 1 + Array.from({ length: T }, (_, t) => clk(t + 1)).filter(c => c <= k).length }); lines.push({ el: e, at }); }
+        lines.push({ el: e, at }); slot.appendChild(e); }
+      // a matrix step from the deck's ops renderer: its steps land on this step and the next ones, with its own Back and Next
+      else if (it.ops) { const O = L.types.ops({ ...it.ops, title: '' }, ctx), T = O.steps - 1, clk = t => clickOf(j + 1 + t), body = O.node.querySelector('.body');
+        const e = h('div', 'bops bi'); if (it.ops.id) e.dataset.id = it.ops.id; e.appendChild(body); lines.push({ el: e, at });
+        const stops = Array.from({ length: T + 1 }, (_, t) => clk(t)), rows = list(L.val(it.ops.matrix && (it.ops.matrix.values ?? it.ops.matrix.from), ctx.scope, 'ops')).length || 4;
+        const w = { wide: true, figs: [] }; zone = w; const fg = { node: e, O, kind: 'ops', issues: [], stops: stops.slice(1), w: 0, h: 0 };
+        fg.paint = c => O.show(1 + stops.slice(1).filter(q => q <= c).length);
+        fg.size = room => { fg.w = room.w; body.style.height = ''; O.layout(); const vecs = list(it.ops.steps).length; fg.h = Math.max(body.offsetHeight, Math.round(46 * (rows + 3 + Math.min(vecs, 2)))); body.style.height = fg.h + 'px'; return fg.w; };
+        holder(fg, at, it.ops); w.figs.push(fg); blocks.push(w); slot.appendChild(fg.wrap); }
       else if (it.note != null) { const nt = typeof it.note === 'string' ? { text: it.note } : it.note;
-        const e = tag(h('div', 'bi note g', md(nt.text || '')), at, nt.id); lines.push({ note: e, at, el: e, side: !!nt.side && !!zl }); }
-    }));
+        const e = tag(h('div', 'bi note g', md(nt.text || '')), at, nt.id); lines.push({ note: e, at, el: e }); (nt.side && zl ? zl : slot).appendChild(e); }
+    };
+
+    steps.forEach((st, j) => { if (!st) return;
+      const items = list(st.add).filter(it => it && typeof it === 'object'), fig = items.find(isFig), wide = items.find(isWide), bridge = pending; pending = null;
+      if (fig) { cur = block(); zone = cur; }
+      const el = makeStep(st, j); let slot = el;
+      // the line that leads from the numbers to the symbols stands between the two rows; what it adds comes after the plate
+      if (bridge) { bridge.appendChild(el); slot = fig ? cur.side : wide ? root : (cur ? cur.side : items.length ? column() : el); }
+      else if (fig) cur.side.appendChild(el);
+      else if (wide) { root.appendChild(el); el.classList.add('wide'); }
+      else (cur ? cur.side : column()).appendChild(el);
+      if (wide && !fig) zone = null;
+      items.forEach(it => addItem(it, j, wide && fig && isWide(it) ? root : slot, cur));
+      el.zone = zone; if (wide) seg = cur = null; });
+    if (zl && !pair) root.prepend(zl);
+
     const tcols = s.table ? list(s.table.cols).map(c => typeof c === 'string' ? { key: c } : c).concat(cols) : [];
     const tkeys = new Set(tcols.map(c => c.key));
     const rowsOf = () => s.table ? list(L.val(s.table.from, ctx.scope, `slide ${ctx.index + 1} table.from`)) : [];
-    const symColor = n => { const c = ((ctx.symbols || {})[n] || {}).color; return c ? col(c) : null; };
-    const kindOf = n => ((ctx.symbols || {})[n] || {}).kind;
+    const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
+    const kindOf = q => ((ctx.symbols || {})[q] || {}).kind;
     // a value data.json (or the top-level derive) already holds must come out the same on the board (KTD21)
     const given = Object.getPrototypeOf(ctx.scope) || {}, clash = [];
-    const store = (n, v) => { if (!n) return; ctx.scope[n] = v;
-      if (typeof given[n] === 'number' && typeof v === 'number' && Math.abs(given[n] - v) > 1e-9 * Math.max(1, Math.abs(v)))
-        clash.push(`\`${n}\` works out to ${L.fmt(v, 's4')} on the board but the data says ${L.fmt(given[n], 's4')}: make_data.py and the page disagree`); };
+    const store = (q, v) => { if (!q) return; ctx.scope[q] = v;
+      if (typeof given[q] === 'number' && typeof v === 'number' && Math.abs(given[q] - v) > 1e-9 * Math.max(1, Math.abs(v)))
+        clash.push(`\`${q}\` works out to ${L.fmt(v, 's4')} on the board but the data says ${L.fmt(given[q], 's4')}: make_data.py and the page disagree`); };
     // each worked line's numbers, in order, so a later line (and the first {{}} fill) can read an earlier result
     const work = () => {
       const rows = rowsOf(); clash.length = 0;
       lines.forEach(ln => { if (!ln.c) return; const c = ln.c, where = `slide ${ctx.index + 1} board line`;
         ln.sc = c.row != null && rows[c.row] ? L.scope(ctx.scope, rows[c.row]) : ctx.scope;
         ln.val = c.expr ? L.try(c.expr, ln.sc, where) : null; store(c.name, ln.val);
-        const fromTable = L.names(c.expr || '').filter(n => c.row != null && tkeys.has(n) && !symColor(n));
-        ln.color = n => n === c.name ? null : symColor(n) || (fromTable.includes(n) ? col(TERMC[Math.min(2, fromTable.indexOf(n))]) : null);
-        ln.reads = L.names(c.expr || '').filter(n => c.row != null && tkeys.has(n));
+        const fromTable = L.names(c.expr || '').filter(q => c.row != null && tkeys.has(q) && !symColor(q));
+        ln.color = q => q === c.name ? null : symColor(q) || (fromTable.includes(q) ? col(TERMC[Math.min(2, fromTable.indexOf(q))]) : null);
+        ln.reads = L.names(c.expr || '').filter(q => c.row != null && tkeys.has(q));
       });
     };
     work();
     // a formula from an expression or from TeX with [name] terms, each input's symbol wrapped for its colour and name
-    const sym = n => symOf(ctx, n), lt = (n, tx) => `\\htmlClass{lt lt-${n}}{${tx}}`;
+    const sym = q => symOf(ctx, q), lt = (q, tx) => `\\htmlClass{lt lt-${q}}{${tx}}`;
     const formTex = f => {
       // only the author's own tex is read for {{…}}: kit-made TeX can hold {{ (a wrapped {x}_{3}) that is not a number
-      const ids = [], body = f.expr ? L.tex(f.expr, { sym, wrap: lt }) : L.interp(String(f.tex || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*)\]/g, (_, n) => { if (!ids.includes(n)) ids.push(n); return lt(n, sym(n)); });
+      const ids = [], body = f.expr ? L.tex(f.expr, { sym, wrap: lt }) : L.interp(String(f.tex || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*)\]/g, (_, q) => { if (!ids.includes(q)) ids.push(q); return lt(q, sym(q)); });
       if (f.expr) ids.push(...L.names(f.expr));
-      return { tex: f.lhs ? `${lt(f.lhs, sym(f.lhs))} = ${body}` : body, ids: ids.filter(n => n !== f.lhs) };
+      return { tex: f.lhs ? `${lt(f.lhs, sym(f.lhs))} = ${body}` : body, ids: ids.filter(q => q !== f.lhs) };
     };
     // a symbol's own colour wins; the other inputs take s1, s2, s3 in reading order; the result and indices stay ink
-    const termColor = ids => { const free = ids.filter(n => !symColor(n) && !kindOf(n)); return n => symColor(n) || (free.indexOf(n) >= 0 && free.indexOf(n) < 3 ? col(TERMC[free.indexOf(n)]) : null); };
-    const termNames = (ids, skip) => ids.filter(n => !kindOf(n) && !(skip && skip.has(n))).map(n => { if (skip) skip.add(n); return { n, text: L.plain(shortOf(ctx, n), ctx.scope) }; });
+    const termColor = ids => { const free = ids.filter(q => !symColor(q) && !kindOf(q)); return q => symColor(q) || (free.indexOf(q) >= 0 && free.indexOf(q) < 3 ? col(TERMC[free.indexOf(q)]) : null); };
+    const termNames = (ids, skip) => ids.filter(q => !kindOf(q) && !(skip && skip.has(q))).map(q => { if (skip) skip.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; });
     const drawAsm = () => asm.forEach(A => {
-      const a = A.a, [nm, sy] = A.e.querySelectorAll('.math'), { tex, ids } = formTex(a), colorOf = termColor(ids);
+      const a = A.a, [nm, sy] = A.e.querySelectorAll('.arow .math'), { tex, ids } = formTex(a), colorOf = termColor(ids);
       let nums;
       if (a.expr) { const v = L.try(a.expr, ctx.scope, `slide ${ctx.index + 1} assemble`); store(a.lhs, v);
-        const { tex: sub, eq } = L.work(a.expr, { slash: true, val: n => typeof ctx.scope[n] === 'number' ? ctx.scope[n] : null, arr: n => Array.isArray(ctx.scope[n]) ? ctx.scope[n] : null, wrap: lt, fmt: a.fmt, lit: null, fmtOf: (n, x) => subFmt(ctx, n, x) }, v, a.fmt, ctx.scope);
+        const { tex: sub, eq } = L.work(a.expr, { slash: true, val: q => typeof ctx.scope[q] === 'number' ? ctx.scope[q] : null, arr: q => Array.isArray(ctx.scope[q]) ? ctx.scope[q] : null, wrap: lt, fmt: a.fmt, lit: null, fmtOf: (q, x) => subFmt(ctx, q, x) }, v, a.fmt, ctx.scope);
         nums = `${sub} ${eq} \\htmlClass{res}{${L.numTex(v, a.fmt)}}`; }
-      else nums = L.interp(String(a.plug || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*):([^\]]*)\]/g, (_, n, x) => n === a.lhs ? `\\htmlClass{res}{${x}}` : lt(n, x)).replace(/\[([A-Za-z_]\w*)\]/g, (_, n) => lt(n, sym(n)));
+      else nums = L.interp(String(a.plug || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*):([^\]]*)\]/g, (_, q, x) => q === a.lhs ? `\\htmlClass{res}{${x}}` : lt(q, x)).replace(/\[([A-Za-z_]\w*)\]/g, (_, q) => lt(q, sym(q)));
       L.renderTex(nm, nums, false); L.renderTex(sy, tex, false); tint(nm, colorOf); tint(sy, colorOf);
-      A.label = termNames(ids);   // every term gets its plain name here (R4), even one named earlier in the scene
+      names(sy, termNames(ids));   // every term gets its plain name here (R4), even one named earlier in the scene
     });
     // write each worked line: symbol = formula, = numbers, = result (stacked at the = signs when too long for a row)
     const drawLines = () => {
       work();
       const named = new Set(), shownFmt = {};
       lines.forEach(ln => {
-        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, termColor(ids)); ln.label = termNames(ids, named); return; }
+        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, termColor(ids)); names(m, termNames(ids, named)); return; }
         if (!ln.c) return; const c = ln.c, math = ln.row.querySelector('.math'); math.innerHTML = ''; math.classList.remove('wrapped');
         if (!c.expr) return;
-        const f = L.tex(c.expr, { sym, wrap: (n, tx) => lt(n, tx) });
-        const { tex: sub, eq } = L.work(c.expr, { slash: true, val: n => typeof ln.sc[n] === 'number' ? ln.sc[n] : null, arr: n => Array.isArray(ln.sc[n]) ? ln.sc[n] : null, wrap: (n, tx) => lt(n, tx),
-          fmt: c.fmt, lit: null, fmtOf: (n, x) => subFmt(ctx, n, x, shownFmt[n]) }, ln.val, c.fmt, ln.sc);
+        const f = L.tex(c.expr, { sym, wrap: (q, tx) => lt(q, tx) });
+        const { tex: sub, eq } = L.work(c.expr, { slash: true, val: q => typeof ln.sc[q] === 'number' ? ln.sc[q] : null, arr: q => Array.isArray(ln.sc[q]) ? ln.sc[q] : null, wrap: (q, tx) => lt(q, tx),
+          fmt: c.fmt, lit: null, fmtOf: (q, x) => subFmt(ctx, q, x, shownFmt[q]) }, ln.val, c.fmt, ln.sc);
         const parts = [[c.name ? `${sym(c.name)} = ${f}` : f, 'f'], [`= ${sub}`, 'sub'], [`${eq} \\htmlClass{res}{${L.numTex(ln.val, c.fmt)}}`, 'r']];
         parts.forEach(([tx, cls]) => { const sp = h('span', 'part ' + cls); math.appendChild(sp); L.renderTex(sp, tx, false); });
-        const ps = [...math.children]; ps.slice(0, 2).forEach(p => tint(p, ln.color)); if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
+        const ps = [...math.children]; ps.slice(0, 2).forEach(q => tint(q, ln.color)); if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
         if (c.name) shownFmt[c.name] = c.fmt;
-        ln.label = L.names(c.expr).filter(n => !named.has(n) && n !== c.name).map(n => { named.add(n); return { n, text: L.plain(shortOf(ctx, n), ctx.scope) }; });
+        names(ps[0], L.names(c.expr).filter(q => !named.has(q) && q !== c.name).map(q => { named.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; }));
       });
-      requestAnimationFrame(() => {
-        lines.forEach(ln => { const f = ln.c ? ln.c.expr && ln.row.querySelector('.part.f') : ln.f && ln.el.querySelector('.math'); if (f) names(f, ln.label || []); });
-        asm.forEach(A => names(A.e.querySelector('.syms .math'), A.label || [])); });
     };
-    lines.forEach(ln => (ln.side ? zl : wtext).appendChild(ln.el));
-    asm.forEach(A => zf.appendChild(A.e));
     // a parameter card: each named number with its symbol in its colour, its value now and its name (it follows the sliders)
-    const drawParams = () => lines.forEach(ln => ln.params && ln.params.querySelectorAll('.pr').forEach(r => { const n = r.dataset.n, v = ctx.scope[n];
-      r.style.setProperty('--tc', symColor(n) || 'var(--ink)'); L.renderTex(r.querySelector('.ps'), symOf(ctx, n), false);
-      r.querySelector('.pv').textContent = typeof v === 'number' ? L.fmt(v, ((ctx.symbols || {})[n] || {}).fmt ?? 's4') : '?'; }));
-    planes.forEach(P => wpic.appendChild(P.node));
+    const drawParams = () => lines.forEach(ln => ln.params && ln.params.querySelectorAll('.pr').forEach(r => { const q = r.dataset.n, v = ctx.scope[q];
+      r.style.setProperty('--tc', symColor(q) || 'var(--ink)'); L.renderTex(r.querySelector('.ps'), symOf(ctx, q), false);
+      r.querySelector('.pv').textContent = typeof v === 'number' ? L.fmt(v, ((ctx.symbols || {})[q] || {}).fmt ?? 's4') : '?'; }));
+
     // controls, registered in ctx.ctl so the check moves each to both ends (lesson.py writes a run or a toggle as a plain
     // slider first): a slider; a run (frames 0..n-1: a scrubber, the frame count and a play button that is off until
-    // pressed and never runs under ?check); a toggle (two buttons, 0 and 1)
+    // pressed and never runs under ?check); a toggle (two buttons, 0 and 1). Each sits under the figure it drives.
     const CHECK = new URLSearchParams(location.search).has('check');
-    let run = null;
-    if ((s.controls || []).length) {
-      const box = h('div', 'controls');
-      s.controls.forEach(c => {
-        const id = `ctl-${ctx.index}-${c.name}`, v0 = c.value ?? c.min;
-        let w, set;
-        if (c.toggle) {
-          w = h('div', 'ctl g pill thin tog');
-          w.innerHTML = `<label>${md(c.label || c.name)}</label><div class="seg2">${c.toggle.map((t, q) => `<button type="button" data-v="${q}">${md(t)}</button>`).join('')}</div>`;
-          const bs = [...w.querySelectorAll('button')];
-          set = v => { ctx.scope[c.name] = +v; bs.forEach(b => b.classList.toggle('on', +b.dataset.v === +v)); };
-          bs.forEach(b => { b.addEventListener('click', e => { e.stopPropagation(); set(b.dataset.v); ctx.refresh(); }); b.addEventListener('pointerdown', e => e.stopPropagation()); });
-        } else {
-          const n = c.run || 0;
-          w = h('div', 'ctl g pill thin' + (n ? ' run' : ''));
-          w.innerHTML = `${n ? '<button type="button" class="play" aria-label="play"></button>' : ''}<label for="${id}">${md(c.label || c.name)}</label><input id="${id}" type="range" min="${c.min}" max="${c.max}" step="${c.step ?? (c.max - c.min) / 100}" value="${v0}"><output></output>`;
-          const inp = w.querySelector('input'), out = w.querySelector('output');
-          set = v => { ctx.scope[c.name] = +v; inp.value = v; out.textContent = n ? `${+v} / ${n - 1}` : L.fmt(+v, c.fmt); inp.style.setProperty('--fill', ((v - c.min) / (c.max - c.min) * 100) + '%'); };
-          inp.addEventListener('input', () => { stop(); set(inp.value); ctx.refresh(); });
-          inp.addEventListener('pointerdown', e => e.stopPropagation());
-          if (n) {
-            const btn = w.querySelector('.play');
-            const stop = () => { if (run.timer) { clearInterval(run.timer); run.timer = null; btn.classList.remove('on'); } };
-            run = { c, n, stop, timer: null };
-            btn.addEventListener('pointerdown', e => e.stopPropagation());
-            btn.addEventListener('click', e => { e.stopPropagation(); if (run.timer) return stop(); if (CHECK) return;
-              if (ctx.scope[c.name] >= n - 1) { set(0); ctx.refresh(); }
-              btn.classList.add('on');
-              run.timer = setInterval(() => { if (L.slides[L.i] && L.slides[L.i].ctx !== ctx) return stop();
-                const f = ctx.scope[c.name] + 1; set(f); ctx.refresh(); if (f >= n - 1) stop(); }, 1000 * (c.every || 1.3)); });
-          }
+    let run = null, flowBox = null;
+    const driven = name => { const seen = new Set([name]), d = Object.entries(s.derive || {}); let more = true;
+      while (more) { more = false; d.forEach(([k, x]) => { if (!seen.has(k) && L.names(String(x)).some(q => seen.has(q))) { seen.add(k); more = true; } }); } return seen; };
+    const driverOf = name => { const set = driven(name); return figs.find(fg => (exprsOf(fg.spec).match(/[A-Za-z_]\w*/g) || []).some(w => set.has(w))) || figs[figs.length - 1] || null; };
+    const boxOf = fg => { if (fg) { if (!fg.box) { fg.box = h('div', 'controls'); fg.wrap.appendChild(fg.box); } return fg.box; }
+      if (!flowBox) { flowBox = h('div', 'controls'); (seg || cur && cur.side || root).appendChild(flowBox); } return flowBox; };
+    (s.controls || []).forEach(c => {
+      const id = `ctl-${ctx.index}-${c.name}`, v0 = c.value ?? c.min, fg = driverOf(c.name);
+      let w, set;
+      if (c.toggle) {
+        w = h('div', 'ctl g pill thin tog');
+        w.innerHTML = `<label>${md(c.label || c.name)}</label><div class="seg2">${c.toggle.map((t, q) => `<button type="button" data-v="${q}">${md(t)}</button>`).join('')}</div>`;
+        const bs = [...w.querySelectorAll('button')];
+        set = v => { ctx.scope[c.name] = +v; bs.forEach(b => b.classList.toggle('on', +b.dataset.v === +v)); };
+        bs.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); ctx.refresh(); }));
+      } else {
+        const k = c.run || 0;
+        w = h('div', 'ctl g pill thin' + (k ? ' run' : ''));
+        w.innerHTML = `${k ? '<button type="button" class="play" aria-label="play"></button>' : ''}<label for="${id}">${md(c.label || c.name)}</label><input id="${id}" type="range" min="${c.min}" max="${c.max}" step="${c.step ?? (c.max - c.min) / 100}" value="${v0}"><output></output>`;
+        const inp = w.querySelector('input'), out = w.querySelector('output');
+        set = v => { ctx.scope[c.name] = +v; inp.value = v; out.textContent = k ? `${+v} / ${k - 1}` : L.fmt(+v, c.fmt); inp.style.setProperty('--fill', ((v - c.min) / (c.max - c.min) * 100) + '%'); };
+        inp.addEventListener('input', () => { stop(); set(inp.value); if (k) follow(); ctx.refresh(); });
+        if (k) {
+          const btn = w.querySelector('.play');
+          const halt = () => { if (run.timer) { clearInterval(run.timer); run.timer = null; btn.classList.remove('on'); btn.setAttribute('aria-label', 'play'); } };
+          run = { c, n: k, set, fg, stop: halt, timer: null };
+          btn.addEventListener('click', () => { if (run.timer) return halt(); if (CHECK) return;
+            if (ctx.scope[c.name] >= k - 1) { set(0); follow(); ctx.refresh(); }
+            btn.classList.add('on'); btn.setAttribute('aria-label', 'pause');
+            run.timer = setInterval(() => { if (L.slides[L.i] && L.slides[L.i].ctx !== ctx) return halt();
+              const f = ctx.scope[c.name] + 1; set(f); follow(); ctx.refresh(); if (f >= k - 1) halt(); }, 1000 * (c.every || 1.3)); });
         }
-        set(v0);
-        ctx.ctl[c.name] = v => { set(v); ctx.refresh(); };
-        if (c.step_at != null) w.dataset.step = firstOf(c.step_at);   // a control a question asks you to use shows with the question
-        box.appendChild(w);
-      });
-      (wtext.children.length || !planes.length ? wtext : wpic).appendChild(box);
-    }
+      }
+      set(v0);
+      ctx.ctl[c.name] = v => { set(v); ctx.refresh(); };
+      boxOf(fg).appendChild(w);
+    });
     function stop() { if (run) run.stop(); }
     // the frame each click shows: the latest step's `frame:` at or before it, else the run's stops in click order
-    const framed = steps.some(st => st && st.frame != null), stops = run ? list(run.c.stops) : [];
+    const framed = steps.some(st => st && st.frame != null), rstops = run ? list(run.c.stops) : [];
     const frameAt = k => { if (!run) return null; let f = framed ? (run.c.value ?? 0) : null;
-      steps.forEach((st, j) => { if (map[j].at > k && (map[j].q || map[j].at) > k) return;
-        if (framed) { if (st && st.frame != null) f = st.frame; } else f = stops[Math.min(j, stops.length - 1)]; });
-      return f ?? stops[0] ?? 0; };
-    if (wtext.children.length) zw.appendChild(wtext);
-    if (wpic.children.length) zw.appendChild(wpic);
-    zw.classList.toggle('two', wtext.children.length > 0 && wpic.children.length > 0);
+      steps.forEach((st, j) => { if (map[j].at > k) return;
+        if (framed) { if (st && st.frame != null) f = st.frame; } else f = rstops[Math.min(j, rstops.length - 1)]; });
+      return f ?? rstops[0] ?? 0; };
+    const frameStops = run ? (framed ? steps.flatMap((st, j) => st && st.frame != null ? [map[j].at] : []) : steps.slice(0, rstops.length).map((_, j) => map[j].at)) : [];
 
-    // the pinned table: the given columns, plus any column a step adds (it takes its space from the start)
+    // ---------- figures that change ----------
+    const shown = (nd, c) => nd.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= c));
+    const stages = [];
+    const makeStage = (host, stops0, paint, zoneOf, frames) => {
+      const uniq = [...new Set(stops0)].sort((a, b) => a - b); if (uniq.length < 2) return null;
+      const S = { node: host, stops: uniq, i: 0, frames };
+      const stopOf = at => { let i = 0; uniq.forEach((c, q) => { if (c <= at) i = q; }); return i; };
+      const go = (v, rel) => { const j = rel ? S.i + v : v; if (j < 0 || j >= uniq.length || j === S.i) return false; S.to(j); return true; };
+      const ui = stageBar(uniq, go);
+      S.show = () => { paint(uniq[S.i]); ui.set(S.i); S.lines.forEach(e => e.classList.toggle('atstop', stopOf(+e.dataset.at) === S.i)); };
+      // go to a stop: the run takes its frame, the think stop there opens, the table lights up for that step
+      S.to = j => { S.i = j; const c = uniq[j];
+        if (frames) { stop(); const f = frameAt(c); if (f != null && f !== ctx.scope[run.c.name]) ctx.ctl[run.c.name](f); }
+        thinks.forEach(e => { if (+e.dataset.at === c) setThink(e, true); });
+        S.show(); light(c); mark(c); };
+      S.move = d => go(d, true);
+      S.jump = at => { const j = stopOf(at); if (j !== S.i) S.to(j); };
+      S.stopOf = stopOf;
+      S.lines = stepEls.filter(e => (zoneOf && e.zone === zoneOf) || uniq.includes(+e.dataset.at));
+      S.lines.forEach(e => { e.stages.push(S); e.classList.add('line'); });
+      host.appendChild(ui.bar); stages.push(S); return S;
+    };
+    const setThink = (e, on) => { e.classList.toggle('open', on); e.querySelector('.tb').textContent = on ? 'Hide answer' : 'Show answer'; node.querySelectorAll(`[data-wait="${e.dataset.at}"]`).forEach(x => x.classList.toggle('open', on)); };
+    // Show answer brings in all the step adds, a stage stop too; Hide answer takes it away again
+    function answer(e) { const on = !e.classList.contains('open'), at = +e.dataset.at; setThink(e, on);
+      stages.forEach(S => { const j = S.stops.indexOf(at); if (j < 0) return; if (on && S.i < j) S.to(j); else if (!on && S.i >= j && j > 0) { S.to(j - 1); setThink(e, false); } });
+      fill(Math.max(read, on ? at : 0)); }
+    // the run's stage follows the scrubber: the line and the dot of the frame on show
+    function follow() { const S = stages.find(x => x.frames); if (!S) return; let i = 0; S.stops.forEach((c, q) => { if (frameAt(c) <= ctx.scope[run.c.name]) i = q; }); S.i = i; S.show(); }
+
+    // ---------- the table ----------
+    // the pinned table: the given columns, plus any column a step adds: it holds its place, and fills in when the reading gets there
     const drawTable = () => {
       if (!zt) return;
       const rows = rowsOf();
       const cell = (c, r) => { let v = r[c.key]; if (c.expr) v = L.try(c.expr, L.scope(ctx.scope, r), `slide ${ctx.index + 1} column ${c.key}`); return typeof v === 'number' ? L.fmt(v, c.fmt) : md(v); };
-      const stp = c => c.at ? ` data-step="${c.at}" data-at="${c.at}"` : '';
-      zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der bi' : ''}" data-col="${L.esc(c.key)}"${stp(c)}>${md(c.label || c.key)}</th>`).join('')}</tr></thead>
-        <tbody>${rows.map((r, i) => `<tr data-r="${i}">${tcols.map(c => `<td class="${c.expr ? 'der bi' : ''}" data-r="${i}" data-col="${L.esc(c.key)}"${stp(c)}>${cell(c, r)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      const stp = c => (c.at ? ` data-step="${c.at}"` : '') + (waits.has(c.at) ? ` data-wait="${c.at}"` : ''), wt = c => waits.has(c.at) ? ` data-wait="${c.at}"` : '';
+      zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}"${wt(c)}>${md(c.label || c.key)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map((r, i) => `<tr data-r="${i}">${tcols.map(c => `<td class="${c.expr ? 'der' : ''}" data-r="${i}" data-col="${L.esc(c.key)}"${stp(c)}>${cell(c, r)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      // a table too wide to leave good room for the work goes above it
+      if (pair) { pair.classList.remove('stacked'); pair.classList.toggle('stacked', zt.offsetWidth > pair.clientWidth * .56); }
     };
 
-    // highlights for the current click, on the things themselves: the row a worked line reads (its cells in the line's
-    // colours), and any `mark:` (row:i, col:key, cell:i:key, #id). A target not on the board yet is left alone.
+    // highlights, on the things themselves: the row a worked line reads (its cells in the line's colours), and any
+    // `mark:` (row:i, col:key, cell:i:key, #id). They follow the reading, a hovered line, or a figure's Next.
     const marksAt = k => { const out = []; steps.forEach((st, j) => { if (st && (map[j].at === k || map[j].q === k)) list(st.mark).forEach(m => out.push(String(m))); }); return out; };
     const targetOf = t => {
       let m;
       if ((m = /^row:(\d+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`tbody tr[data-r="${m[1]}"]`)], cls: 'wrow' };
       if ((m = /^col:(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`[data-col="${CSS.escape(m[1])}"]`)], cls: 'hcol' };
       if ((m = /^cell:(\d+):(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`td[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`)], cls: 'src' };
-      if ((m = /^#(.+)$/.exec(t))) return { els: [...root.querySelectorAll(`[data-id="${CSS.escape(m[1])}"]`)], cls: 'hl' };
+      if ((m = /^#(.+)$/.exec(t))) return { els: [...node.querySelectorAll(`[data-id="${CSS.escape(m[1])}"]`)], cls: 'hl' };
       return { els: [], cls: '' };
     };
-    let missing = [];
-    const light = k => {
-      root.querySelectorAll('.wrow, .hcol, .src, .hl').forEach(e => { e.classList.remove('wrow', 'hcol', 'src', 'hl'); e.style.removeProperty('--tc'); });
+    let missing = [], lit = 0, read = 0, over = null;
+    const light = k => { lit = k;
+      node.querySelectorAll('.wrow, .hcol, .src, .hl').forEach(e => { e.classList.remove('wrow', 'hcol', 'src', 'hl'); e.style.removeProperty('--tc'); });
       missing = [];
-      const up = e => !e.dataset.step || +e.dataset.step <= k;
       lines.forEach(ln => { if (!ln.c || ln.at !== k || ln.c.row == null || !zt) return;
         zt.querySelector(`tbody tr[data-r="${ln.c.row}"]`)?.classList.add('wrow');
-        ln.reads.forEach(n => { const td = zt.querySelector(`td[data-r="${ln.c.row}"][data-col="${CSS.escape(n)}"]`), c = ln.color(n);
-          if (td && c && up(td)) { td.classList.add('src'); td.style.setProperty('--tc', c); } }); });
+        ln.reads.forEach(q => { const td = zt.querySelector(`td[data-r="${ln.c.row}"][data-col="${CSS.escape(q)}"]`), c = ln.color(q);
+          if (td && c) { td.classList.add('src'); td.style.setProperty('--tc', c); } }); });
       marksAt(k).forEach(t => { const { els, cls } = targetOf(t); if (!els.length) { missing.push(t); return; }
-        els.filter(up).forEach(e => { e.classList.add(cls); if (cls === 'src') e.style.setProperty('--tc', 'var(--accent)'); }); });
+        els.forEach(e => { e.classList.add(cls); if (cls === 'src') e.style.setProperty('--tc', 'var(--accent)'); }); });
     };
+    const fill = k => { if (zt) shown(zt, k); };
+    const mark = k => stepEls.forEach(e => e.classList.toggle('now', +e.dataset.at === k || +e.dataset.q === k));
 
-    let tableBox = null, redraw = false;
+    // the figures: how each sizes itself. Two figures on one step stand in a row above their lines
+    const place = () => { blocks.forEach(b => {
+      const room = { w: 0, h: figH() };
+      if (b.wide) { room.w = root.clientWidth; b.figs.forEach(fg => fg.size(room)); return; }
+      const W = b.node.clientWidth, many = b.figs.length > 1, beside = !many && b.side.children.length > 0 && W >= FIG + GAP + SIDE;
+      room.w = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - SIDE - GAP : W;
+      b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many);
+      const w = Math.max(...b.figs.map(fg => fg.size(room))); b.fig.style.width = beside ? w + 'px' : ''; });
+      node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / 1.6) + 'px'; }); };
+    // anything sticky taller than the window would hide its own foot
+    const stick = () => node.querySelectorAll('.tcol, .ffig').forEach(e => e.classList.toggle('nostick', e.offsetHeight > innerHeight - 48));
+
     const R = {
-      node, steps: n,
-      layout: () => { redraw = true; drawTable(); drawLines(); drawAsm(); drawParams(); planes.forEach(P => P.layout && P.layout()); vis.forEach(V => V.layout()); opsl.forEach(o => o.O.layout()); },
-      show: k => {
-        // a click puts the run on that click's frame; a redraw (a slider moved, a refit) leaves the frame where it is
-        if (run && !redraw) { stop(); const f = frameAt(k); if (f != null && f !== ctx.scope[run.c.name]) { ctx.ctl[run.c.name](f); return; } }
-        redraw = false;
-        root.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= k));   // redrawn parts need it again
-        root.querySelectorAll('[data-only]').forEach(e => e.classList.toggle('shown', +e.dataset.only === k));
-        root.querySelectorAll('.bi').forEach(e => { const a = +e.dataset.at, u = +(e.dataset.until || a); e.classList.toggle('now', a <= k && k <= u); e.classList.toggle('past', u < k); });
-        vis.forEach(V => V.show(k)); opsl.forEach(o => o.O.show(o.k(k)));
-        light(k);
-      },
+      node, steps: n, stages, stick,
+      layout: () => { drawTable(); place(); drawLines(); drawAsm(); drawParams(); figs.forEach(fg => fg.layout && fg.layout()); vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
+      // what the page shows now, after a redraw or a move
+      repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); },
+      // everything up to click k, as the check and the printer see it
+      show: k => { read = lit = k; thinks.forEach(e => setThink(e, +e.dataset.at <= k)); stages.forEach(S => S.to(S.stopOf(k))); R.repaint(); },
+      reset: () => { stages.forEach(S => S.to(0)); thinks.forEach(e => setThink(e, false)); read = lit = 0; R.repaint(); },
+      // the reading line, in window pixels: every step whose top has passed it counts as read
+      spy: y => { const b = node.getBoundingClientRect(); let k = 0;
+        if (y === Infinity || b.bottom < y) k = n; else if (b.top <= y) stepEls.forEach(e => { if (e.getBoundingClientRect().top <= y) k = Math.max(k, +e.dataset.at); });
+        if (k === read) return; read = k; fill(k); if (over == null) { light(k); mark(k); } },
+      hover: k => { over = k; const c = k ?? read; fill(Math.max(read, c)); light(c); mark(c); },
       audit: () => {
-        const out = [], sc = scaleOf(root);
-        if (zt) { const r = zt.getBoundingClientRect(), b = { x0: r.left / sc, y0: r.top / sc, x1: r.right / sc, y1: r.bottom / sc };
-          if (!tableBox) tableBox = b; else if (['x0', 'y0', 'x1', 'y1'].some(q => Math.abs(b[q] - tableBox[q]) > 1.5)) out.push('the pinned table moved between steps (keep its rows and widths fixed)'); }
-        // measured without the 8px rise of items still to come, which is not overflow
-        root.classList.add('fitting');
-        [[zl, 'table column'], [zw, 'work area'], [zs, 'teacher band']].forEach(([z, nm]) => { if (z && (z.scrollHeight > z.clientHeight + 3 || z.scrollWidth > z.clientWidth + 3)) out.push(`the ${nm} overflows: split the scene or cut an item`); });
-        root.querySelectorAll('.wcol').forEach(w => { if (w.scrollHeight > w.clientHeight + 3) out.push('the work area overflows: split the scene or cut an item'); });
-        root.classList.remove('fitting');
+        const out = [];
         missing.forEach(t => out.push(`mark target not found: ${t}`));
+        figs.forEach(fg => { out.push(...(fg.issues || []));
+          if (['plane', 'chart', 'image', 'units'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
+        node.querySelectorAll('.board .vis .chart').forEach(c => { const r = c.getBoundingClientRect(), q = r.width / (r.height || 1); if (q < 1 || q > 2.2) out.push(`a chart is ${Math.round(r.width)} × ${Math.round(r.height)} px: its shape must stay between 1:1 and 2.2:1, so set its \`ratio\``); });
+        root.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { if (parseFloat(getComputedStyle(m).fontSize) < 26) out.push('a formula renders under 26px'); });
+        node.querySelectorAll('table.t td').forEach(c => { if (parseFloat(getComputedStyle(c).fontSize) < 20) out.push('a table cell renders under 20px'); });
+        vis.forEach(V => out.push(...V.audit())); figs.forEach(fg => fg.O && out.push(...fg.O.audit()));
         root.querySelectorAll('.approx').length && out.push('a worked line does not add up by hand at the rounding shown (it reads ≈): give its inputs a finer fmt');
-        planes.forEach(P => out.push(...P.issues));
-        vis.forEach(V => out.push(...V.audit())); opsl.forEach(o => out.push(...o.O.audit()));
-        root.querySelectorAll('.fline .math, .asm .math').forEach(m => { const kx = m.querySelector('.katex'); if (kx && kx.scrollWidth > m.clientWidth + 4) out.push('a formula is wider than its box: shorten it or split the line'); });
+        root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = m.closest('.st, .asm'); if (kx && box && kx.getBoundingClientRect().right > box.getBoundingClientRect().right + 2) out.push('a formula is wider than its box: shorten it or split the line'); });
         out.push(...clash);
-        const sl = L.slides[ctx.index]; if (sl && sl.zoom && sl.zoom < .8) out.push(`the board is too full for one scene (shrunk to ${Math.round(sl.zoom * 100)}%): split it into two scenes`);
         return out;
       },
     };
+
+    // which figures change, and how: a figure's stops are the clicks where something new comes in
+    figs.forEach(fg => { const own = fg.stops.filter(c => c > fg.at), runs = run && run.fg === fg ? frameStops : [];
+      fg.stage = makeStage(fg.wrap, [fg.at, ...own, ...runs], fg.paint, fg.zone, !!runs.length); });
+    if (run && !run.fg) makeStage(flowBox, frameStops, () => {}, null, true);
+    // a run starts on its first stop's frame
+    if (run && stages.some(S => S.frames)) { const f = frameAt(stages.find(S => S.frames).stops[0]); if (f != null && f !== ctx.scope[run.c.name]) { run.set(f); L.derive(ctx.scope, s.derive, `slide ${ctx.index + 1}`); } }
     return R;
   };
 })();

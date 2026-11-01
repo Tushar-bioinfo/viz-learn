@@ -22,6 +22,9 @@
     try { sl.r.layout && sl.r.layout(); } catch (e) { L.err(`slide ${sl.ctx.index + 1}`, e.message); console.error(e); }
     L.fill(sl.r.node, sl.ctx.scope);
     sl.r.repaint && sl.r.repaint();
+    // a deck slide between scenes has no reading line: all its steps show
+    if (sl.r.repaint) return;
+    if (sl.r.show) sl.r.show(sl.steps); else sl.r.node.querySelectorAll('[data-step]').forEach(e => e.classList.add('shown'));
   }
   function drawAll() { L.slides.forEach(draw); spy(); }
 
@@ -45,6 +48,8 @@
       if (!type) { L.err(`slide ${i + 1}`, `unknown type "${s.type}"`); r = { node: h('section', 'slide'), steps: 0 }; }
       else { try { r = type(s, ctx); } catch (e) { L.err(`slide ${i + 1}`, e.message); console.error(e); r = { node: h('section', 'slide', `<div class="h1">Scene ${i + 1} failed: ${L.esc(e.message)}</div>`), steps: 0 }; } }
       r.node.dataset.i = i; r.node.id = `scene-${i + 1}`;
+      // what the deck keeps in its Details sheet stays on the page
+      if (r.more || s.more) r.node.appendChild(h('div', 'lsmore g thin', (r.more || '') + (s.more ? `<div>${L.md(s.more)}</div>` : '')));
       const sl = { s, r, ctx, k: 0, steps: r.steps || 0 };
       // a slider moves many times a frame: redraw once a frame, and leave the slider itself alone so it keeps the pointer
       let queued = false;
@@ -96,7 +101,7 @@
     });
     addEventListener('scroll', onScroll, { passive: true });
     let t, wide = innerWidth;
-    addEventListener('resize', () => { onScroll(); if (innerWidth === wide) return; wide = innerWidth; clearTimeout(t); t = setTimeout(drawAll, 120); });
+    addEventListener('resize', () => { onScroll(); L.slides.forEach(sl => sl.r.stick && sl.r.stick()); if (innerWidth === wide) return; wide = innerWidth; clearTimeout(t); t = setTimeout(drawAll, 120); });
     addEventListener('beforeprint', () => L.slides.forEach(sl => sl.r.show && sl.r.show(sl.steps)));
     addEventListener('afterprint', () => L.slides.forEach(sl => sl.r.reset && sl.r.reset()));
   }
@@ -136,7 +141,7 @@
     const hasText = e => (e.textContent || '').trim().length > 0;
     const inline = e => { const d = getComputedStyle(e).display; return d === 'inline' || d === 'contents'; };
     const leaves = [...node.querySelectorAll('*')].filter(e => {
-      if (e.closest('svg') || e.closest('.datatable') || e.closest('.tip')) return false;
+      if (e.closest('svg') || e.closest('.datatable') || e.closest('.tip') || e.closest('.flip .back')) return false;
       if (e.closest('.katex') && !e.matches('.katex')) return false;
       if (e.matches('.katex')) return true;
       if (inline(e) || !hasText(e)) return false;
