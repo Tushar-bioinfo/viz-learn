@@ -14,7 +14,7 @@ seed: pca-what            # one seed gives the same drawing every time
 learner: {goal: read a PCA plot, knows: [mean, variance], anchors: [flow cytometry gates]}
 series: pca               # with `episode` and `recall`, only in a series
 episode: 2
-recall: ../pca-what       # a page's or a lesson's folder: its review cards open this page
+recall: ../pca-what       # a page's folder, or an older lesson that still ends in cards: its review cards open this page
 home: cells               # the learner's home table
 data_file: data.json      # the numbers make_data.py wrote
 data: {...}               # a few small values, if any
@@ -46,7 +46,7 @@ sheets: [...]
 | `more` | fold-outs: a list of `{ask, answer}`, closed until opened |
 | `derive`, `controls` | sheet numbers and sliders: `{name, min, max, step, value, label}` |
 
-The last sheet is `beat: review` with `title` and 5–8 `cards` of `{q, a}`.
+The last sheet is `beat: review` with `title` and 5–8 `cards` of `{q, a}` (see Review cards). A class lesson ends at `next`; a page goes on to this sheet.
 
 **Beats on paper.** `plan`: a thin sheet, the stops as text or a row of parts. `problem`: a plot or two tables that show the need. `data`: a `table` with a `mark`, on a sheet of its own. `by-hand`: the table on the left, `calc` lines on the right. `picture`: a `plot` with `equal: true` on `graph` paper. `formula`: `assemble`, with numbers above symbols. `run`: `frames`. `what-if`: `controls` that move a `plot`. `limits`: the method failing on this data, with `break`. `summary`: a thin sheet, the answer in the question's words. `next`: one picture from this page's data.
 
@@ -172,8 +172,17 @@ The block sees these names, and no others:
 
 `o` takes `color` and `nib`, plus `size` for an arrow or text, and `angle` or `pressure` for a fill. Limits: 40 lines a block, 3 blocks a page, 20% of the page's words. Numbers in drawn text come from `data` through `fmt`.
 
+## Review cards
+- **Test the method, not the trivia.** "Why square the distances?" beats "What symbol is the mean?"
+- **Mix kinds**: one card asks for a number from the page's table (computed, `{{…}}`); one asks why a step is there; one asks what breaks; one asks what changes if an input changes.
+- **At least one card from an angle the page did not take**: an interview question, a different field, a reversed question ("a variance of 0 means what?").
+- **Order them by importance.** A later page's recall takes the first cards of this one, so put the one the learner must keep first.
+- **A card may read data names** (`{{xbar|1}}`); a later page then shows this page's numbers. Every name a card reads must be in this page's `data.json` or inline `data:`.
+
+A later page in a series opens with these cards: `recall:` copies them, with their numbers, to the top of the page. `C/lesson.md` §7 says a lesson has no cards; a page keeps them. A lesson made now has no cards to recall, so `recall:` names a page, or an older lesson that still ends in a `quiz`.
+
 ## The review
-On top of `C/lesson.md` §9, answer yes to each, or fix the YAML:
+On top of `C/lesson.md` §8, answer yes to each, or fix the YAML:
 1. Close every fold. Do the sheets still give the beats in order?
 2. Cover the notes. Can you name every part of each figure from its labels?
 3. Read only the stops, top to bottom. Is that the data's journey, in plain words, with the right shape at each stop?

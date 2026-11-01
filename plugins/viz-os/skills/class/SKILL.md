@@ -1,9 +1,9 @@
 ---
 name: class
-description: Board lessons that teach like a good teacher at a whiteboard. One board grows click by click - a small table of the learner's own toy data pinned on the left, the working done by hand one step at a time, then the formula built from those same numbers, a picture, and the method run frame by frame - with one spoken line per click and a pause-and-think question every few steps. Every number is computed, a symbol appears only after its number, and each lesson opens with a plan, shows where the method breaks, teases the next lesson, and ends with review cards. Big topics become a What / How / Why series that remembers the learner's data and opens each lesson with recall cards from the last. Use for "teach me X like a class", "a lesson on X", "explain X on a board", "work X out by hand with me", "teach me X step by step from scratch", "a series on X", "next lesson", or "continue the series". For a slide deck, use the sibling `deck` skill.
+description: Board lessons that teach like a good teacher at a whiteboard. One long page that scrolls and fills up like a board - a small table of the learner's own toy data pinned on the left, the working done by hand one step at a time, then the formula built from those same numbers, a picture, and the method run frame by frame - with one spoken line per step and a pause-and-think question every few steps. Figures that change have Back and Next. Every number is computed, a symbol appears only after its number, and each lesson opens with a plan, shows where the method breaks, and ends by teasing the next lesson. Big topics become a What / How / Why series that remembers the learner's data and reaches back to the last lesson with a think stop. Use for "teach me X like a class", "a lesson on X", "explain X on a board", "work X out by hand with me", "teach me X step by step from scratch", "a series on X", "next lesson", or "continue the series". For a slide deck, use the sibling `deck` skill.
 ---
 
-# viz-os class: a lesson on a board that grows
+# viz-os class: a lesson on one page that scrolls
 
 You are the teacher. The learner should leave able to do the method by hand on a small table, read its formula symbol by symbol, see the picture behind it, and say where it breaks. A lesson is a `lesson.yaml` file: you write only content, and the kit draws every board. `C` = this skill's folder. `D` = the sibling `deck` folder (`C/../deck`), whose kit and scripts the lesson uses.
 
@@ -23,10 +23,10 @@ You are the teacher. The learner should leave able to do the method by hand on a
 5. **Build and check.**
    ```bash
    python3 C/scripts/lesson.py lessons/<slug>/lesson.yaml   # lint + one HTML file next to the yaml
-   python3 D/scripts/check.py lessons/<slug>/lesson.html     # every click, every slider and run end, a photo per scene
+   python3 D/scripts/check.py lessons/<slug>/lesson.html     # every step, every slider and run end, a photo per scene
    ```
-6. **Look.** Open `snaps/desktop.png` and read `snaps/numbers.txt`. Answer the review in `lesson.md` §9. A clean check does not prove the lesson teaches.
-7. **Reply** in 4 lines or fewer: the path; the question and the toy data in one line; the gate results (`lint 0/0 · check: 0 warnings · numbers verified · boards viewed · beats read`); any beat you left out and why. End with `→ quiz me · go deeper on <x> · next lesson: <question>`.
+6. **Look.** Open `snaps/desktop.png` and read `snaps/numbers.txt`. Answer the review in `lesson.md` §8. A clean check does not prove the lesson teaches.
+7. **Reply** in 4 lines or fewer: the path; the question and the toy data in one line; the gate results (`lint 0/0 · check: 0 warnings · numbers verified · boards viewed · beats read`); any beat you left out and why. End with `→ go deeper on <x> · next lesson: <question>`.
 8. **Remember.**
    ```bash
    python3 C/scripts/memory.py episode <series> --part 1 --path lessons/<slug>/lesson.yaml --gates "5/5" --title "<question>"
@@ -35,6 +35,11 @@ You are the teacher. The learner should leave able to do the method by hand on a
    python3 C/scripts/memory.py learner --topic "<topic>" --note "<what clicked or confused>" --home ~/.viz-os/home/cells.json
    ```
    A one-off lesson is a series of one: name it after the topic. Each command is safe to run twice. Then add to the profile what the deck skill's Remember step adds: ideas now known, comparisons that clicked, confusions.
+9. **Tidy.** Run this last, once all the gates pass.
+   ```bash
+   python3 C/scripts/tidy.py lessons/<slug>             # --dry-run prints the moves; --keep <name> spares a file
+   ```
+   It keeps `lesson.html` and `lesson.yaml`, and moves the working files (`snaps/`, the data file, `make_data.py`, `verify_data.py`, images) to `~/.viz-os/attic/<slug>-<date>/`. It leaves files it does not know, and lists them. It refuses unless `lesson.html` is built, up to date and holds its data. To change a tidied lesson, or to read its `data.json` from a later lesson, first run `tidy.py lessons/<slug> --restore`.
 
 ## Gates: a lesson is done only when all five pass
 | Gate | Pass when |
@@ -42,16 +47,16 @@ You are the teacher. The learner should leave able to do the method by hand on a
 | Lint | `lesson.py` ends with `0 errors  0 warnings`. |
 | Browser | `check.py` prints `check: 0 warnings` (exit 0). Exit 2 means it could not run: report "not checked", never "passed". |
 | Numbers | Every number on a board is computed. `make_data.py` is seeded; `verify_data.py` agrees with `data.json`; `snaps/numbers.txt` shows the same values; no worked line reads ≈. |
-| Eyes | You opened the contact sheet and looked at every board, full, at its last click. |
-| Pedagogy | From the boards alone you can read the beats in order and follow each formula back to the numbers worked by hand (`lesson.md` §9). |
+| Eyes | You opened the contact sheet and looked at every scene, full, at its last step. |
+| Pedagogy | From the boards alone you can read the beats in order and follow each formula back to the numbers worked by hand (`lesson.md` §8). |
 
 Fix with small edits, not rewrites, and rerun. A warning that survives 3 rounds of honest fixes is probably a kit bug: report it with the slide number and message. Never hide a warning by cutting the content that teaches.
 
 ## Rules that never bend
-- **Numbers before symbols.** Work the method by hand on the table first. The formula scene then builds the formula from those numbers (`assemble`): our numbers on one click, the symbols on the next, each term named. A symbol never appears before its number.
+- **Numbers before symbols.** Work the method by hand on the table first. The formula scene then builds the formula from those numbers (`assemble`): our numbers, then the symbols under them, each term named. A symbol never appears before its number.
 - **Every number is computed.** It comes from `data.json` (made by `make_data.py`), a worked line, or a `{{…}}` expression. The lint flags a typed number and names the data value it matches.
-- **One line per click.** Each step has one teacher line of at most 24 words, said the way a teacher says it at the board.
-- **Pause and think.** At least one think stop in any 6 steps in a row: the question on one click, the answer on the next.
+- **One line per step.** Each step has one teacher line of at most 24 words, said the way a teacher says it at the board.
+- **Pause and think.** At least one think stop in any 6 steps in a row. It shows its question with a Show answer button. The answer takes no room until pressed. On a figure with Next, the first press asks and the second answers.
 - **The table keeps its shape.** A cells × markers table has a row per cell in every scene and every lesson; genes × samples has a row per gene. Never flip it to make a calculation easier.
 - **Need before name.** Show the problem before the method, and the method by hand before its formula.
 - **Show where it breaks.** Every lesson has a limits scene before the next-lesson tease.
@@ -71,11 +76,11 @@ Read only the file the current step needs. Write `lesson.yaml` once and fix it w
 ## Files
 | File | Read it when |
 |---|---|
-| `lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, review cards, the review |
-| `board.md` | step 4: every board field and item, plane marks, runs and toggles, recall, and what each lint message means |
+| `lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, the review |
+| `board.md` | step 4: how a scene is laid out, every board field and item, plane marks, runs and toggles, and what each lint message means |
 | `examples/board-gallery/` | every scene kind in one full lesson (variance of six cells), with `make_data.py` and `verify_data.py` |
 | `examples/home/cells.json` | what a home table looks like |
-| `examples/pca-1-what/`, `pca-2-how/`, `pca-3-why/` | a three-part series on one home table: `recall:`, each part's `next` scene feeding the next part's `problem` |
+| `examples/pca-1-what/`, `pca-2-how/`, `pca-3-why/` | a three-part series on one home table: each part's `next` scene feeding the next part's `problem`, and a think stop that reaches back |
 | `D/spec.md` | a deck visual's fields (chart, dist, stat, parts, flow, image), the expression functions, number formats |
 Read the examples for patterns. If the user asks for an example's topic, build it fresh on the learner's own table: never copy an example's beats, scenes or numbers.
 For one long illustrated page the learner scrolls, use the sibling `sketch` skill (`C/../sketch`).

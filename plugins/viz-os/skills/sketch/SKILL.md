@@ -26,7 +26,7 @@ You are the teacher, with a pen. The learner should reach the bottom of the page
    python3 S/scripts/sketch.py pages/<slug>/page.yaml   # lint + one HTML file next to the yaml
    python3 D/scripts/check.py pages/<slug>/page.html     # every sheet, every slider, a photo of each sheet
    ```
-6. **Look.** Open `snaps/desktop.png` and read `snaps/numbers.txt`. Answer the review in `C/lesson.md` §9, and the page questions in `page.md`, The review. A clean check does not prove the page teaches.
+6. **Look.** Open `snaps/desktop.png` and read `snaps/numbers.txt`. Answer the review in `C/lesson.md` §8, and the page questions in `page.md`, The review. A clean check does not prove the page teaches.
 7. **Reply** in 4 lines or fewer: the path; the question and the toy data in one line; the gate results (`lint 0/0 · check: 0 warnings · numbers verified · sheets viewed · beats read`); what the page leaves out: any beat you dropped, and any part of the method you simplified. End with `→ quiz me · go deeper on <x> · next page: <question>`.
 8. **Remember.**
    ```bash
@@ -35,7 +35,7 @@ You are the teacher, with a pen. The learner should reach the bottom of the page
    python3 C/scripts/memory.py loop <series> "<a question this page raised and did not answer>"
    python3 C/scripts/memory.py learner --topic "<topic>" --note "<what clicked or confused>" --home ~/.viz-os/home/cells.json   # the file home.py made
    ```
-   A one-off page is a series of one: name it after the topic. Pages and class lessons share this memory: a page may recall a page or a lesson, but a lesson cannot yet recall a page. Each command is safe to run twice.
+   A one-off page is a series of one: name it after the topic. Pages and class lessons share this memory: a page may recall a page, or an older lesson that still ends in review cards. A lesson made now has no cards, and a lesson never recalls. Each command is safe to run twice.
 
 ## Gates: a page is done only when all five pass
 | Gate | Pass when |
@@ -75,7 +75,7 @@ Read only the file the current step needs. Write `page.yaml` once and fix it wit
 ## Files
 | File | Read it when |
 |---|---|
-| `C/lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, review cards, the review |
+| `C/lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, the review |
 | `page.md` | step 4: every field, the parts and their anchors, frames, the thread, custom drawing, and what each lint message means |
 | `examples/pca-what/` | one full page on the six-cell table, with `make_data.py` and `verify_data.py` |
 | `C/examples/home/cells.json` | what a home table looks like |

@@ -12,7 +12,6 @@ learner: {goal: intuition+hand, knows: [mean], anchors: [flow cytometry]}       
 # beats: plan · problem · data · by-hand · picture · formula · run · limits · summary · next   (the spine, one line per scene)
 series: spread        # the series this lesson belongs to (memory.py's name for it)
 episode: 2            # its place in the series, from 1
-recall: [../what-is-variance]    # earlier lessons whose review cards open this one (lesson 2 onward; see Series)
 home: cells           # the learner's home table this lesson reads (its rows and provenance are in data.json)
 data_file: data.json  # every number, made by make_data.py
 abbr: {SD: standard deviation, CD3: a T-cell surface marker}
@@ -21,7 +20,7 @@ symbols:
   i: {tex: 'i', says: which cell, kind: index}
 slides: [ … ]
 ```
-`series`, `episode`, `recall` and `home` are the board's own top-level keys; the rest are the deck's.
+`series`, `episode` and `home` are the board's own top-level keys; the rest are the deck's. `recall` is an error in a lesson.
 
 ### Symbols
 Every name that appears in a formula, a worked line or a parameter card gets a symbol.
@@ -46,25 +45,27 @@ A symbol shows only after its number (`lesson.md` §3). A table column, a worked
   table: {from: cells, cols: [{key: id, label: cell}, {key: cd3, label: CD3}]}
   derive: {sq: (cd3 - xbar)^2}     # scene-level names, recomputed when a control moves
   controls: [ … ]                  # a slider, a run or a toggle (see Controls)
-  steps: [ … ]                     # one teacher line per click
+  steps: [ … ]                     # one teacher line per step
 ```
 | Field | What it does |
 |---|---|
 | `beat` | what the scene is for; drawn as the small label above the title ("By hand", "What if", "A common mix-up") |
 | `title` | the claim, 4–8 words |
 | `lead` | one short line that links this scene to the last; every scene after the plan has one |
-| `table` | the pinned table on the left (about 30% of the width). Leave it out and the work area takes the full width |
+| `table` | the pinned table on the left (30% of the width). Leave it out and the scene takes the full width |
 | `derive`, `controls` | as on a deck slide, plus the run and the toggle |
-| `steps` | 1–10 steps. A full board must fit the stage at its last click; split a scene that does not |
+| `steps` | 1–10 steps. Split a scene that needs more |
 
-### The zones
-The board has fixed zones, filled by order, never by coordinates:
-- **Table column** (left): the pinned table, then any `note` or `params` with `side: true`.
-- **Work area** (right): a text column (worked lines, equations, notes, parameter cards, comparisons, matrix steps) and a picture column (planes, charts, images, other deck visuals). With both, they sit side by side.
-- **Formula strip**: under both columns, present only when a step adds an `assemble`. If the scene opens with the `assemble`, the strip sits on top.
-- **Teacher band** (foot): the current step's `say:` line.
+### How a scene is laid out
+A lesson is one long page, a scene after a scene. You give the order; the kit places everything, never by coordinates. A scene is a head (beat label, title, lead), then its steps in order. What is written stays, and the learner scrolls back to it. Only a think answer waits.
 
-Every item stays on the board once added. The current item is orange (`now`); earlier ones turn grey (`past`). The board never reflows: space for every item is kept from the first click.
+- **Lines**: steps before the first figure run down the page in one column.
+- **Figure block**: a figure (`plane`, `chart`, `image`, `stat`, `units`) starts a block. It holds the figure and the steps after it, until the next figure or a wide item. The figure is centred in the left 70% of the page and stays in view while its lines scroll past in the right 30%. Side by side needs 520 px of figure and 300 px of text. A narrower window, or a formula too long for the text column, puts that figure above its lines.
+- **Wide items** (`assemble`, `compare`, `ops`, `dist`, `parts`, `flow`) run the full width and end the block. `parts` and `dist` stop at 1060 px and sit centred.
+- **Table scene**: the table stays in view in the left 30%, then any `note` or `params` with `side: true` under it. The rest of the scene sits to its right. A table too wide for 30% takes the room it needs; if that leaves under 520 px, it goes on top and does not stay in view.
+- **Reading**: as a step passes the reading line, 45% down the window, it lights up, the table's next column fills in and the row in use lights. Hovering a step does the same. Scrolling never changes a figure.
+- **Next and Back**: a figure gets them only if it changes: a mark, series or label with `step`, a run's frames (`frame:` or `stops`), an `ops` step. With one state it has no buttons. It starts at its first stop. A click on a line goes to its stop, and the ← → keys step the figure nearest the reading line.
+- **Sizes**: a figure owns its shape. A plane's comes from its axis ranges, a chart's from its `ratio`, an image's from the image. The layout gives a width and a height limit, never a box to fill. With the scene's head at the top of the window, a figure and its buttons fit on screen.
 
 ### The table
 ```yaml
@@ -75,7 +76,7 @@ table:
     - {key: cd3, label: CD3, fmt: 1}
     - {key: dev, label: distance, expr: cd3 - xbar, fmt: 2}   # a column worked from each row
 ```
-`from` names a list of rows in the data, never `rows:` (that crashes in the browser; the lint stops it). A column is a `key` read from each row, or an `expr` worked on each row; `label` is its header and `fmt` its number format. A plain string (`cols: [id, cd3]`) is a column with its key as its label. Keep 3–8 rows, in the source's layout: a row per cell, or a row per gene. The table never moves between clicks (the check measures it).
+`from` names a list of rows in the data, never `rows:` (that crashes in the browser; the lint stops it). A column is a `key` read from each row, or an `expr` worked on each row; `label` is its header and `fmt` its number format. A plain string (`cols: [id, cd3]`) is a column with its key as its label. Keep 3–8 rows, in the source's layout: a row per cell, or a row per gene.
 
 ## Steps
 ```yaml
@@ -89,13 +90,13 @@ steps:
 ```
 | Field | What it does |
 |---|---|
-| `say` | one teacher line for this click, at most 24 words |
-| `add` | one item, or a list of items, placed on this click |
-| `mark` | lights a table row, column, cell or item for this click only (see Marks) |
-| `think` | a pause-and-think stop: `{q, a}`. It takes two clicks: the question (after `say`, if there is one), then the answer with whatever the step adds |
-| `frame` | the run frame this click shows (see Controls) |
+| `say` | one teacher line for this step, at most 24 words |
+| `add` | one item, or a list of items, written with this step |
+| `mark` | lights a table row, column, cell or item while this step is lit (see Marks) |
+| `think` | a pause-and-think stop: `{q, a}`. The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer |
+| `frame` | the run frame this step shows (see Controls) |
 
-A think step's `say` is optional; its question is the line. At least one think stop in any 6 steps in a row (a quiz slide resets the count). A think question has one short answer the learner can reach from the board.
+A think step's `say` is optional; its question is the line. At least one think stop in any 6 steps in a row. A think question has one short answer the learner can reach from the board. On a figure with Next, a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it.
 
 ### Marks
 | Target | Lights |
@@ -105,7 +106,7 @@ A think step's `say` is optional; its question is the line. At least one think s
 | `cell:4:cd3` | one cell |
 | `#total` | an item with `id: total` |
 
-`mark` takes one target or a list. It lights for one click; a think step's mark lights on both its clicks. A target not yet on the board is ignored, and the check warns `mark target not found`. A `calc` with `row:` lights its row, and the cells it reads, by itself.
+`mark` takes one target or a list. It lights for one step; a think step's mark lights on its question and its answer. A target not yet on the board is ignored, and the check warns `mark target not found`. A `calc` with `row:` lights its row, and the cells it reads, by itself.
 
 ### Highlights in text
 - `==s1:CD3==`: the words in bold, in that colour (`s1`, `s2`, `s3`, `good`, `bad`, `mist`). Match a term's symbol and column colour. A few words per scene.
@@ -138,7 +139,7 @@ The working must add up by hand at the rounding shown, or the line reads ≈ and
 add: {col: {key: sq, label: squared, expr: (cd3 - xbar)^2, fmt: 2}}
 mark: col:sq
 ```
-Adds a column worked on every row, on this click. `key`, `label`, `expr`, `fmt` as in the table. Pair it with `mark: col:<key>`.
+Adds a column worked on every row. It keeps its place, with its row lines, and fills in when the reading reaches this step. `key`, `label`, `expr`, `fmt` as in the table. Pair it with `mark: col:<key>`.
 
 ### `eqn`: a formula in symbols
 ```yaml
@@ -147,7 +148,7 @@ add: {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
 `lhs` is the name on the left; `expr` (an expression, drawn as TeX) or `tex` (TeX with `[name]` terms, as in `assemble`) is the right. Each term takes its colour and its `short` name under it. No numbers: use it after the numbers are known.
 
 ### `assemble`: the formula built from our numbers
-The formula scene's core (`lesson.md` §3). On its click the strip shows **Our numbers**; on the next click, **In symbols** appears under it, each term in the same colour and named. So the step after it must say what the symbols are.
+The formula scene's core (`lesson.md` §3). One full-width plate holds **Our numbers**, then the next step's line, then **In symbols**, each term in the same colour and named. So the step after it must say what the symbols are.
 
 With an expression, the numbers row is worked for you:
 ```yaml
@@ -201,10 +202,10 @@ add:
     steps:
       - {op: cols, fn: var, name: mvar, tex: 's^2', label: variance, fmt: 2, say: Find each marker's variance, why: Each column is its own set.}
 ```
-The deck's matrix steps (`spec.md`, Matrix steps), drawn in the text column. Its first step lands on this click and each further step takes the next click, so add one board step after it per matrix step. `notation: false` on the `ops` item hides the deck's notation chip (`x_ij` = …); use it when the card is narrow, since the chip can spill out of it, and say what the row and column are in `says:` instead.
+The deck's matrix steps (`spec.md`, Matrix steps), drawn at full width with their own Back and Next. Its first step lands on this step and each further one on the next board step, so add one board step after it per matrix step. `notation: false` on the `ops` item hides the deck's notation chip (`x_ij` = …); use it when the card is narrow, since the chip can spill out of it, and say what the row and column are in `says:` instead.
 
 ### Deck visuals
-`chart`, `dist`, `stat`, `units`, `parts`, `flow` and `image` go in the picture column, written as on a deck slide (`spec.md`, Visuals and Charts), with `caption`, `alt` and `labels` beside them:
+`chart`, `stat`, `units` and `image` are figures, and `dist`, `parts` and `flow` are wide items, all written as on a deck slide (`spec.md`, Visuals and Charts), with `caption`, `alt` and `labels` beside them:
 ```yaml
 add:
   chart:
@@ -279,49 +280,35 @@ derive:
 | Field | What it does |
 |---|---|
 | `run` | the number of frames, 2 or more. Store each frame's values as lists in `data.json` and read them with `at(list, t)` |
-| `stops` | the frame each click shows, one per step in order (default 0, 1, 2 and the last). The run needs as many stops as the scene has steps, or a `frame:` on its steps |
+| `stops` | the frame each step shows, in order (default 0, 1, 2 and the last). The run needs as many stops as the scene has steps, or a `frame:` on its steps |
 | `every` | seconds per frame when playing (0.3–10; default 1.3) |
 | `label` | the words beside the scrubber |
 
-Instead of `stops`, a step may set `frame: 5`; each click then shows the frame of the latest step that set one. One run per scene. Choose stops on the first two frames and the last; let the learner scrub the middle.
+Instead of `stops`, a step may set `frame: 5`; each Next stop then shows the frame of the latest step that set one. One run per scene. Choose stops on the first two frames and the last; let the learner scrub the middle.
 
 **A toggle**: two buttons, 0 and 1.
 ```yaml
 controls:
-  - {name: prev, toggle: [hide, show], label: last line, step_at: 3}
+  - {name: prev, toggle: [hide, show], label: last line}
 ```
 `toggle` is two labels, `[off, on]`; the name is 0 for the first, 1 for the second. Use it with `when:` on a mark, or in an expression.
 
-`step_at` (any control) hides the control until that step, so it appears with the question that asks the learner to use it. The check moves every slider, run and toggle to both ends.
+A control sits under the figure it drives: the first figure that reads its name, otherwise the scene's last figure, otherwise the end of the lines. The check moves every slider, run and toggle to both ends.
 
-## Series, recall and home
+## Series and home
 A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same home table:
 ```
 lessons/
   what-is-variance/   lesson.yaml  data.json  make_data.py  verify_data.py  lesson.html
-  computing-variance/ lesson.yaml  …          # series: spread, episode: 2, recall: [../what-is-variance]
+  computing-variance/ lesson.yaml  …          # series: spread, episode: 2
 ```
-- `series` and `episode` name the lesson's place. An episode after 1 with no `recall:` warns.
-- `recall: [paths]` lists earlier lessons, relative to this file; a folder means its `lesson.yaml`. List them oldest first: the last one is the most recent.
-- The build copies their review cards into a quiz titled "Before we start: from last time", right after the title slide: the most recent lesson's first cards, then the first card of each older one, at most 5 in all. So put each lesson's most important card first.
-- A recalled card shows the numbers its own lesson showed. The build reads that lesson's `data.json` (and inline `data:`) and renames each name a card reads, so `{{n}}` from lesson 1 becomes a separate name (`r1_n`). Lesson 1's `n` and this lesson's `n` can differ.
+- `series` and `episode` name the lesson's place.
+- A later lesson reaches back with a think stop near its start, not with cards (`lesson.md` §7). Copy any number it needs into this lesson's data with `make_data.py`, or compute it with `{{…}}`. If `make_data.py` reads an earlier lesson's `data.json` and that lesson was tidied, run `tidy.py --restore` on it first.
 - `home: <name>` names the home table (`C/scripts/home.py`, written to `~/.viz-os/home/<name>.json`, or under `$VIZOS_HOME` when it is set). `make_data.py` reads that file and writes the rows it uses into `data.json`, plus `"home": {"name": …, "provenance": {…}}` copied from the file, so each lesson keeps its own copy and says where it came from. The build does not read the home file; it reads only `data.json`.
 
-The plan and recall quiz come first: title, recall quiz, then the `plan` scene.
 The plan is its picture: a `plan` scene has one step, `add` with a `flow`, and no `say`. The `flow` draws as a row of numbered squares, the first one filled, with each `title` under its square and any `sub` under that.
 
-## Review cards
-The last slide:
-```yaml
-- type: quiz
-  cards:
-    - q: Why square the distances?
-      a: So cells below the mean do not cancel cells above it, and far cells count most.
-    - q: 'Our six cells had mean {{xbar|1}}. What do their plain distances from it add up to?'
-      a: 'Zero, always: that is what makes it the mean.'
-```
-5–8 cards, each `q` and `a`. A card may read data with `{{…}}`; every name it reads must be in this lesson's data, so a later lesson can recall it.
-
+## The plan and the summary
 The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [ … ]}`. Any other deck slide type (`predict`, `table`, `bridge`, …) may sit between board scenes when it teaches better, and counts as a scene.
 
 ## Lint messages
@@ -336,8 +323,9 @@ The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [
 | `no limits scene` / `limits comes after next` | add one, before `next` |
 | `a what-if scene with no picture` | add a `chart` or `plane` whose marks read the slider |
 | `no summary scene` | a `recap` slide that answers the opening question, before `next` |
-| `no next scene` / `after the next tease only the review cards follow` | one `next` scene, then the quiz |
-| `end with the review cards` / `N review cards; use 5–8` | a last `quiz` slide of 5–8 cards |
+| `no next scene` / `the next tease is the last scene` | one `next` scene, at the end |
+| `a class lesson has no quiz cards` | delete the slide; keep any good question as a `think` stop |
+| `a class lesson has no recall cards` | delete `recall:`; reach back with a `think` stop near the start |
 | `no lead` | one short line linking the scene to the last |
 | `N steps (≤ 10)` | split the scene |
 | `6 steps in a row with no think stop` | add a `think` step |
@@ -350,11 +338,11 @@ The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [
 | `symbol X shows on slide …, but its number first shows on …` | show the number first: a worked line, a column, or `{{name}}` |
 | `` `assemble` uses X, whose number was not worked in an earlier by-hand scene `` | work it by hand first |
 | `a formula scene builds its formula with an assemble item` | add the `assemble` |
-| `` `assemble` shows its symbols row on the next click `` | add a step after it |
+| `` `assemble` has a line between its numbers and its symbols `` | add a step after it |
 | `an assemble with tex needs plug` / `a number in plug has no tag` | write `plug` with each number as `[name:number]` |
 | `N terms: more than 5 is a wall` | build it over two scenes |
 | `typed number N in say matches X` | write `{{X|fmt}}` |
-| `` `ops` has N steps and each one takes the next click `` | add that many board steps after it |
+| `` `ops` has N steps and each one takes a board step `` | add that many board steps after it |
 | `a calc with row: reads that row of the scene's table` | give a row number from 0, and a `table` |
 | `` `params` name X is not in data, derive or the worked lines `` | work it first, or add it to data |
 | `` `rows: X` names data, which a table cannot read `` | write `from: X` |
@@ -362,14 +350,10 @@ The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [
 | `plane mark N is one of …` / `plane line takes 3 values` | one mark kind per entry; quote expressions with commas |
 | `a plane with fill stretches its axes` | delete `fill`, or drop the `vector`, `foot` or `square` |
 | `` control …: `run` is the number of frames `` / `stops … are not frames` | `run` ≥ 2; stops between 0 and run − 1 |
-| `the run stops on N frames, one per click, but the scene has M steps` | one stop per step, or `frame:` on the steps |
+| `the run stops on N frames, one per step, but the scene has M steps` | one stop per step, or `frame:` on the steps |
 | `one run per scene` | split the scene |
-| `review card N reads X, which is not in data.json` | add X to `data.json`, or compute it in the card |
-| `` recall: … not found `` / `has no review cards` / `a review card reads X, which is not in that lesson's data.json` | fix the path, or the earlier lesson |
-| `` recall: wants to add r1_X, but this lesson's data already has that name `` | rename this lesson's `r1_X` |
-| `episode N has no recall:` | name the earlier lesson |
 
-The browser check adds: `the pinned table moved between steps`, `the work area overflows` / `the board is too full for one scene` (split it), `mark target not found`, `a worked line … reads ≈` (finer `fmt` on the inputs), `point … is outside the picture` / `plane mark N is outside the box` (widen the box), `the plane label … overlaps` (shorter names, or move a mark), `a formula is wider than its box` (split it), and `X works out to … on the board but the data says …` (`make_data.py` and the page disagree: fix one).
+The browser check adds: `a plane is N wide per 1 tall` (change its ranges, or the spacing of what it shows), `a chart is W × H px` (set its `ratio`), `a plane is only W × H px` (give it more room, or split the scene), `a formula renders under 26px`, `a table cell renders under 18px`, `mark target not found`, `a worked line … reads ≈` (finer `fmt` on the inputs), `point … is outside the picture` / `plane mark N is outside the box` (widen the box), `the plane label … overlaps` (shorter names, or move a mark), `a formula is wider than its box` (split it), and `X works out to … on the board but the data says …` (`make_data.py` and the page disagree: fix one).
 
 ## YAML gotchas
 - Quote any value that starts with `{{` or holds `{{…}}` inside a `{ }` mapping: `label: 'mean {{xbar|1}}'`.
