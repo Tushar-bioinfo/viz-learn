@@ -52,6 +52,7 @@ slides:
       - say: A flow panel measures dozens of markers, but a plot shows only two at a time.
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -77,6 +78,7 @@ slides:
       - say: 'Six of the {{n_home}} cells in your home table, chosen so each kind shows twice.'
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -104,6 +106,7 @@ slides:
       - say: 'Together they mark the middle of the cells, at ({{m1|2}}, {{m2|2}}).'
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:

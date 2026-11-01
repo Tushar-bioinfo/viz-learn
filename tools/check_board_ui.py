@@ -10,7 +10,7 @@ fills columns but never moves a figure; no sideways scroll; every plane without 
 Then the look's own rules: a long formula sends its figure above its text; the plan shows no lines of text; the scene counter
 stays in the margin; a column not filled in keeps its row lines; Next stays on screen; the line by the buttons stays on
 screen after every Next; Next onto a think step takes two presses; rows fit their figures at five widths and stay on
-screen at three windows; a beside scene is 70 / 30; a filled plane and a table fill their room; the first stop has no line;
+screen at three windows; a filled plane and a table fill their room; the first stop has no line;
 Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen.
 """
 import importlib.util, sys
@@ -27,11 +27,9 @@ spec.loader.exec_module(check)
 # what a figure shows right now: the parts that are up, its dots, and the text of a matrix
 STATE = "e => [...e.querySelectorAll('.shown')].length + '|' + [...e.querySelectorAll('.off')].length + '|' + [...e.querySelectorAll('.sdot.now')].map(d => [...d.parentNode.children].indexOf(d)).join() + '|' + [...e.querySelectorAll('.mc, .opcard .ok.shown')].map(c => c.textContent).join().length"
 STAGES = "VizOS.slides.flatMap(sl => (sl.r.stages || []).map(S => S.i))"
-EQUAL = """() => { const out = []; VizOS.slides.forEach(sl => { const boxes = [...sl.r.node.querySelectorAll('.pbox')], specs = [];
-  (sl.s.steps || []).forEach(st => [].concat((st && st.add) || []).forEach(it => { if (it && it.plane) specs.push(it.plane); }));
-  boxes.forEach((b, i) => { const p = specs[i], v = (x, d) => VizOS.val(x ?? d, sl.ctx.scope, 'test'), w = +b.getAttribute('width'), h = +b.getAttribute('height'); if (p.fill) return;
-    const ux = w / (v(p.x.max, 10) - v(p.x.min, 0)), uy = h / (v(p.y.max, 10) - v(p.y.min, 0)); out.push(Math.abs(ux / uy - 1)); }); }); return out; }"""
-SHAPES = """() => [...document.querySelectorAll('.bvis .chart')].map(c => { const r = c.getBoundingClientRect(); return r.width / r.height; })"""
+# a chart with no ratio of its own holds 16:9, and may go to 2:1 in a short window; one with a ratio keeps it
+SHAPES = """() => VizOS.slides.flatMap(sl => { const specs = (sl.s.steps || []).flatMap(st => [].concat((st && st.add) || [])).filter(it => it && it.chart), cs = [...sl.r.node.querySelectorAll('.fg .bvis.chart .chart')];
+  return cs.map((c, i) => { const r = c.getBoundingClientRect(), k = specs[i] || {}, own = k.ratio ?? (k.chart || {}).ratio; return [r.width / r.height, own ?? null]; }); })"""
 IMAGES = """() => [...document.querySelectorAll('.bvis img')].map(m => { const r = m.getBoundingClientRect(); return (r.width / r.height) / (m.naturalWidth / m.naturalHeight); })"""
 
 
@@ -146,21 +144,18 @@ def scrolling(page):
 
 
 def widths(page):
-    bad, shape0 = [], None
+    bad, sh = [], []
     for w in WIDTHS:
         page.set_viewport_size({"width": w, "height": 900}); page.wait_for_timeout(350)
         if page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth"):
             bad.append(f"sideways scroll at {w}")
-        if max(page.evaluate(EQUAL) or [0]) > .01:
-            bad.append(f"unequal plane at {w}")
         sh = page.evaluate(SHAPES)
-        if shape0 is not None and any(abs(x / y - 1) > .02 for x, y in zip(sh, shape0)):
-            bad.append(f"chart ratio moved at {w}")
-        shape0 = shape0 or sh
+        if any(own is None and not 1.74 <= x <= 2.03 for x, own in sh):
+            bad.append(f"chart shape left 16:9 to 2:1 at {w}: {[round(x, 2) for x, own in sh if own is None]}")
         if any(abs(x - 1) > .02 for x in page.evaluate(IMAGES)):
             bad.append(f"image ratio wrong at {w}")
     page.set_viewport_size({"width": 1440, "height": 900})
-    return not bad, "; ".join(bad) or f"{len(shape0 or [])} charts"
+    return not bad, "; ".join(bad) or f"{len(sh)} charts"
 
 
 def narrow_formula(page):
@@ -305,18 +300,10 @@ def rows_on_screen(page):
     return n > 0 and not bad, "; ".join(bad[:4]) or f"{n} rows"
 
 
-def columns(page):
-    """At 1440 wide a beside scene is 70 / 30, gap included, with its figure centred in the 70."""
-    r = page.evaluate("""() => { const rc = e => e.getBoundingClientRect(); return [...document.querySelectorAll('.fb.beside')].map(b => { const B = rc(b), s = rc(b.querySelector('.fside')), f = rc(b.querySelector('.ffig')), col = s.left - B.left - 20;
-      return [col / B.width, s.width / B.width, Math.abs((f.left + f.right) / 2 - (B.left + col / 2))]; }); }""")
-    bad = [x for x in r if abs(x[0] - .7) > .01 or abs(x[1] - .3) > .01 or x[2] > 3]
-    return not bad, f"{len(r)} scenes" + (f", off: {bad[0]}" if bad else "")
-
-
 def plane_fills(page):
-    """A filled plane reaches 70% of the page, or the height limit."""
-    r = page.evaluate("""() => { const rc = e => e.getBoundingClientRect(), W = rc(document.querySelector('#lesson')).width; return [...document.querySelectorAll('.bi.plane.fill')].map(p => { const n = p.closest('.slide'); n.scrollIntoView({ block: 'start', behavior: 'instant' });
-      return [n.id, Math.round(rc(p).width), Math.round(W * .69), Math.round(rc(p.closest('.fg')).bottom), innerHeight]; }); }""")
+    """A filled plane reaches its room, or its height limit."""
+    r = page.evaluate("""() => { const rc = e => e.getBoundingClientRect(); return [...document.querySelectorAll('.bi.plane.fill')].map(p => { const n = p.closest('.slide'), room = p.closest('.fb.beside') ? rc(p.closest('.fb.beside')).width * .7 - 40 : rc(p.closest('.lines')).width * .98; n.scrollIntoView({ block: 'start', behavior: 'instant' });
+      return [n.id, Math.round(rc(p).width), Math.round(room), Math.round(rc(p.closest('.fg')).bottom), innerHeight]; }); }""")
     bad = [x for x in r if x[1] < x[2] and x[3] < x[4] - 60]
     return not bad and (bool(r) or not ("perceptron" in page.url or "board-gallery" in page.url)), f"{len(r)} planes" + (f", small: {bad[:2]}" if bad else "")
 
@@ -542,7 +529,7 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("a long formula sends its figure above its text", narrow_formula), ("the plan shows no lines of text", plan_words), ("the scene counter stays in the margin", rail_margin),
          ("a column not filled in keeps its row lines", row_lines), ("Back and Next stay on screen", next_on_screen), ("the line by the buttons stays on screen", stop_line),
          ("Next onto a think step takes two presses", two_presses),
-         ("every row fits its figure at five widths", rows_fit), ("every row is on screen at three windows", rows_on_screen), ("a beside scene is 70 / 30", columns),
+         ("every row fits its figure at five widths", rows_fit), ("every row is on screen at three windows", rows_on_screen),
          ("a filled plane fills its room", plane_fills), ("a table fills its column", table_fills), ("the first stop has no line by the buttons", first_stop_quiet),
          ("Next stays under the pointer", stays_put), ("the line by the buttons never repeats words on screen", no_repeat),
          ("no piece of a formula on two rows", one_row), ("a formula shrinks to fit, never under 20 px", formula_floor), ("term labels never stack", no_stack),

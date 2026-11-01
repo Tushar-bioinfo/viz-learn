@@ -37,27 +37,28 @@ html.ls-page button:focus-visible, html.ls-page input:focus-visible { outline: 3
 .s-board .head .purpose { grid-column: 1 / -1; font-size: 20px; max-width: none; }
 
 /* where things go */
-html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: column; gap: 26px; min-height: auto; align-items: stretch; }
-.board .lines { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-.board .lines > .st:not(.wide), .board .st.wide > .say { max-width: 980px; }
-.board .st.wide > .say { padding-left: 20px; }
+html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: column; gap: 28px; min-height: auto; align-items: stretch; --read: min(1100px, 100%); }
+.board .lines { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 .board .bpair { display: grid; grid-template-columns: var(--tcw, 30%) minmax(0, 1fr); gap: 20px; align-items: start; }
-.board .bpair.stacked { display: flex; flex-direction: column; gap: 22px; align-items: stretch; }
+.board .bpair.stacked { display: flex; flex-direction: column; gap: 28px; align-items: stretch; }
 .board .tcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: sticky; top: 24px; align-self: start; }
 .board .bpair.stacked .tcol, .board .tcol.nostick { position: static; }
-.board .bpair.stacked .tcol { align-self: flex-start; }
+.board .bpair.stacked .tcol { align-self: center; }
 .board .tcol > .note { width: 0; min-width: 100%; box-sizing: border-box; }
 html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: var(--card); border: 1px solid var(--thin); box-shadow: none; }
 .board .tcard table.t { width: 100%; }
-.board .fb { display: flex; flex-direction: column; gap: 18px; min-width: 0; width: 100%; align-self: center; }
+.board .fb { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 .board .ffig { display: flex; flex-direction: column; gap: 18px; min-width: 0; align-self: center; }
-.board .fside { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-/* 70 / 30: the figure sits centred in its column, and the side column never grows */
-.board .fb.beside { display: grid; grid-template-columns: minmax(0, 1fr) var(--side, 30%); gap: 20px; align-items: start; }
-.board .fb.beside > .ffig { justify-self: center; align-self: start; }
+.board .fside { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+/* one reading column: what is not side by side shares one centred pair of edges. board.js sets --read (the page, in a scene with a matrix panel) */
+.board > .lines > *, .board > .bpair.stacked > .lines > *, .board > .st.wide, .board > .controls, .board .fb.many > .fside > .st, .board .fb.many .st.intro > * { width: var(--read); max-width: 100%; box-sizing: border-box; align-self: center; }
+.board > .lines > .fb.beside, .board > .lines > .fb.many, .board > .bpair.stacked > .lines > .fb.beside, .board > .bpair.stacked > .lines > .fb.many { width: 100%; }
+/* beside a figure: it sits at the left of the page, the gap is 20 px, and the text takes the rest */
+.board .fb.beside { display: grid; grid-template-columns: var(--fig, 70%) minmax(0, 1fr); gap: 20px; align-items: start; }
+.board .fb.beside > .ffig { justify-self: start; align-self: start; }
 /* a figure above its lines: the line that brings it in stays above it, and the rest of that step stays under it */
 .board .fb:not(.beside) > .fside, .board .fb:not(.beside) > .fside > .st.intro { display: contents; }
-.board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; padding-left: 20px; }
+.board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; margin-bottom: -14px; }
 .board .fb.beside .ffig { position: sticky; top: 24px; }
 .board .fb.beside .ffig.nostick { position: static; }
 .board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: center; align-self: stretch; }
@@ -70,24 +71,24 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 /* wide pictures sit centred; their line of text stays lined up with the other lines */
 .board .st.wide .fg, .board > .fg { align-self: center; }
 
-/* a step: the teacher's line, then what it adds. The one being read is lit; nothing goes grey once it is past */
-.board .st { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding-left: 16px; border-left: 4px solid transparent; transition: border-color .25s var(--ease); }
-.board .st.wide { padding-left: 0; border-left: 0; }
-.board .st.now, .board .st.atstop { border-left-color: var(--accent); }
+/* a step: the teacher's line, then what it adds, 14 px apart; steps stand 28 px apart. The one being read is lit by a bar
+   hung in the margin, so the text keeps the column's edge; nothing goes grey once it is past */
+.board .st { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.board .st::before { content: ""; position: absolute; left: -12px; top: 0; bottom: 0; width: 4px; background: transparent; transition: background .25s var(--ease); pointer-events: none; }
+.board .st.wide::before, .board .abridge .st::before { display: none; }
+.board .st.now::before, .board .st.atstop::before { background: var(--accent); }
 .board .st.wide.now .asm::before { background: var(--accent); }
 .board .st.line { cursor: pointer; }
-.board .st .say, .board p.say { margin: 0; font-size: 18px; line-height: 1.42; color: var(--ink); }
-.board .abridge { padding: 2px 0; }
-.board .abridge .st { padding-left: 0; border-left: 0; }
+.board .st .say, .board p.say { margin: 0; font-size: 18px; font-weight: 400; line-height: 1.5; color: var(--ink); }
 
 /* a think stop: the word Think, the question, a button under it. The answer takes no room until pressed: the card grows
    and its top stays. What the step adds waits behind the answer, in its own space */
 html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: transparent; border: 0; border-top: 1px solid #353634; border-bottom: 1px solid #353634; box-shadow: none; }
 .board .tq { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.board .tqt { font-size: 19px; font-weight: 400; line-height: 1.34; color: var(--ink); }
+.board .tqt { font-size: 18px; font-weight: 400; line-height: 1.5; color: var(--ink); }
 .board .tb { flex: none; white-space: nowrap; font: 650 16px var(--f-ui); color: var(--ink); background: transparent; border: 1px solid var(--thin); box-shadow: none; padding: 5px 12px; cursor: pointer; }
 .board .tb:hover { border-color: var(--accent); }
-.board .ta { display: flex; flex-direction: column; gap: 4px; font-size: 18px; line-height: 1.42; }
+.board .ta { display: flex; flex-direction: column; gap: 4px; font-size: 18px; line-height: 1.5; }
 .board .think:not(.open) .ta { display: none; }
 .s-board [data-wait]:not(.open):not(td, th), .s-board [data-wait]:not(.open):not(td, th) * { visibility: hidden !important; }
 .board .btag { flex: none; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
@@ -113,21 +114,21 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board table.t .hcol { color: var(--accent); font-weight: 750; }
 
 /* worked lines: the deck's calc look; term colours stay on all the time */
-.board .cline { grid-template-columns: 38px minmax(0, 1fr); column-gap: 14px; }
+.board .cline { grid-template-columns: 38px minmax(0, 1fr); gap: 14px; }
 .board .cline .num { width: 36px; height: 36px; font-size: 16px; }
 .board .st.now .cline .num { background: var(--accent); border-color: var(--accent); color: var(--on); }
-.board .cline .say { font-size: 18px; }
-.board .cline .cwhy { font-size: 18px; }
+.board .cline .say { font-size: 18px; font-weight: 400; line-height: 1.5; }
+.board .cline .cwhy { font-size: 18px; line-height: 1.5; }
 .board .cline .math { font-size: 29px; }
 .board .lt.tc { color: var(--tc); }
 .board .wl { position: absolute; transform: translateX(-50%); white-space: nowrap; font: 600 16px var(--f-ui); color: var(--ink); line-height: 1.2; }
-.board .fline { display: flex; flex-direction: column; gap: 6px; }
-.board .fline .say { font-size: 18px; }
+.board .fline { display: flex; flex-direction: column; gap: 14px; }
+.board .fline .say { font-size: 18px; font-weight: 400; line-height: 1.5; }
 .board .fline .math, .board .asm .math { position: relative; min-width: 0; }
 .board .fline .math { font-size: 30px; }
-.board .asm { padding: 14px 24px; display: flex; flex-direction: column; gap: 12px; }
+.board .asm { padding: 14px 24px; display: flex; flex-direction: column; gap: 14px; }
 .board .asm .say { font-size: 20px; font-weight: 650; }
-.board .abridge .say { font-weight: 500; }
+.board .asm .abridge .say { font-size: 18px; font-weight: 400; }
 .board .arow { display: grid; grid-template-columns: 132px minmax(0, 1fr); column-gap: 16px; align-items: center; }
 .board .arow .math { font-size: 32px; }
 .board .atag { font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tint); }

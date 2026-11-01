@@ -204,6 +204,7 @@ slides:
       - say: Plot every cell by its PC1 and PC2 scores.
         add:
           plane:
+            fill: true
             x: {label: PC1 score, min: -4, max: 3.5}
             y: {label: PC2 score, min: -3, max: 3.8}
             marks:
@@ -290,6 +291,7 @@ slides:
       - say: Our cells form three clumps, and two straight axes separate them.
         add:
           plane:
+            fill: true
             x: {label: PC1 score, min: -4, max: 3.5}
             y: {label: PC2 score, min: -3, max: 3.8}
             marks:

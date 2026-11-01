@@ -81,6 +81,7 @@ slides:
       - say: 'Here are part 1''s six cells, each measured from the middle: ==s1:d₁== for CD3, ==s2:d₂== for CD19.'
         add:
           plane:
+            fill: true
             x: {label: CD3 from the middle, min: -3, max: 3.5}
             y: {label: CD19 from the middle, min: -2.5, max: 3}
             marks:
@@ -107,6 +108,7 @@ slides:
       - say: 'Right-and-low or left-and-high gives a negative product. {{n_neg}} of the six cells do that.'
         add:
           plane:
+            fill: true
             x: {label: CD3 from the middle, min: -3, max: 3.5}
             y: {label: CD19 from the middle, min: -2.5, max: 3}
             marks:
