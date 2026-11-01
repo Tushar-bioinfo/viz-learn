@@ -49,6 +49,7 @@ slides:
       - say: 'Eight cells from your panel: four T cells and four B cells, by CD3 and CD19.'
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -68,6 +69,7 @@ slides:
       - say: Here is a bad first line. The shaded side is what it calls T.
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -94,6 +96,7 @@ slides:
       - say: 'The bad line is every point where {{w0}} + ({{w1}}) × CD3 + {{w2}} × CD19 is exactly 0.'
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -132,6 +135,7 @@ slides:
         add:
           - {params: {say: 'The line you set', names: [w0, w1, w2, nw]}}
           - plane:
+              fill: true
               x: {label: CD3, min: -0.5, max: 5.5}
               y: {label: CD19, min: 0, max: 5}
               marks:
@@ -161,6 +165,7 @@ slides:
       - say: 'Take c5, a B cell the line calls T. CD3 {{c5_cd3}}, CD19 {{c5_cd19}}.'
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -190,6 +195,7 @@ slides:
       - say: 'Too far. Multiply c5''s numbers by η = {{eta}} first, then subtract.'
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -252,6 +258,7 @@ slides:
         add:
           - {params: {say: 'The line, at this update', names: [w0, w1, w2, nw, ep]}}
           - plane:
+              fill: true
               x: {label: CD3, min: -0.5, max: 5.5}
               y: {label: CD19, min: 0, max: 5}
               marks:
@@ -310,6 +317,7 @@ slides:
         add:
           - {params: {say: 'The final line', names: [w0, w1, w2]}}
           - plane:
+              fill: true
               x: {label: CD3, min: -0.5, max: 5.5}
               y: {label: CD19, min: 0, max: 5}
               marks:
@@ -337,6 +345,7 @@ slides:
       - say: Same shuffles, but start from all-zero weights. It stops at another line, also with no cell wrong.
         add:
           plane:
+            fill: true
             x: {label: CD3, min: -0.5, max: 5.5}
             y: {label: CD19, min: 0, max: 5}
             marks:
@@ -372,6 +381,7 @@ slides:
       - say: Next time, thymocytes, the T cells still maturing in the thymus, on CD4 against CD8.
         add:
           plane:
+            fill: true
             x: {label: CD4, min: 0, max: 5}
             y: {label: CD8, min: 0, max: 5}
             marks:

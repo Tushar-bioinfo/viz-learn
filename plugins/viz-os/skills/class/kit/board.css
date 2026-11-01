@@ -1,7 +1,7 @@
 /* viz-os class: one long page, a scene after a scene, in the class look: thin lines, soft frames, bright data colours.
    Nothing is scaled: every size here is a real pixel, and every figure owns its shape (board.js). Decks and sketch pages
    do not load this file. These tokens are read at boot for the drawings, so a colour changed here reaches the SVGs too. */
-:root { --page-w: min(1500px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #8ec5ff; --s2: #6ff0d0; --s3: #f29ac8;
+:root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #8ec5ff; --s2: #6ff0d0; --s3: #f29ac8;
   --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315; }
 
 /* the page: the deck's fixed stage lets go, so the window scrolls and the text can be selected */
@@ -43,35 +43,34 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .lines { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .board .lines > .st:not(.wide), .board .st.wide > .say { max-width: 980px; }
 .board .st.wide > .say { padding-left: 20px; }
-.board .bpair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: start; }
+.board .bpair { display: grid; grid-template-columns: var(--tcw, 30%) minmax(0, 1fr); gap: 20px; align-items: start; }
 .board .bpair.stacked { display: flex; flex-direction: column; gap: 22px; align-items: stretch; }
-.board .tcol { display: flex; flex-direction: column; gap: 14px; min-width: 280px; position: sticky; top: 24px; align-self: start; }
+.board .tcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: sticky; top: 24px; align-self: start; }
 .board .bpair.stacked .tcol, .board .tcol.nostick { position: static; }
 .board .bpair.stacked .tcol { align-self: flex-start; }
 .board .tcol > .note { width: 0; min-width: 100%; box-sizing: border-box; }
 html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: var(--card); border: 1px solid var(--thin); box-shadow: none; }
-.board .fb { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.board .ffig { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.board .tcard table.t { width: 100%; }
+.board .fb { display: flex; flex-direction: column; gap: 18px; min-width: 0; width: 100%; align-self: center; }
+.board .ffig { display: flex; flex-direction: column; gap: 18px; min-width: 0; align-self: center; }
 .board .fside { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-.board .fb.beside { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: start; }
+/* 70 / 30: the figure sits centred in its column, and the side column never grows */
+.board .fb.beside { display: grid; grid-template-columns: minmax(0, 1fr) var(--side, 30%); gap: 20px; align-items: start; }
+.board .fb.beside > .ffig { justify-self: center; align-self: start; }
 /* a figure above its lines: the line that brings it in stays above it, and the rest of that step stays under it */
 .board .fb:not(.beside) > .fside, .board .fb:not(.beside) > .fside > .st.intro { display: contents; }
 .board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; padding-left: 20px; }
 .board .fb.beside .ffig { position: sticky; top: 24px; }
 .board .fb.beside .ffig.nostick { position: static; }
-.board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
-/* a figure, then its slider and its Back and Next on one row, centred under it */
-.board .fg { display: flex; flex-flow: row wrap; justify-content: center; align-items: center; gap: 10px 20px; max-width: 100%; }
-.board .fg::after { content: ""; flex: 0 0 100%; height: 0; order: 1; margin-top: -10px; }
-.board .fg > .bvis, .board .fg > .bi { order: 0; flex: 0 0 auto; }
-.board .fg > .controls, .board .fg > .stage { order: 2; }
-.board .fg > .controls { justify-content: center; min-width: 0; max-width: 100%; }
-.board .stopl { order: 3; flex: 0 0 100%; font-size: 17px; line-height: 1.32; color: var(--mist); text-align: center; }
+.board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: center; align-self: stretch; }
+/* a figure, then its sliders and its Back and Next, each the figure's own width; board.js sets that width */
+.board .fg { display: flex; flex-direction: column; align-items: stretch; max-width: 100%; }
+.board .fg > .bvis, .board .fg > .bi { flex: none; }
+.board .fg > .controls + .stage { margin-top: 8px; }
+.board .stopl { margin-top: 8px; font-size: 17px; line-height: 1.32; color: var(--mist); text-align: center; }
 .board .fb.beside .stopl { display: none; }
 /* wide pictures sit centred; their line of text stays lined up with the other lines */
-.board .st.wide .fg, .board > .fg { flex-flow: column nowrap; align-self: center; }
-.board .st.wide .fg::after, .board > .fg::after { content: none; }
-.board .st.wide .stopl, .board > .fg > .stopl { flex: none; width: 100%; }
+.board .st.wide .fg, .board > .fg { align-self: center; }
 
 /* a step: the teacher's line, then what it adds. The one being read is lit; nothing goes grey once it is past */
 .board .st { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding-left: 16px; border-left: 4px solid transparent; transition: border-color .25s var(--ease); }
@@ -85,9 +84,9 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 
 /* a think stop: the word Think, the question, a button under it. The answer takes no room until pressed: the card grows
    and its top stays. What the step adds waits behind the answer, in its own space */
-html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: #0f1012; border: 0; border-top: 1px solid var(--thin); border-bottom: 1px solid var(--thin); box-shadow: none; }
+html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: transparent; border: 0; border-top: 1px solid #353634; border-bottom: 1px solid #353634; box-shadow: none; }
 .board .tq { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.board .tqt { font-size: 19px; font-weight: 500; line-height: 1.34; color: var(--ink); }
+.board .tqt { font-size: 19px; font-weight: 400; line-height: 1.34; color: var(--ink); }
 .board .tb { flex: none; white-space: nowrap; font: 650 16px var(--f-ui); color: var(--ink); background: transparent; border: 1px solid var(--thin); box-shadow: none; padding: 5px 12px; cursor: pointer; }
 .board .tb:hover { border-color: var(--accent); }
 .board .ta { display: flex; flex-direction: column; gap: 4px; font-size: 18px; line-height: 1.42; }
@@ -95,15 +94,15 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .s-board [data-wait]:not(.open):not(td, th), .s-board [data-wait]:not(.open):not(td, th) * { visibility: hidden !important; }
 .board .btag { flex: none; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 
-/* a figure that changes: Back, a dot per stop, Next. All of this row's look is in this block */
-.board .stage { display: flex; align-items: center; gap: 12px; }
-.board .sb { font: 650 18px var(--f-ui); color: var(--ink); background: transparent; border: 1px solid var(--thin); box-shadow: none; padding: 6px 14px; cursor: pointer; }
-.board .sb.next { color: var(--on); background: var(--accent); border-color: var(--accent); }
-.board .sb:disabled { color: var(--haze); background: transparent; border-color: var(--thin); cursor: default; }
-.board .dots { display: flex; gap: 6px; }
-.board .sdot { width: 16px; height: 16px; padding: 0; background: transparent; border: 2px solid var(--haze); cursor: pointer; }
-.board .sdot.on { background: var(--haze); }
-.board .sdot.now { background: var(--accent); border-color: var(--accent); }
+/* a figure that changes: Back at the left end, Next at the right, a bar per stop between them. All of this row's look is in this block */
+.board .stage { display: flex; align-items: center; gap: 24px; border-top: 1px solid #2c2d2b; padding-top: 10px; }
+.board .sb { flex: none; font: 650 17px var(--f-ui); color: #f2f2f0; background: transparent; border: 0; box-shadow: 3px 3px 0 #2c2d2b; padding: 4px 16px; cursor: pointer; }
+.board .sb.next { color: var(--accent); border: 1.5px solid var(--accent); }
+.board .sb:disabled { opacity: .38; box-shadow: none; cursor: default; }
+.board .dots { flex: 1 1 auto; display: flex; gap: 6px; min-width: 0; }
+.board .sdot { flex: 1 1 0; min-width: 0; box-sizing: content-box; height: 3px; padding: 10px 0; background: #2c2d2b content-box; border: 0; cursor: pointer; }   /* the padding only makes it easier to press */
+.board .sdot.on { background-color: var(--haze); }
+.board .sdot.now { background-color: var(--accent); }
 
 /* the table: the row in use is lit with its name in orange, the cells a worked line reads take its term colours */
 .board table.t th { font-size: 16px; padding: 6px 12px 9px; color: #9fe6d8; }
@@ -236,23 +235,23 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .board svg circle { stroke: var(--bg); stroke-width: 2.5; }
 .board svg .pring { fill: none; stroke: var(--accent); stroke-width: 4; }
 
-/* controls, under the figure they drive */
-.board .controls { margin-top: 0; gap: 10px 18px; }
-html.ls-page .board .ctl.g { background: transparent; border: 1px solid var(--thin); box-shadow: none; }
-.board .ctl { padding: 2px 12px; gap: 12px; }
-.board .ctl label { font-size: 18px; }
-.board .ctl output { font-size: 19px; }
-.board .ctl input[type=range] { width: 180px; }
-/* a run: a play button (a triangle; two bars while playing), the scrubber and the frame count; a toggle: two flat buttons */
-.board .ctl.run { padding-left: 8px; }
-.board .ctl .play { flex: none; width: 32px; height: 32px; display: grid; place-items: center; background: transparent; border: 1px solid var(--thin); cursor: pointer; padding: 0; }
+/* controls, under the figure they drive: one to a line, name, line, value, with no boxes. A run and a toggle take the same line */
+html.ls-page .board .controls { display: flex; flex-flow: column nowrap; align-items: stretch; gap: 2px; margin: 0; border-top: 1px solid #2c2d2b; padding-top: 8px; min-width: 0; }
+html.ls-page .board .ctl.g { display: flex; align-items: center; gap: 12px; box-sizing: border-box; width: 100%; min-width: 0; padding: 1px 0; background: transparent; border: 0; box-shadow: none; }
+html.ls-page .board .ctl label { min-width: 2.4em; font: 400 16px var(--f-ui); color: var(--mist); }
+html.ls-page .board .ctl output { flex: none; min-width: 5ch; text-align: right; font: 700 17px var(--f-mono); color: var(--accent); }
+html.ls-page .board .ctl input[type=range] { -webkit-appearance: none; appearance: none; flex: 1 1 auto; width: auto; min-width: 50px; height: 24px; margin: 0; background: transparent; }
+html.ls-page .board .ctl input[type=range]::-webkit-slider-runnable-track { height: 3px; background: linear-gradient(90deg, #ff5a36 var(--fill, 50%), #2c2d2b var(--fill, 50%)); }
+html.ls-page .board .ctl input[type=range]::-moz-range-track { height: 3px; background: linear-gradient(90deg, #ff5a36 var(--fill, 50%), #2c2d2b var(--fill, 50%)); }
+html.ls-page .board .ctl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 20px; height: 20px; margin-top: -8.5px; background: var(--bg); border: 3px solid #ff5a36; border-radius: 50%; box-shadow: none; }
+html.ls-page .board .ctl input[type=range]::-moz-range-thumb { box-sizing: border-box; width: 20px; height: 20px; background: var(--bg); border: 3px solid #ff5a36; border-radius: 50%; box-shadow: none; }
+/* a run: a play button (a triangle; two bars while playing), the scrubber and the frame count; a toggle: two words, the one on in orange */
+html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display: grid; place-items: center; background: transparent; border: 0; box-shadow: none; cursor: pointer; padding: 0; }
 .board .ctl .play::before { content: ''; width: 0; height: 0; margin-left: 4px; border-left: 14px solid var(--accent); border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
 .board .ctl .play.on::before { width: 14px; height: 16px; margin: 0; border: 0; border-left: 5px solid var(--accent); border-right: 5px solid var(--accent); box-sizing: border-box; }
-.board .ctl.run output { min-width: 5ch; }
-.board .ctl.tog .seg2 { display: flex; }
-.board .ctl.tog button { font: 650 17px var(--f-ui); color: var(--mist); background: transparent; border: 1px solid var(--thin); padding: 4px 12px; cursor: pointer; }
-.board .ctl.tog button + button { border-left: 0; }
-.board .ctl.tog button.on { color: var(--on); background: var(--accent); border-color: var(--accent); }
+.board .ctl.tog .seg2 { display: flex; gap: 4px; }
+.board .ctl.tog button { font: 650 17px var(--f-ui); color: var(--mist); background: transparent; border: 0; box-shadow: none; padding: 0 8px; cursor: pointer; }
+.board .ctl.tog button.on { color: var(--accent); }
 
 /* a phone stacks everything */
 @media (max-width: 760px) {

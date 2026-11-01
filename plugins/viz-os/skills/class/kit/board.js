@@ -72,7 +72,7 @@
   }
 
   function plane(p, ctx, clickOf, at) {
-    const node = h('div', 'bi plane'); node.dataset.at = at;
+    const node = h('div', p.fill ? 'bi plane fill' : 'bi plane'); node.dataset.at = at;
     if (p.id) node.dataset.id = p.id;
     const leg = h('div', 'plegend'); node.appendChild(leg);
     const wrap = h('div', 'pwrap'); node.appendChild(wrap);
@@ -80,20 +80,21 @@
     const R = { node, issues: [], kind: 'plane', w: 0, h: 0, leg: LEG };
     const num = (x, where) => L.val(x, ctx.scope, where);
     const m = { l: 62, r: 18, t: 14, b: 60 }, boxOf = () => { const X = p.x || {}, Y = p.y || {}; return [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)]; };
-    // the widest picture that fits the room at one scale for both axes: its ranges alone set its shape
-    R.size = room => { const b = boxOf(), xs = b[1] - b[0], ys = b[3] - b[2], u = Math.min((room.w - PAD - m.l - m.r) / xs, (room.h - PAD - R.leg - m.t - m.b) / ys);
-      R.w = Math.round(u * xs + m.l + m.r); R.h = Math.round(u * ys + m.t + m.b); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
+    // the widest picture that fits the room at one scale for both axes: its ranges alone set its shape.
+    // With `fill` the plot takes the chart shape, each axis at its own scale
+    R.size = room => { const b = boxOf(), xs = b[1] - b[0], ys = b[3] - b[2], aw = room.w - PAD - m.l - m.r, ah = room.h - PAD - R.leg - m.t - m.b, u = Math.min(aw / xs, ah / ys), gh = p.fill ? Math.min(ah, aw / SHAPE) : u * ys, gw = p.fill ? Math.min(aw, gh * SHAPE) : u * xs;
+      R.w = Math.round(gw + m.l + m.r); R.h = Math.round(gh + m.t + m.b); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
     R.layout = () => {
       svg.innerHTML = ''; leg.innerHTML = ''; R.issues = [];
       const W = R.w, H = R.h; if (W < 40 || H < 40) { R.issues.push('the picture has no room'); return; }
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-      const X = p.x || {}, Y = p.y || {}, box = boxOf(), shape = (box[1] - box[0]) / (box[3] - box[2]);
-      if (shape < .6 || shape > 1.75) R.issues.push(`a plane is ${shape.toFixed(2)} wide per 1 tall: its width over height must stay between 0.6 and 1.75, so change its x and y ranges or the spacing of what it shows`);
-      const pw = W - m.l - m.r, ph = H - m.t - m.b;
-      const u = Math.min(pw / (box[1] - box[0]), ph / (box[3] - box[2]));      // pixels per unit, the same on both axes
-      const gw = u * (box[1] - box[0]), gh = u * (box[3] - box[2]), ox = m.l + (pw - gw) / 2, oy = m.t + (ph - gh) / 2;
-      const sx = x => ox + (x - box[0]) * u, sy = y => oy + gh - (y - box[2]) * u;
-      R.unit = [u, u];
+      const X = p.x || {}, Y = p.y || {}, box = boxOf();
+      const pw = W - m.l - m.r, ph = H - m.t - m.b, u = Math.min(pw / (box[1] - box[0]), ph / (box[3] - box[2]));      // pixels per unit, the same on both axes
+      const ux = p.fill ? pw / (box[1] - box[0]) : u, uy = p.fill ? ph / (box[3] - box[2]) : u;                          // unless the plane fills its room
+      const gw = ux * (box[1] - box[0]), gh = uy * (box[3] - box[2]), ox = m.l + (pw - gw) / 2, oy = m.t + (ph - gh) / 2, shape = gw / gh;
+      if (shape < .6 || shape > 1.8) R.issues.push(`a plane is ${shape.toFixed(2)} wide per 1 tall: its width over height must stay between 0.6 and 1.8, so change its x and y ranges or the spacing of what it shows`);
+      const sx = x => ox + (x - box[0]) * ux, sy = y => oy + gh - (y - box[2]) * uy;
+      R.unit = [ux, uy];
       const grid = sv('g', { class: 'pgrid' }, svg);
       const tx = niceStep(box[1] - box[0]), ty = niceStep(box[3] - box[2]);
       for (let v = Math.ceil(box[0] / tx) * tx; v <= box[1] + 1e-9; v += tx) { sv('line', { x1: sx(v), x2: sx(v), y1: oy, y2: oy + gh }, grid); sv('text', { class: 'tick', x: sx(v), y: oy + gh + 26, 'text-anchor': 'middle' }, grid).textContent = L.fmt(+v.toFixed(6)); }
@@ -189,9 +190,9 @@
   }
 
   // ---------- how much room a figure gets ----------
-  const FIG = 520, SIDE = 360, GAP = 24, UNDER = 1060;    // a figure sits beside its 360 px of lines when it keeps a good width; a figure over its lines stops at 1060
-  const FOOT = 46;                                        // one row of buttons and its gap, already counted in figH
-  const figH = () => Math.min(720, innerHeight - 190);    // with a scene's head at the top of the window, the buttons stay on it
+  const FIG = 520, SIDE = 300, GAP = 20, UNDER = 1280, WIDE = 1060;   // beside needs 520 px of figure and 300 of side column; a figure over its text stops at 1280, parts and dist at 1060
+  const sideOf = W => Math.max(SIDE, Math.round(W * .3 - GAP / 2));   // 70 / 30, the gap included
+  const SHAPE = 16 / 9, FIGH = 820;                                   // a chart's shape unless it has a ratio; the tallest figure
   const ratioOf = (r, dflt) => { if (typeof r === 'number' && r > 0) return r; const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(r ?? '')); return m && +m[2] ? +m[1] / +m[2] : dflt; };
   const PAD = 16, LEG = 38;   // a figure's frame: its padding, both sides; a plane's legend row
   const PROSE = new Set(['label', 'name', 'caption', 'alt', 'text', 'say', 'title', 'verdict']);
@@ -201,7 +202,7 @@
 
   // a stepped figure: Back, a dot per stop, Next
   function stageBar(stops, go) {
-    const bar = h('div', 'stage', `<button type="button" class="sb back">‹ Back</button><span class="dots">${stops.map((_, i) => `<button type="button" class="sdot" aria-label="stop ${i + 1}"></button>`).join('')}</span><button type="button" class="sb next">Next ›</button>`), line = h('div', 'stopl');
+    const bar = h('div', 'stage', `<button type="button" class="sb back" aria-label="Back">‹</button><span class="dots">${stops.map((_, i) => `<button type="button" class="sdot" aria-label="stop ${i + 1}"></button>`).join('')}</span><button type="button" class="sb next" aria-label="Next">›</button>`), line = h('div', 'stopl');
     const bs = bar.querySelectorAll('.sb'), ds = [...bar.querySelectorAll('.sdot')];
     bs[0].onclick = () => go(-1, true); bs[1].onclick = () => go(1, true); ds.forEach((d, i) => { d.onclick = () => go(i, false); });
     return { bar, line, set: (i, asking) => { bs[0].disabled = i === 0 && !asking; bs[1].disabled = i === stops.length - 1; ds.forEach((d, q) => { d.classList.toggle('on', q < i); d.classList.toggle('now', q === i); }); } };
@@ -216,6 +217,8 @@
     const clickOf = j => (map[Math.max(1, Math.min(steps.length, j)) - 1] || { at: 1 }).at;
     const waits = new Set(steps.flatMap((st, j) => st && st.think ? [map[j].at] : []));   // what a think step adds waits for its answer
     const root = h('div', 'body board'); node.appendChild(root);
+    // with the scene's head at the top of the window, the figure and all that goes under it stay on screen
+    const figH = () => Math.min(FIGH, innerHeight - (root.getBoundingClientRect().top - node.getBoundingClientRect().top) - 12);
     const zl = s.table ? h('div', 'tcol') : null, zt = s.table ? h('div', 'tcard g plate') : null;   // the pinned column: the table, then side notes
     if (zl) zl.appendChild(zt);
 
@@ -245,7 +248,7 @@
       if (v.chart && (v.chart.legend === false || list(v.chart.series).filter(q => q.name && q.legend !== false).length < 2)) e.classList.add('bare');   // no legend, so no legend row
       const V = visual(v), body = V.node; e.appendChild(body);
       const fg = { node: e, V, kind, issues: [], w: 0, h: 0, stops: [...stepsIn((v.chart || {}).series), ...stepsIn((v.chart || {}).marks), ...stepsIn(v.labels)] };
-      const pick = sel => body.querySelector(sel), rr = ratioOf(ratio ?? (v.chart || v.dist || {}).ratio, 16 / 10);
+      const pick = sel => body.querySelector(sel), rr = ratioOf(ratio ?? (v.chart || v.dist || {}).ratio, SHAPE);
       // the widest size that keeps the shape: `over` is what sits round the shape inside the plate (a caption, a legend)
       const fit = (room, r, over) => { const hh = Math.round(Math.min((room.w - PAD) / r, room.h - over)); return [Math.round(hh * r) + PAD, hh]; };
       fg.size = room => {
@@ -463,15 +466,15 @@
         if (j > S.i && S.ask !== j && unanswered(uniq[j])) { if (j > S.i + 1) S.to(j - 1); asked(j); return true; }
         S.to(j); return true; };
       const ui = stageBar(uniq, go);
-      // the line by the buttons: the step's own words, or for a think step its question and then its answer
+      // the line by the buttons, from the second stop on (the first is the line just read): the step's own words, or for a think step its question and then its answer
       const lineOf = (c, answered) => { const e = stepAt(c), ta = e && e.querySelector('.ta > span:last-child'), q = e && e.querySelector('.tqt'), say = e && e.querySelector(':scope > .say');
         return (answered ? ta || say : say || q) || q; };
       S.show = () => { const on = S.ask != null, c = uniq[on ? S.ask : S.i], e = lineOf(c, !on && !unanswered(c));
-        paint(uniq[S.i]); ui.set(S.i, on); ui.line.innerHTML = e ? e.innerHTML : '';
+        paint(uniq[S.i]); ui.set(S.i, on); ui.line.innerHTML = e && (on || S.i) ? e.innerHTML : '';
         S.lines.forEach(q => q.classList.toggle('atstop', on ? +q.dataset.at === c : stopOf(+q.dataset.at) === S.i)); };
       // its room is the tallest words it will hold, so the page under it does not jump
       S.fit = () => { const l = ui.line; if (!l.clientWidth) return; const now = l.innerHTML; l.style.minHeight = ''; let most = 0;
-        uniq.forEach(c => [true, false].forEach(a => { const e = lineOf(c, a); if (e) { l.innerHTML = e.innerHTML; most = Math.max(most, l.offsetHeight); } }));
+        uniq.slice(1).forEach(c => [true, false].forEach(a => { const e = lineOf(c, a); if (e) { l.innerHTML = e.innerHTML; most = Math.max(most, l.offsetHeight); } }));
         l.innerHTML = now; l.style.minHeight = most + 'px'; };
       // go to a stop: the run takes its frame, the think stop there opens, the table lights up for that step
       S.to = j => { S.i = j; S.ask = null; const c = uniq[j];
@@ -502,8 +505,8 @@
       const stp = c => (c.at ? ` data-step="${c.at}"` : '') + (waits.has(c.at) ? ` data-wait="${c.at}"` : ''), wt = c => waits.has(c.at) ? ` data-wait="${c.at}"` : '';
       zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der' : ''}" data-col="${L.esc(c.key)}"${wt(c)}><span class="cv">${md(c.label || c.key)}</span></th>`).join('')}</tr></thead>
         <tbody>${rows.map((r, i) => `<tr data-r="${i}">${tcols.map(c => `<td class="${c.expr ? 'der' : ''}" data-r="${i}" data-col="${L.esc(c.key)}"${stp(c)}><span class="cv">${cell(c, r)}</span></td>`).join('')}</tr>`).join('')}</tbody></table>`;
-      // a table too wide to leave good room for the work goes above it
-      if (pair) { pair.classList.remove('stacked'); pair.classList.toggle('stacked', zt.offsetWidth > pair.clientWidth * .56); }
+      // the table fills its 30%; one too wide for that takes what it needs, and if that leaves the work too little it goes above it
+      if (pair) { pair.classList.add('stacked'); const W = pair.clientWidth, w = Math.max(zt.offsetWidth, sideOf(W)); pair.style.setProperty('--tcw', w + 'px'); pair.classList.toggle('stacked', W - w - GAP < FIG); }
     };
 
     // highlights, on the things themselves: the row a worked line reads (its cells in the line's colours), and any
@@ -531,21 +534,23 @@
     const fill = k => { if (zt) shown(zt, k); };
     const mark = k => stepEls.forEach(e => e.classList.toggle('now', +e.dataset.at === k || +e.dataset.q === k));
 
+    // a figure's rows take its width
+    const sized = (fg, room) => { const w = fg.size(room); fg.wrap.style.width = w + 'px'; return w; };
     // the figures: how each sizes itself. Two figures on one step stand in a row above their lines
     const place = () => { blocks.forEach(b => {
       const room = { w: 0, h: figH() };
-      if (b.wide) { room.w = root.clientWidth; b.figs.forEach(fg => fg.size(fg.kind === 'parts' || fg.kind === 'dist' ? { w: Math.min(room.w, UNDER), h: room.h } : room)); return; }
-      b.node.style.maxWidth = ''; const W = b.node.clientWidth, many = b.figs.length > 1, inPair = b.node.closest('.bpair:not(.stacked)');
-      const beside = !b.over && !inPair && !many && b.side.children.length > 0 && W >= FIG + GAP + SIDE;
-      room.w = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - SIDE - GAP : Math.min(W, UNDER);
-      b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many);
-      const size = () => { const w = Math.max(...b.figs.map(fg => fg.size(room))); b.fig.style.width = many ? '' : w + 'px'; b.node.style.maxWidth = beside || many ? '' : w + 'px'; };
-      // what the figure must share the window with: the line above it, and whatever under it is more than one row of buttons
+      if (b.wide) { room.w = root.clientWidth; b.figs.forEach(fg => sized(fg, fg.kind === 'parts' || fg.kind === 'dist' ? { w: Math.min(room.w, WIDE), h: room.h } : room)); return; }
+      b.node.style.maxWidth = ''; const W = b.node.clientWidth, side = sideOf(W), many = b.figs.length > 1, inPair = b.node.closest('.bpair:not(.stacked)');
+      const beside = !b.over && !inPair && !many && b.side.children.length > 0 && W - side - GAP >= FIG;
+      room.w = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - side - GAP : Math.min(W, UNDER);
+      b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many); b.node.style.setProperty('--side', side + 'px');
+      const size = () => { const w = Math.max(...b.figs.map(fg => sized(fg, room))); b.fig.style.width = many ? '' : w + 'px'; b.node.style.maxWidth = beside || many ? '' : w + 'px'; };
+      // what the figure must share the window with: the line above it, and its slider and button rows, if it has any
       const shared = () => { const say = beside ? null : b.side.querySelector(':scope > .st.intro > .say'); let foot = 0;
-        b.figs.forEach(fg => { if (fg.stage) fg.stage.fit(); foot = Math.max(foot, fg.wrap.offsetHeight - fg.node.offsetHeight - FOOT); });
-        return (say ? say.offsetHeight + 18 : 0) + Math.max(0, foot); };
+        b.figs.forEach(fg => { if (fg.stage) fg.stage.fit(); foot = Math.max(foot, fg.wrap.offsetHeight - fg.node.offsetHeight); });
+        return (say ? say.offsetHeight + 18 : 0) + foot; };
       size(); for (let pass = 0; pass < 3; pass++) { room.h = figH() - shared(); size(); } });
-      node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / 1.6) + 'px'; }); };
+      node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / SHAPE) + 'px'; }); };
     // a worked line too long to sit beside the table sends the table above the work: a formula is never shrunk or cut
     const widen = () => { if (!pair || pair.classList.contains('stacked')) return; const edge = pair.getBoundingClientRect().right;
       if ([...pair.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1)) { pair.classList.add('stacked'); place(); drawLines(); } };

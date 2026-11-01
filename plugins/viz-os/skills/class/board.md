@@ -214,7 +214,7 @@ add:
     marks: [{kind: hline, y: xbar, label: 'mean {{xbar|1}}', step: 2}]
   caption: The tallest stick sits farthest above the line.
 ```
-`ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 3:2; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
+`ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 16:9; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
 
 A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows on the scene's second step. Dots on a category axis sit at the left edge of their band: add 0.5 to `x` to centre them.
 
@@ -222,6 +222,8 @@ An `image` is only for when the user asks for a picture (`D/scripts/image.py`). 
 
 ### `plane`: geometry with equal scales
 A coordinate plane with one scale for both axes, so a slope, a right angle and a square look like what they are.
+
+Add `fill: true` to a plane that is a scatter, a line or a shaded side, with no right angle or length the lesson relies on. It takes the chart shape, with its own scale per axis, and fills its column. It cannot hold a `vector`, `foot` or `square`.
 ```yaml
 add:
   plane:
@@ -358,6 +360,7 @@ The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [
 | `` `rows: X` names data, which a table cannot read `` | write `from: X` |
 | `the line for X has its own name as its formula` | write the formula from the names it is made of |
 | `plane mark N is one of …` / `plane line takes 3 values` | one mark kind per entry; quote expressions with commas |
+| `a plane with fill stretches its axes` | delete `fill`, or drop the `vector`, `foot` or `square` |
 | `` control …: `run` is the number of frames `` / `stops … are not frames` | `run` ≥ 2; stops between 0 and run − 1 |
 | `the run stops on N frames, one per click, but the scene has M steps` | one stop per step, or `frame:` on the steps |
 | `one run per scene` | split the scene |

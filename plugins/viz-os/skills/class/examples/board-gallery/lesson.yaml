@@ -196,6 +196,7 @@ slides:
         add:
           - {params: {say: 'The line, at this update', names: [w0, w1, w2]}}
           - plane:
+              fill: true
               x: {label: CD3, min: 0, max: 10}
               y: {label: CD19, min: 0, max: 10}
               marks:
@@ -252,6 +253,7 @@ slides:
       - say: Next time we ask whether CD3 and CD19 rise and fall together.
         add:
           plane:
+            fill: true
             x: {label: CD3, min: 0, max: 10}
             y: {label: CD19, min: 0, max: 10}
             marks:

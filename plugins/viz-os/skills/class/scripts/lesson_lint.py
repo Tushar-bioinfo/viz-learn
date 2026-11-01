@@ -96,6 +96,8 @@ def lint_plane(B, Lx, w, pl, names):
             Lx.err(w, f"plane mark {i + 1} is one of {', '.join(PLANE)}; got {mk!r}")
             continue
         k, v = kind[0], mk[kind[0]]
+        if pl.get("fill") and k in ("vector", "foot", "square"):
+            Lx.err(w, f"a plane with `fill` stretches its axes, so a `{k}` would not read true: delete `fill`, or drop the mark")
         if mk.get("when") is not None:
             ex(mk["when"])
         if k in ("shade", "line"):

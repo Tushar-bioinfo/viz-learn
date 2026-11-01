@@ -1,0 +1,25 @@
+# expect: a plane with `fill` stretches its axes
+# A square on a stretched plane stops being square.
+title: A square that fills
+question: What if a filled plane holds a square?
+answer: The lint asks to drop one of them.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
+  - type: board
+    beat: problem
+    title: A square
+    lead: Build a square.
+    steps:
+      - say: The square on a distance.
+        add:
+          plane:
+            fill: true
+            x: {min: 0, max: 4}
+            y: {min: 0, max: 4}
+            marks:
+              - square: [[1, 1], [2, 1]]
