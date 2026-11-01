@@ -121,6 +121,17 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .cline .cwhy { font-size: 18px; line-height: 1.5; }
 .board .cline .math { font-size: 29px; }
 .board .lt.tc { color: var(--tc); }
+/* a piece of a formula never breaks across rows; board.js shrinks it to fit */
+.board .math .katex-html { white-space: nowrap; }
+.board .cline .math { min-width: 0; }
+.board .cline .math.wrapped > .part + .part { margin-left: 0; }
+/* with no figure beside them, equations sit centred in the reading column; in a side column they stay left */
+.board > .lines > .st :is(.cline, .fline) .math, .board > .lines > .fb:not(.beside) :is(.cline, .fline) .math, .board > .bpair.stacked :is(.cline, .fline) .math { grid-column: 1 / -1; text-align: center; justify-content: center; }
+.board > .lines > .st .cline .math.wrapped, .board > .lines > .fb:not(.beside) .cline .math.wrapped, .board > .bpair.stacked .cline .math.wrapped { align-items: center; }
+/* the key row: each symbol in its colour, then its plain name */
+.board .wkey { flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: inherit; gap: 2px 8px; margin-top: 6px; font: 400 16px/1.5 var(--f-ui); color: var(--mist); text-align: left; }
+.board .wk { display: inline-flex; align-items: baseline; gap: 6px; }
+.board .wk + .wk::before { content: "·"; margin-right: 2px; }
 .board .wl { position: absolute; transform: translateX(-50%); white-space: nowrap; font: 600 16px var(--f-ui); color: var(--ink); line-height: 1.2; }
 .board .fline { display: flex; flex-direction: column; gap: 14px; }
 .board .fline .say { font-size: 18px; font-weight: 400; line-height: 1.5; }
@@ -129,8 +140,9 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .asm { padding: 14px 24px; display: flex; flex-direction: column; gap: 14px; }
 .board .asm .say { font-size: 20px; font-weight: 650; }
 .board .asm .abridge .say { font-size: 18px; font-weight: 400; }
-.board .arow { display: grid; grid-template-columns: 132px minmax(0, 1fr); column-gap: 16px; align-items: center; }
-.board .arow .math { font-size: 32px; }
+.board .arow { display: grid; grid-template-columns: 132px minmax(0, 1fr) 132px; column-gap: 16px; align-items: center; }
+.board .arow .math { font-size: 32px; text-align: center; }
+.board .arow .wkey { justify-content: center; }
 .board .atag { font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tint); }
 .board .note { font-size: 18px; line-height: 1.5; }
 .board .hl { box-shadow: 4px 4px 0 var(--accent); }

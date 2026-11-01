@@ -35,23 +35,27 @@
   // every \htmlClass{lt lt-<name>} span of a part takes its colour
   const tint = (part, colorOf) => part.querySelectorAll('.lt').forEach(sp => {
     const c = colorOf([...sp.classList].find(x => x.startsWith('lt-')).slice(3)); if (c) { sp.classList.add('tc'); sp.style.setProperty('--tc', c); } });
-  // names under the formula's symbols: centred on the symbol, sliding or dropping a row to clear each other
-  function names(part, items) {
-    part.style.paddingBottom = '';
-    part.querySelectorAll(':scope > .wl').forEach(e => e.remove());
+  // a worked line takes its full size if it fits, else it drops until it does, down to the floor. Every part keeps one size, so the line stays even
+  const FLOOR = 20, wideOf = m => Math.max(0, ...[...m.querySelectorAll('.katex')].filter(k => !k.closest('.wkey')).map(k => k.getBoundingClientRect().width));
+  const fitMath = ms => { ms.forEach(m => { m.style.fontSize = ''; }); const k = Math.min(1, ...ms.map(m => { const w = wideOf(m); return w && m.clientWidth ? m.clientWidth / w : 1; }));
+    if (k < 1) ms.forEach(m => { m.style.fontSize = Math.max(FLOOR, Math.floor(parseFloat(getComputedStyle(m).fontSize) * k * 2) / 2) + 'px'; }); };
+  // names under the formula's symbols, centred on the symbol, sliding a little to clear each other. If two would touch, or the
+  // formula has a fraction, they never stack: one key row goes under the formula instead, each symbol in its colour, then its name
+  function names(part, items, key) {
+    const math = part.closest('.math') || part; part.style.paddingBottom = '';
+    part.querySelectorAll(':scope > .wl').forEach(e => e.remove()); math.querySelectorAll(':scope > .wkey').forEach(e => e.remove());
     const base = part.getBoundingClientRect(), top0 = base.height + 14, placed = [], edge = part.closest('.slide').getBoundingClientRect().right - base.left;   // a name stays on the page
-    items.forEach(({ n, text }) => {
-      const sp = part.querySelector(`.lt-${CSS.escape(n)}`); if (!sp) return; const r = sp.getBoundingClientRect(); if (!r.width) return;
+    const shown = items.filter(({ n }) => { const sp = part.querySelector(`.lt-${CSS.escape(n)}`); return sp && sp.getBoundingClientRect().width; });
+    let touch = !!part.querySelector('.mfrac');
+    if (!touch) for (const { n, text } of shown) { const r = part.querySelector(`.lt-${CSS.escape(n)}`).getBoundingClientRect();
       const lab = h('div', 'wl', L.esc(text)); part.appendChild(lab);
-      const w = lab.offsetWidth, hh = lab.offsetHeight, cx = r.left + r.width / 2 - base.left;
-      // the first row where it fits, sliding right by up to a third of its width past the name before it
-      let row = 0, x = cx;
-      for (; row < 3; row++) { const prev = placed.filter(b => b.row === row).reduce((m, b) => Math.max(m, b.cx + b.w / 2 + 10), -1e9);
-        if (prev <= cx - w / 2) { x = cx; break; } if (prev - (cx - w / 2) <= w / 3) { x = prev + w / 2; break; } }
-      const y = top0 + row * (hh + 2), cxp = Math.min(x, edge - w / 2); placed.push({ cx: cxp, w, row, bottom: y + hh });
-      Object.assign(lab.style, { left: cxp + 'px', top: y + 'px' });
-    });
-    if (placed.length) part.style.paddingBottom = Math.max(...placed.map(b => b.bottom)) - base.height + 4 + 'px';
+      const w = lab.offsetWidth, hh = lab.offsetHeight, cx = r.left + r.width / 2 - base.left, prev = placed.reduce((m, b) => Math.max(m, b.cx + b.w / 2 + 10), -1e9);
+      const cxp = Math.min(Math.max(cx, prev + w / 2), edge - w / 2);
+      if (prev - (cx - w / 2) > w / 3 || cxp - w / 2 < prev - 1) { touch = true; break; }   // past a third of its width it no longer reads as under its symbol
+      placed.push({ cx: cxp, w, bottom: top0 + hh });
+      Object.assign(lab.style, { left: cxp + 'px', top: top0 + 'px' }); }
+    if (touch) { part.querySelectorAll(':scope > .wl').forEach(e => e.remove()); if (shown.length) key(math, shown); }
+    else if (placed.length) part.style.paddingBottom = Math.max(...placed.map(b => b.bottom)) - base.height + 4 + 'px';
   }
 
   // ---------- plane: one scale for both axes, so a slope and a right angle look like what they are ----------
@@ -376,6 +380,8 @@
     };
     // a symbol's own colour wins; the other inputs take s1, s2, s3 in reading order; the result and indices stay ink
     const termColor = ids => { const free = ids.filter(q => !symColor(q) && !kindOf(q)); return q => symColor(q) || (free.indexOf(q) >= 0 && free.indexOf(q) < 3 ? col(TERMC[free.indexOf(q)]) : null); };
+    const keyRow = colorOf => (math, items) => { const e = h('div', 'wkey', items.map(({ text }) => `<span class="wk"><span class="wm"></span>${L.esc(text)}</span>`).join('')); math.appendChild(e);
+      e.querySelectorAll('.wm').forEach((m, i) => { L.renderTex(m, lt(items[i].n, sym(items[i].n)), false); tint(m, colorOf); }); };
     const termNames = (ids, skip) => ids.filter(q => !kindOf(q) && !(skip && skip.has(q))).map(q => { if (skip) skip.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; });
     const drawAsm = () => asm.forEach(A => {
       const a = A.a, [nm, sy] = A.e.querySelectorAll('.arow .math'), { tex, ids } = formTex(a), colorOf = termColor(ids);
@@ -384,15 +390,15 @@
         const { tex: sub, eq } = L.work(a.expr, { slash: true, val: q => typeof ctx.scope[q] === 'number' ? ctx.scope[q] : null, arr: q => Array.isArray(ctx.scope[q]) ? ctx.scope[q] : null, wrap: lt, fmt: a.fmt, lit: null, fmtOf: (q, x) => subFmt(ctx, q, x) }, v, a.fmt, ctx.scope);
         nums = `${sub} ${eq} \\htmlClass{res}{${L.numTex(v, a.fmt)}}`; }
       else nums = L.interp(String(a.plug || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*):([^\]]*)\]/g, (_, q, x) => q === a.lhs ? `\\htmlClass{res}{${x}}` : lt(q, x)).replace(/\[([A-Za-z_]\w*)\]/g, (_, q) => lt(q, sym(q)));
-      L.renderTex(nm, nums, false); L.renderTex(sy, tex, false); tint(nm, colorOf); tint(sy, colorOf);
-      names(sy, termNames(ids));   // every term gets its plain name here (R4), even one named earlier in the scene
+      L.renderTex(nm, nums, false); L.renderTex(sy, tex, false); tint(nm, colorOf); tint(sy, colorOf); fitMath([nm, sy]);
+      names(sy, termNames(ids), keyRow(colorOf));   // every term gets its plain name here (R4), even one named earlier in the scene
     });
     // write each worked line: symbol = formula, = numbers, = result (stacked at the = signs when too long for a row)
     const drawLines = () => {
       work();
       const named = new Set(), shownFmt = {};
       lines.forEach(ln => {
-        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, termColor(ids)); names(m, termNames(ids, named)); return; }
+        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, termColor(ids)); fitMath([m]); names(m, termNames(ids, named), keyRow(termColor(ids))); return; }
         if (!ln.c) return; const c = ln.c, math = ln.row.querySelector('.math'); math.innerHTML = ''; math.classList.remove('wrapped');
         if (!c.expr) return;
         const f = L.tex(c.expr, { sym, wrap: (q, tx) => lt(q, tx) });
@@ -400,9 +406,9 @@
           fmt: c.fmt, lit: null, fmtOf: (q, x) => subFmt(ctx, q, x, shownFmt[q]) }, ln.val, c.fmt, ln.sc);
         const parts = [[c.name ? `${sym(c.name)} = ${f}` : f, 'f'], [`= ${sub}`, 'sub'], [`${eq} \\htmlClass{res}{${L.numTex(ln.val, c.fmt)}}`, 'r']];
         parts.forEach(([tx, cls]) => { const sp = h('span', 'part ' + cls); math.appendChild(sp); L.renderTex(sp, tx, false); });
-        const ps = [...math.children]; ps.slice(0, 2).forEach(q => tint(q, ln.color)); if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
+        const ps = [...math.children]; ps.slice(0, 2).forEach(q => tint(q, ln.color)); fitMath([math]); if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
         if (c.name) shownFmt[c.name] = c.fmt;
-        names(ps[0], L.names(c.expr).filter(q => !named.has(q) && q !== c.name).map(q => { named.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; }));
+        names(ps[0], L.names(c.expr).filter(q => !named.has(q) && q !== c.name).map(q => { named.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; }), keyRow(ln.color));
       });
     };
     // a parameter card: each named number with its symbol in its colour, its value now and its name (it follows the sliders)
@@ -574,11 +580,11 @@
       root.style.setProperty('--read', read + 'px');
       blocks.forEach(b => { if (b.wide) b.figs.forEach(fg => sized(fg, { w: read, col: read, h: figH() })); });
       node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / SHAPE) + 'px'; }); };
-    // a worked line too long to sit beside the table sends the table above the work: a formula is never shrunk or cut
+    // a worked line too long to sit beside the table, even at the floor, sends the table above the work
     const widen = () => { if (!pair || pair.classList.contains('stacked')) return; const edge = pair.getBoundingClientRect().right;
       if ([...pair.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1)) { pair.classList.add('stacked'); place(); drawLines(); } };
     // anything sticky taller than the window would hide its own foot
-    // a formula that runs past the text column sends that one figure above its text
+    // a formula that runs past the text column at the floor sends that one figure above its text
     const overrun = () => { let moved = false; blocks.forEach(b => { if (b.wide || !b.node.classList.contains('beside')) return; const edge = b.side.getBoundingClientRect().right;
       if ([...b.side.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1)) b.over = moved = true; });
       if (moved) { place(); drawLines(); } };
@@ -605,11 +611,11 @@
         figs.forEach(fg => { out.push(...(fg.issues || []));
           if (['plane', 'chart', 'image', 'units'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
         node.querySelectorAll('.board .vis .chart').forEach(c => { const r = c.getBoundingClientRect(), q = r.width / (r.height || 1); if (q < 1 || q > 2.2) out.push(`a chart is ${Math.round(r.width)} × ${Math.round(r.height)} px: its shape must stay between 1:1 and 2.2:1, so set its \`ratio\``); });
-        root.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { if (parseFloat(getComputedStyle(m).fontSize) < 26) out.push('a formula renders under 26px'); });
+        root.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { if (parseFloat(getComputedStyle(m).fontSize) < FLOOR) out.push(`a formula renders under ${FLOOR}px`); });
         node.querySelectorAll('table.t td').forEach(c => { if (parseFloat(getComputedStyle(c).fontSize) < 18) out.push('a table cell renders under 18px'); });
         vis.forEach(V => out.push(...V.audit())); figs.forEach(fg => fg.O && out.push(...fg.O.audit()));
         root.querySelectorAll('.approx').length && out.push('a worked line does not add up by hand at the rounding shown (it reads ≈): give its inputs a finer fmt');
-        root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = m.closest('.st, .asm'); if (kx && box && kx.getBoundingClientRect().right > box.getBoundingClientRect().right + 2) out.push('a formula is wider than its box: shorten it or split the line'); });
+        root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = m.closest('.st, .asm'); if (kx && box && kx.getBoundingClientRect().right > box.getBoundingClientRect().right + 2) out.push(`a formula is wider than its box at ${FLOOR}px: shorten it or split the line`); });
         out.push(...clash);
         return out;
       },

@@ -398,7 +398,7 @@ def no_repeat(page):
 FIVE = ((1100, 800), (1280, 720), (1480, 800), (1728, 1000), (1920, 1080))
 FORMULAS = ".cline .math, .fline .math, .asm .math"
 # a part of a worked line whose pieces go back to the left has broken across rows
-BROKEN = """() => { const out = []; document.querySelectorAll('.cline .part, .fline .math, .asm .math').forEach(p => { const bs = [...p.querySelectorAll('.katex-html > .base')].map(b => b.getBoundingClientRect()).filter(r => r.width);
+BROKEN = """() => { const out = []; document.querySelectorAll('.cline .part, .fline .math, .asm .math').forEach(p => { const bs = [...p.querySelectorAll('.katex-html > .base')].filter(b => !b.closest('.wkey')).map(b => b.getBoundingClientRect()).filter(r => r.width);
   if (bs.some((r, i) => i && r.left < bs[i - 1].right - 2)) out.push([p.closest('.slide').id, p.textContent.slice(0, 30)]); }); return out; }"""
 
 
