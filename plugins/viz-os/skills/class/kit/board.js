@@ -579,7 +579,7 @@
         els.forEach(e => { e.classList.add(cls); if (cls === 'src') e.style.setProperty('--tc', 'var(--accent)'); }); });
     };
     const fill = k => { if (zt) shown(zt, k); };
-    const mark = k => stepEls.forEach(e => e.classList.toggle('now', +e.dataset.at === k || +e.dataset.q === k));
+    const mark = k => { stepEls.forEach(e => e.classList.toggle('now', +e.dataset.at === k || +e.dataset.q === k)); root.querySelectorAll('.rl').forEach(e => e.classList.toggle('now', +e.dataset.at === k)); };   // a callout left outside its step lights with it
 
     // a figure's rows take its width
     const sized = (fg, room) => { const w = fg.size(room); fg.wrap.style.width = w + 'px'; return w; };
@@ -596,7 +596,7 @@
       // what the figure must share the window with: the line above it, and its slider and button rows, if it has any
       const shared = () => { const say = beside ? null : b.side.querySelector(':scope > .st.intro > .say'); let foot = 0;
         b.figs.forEach(fg => { if (fg.stage) fg.stage.fit(); foot = Math.max(foot, fg.wrap.offsetHeight - fg.node.offsetHeight); });
-        return (say ? say.offsetHeight + 14 : 0) + foot; };
+        return (say ? say.offsetHeight + 12 : 0) + foot; };
       size(); for (let pass = 0; pass < 3; pass++) { read = read0; room.h = figH() - shared(); size(); } });
       root.style.setProperty('--read', read + 'px');
       blocks.forEach(b => { if (b.wide) b.figs.forEach(fg => sized(fg, { w: read, col: read, h: figH() })); });

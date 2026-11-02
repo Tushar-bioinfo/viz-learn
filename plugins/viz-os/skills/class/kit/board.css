@@ -58,7 +58,7 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 .board .fb.beside > .ffig { justify-self: start; align-self: start; }
 /* a figure above its lines: the line that brings it in stays above it, and the rest of that step stays under it */
 .board .fb:not(.beside) > .fside, .board .fb:not(.beside) > .fside > .st.intro { display: contents; }
-.board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; margin-bottom: -14px; }
+.board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; margin-bottom: -16px; }
 .board .fb.beside .ffig { position: sticky; top: 24px; }
 .board .fb.beside .ffig.nostick { position: static; }
 .board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: center; align-self: stretch; }
@@ -73,9 +73,9 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 /* wide pictures sit centred; their line of text stays lined up with the other lines */
 .board .st.wide .fg, .board > .fg { align-self: center; }
 
-/* a step: the teacher's line, then what it adds, 14 px apart; steps stand 28 px apart. The one being read is lit by a bar
+/* a step: the teacher's line, then what it adds, 12 px apart; steps stand 28 px apart. The one being read is lit by a bar
    hung in the margin, so the text keeps the column's edge; nothing goes grey once it is past */
-.board .st { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.board .st { position: relative; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .board .st::before { content: ""; position: absolute; left: -12px; top: 0; bottom: 0; width: 4px; background: transparent; transition: background .25s var(--ease); pointer-events: none; }
 .board .st.wide::before, .board .abridge .st::before { display: none; }
 .board .st.now::before, .board .st.atstop::before { background: var(--accent); }
@@ -85,7 +85,7 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 
 /* a think stop: the word Think, the question, a button under it. The answer takes no room until pressed: the card grows
    and its top stays. What the step adds waits behind the answer, in its own space */
-html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: transparent; border: 0; border-top: 1px solid #353634; border-bottom: 1px solid #353634; box-shadow: none; }
+html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; padding: 0; background: transparent; border: 0; box-shadow: none; }
 .board .tq { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .board .tqt { font-size: 18px; font-weight: 400; line-height: 1.5; color: var(--ink); }
 .board .tb { flex: none; white-space: nowrap; font: 650 16px var(--f-ui); color: var(--ink); background: transparent; border: 1px solid var(--thin); box-shadow: none; padding: 5px 12px; cursor: pointer; }
@@ -152,10 +152,15 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 /* ==text== keeps the deck's orange underline; ==s1:text== is bold text in a term colour, with no underline */
 .s-board mark.hi.tc { color: var(--hc); text-decoration: none; }
 
-/* text cards: a thin line, no shadow. A callout and a number card (.rl) take a line above and below instead: a tab on each would be noise */
+/* text cards: a thin line, no shadow. A callout and a number card (.rl) take no box at all: spacing sets them apart, and they start on the line above's edge */
 html.ls-page .board .g:not(.vis, .ctl, .hl, .think, .tcard, .fr, .rl) { background: var(--card); border: 1px solid var(--line-dim); box-shadow: none; }
-html.ls-page .board .rl { background: transparent; border: 0; border-top: 1px solid var(--thin); border-bottom: 1px solid var(--thin); box-shadow: none; padding: 12px 16px; }
-html.ls-page .board .fr.hl, html.ls-page .board .rl.hl { box-shadow: 4px 4px 0 var(--accent); }
+html.ls-page .board .rl { position: relative; background: transparent; border: 0; box-shadow: none; padding: 0; }
+html.ls-page .board .fr.hl { box-shadow: 4px 4px 0 var(--accent); }
+/* a block with no box has no edge to ring, so lit it takes a step's bar, hung in the margin: the text never moves */
+html.ls-page .board :is(.rl, .cline, .fline).hl { box-shadow: none; }
+.board :is(.cline, .fline) { position: relative; }
+.board :is(.rl, .think, .cline, .fline)::before { content: ""; position: absolute; left: -12px; top: 0; bottom: 0; width: 4px; background: transparent; transition: background .25s var(--ease); pointer-events: none; }
+.board :is(.rl.now, .hl:is(.rl, .cline, .fline), .st.now > :is(.rl, .think), .st.atstop > :is(.rl, .think))::before { background: var(--accent); }
 
 /* a parameter card: symbol (in its colour), value, plain name */
 .board .params { display: grid; grid-template-columns: auto auto 1fr; column-gap: 12px; row-gap: 6px; align-items: center; }
