@@ -77,7 +77,8 @@ Read only the file the current step needs. Write `lesson.yaml` once and fix it w
 | File | Read it when |
 |---|---|
 | `lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, the review |
-| `board.md` | step 4: how a scene is laid out, every board field and item, plane marks, runs and toggles, and what each lint message means |
+| `board.md` | step 4: how a scene is laid out, every board field and item, plane marks, runs and toggles |
+| `lint.md` | after a build error: what each lint and check message means, and its fix |
 | `examples/board-gallery/` | every scene kind in one full lesson (variance of six cells), with `make_data.py` and `verify_data.py` |
 | `examples/home/cells.json` | what a home table looks like |
 | `examples/pca-1-what/`, `pca-2-how/`, `pca-3-why/` | a three-part series on one home table: each part's `next` scene feeding the next part's `problem`, and a think stop that reaches back |

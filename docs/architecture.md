@@ -49,7 +49,8 @@ lesson.yaml ──lesson.py──> deck build.py (ext: board fields, lesson lint
 |---|---|---|
 | The lesson loop, the five gates | `skills/class/SKILL.md` | reaches the deck as its sibling folder `D` |
 | Beats, teaching moves, voice, pacing, series, review | `lesson.md` | pedagogy has one home |
-| Every board field, item, plane mark, control, lint message | `board.md` | `tools/check_docs.py` fails if a field `board.js` reads is missing here |
+| Every board field, item, plane mark, control | `board.md` | `tools/check_docs.py` fails if a field `board.js` reads is missing here |
+| What each lesson lint and check message means | `lint.md` | read only after a build error, so a good run does not pay for it |
 | Lesson rules (beats, think stops, symbol before number, typed numbers, no quiz or `recall:`) | `scripts/lesson_lint.py` | run through `build.py`'s lint hook; `lint_cards` and `lint_recall` stay for sketch |
 | Build glue: runs and toggles become sliders, the page runtime takes `deck.js`'s place | `scripts/lesson.py` | `prepare()`, `adopt()`; never writes to the viz-os home. `recall()` stays here for sketch |
 | The scrolling page: reading line, keys, scene rail, the page's audit | `kit/lesson.js` | answers to the same `VizOS` API as `deck.js`, so `check.py` walks it |
