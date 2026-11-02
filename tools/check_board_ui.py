@@ -11,7 +11,9 @@ Then the look's own rules: a long formula sends its figure above its text; the p
 stays in the margin; a column not filled in keeps its row lines; Next stays on screen; the line by the buttons stays on
 screen after every Next; Next onto a think step takes two presses; rows fit their figures at five widths and stay on
 screen at three windows; a filled plane and a table fill their room; the first stop has no line;
-Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen.
+Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen;
+text not side by side starts at the page's left edge while figures and equations centre on it; callouts and thinks have
+no lines and no indent, stand 12 px from their line, and show a bar when lit without moving their text.
 """
 import importlib.util, re, sys
 from pathlib import Path
@@ -482,20 +484,38 @@ def equal_units(page):
     return not bad, "; ".join(bad[:3]) or f"{n} planes"
 
 
-EDGES = """() => { const rc = e => e.getBoundingClientRect(), bad = [], SEL = '.st > .say, .think, .asm, .bi.note, .bi.params, .bcmp, .track, .bi.plane, .bvis.chart, .bvis.dist, .bvis.parts, .bvis.flow';
-  document.querySelectorAll('.board').forEach(b => { const broad = b.classList.contains('broad'), es = [...b.querySelectorAll(SEL)].filter(e => rc(e).width && !e.closest('.fb.beside, .fb.many, .bpair:not(.stacked), .tcol, .abridge, .bcmp .side') && !(e.matches('.say') && e.closest('.bcmp')));
-    if (!es.length) return; const L = es.map(e => rc(e).left), R = es.map(e => rc(e).right);
-    if (Math.max(...L) - Math.min(...L) > 2 || (!broad && Math.max(...R) - Math.min(...R) > 2)) bad.push([b.closest('.slide').id, Math.round(Math.min(...L)), Math.round(Math.max(...L)), Math.round(Math.min(...R)), Math.round(Math.max(...R))]); }); return bad; }"""
+# a scene's parts that are not side by side: text starts at the head's left edge; figures and equations centre on the page column
+OPEN = ".fb.beside, .fb.many .ffig, .bpair:not(.stacked), .bcmp .side"
+EDGES = """o => { const rc = e => e.getBoundingClientRect(), bad = [], SEL = '.st > .say, .think .tqt, .think .ta > span, .think .btag, .think .tb, .note, .params, .asm > .say, .abridge .say, .atag, .fline > .say, .cline > .num, .bcmp, .fg > .stopl';
+  document.querySelectorAll('.board').forEach(b => { const L = rc(b.closest('.slide').querySelector('.head')).left; b.querySelectorAll(SEL).forEach(e => { if (!rc(e).width || !e.textContent.trim() || e.closest(o) || getComputedStyle(e).textAlign === 'center' && !e.matches('.stopl')) return;
+    const x = (() => { const n = document.createRange(); n.selectNodeContents(e); const q = [...n.getClientRects()].filter(r => r.width); return e.matches('.bcmp, .num') || !q.length ? rc(e).left : Math.min(...q.map(r => r.left)); })();
+    if (Math.abs(x - L) > 2) bad.push([b.closest('.slide').id, e.className, Math.round(x - L)]); }); }); return bad; }"""
+CENTRES = """o => { const rc = e => e.getBoundingClientRect(), bad = []; let n = 0; const mid = r => (r.left + r.right) / 2;
+  document.querySelectorAll('.board').forEach(b => { const P = rc(b), C = mid(P), off = (e, r) => { n++; if (Math.abs(mid(r) - C) > 3) bad.push([b.closest('.slide').id, e.className, Math.round(mid(r) - C)]); }, ink = m => { const k = [...m.querySelectorAll('.katex-html')].filter(e => !e.closest('.wkey')).map(rc).filter(r => r.width); return k.length ? { left: Math.min(...k.map(r => r.left)), right: Math.max(...k.map(r => r.right)) } : null; };
+    b.querySelectorAll(':scope .fg').forEach(g => { if (rc(g).width && !g.closest(o) && !g.closest('.bcmp')) { off(g, rc(g)); g.querySelectorAll(':scope > .controls, :scope > .stage').forEach(c => { if (rc(c).width) off(c, rc(c)); }); } });
+    b.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { const r = ink(m); if (r && !m.closest(o)) off(m, r); });
+    b.querySelectorAll('.asm .wkey').forEach(k => { const c = [...k.children].map(rc); if (c.length) off(k, { left: Math.min(...c.map(r => r.left)), right: Math.max(...c.map(r => r.right)) }); }); }); return [bad, n]; }"""
 
 
 def edges(page):
-    """Everything in the reading column shares its left and right edges."""
+    """Not side by side, all text starts at the scene head's left edge: says, callouts, thinks, a formula card's title and tags, the line by the buttons."""
     bad = []
     for w, h in ((1480, 800), (1920, 1080)):
         sized(page, w, h)
-        bad += [f"{w}: {x}" for x in page.evaluate(EDGES)]
+        bad += [f"{w}: {x}" for x in page.evaluate(EDGES, OPEN)]
     sized(page, 1440, 900)
     return not bad, "; ".join(bad[:3]) or "2 windows"
+
+
+def centres(page):
+    """Wide figures with their rows, worked-line math and formula-card equations with their key rows centre on the page column."""
+    bad, n = [], 0
+    for w, h in ((1480, 800), (1920, 1080)):
+        sized(page, w, h)
+        r = page.evaluate(CENTRES, ".fb.beside, .fb.many, .bpair:not(.stacked)")
+        bad += [f"{w}: {x}" for x in r[0]]; n += r[1]
+    sized(page, 1440, 900)
+    return n > 0 and not bad, "; ".join(bad[:3]) or f"{n} centred"
 
 
 COLOURS = """() => { const seen = {}; VizOS.slides.forEach((sl, i) => Object.keys(sl.ctx.symbols || {}).forEach(q => sl.r.node.querySelectorAll(`.lt-${CSS.escape(q)}, .sy-${CSS.escape(q)}`).forEach(e => { const c = getComputedStyle(e).color; (seen[q] = seen[q] || {})[c] = i + 1; })));
@@ -509,11 +529,42 @@ def one_colour(page):
 
 
 def frames(page):
-    """Formula cards and matrix panels wear the figure's frame; callouts and number cards a line above and below; the chips are orange."""
-    r = page.evaluate("""() => { const bad = []; document.querySelectorAll('.asm, .bops .opsw, .bops .opcard').forEach(e => { const c = getComputedStyle(e), a = getComputedStyle(e, '::after'); if (c.backgroundColor !== 'rgba(0, 0, 0, 0)' || c.borderLeftWidth !== '0px' || c.borderBottomWidth !== '0px' || a.width !== '64px' || a.height !== '3px' || c.boxShadow === 'none') bad.push(e.className); });
-      document.querySelectorAll('.bi.note, .bi.params').forEach(e => { const c = getComputedStyle(e); if (e.closest('.hl') || c.backgroundColor !== 'rgba(0, 0, 0, 0)' || c.borderTopColor !== 'rgb(44, 45, 43)' || c.borderTopWidth !== '1px' || c.borderBottomWidth !== '1px' || c.borderLeftWidth !== '0px' || c.boxShadow !== 'none' || c.paddingTop !== '12px' || c.paddingLeft !== '16px') bad.push(e.className); });
-      const ac = getComputedStyle(document.documentElement).getPropertyValue('--accent'); document.querySelectorAll('.s-board .head .eyebrow').forEach(e => { if (getComputedStyle(e).borderTopColor !== 'rgb(255, 90, 54)') bad.push('chip'); }); return bad; }""")
+    """Formula cards and matrix panels wear the figure's frame, and a formula card has no side padding; the chip is all orange."""
+    r = page.evaluate("""() => { const bad = [], ac = 'rgb(255, 90, 54)'; document.querySelectorAll('.asm, .bops .opsw, .bops .opcard').forEach(e => { const c = getComputedStyle(e), a = getComputedStyle(e, '::after'); if (c.backgroundColor !== 'rgba(0, 0, 0, 0)' || c.borderLeftWidth !== '0px' || c.borderBottomWidth !== '0px' || a.width !== '64px' || a.height !== '3px' || c.boxShadow === 'none') bad.push(e.className); });
+      document.querySelectorAll('.asm').forEach(e => { const c = getComputedStyle(e); if (c.paddingLeft !== '0px' || c.paddingRight !== '0px' || Math.abs(e.getBoundingClientRect().width - e.closest('.board').getBoundingClientRect().width) > 2) bad.push('asm width'); });
+      document.querySelectorAll('.s-board .head .eyebrow').forEach(e => { const c = getComputedStyle(e); if (c.borderTopColor !== ac || !c.boxShadow.startsWith(ac) || !c.boxShadow.endsWith('3px 3px 0px 0px')) bad.push('chip ' + c.boxShadow); }); return bad; }""")
     return not r, f"{r[:3]}" if r else "frames ok"
+
+
+def no_lines(page):
+    """A callout, a number card and a think card have no line, box, ground or left padding, in the page and in side columns."""
+    r = page.evaluate("""() => { const es = [...document.querySelectorAll('.board .rl, .board .think.g')]; return [es.length, es.filter(e => { const c = getComputedStyle(e); return c.borderTopWidth !== '0px' || c.borderBottomWidth !== '0px' || c.borderLeftWidth !== '0px' || c.paddingLeft !== '0px' || c.paddingTop !== '0px' || c.paddingBottom !== '0px' || c.backgroundColor !== 'rgba(0, 0, 0, 0)' || c.boxShadow !== 'none'; }).map(e => e.className).slice(0, 3)]; }""")
+    return r[0] > 0 and not r[1], f"{r[0]} cards, lined: {r[1]}"
+
+
+def card_gap(page):
+    """A line stands 12 px from the card it brings, and level with it; steps stand 28 px apart."""
+    sized(page, 1480, 800)
+    r = page.evaluate("""() => { const rc = e => e.getBoundingClientRect(), gaps = [], left = [], apart = [];
+      document.querySelectorAll('.st > .say').forEach(s => { const c = s.nextElementSibling; if (c && c.matches('.rl, .think, .asm, .cline, .fline') && rc(s).height && rc(c).height) { gaps.push(rc(c).top - rc(s).bottom); if (!c.matches('.cline, .asm')) left.push(rc(c).left - rc(s).left); } });
+      document.querySelectorAll('.lines > .st + .st, .fside > .st + .st').forEach(s => { const p = s.previousElementSibling; if (rc(s).height && rc(p).height) apart.push(rc(s).top - rc(p).bottom); });
+      document.querySelectorAll('.fb:not(.beside) .st.intro > .say').forEach(s => { const f = s.closest('.fb').querySelector('.ffig'); if (rc(s).height && rc(f).height) gaps.push(rc(f).top - rc(s).bottom); });
+      return [gaps, left, apart]; }""")
+    sized(page, 1440, 900)
+    bad = [round(x, 1) for x in r[0] if abs(x - 12) > 1] + [f"left {round(x)}" for x in r[1] if abs(x) > 1] + [f"apart {round(x)}" for x in r[2] if abs(x - 28) > 1]
+    return bool(r[0]) and not bad, f"{len(r[0])} gaps, {len(r[2])} steps" + (f", off: {bad[:4]}" if bad else "")
+
+
+def lit_mark(page):
+    """A lit callout or think card shows the orange bar hung outside its edge, a marked one too, in or out of a step, and its text does not move."""
+    r = page.evaluate("""() => { const ac = 'rgb(255, 90, 54)', bad = [], still = document.head.appendChild(document.createElement('style')); still.textContent = '.board *::before { transition: none !important; }'; let n = 0; const box = e => { const r = document.createRange(); r.selectNodeContents(e); const q = r.getBoundingClientRect(); return [q.left, q.top, q.width, q.height].map(Math.round).join(); };
+      VizOS.slides.forEach(sl => { if (!sl.r.hover) return; const es = [...sl.r.node.querySelectorAll('.rl, .think')].filter(e => e.getClientRects().length); es.forEach(e => { const at = +(e.dataset.at || 0), lit = c => [c.backgroundColor, c.width, c.position, parseFloat(c.left) < 0], cs = () => getComputedStyle(e, '::before'), id = sl.r.node.id;
+          n++; sl.r.hover(0); const was = box(e); if (cs().backgroundColor === ac && !e.closest('.atstop')) bad.push([id, 'lit at rest']);
+          sl.r.hover(at); const a = lit(cs()); if (a[0] !== ac || a[1] !== '4px' || a[2] !== 'absolute' || !a[3] || box(e) !== was) bad.push([id, e.className, 'step', a]);
+          sl.r.hover(null); if (e.matches('.rl')) { e.classList.add('hl'); const b = lit(cs()); if (b[0] !== ac || getComputedStyle(e).boxShadow !== 'none' || box(e) !== was) bad.push([id, 'hl', b]); e.classList.remove('hl'); } }); });
+      still.remove(); return [n, bad]; }""")
+    page.evaluate("VizOS.slides.forEach(sl => sl.r.reset && sl.r.reset())")
+    return r[0] > 0 and not r[1], f"{r[0]} cards" + (f", off: {r[1][:3]}" if r[1] else "")
 
 
 def legend_room(page):
@@ -534,7 +585,8 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("Next stays under the pointer", stays_put), ("the line by the buttons never repeats words on screen", no_repeat),
          ("no piece of a formula on two rows", one_row), ("a formula shrinks to fit, never under 20 px", formula_floor), ("term labels never stack", no_stack),
          ("the text sits 20 px from its figure", side_gap), ("figures fill their room at 1480 x 800", fills_room), ("equal planes keep one scale", equal_units),
-         ("the reading column's edges line up", edges), ("a symbol has one colour", one_colour), ("cards wear the figure's frame", frames), ("legends have room above them", legend_room)]
+         ("all text starts at the page's left edge", edges), ("figures and equations centre on the page", centres), ("a symbol has one colour", one_colour), ("cards wear the figure's frame", frames),
+         ("callouts and thinks have no lines and no indent", no_lines), ("a line stands 12 px from its card", card_gap), ("a lit callout shows its mark, its text stays", lit_mark), ("legends have room above them", legend_room)]
 
 
 def series_of(name):
