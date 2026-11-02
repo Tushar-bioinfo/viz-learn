@@ -44,7 +44,7 @@ This is the rule that makes the lesson feel like a class rather than a textbook.
 
 1. **The learner makes the numbers.** In the by-hand scene, each `calc` line works one number from the table: "how far c1 sits from the mean: 4.3 − 5.70 = −1.40". A `col` does the same for every row at once. Name every number you will need later (`name: d1`).
 2. **The formula is a summary of what was done.** The formula scene's `assemble` writes the formula once with our numbers in it, each tagged with its term (`[xbar:{{xbar|1}}]`). Under it, after the next step's line, the symbols sit in the same places and colours, each with its plain name. The learner sees that `x̄` *is* the 5.70 they worked.
-3. **A symbol never comes before its number.** The lint keeps a ledger: if `\bar{x}` appears on slide 4 but the mean's number first shows on slide 5, it is an error. Index letters and operators (`kind: index`, `kind: operator`) are exempt, but still give them a plain meaning under `symbols:`.
+3. **A symbol never comes before its number.** The lint keeps a ledger: if `\bar{x}` appears on slide 4 but the mean's number first shows on slide 5, it is an error. A table column, a worked line, a `{{name}}` in text or a parameter card all count as showing the number. Index letters and operators (`kind: index`, `kind: operator`) are exempt, but still give them a plain meaning under `symbols:`.
 4. **One new symbol at a time.** More than 5 terms in one formula is a wall (the lint warns). Build a long formula over two scenes, or show it whole and point at the parts that matter (move 14).
 
 The table keeps its source's shape through all of this. A cells × markers table has a row per cell; genes × samples has a row per gene, the way a count table does. If the method is usually written the other way round (a matrix with samples as rows), say so in a note and keep the table as it is.
@@ -53,7 +53,7 @@ The table keeps its source's shape through all of this. A cells × markers table
 Pick the moves the topic needs; this is a menu, not a template. Each line says when to reach for it.
 
 1. **Bookends.** Always: the plan at the start; limits and next at the end.
-2. **What / How / Why split.** The topic has more than about 7 new ideas, or one lesson would need more than 14 scenes (§7).
+2. **What / How / Why split.** The topic is too big for one lesson (§7).
 3. **Problem-first ladder.** The method has parts that each fix the last one's problem. Show the problem, add the part, show the next problem (distances cancel → square them → units are squared → take the root).
 4. **Think like the algorithm.** The method works from local information (a gradient, a nearest neighbour, one misclassified point). Say what it can see from where it stands, and what it cannot: "it has no eyes for the whole curve, only the slope under its feet".
 5. **Personification.** A point, a weight or a gene "wants" something. Use it once or twice per lesson to make a rule stick: "this wrong cell objects, and the line moves to quiet it".
@@ -62,7 +62,7 @@ Pick the moves the topic needs; this is a menu, not a template. Each line says w
 8. **Counterfactual flip.** The answer depends on one count or one value. Change it and redraw: "if c5 were 5.0 instead, the variance would drop to …". A slider or a toggle does this; compute both states in `make_data.py` or with an expression.
 9. **Geometry reveal.** The method has a picture: a projection, a distance, a decision line, an area. Show it after the numbers, so the picture explains something already done.
 10. **Watch it run.** The method repeats an update. Show the frames, with Next stops on the first two and the last, and let the learner scrub the rest.
-11. **Pause and think.** Always, at least once in any 6 steps. Ask the question the learner should be asking; the answer waits behind its button.
+11. **Pause and think.** Always. Ask the question the learner should be asking; the answer waits behind its button.
 12. **Interview angle.** The topic is a common exam or interview question. Ask it the way an interviewer would, in a think stop: "why n − 1 and not n?"
 13. **Real product demo.** The method runs inside a tool the learner uses (a clustering in Seurat, a test in DESeq2). One scene that shows where the number appears in that tool's output. Do not invent the tool's output: show the shape, not made-up values.
 14. **"Don't be afraid."** The real expression or diagram is big. Show it whole, say "most of this you can ignore", then mark only the 2–3 parts that matter.
@@ -75,7 +75,7 @@ Pick the moves the topic needs; this is a menu, not a template. Each line says w
 ## 5. Voice
 You are a teacher at a whiteboard talking to one student. Each step's `say:` is the one line you would say while writing.
 
-- **One breath per step**: on a board, a line or a think question has at most 14 words, a note at most 16, a think answer at most 18. The lint counts them (a sketch note has its own limit in `page.md`). Short sentences. Active voice. Keep lines about even in length.
+- **One breath per step.** The lint counts the words (`board.md`; a sketch's limit is in `page.md`). Short sentences. Active voice. Keep lines about even in length.
 - **Say only what helps.** Cut "Here is", "Now" and "as we did". Cut a line that only repeats the title or the card under it, and a note that repeats its line. If a step has nothing left to say, merge it with the next.
 - **On a board, write a symbol as math**: `$w_0$`, not w0, so it takes its colour. The lint warns on a bare name.
 - **Say what you are doing, then why**: "Square each distance. Now every one counts, and far cells count most."
@@ -84,7 +84,6 @@ You are a teacher at a whiteboard talking to one student. Each step's `say:` is 
 - **Read the board aloud**: name the cell, the column, the number on screen. "c5 sits 2.4 above the mean." Numbers come from `{{…}}`, never typed.
 - **A think question is a real question**: it has one short answer the learner can reach from what is on the board. "Which cell sits farthest from the mean?" not "What do you think?".
 - **A think answer gives the answer and its reason** in one or two sentences.
-- **Colour the text that matters, a few words per scene.** Colour a term the same colour as its symbol and its table column (`==s1:CD3==`). Bold (`**…**`) a result. An underline (`==text==`) is rare: once or twice in a lesson, for the one line to remember. Never colour a whole sentence.
 - **No hype, no filler**: no "amazing", "simply", "just", "as you can see".
 
 ## 6. Pacing

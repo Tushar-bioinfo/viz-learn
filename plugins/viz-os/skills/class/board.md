@@ -33,8 +33,6 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 | `color` | a fixed colour for the symbol, its number, its table column and every place it shows in math: `s1` to `s5`, `good`, `bad`. A symbol keeps one colour across the page, and across every lesson of a series: set `color` by hand when it returns, since the automatic pick depends on what else the lesson lists. Without `color` it takes the next unused colour at the start, in the order listed, and `ink` once they run out; a `kind: operator` symbol takes none. Set it to pair symbols that belong together, like `w_1` and `x_1` |
 | `kind` | `index` (i, j) or `operator` (Σ): no number to show first, so the symbol ledger skips it |
 
-A symbol shows only after its number (`lesson.md` §3). A table column, a worked line, a `{{name}}` in text, or a parameter card all count as showing the number.
-
 ## A board scene
 ```yaml
 - type: board
@@ -81,7 +79,7 @@ table:
 ## Steps
 ```yaml
 steps:
-  - say: Start from the mean. How far does c1 sit from it?       # the teacher's line, ≤ 14 words
+  - say: Start from the mean. How far does c1 sit from it?       # the teacher's line
     add: {calc: {say: How far c1 sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
     mark: row:0
   - think:
@@ -93,10 +91,10 @@ steps:
 | `say` | one teacher line for this step, at most 14 words |
 | `add` | one item, or a list of items, written with this step |
 | `mark` | lights a table row, column, cell or item while this step is lit (see Marks) |
-| `think` | a pause-and-think stop: `{q, a}`. The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer |
+| `think` | a pause-and-think stop: `{q, a}`, the question at most 14 words, the answer at most 18. The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer |
 | `frame` | the run frame this step shows (see Controls) |
 
-A think step's `say` is optional; its question is the line. At least one think stop in any 6 steps in a row. A think question has one short answer the learner can reach from the board. On a figure with Next, a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it.
+A think step's `say` is optional; its question is the line. A think question has one short answer the learner can reach from the board. On a figure with Next, a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it.
 
 ### Marks
 | Target | Lights |
@@ -109,7 +107,8 @@ A think step's `say` is optional; its question is the line. At least one think s
 `mark` takes one target or a list. It lights for one step; a think step's mark lights on its question and its answer. A target not yet on the board is ignored, and the check warns `mark target not found`. A `calc` with `row:` lights its row, and the cells it reads, by itself.
 
 ### Highlights in text
-- `==s1:CD3==`: the words in bold, in that colour (`s1` to `s5`, `good`, `bad`, `mist`). Match a term's symbol and column colour. A few words per scene.
+The kit colours worked lines and their table cells for you. In your own text:
+- `==s1:CD3==`: the words in bold, in that colour (`s1` to `s5`, `good`, `bad`, `mist`). Match a term's symbol and column colour. A few words per scene, never a whole sentence.
 - `**3.1×**`: bold, for a result.
 - `==text==`: an orange underline. Rare: once or twice a lesson, for the line to remember.
 - `$…$`: maths, in KaTeX.
@@ -183,7 +182,7 @@ Each name shows its symbol in its colour, its value now and its `short` name; it
 add: {note: 'The means are ==s1:{{mA|1}}== and ==s2:{{mB|1}}==, but B is **{{ratio|1}}×** as variable as A.'}
 add: {note: {text: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$', side: true, id: rule}}
 ```
-A string, or `{text, side, id}`. One or two sentences; the board is not for paragraphs.
+A string, or `{text, side, id}`. At most 16 words; the board is not for paragraphs.
 
 ### `compare`: two cases side by side
 ```yaml

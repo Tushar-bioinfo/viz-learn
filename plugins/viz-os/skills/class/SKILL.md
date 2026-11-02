@@ -17,7 +17,7 @@ You are the teacher. The learner should leave able to do the method by hand on a
    3. How much?  a) one lesson (~10 scenes)  b) a What / How / Why series (2–3 lessons)
    ```
    Ask question 2 once: after the first lesson the answer lives in memory and `home:`.
-2. **Spine.** Open `lesson.md`. Write the top of `lesson.yaml`: `title`, `question`, `answer`, `learner` (`{goal, knows, anchors}`, from the probe; `board.md`, Top level), and the beat list as a comment, one line per scene. If the topic has more than about 7 new ideas, or needs more than 14 scenes, it becomes a series (`lesson.md` §7): write the top of each lesson's `lesson.yaml` in its own folder, show the questions to the user, and **wait for an OK** before you write any scene.
+2. **Spine.** Open `lesson.md`. Write the top of `lesson.yaml`: `title`, `question`, `answer`, `learner` (`{goal, knows, anchors}`, from the probe; `board.md`, Top level), and the beat list as a comment, one line per scene. If the topic is big enough for a series (`lesson.md` §7), write the top of each lesson's `lesson.yaml` in its own folder, show the questions to the user, and **wait for an OK** before you write any scene.
 3. **Data.** Make the learner's home table once, seeded: `python3 C/scripts/home.py cells-x-markers --name cells --seed 7` (or `genes-x-samples`). It keeps its source's layout: a row per cell, or a row per gene. Then write `make_data.py` beside the lesson: seeded, it reads the home file, copies the rows the lesson uses into `data.json` with the file's `provenance` block under `home`, and computes every number the lesson shows, including each frame of a run. Write `verify_data.py` as a second, independent program that recomputes the numbers from the rows and compares; if you can hand that to another agent that has not seen `make_data.py`, do.
 4. **Scenes.** Open `board.md`. Write the scenes under the spine in one pass. Every number is a `{{name|fmt}}` expression or a worked line, never typed.
 5. **Build and check.**
@@ -53,14 +53,14 @@ You are the teacher. The learner should leave able to do the method by hand on a
 Fix with small edits, not rewrites, and rerun. A warning that survives 3 rounds of honest fixes is probably a kit bug: report it with the slide number and message. Never hide a warning by cutting the content that teaches.
 
 ## Rules that never bend
-- **Numbers before symbols.** Work the method by hand on the table first. The formula scene then builds the formula from those numbers (`assemble`): our numbers, then the symbols under them, each term named. A symbol never appears before its number.
+- **Numbers before symbols.** Work the method by hand on the table first. The formula scene then builds the formula from those numbers (`assemble`): our numbers, then the symbols under them, each term named.
 - **Every number is computed.** It comes from `data.json` (made by `make_data.py`), a worked line, or a `{{…}}` expression. The lint flags a typed number and names the data value it matches.
-- **One line per step.** Each step has one teacher line of at most 14 words, said the way a teacher says it at the board.
+- **One line per step.** Each step has one teacher line, said the way a teacher says it at the board.
 - **Pause and think.** At least one think stop in any 6 steps in a row. It shows its question with a Show answer button. The answer takes no room until pressed. On a figure with Next, the first press asks and the second answers.
 - **The table keeps its shape.** A cells × markers table has a row per cell in every scene and every lesson; genes × samples has a row per gene. Never flip it to make a calculation easier.
 - **Need before name.** Show the problem before the method, and the method by hand before its formula.
 - **Show where it breaks.** Every lesson has a limits scene before the next-lesson tease.
-- **Colour the text, not the page.** Point at a term by colouring its text (`==s1:text==`), and only a few words per scene; an underline (`==text==`) is rare. The kit colours worked lines and their table cells for you.
+- **Colour the text, not the page** (`board.md`, Highlights in text).
 - **Never hand-write HTML, CSS or SVG**, and never edit a built `lesson.html`: change the YAML and rebuild.
 
 ## Where you are running
