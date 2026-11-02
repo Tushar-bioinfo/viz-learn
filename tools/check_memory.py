@@ -41,6 +41,18 @@ def tests():
     kept = [ln for ln in PROFILE.read_text().splitlines() if not ln.startswith("history:")]
     yield "learner: one history line, home set, comments kept, rerun unchanged", (
         once == twice and once.count("topic: variance") == 1 and "home: home/cells.json" in once and all(ln in once for ln in kept))
+    import yaml
+    ok = True
+    for ind in ("", "  "):   # a history list written at column 0 or indented, with a wrapped block entry
+        (HOME / "learner.yaml").write_text(f"history:\n{ind}- date: '2026-10-24'\n{ind}  topic: mean\n{ind}  note: a long note that\n{ind}    wraps\n{ind}- {{date: '2026-10-25', topic: sd}}\nknows:\n  mean: 3\n")
+        code, _ = run("memory.py", "learner", "--topic", "variance", "--date", "2026-10-26")
+        text = (HOME / "learner.yaml").read_text()
+        try:
+            d = yaml.safe_load(text)
+        except yaml.YAMLError:
+            d = {}
+        ok = ok and code == 0 and [h["topic"] for h in d.get("history", [])] == ["mean", "sd", "variance"] and f"\n{ind}- {{date: '2026-10-26'" in text
+    yield "learner: adds at the history list's own indent (column 0 or two spaces)", ok
     a, b = HOME / "a.json", HOME / "b.json"
     for f in (a, b):
         run("home.py", "genes-x-samples", "--name", "counts", "--seed", 11, "-o", f)

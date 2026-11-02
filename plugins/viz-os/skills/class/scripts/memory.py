@@ -120,10 +120,13 @@ def cmd_learner(a):
             elif re.fullmatch(r"\[\]\s*(#.*)?", rest):   # history: []  ->  a block list
                 lines[h] = "history:" + (" " + rest[2:].strip() if rest[2:].strip() else "")
                 lines.insert(h + 1, item)
-            elif rest == "" or rest.startswith("#"):   # a block list: add after its last line
+            elif rest == "" or rest.startswith("#"):   # a block list: add after its last line, at its items' indent
                 j = h + 1
                 while j < len(lines) and lines[j].strip() and lines[j][:1] in (" ", "\t", "-"):
                     j += 1
+                first = next((m for ln in lines[h + 1:j] if (m := re.match(r"( *)- ", ln))), None)
+                if first:
+                    item = first.group(1) + item.lstrip()
                 lines.insert(j, item)
             else:
                 sys.exit(f"memory: cannot add to `history: {rest[:40]}` in {f}; write it as a block list (one `- ` line per entry)")
@@ -136,7 +139,10 @@ def cmd_learner(a):
     if new == text:
         print(f"memory: unchanged {f}")
         return
-    after = yaml.safe_load(new) or {}
+    try:
+        after = yaml.safe_load(new) or {}
+    except yaml.YAMLError as e:
+        sys.exit(f"memory: refusing to write {f}: the edit would not load as YAML ({str(e).splitlines()[0]})")
     keep = {k: v for k, v in doc.items() if k not in ("history", "home")}
     if {k: v for k, v in after.items() if k not in ("history", "home")} != keep:
         sys.exit(f"memory: refusing to write {f}: the edit would change fields other than history and home")

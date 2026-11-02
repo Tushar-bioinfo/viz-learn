@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.1 (2026-11-01)
+
+- Fixed: `memory.py learner` always wrote its history line with a two-space indent, which broke a `learner.yaml` whose `history:` items start at column 0. It now copies the list's own indent and refuses to write an edit that would not load.
+
 ## 3.0.0 (2026-11-01)
 
 A class lesson is now one long page that scrolls, in a new look. A lesson written for 2.x that has `type: quiz` or `recall:` no longer builds: delete them. Decks and sketch pages are unchanged.

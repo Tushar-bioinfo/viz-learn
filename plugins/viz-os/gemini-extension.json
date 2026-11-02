@@ -1,5 +1,5 @@
 {
   "name": "viz-os",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Learning pages that explain, not just show: flat dark decks, board lessons on one scrolling page, and hand-drawn scrolling pages. Each asks what you know, then tells the story from the ground up, mostly with visuals. Every formula shows where it comes from, with each term named and run with real numbers; every step says what and why; every number is computed from data. Lint plus a desktop browser check keep long outputs on-style and their numbers honest."
 }
