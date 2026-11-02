@@ -52,6 +52,7 @@ For people working on the plugin. The skill files never point here: rules an age
 | Controls sit under the text column when there is one, beside the numbers they move | Under the plane they took its height: one scale on both axes makes a plane as small as its shorter side. | `board.js` |
 | Plane names keep clear of dots, rings, drawn lines and square edges, with twelve places to try; a free `text` label is centred on its point first | A name on a line or under a ring was hard to read in the gallery. When none of the twelve places is clear, the audit warns instead of drawing on top. | `board.js` (`name`, `hit`), `tools/class-cases/plane-overlap.yaml` |
 | A run's data is chosen by a seeded search in `make_data.py`, with the teaching claims asserted | The gallery's perceptron needs exactly 11 updates and cells 0.8 apart so a ring points at one cell. The think answer says each update fixes its own cell, so `make_data.py` asserts it and `verify_data.py` checks it again with separate code. | `class/examples/board-gallery/make_data.py` |
+| A lesson's lint messages live in `class/lint.md`, read only after a build error; the teaching-time table moved here; each repeated rule keeps one home | `SKILL.md`, `lesson.md` and `board.md` are read for every lesson, so a repeated line costs on every build, and a good run never needs the lint table. `recall` and `frames` stay named in `board.md` because `tools/check_docs.py` reads that file for every field. | `class/lint.md`, `class/SKILL.md` |
 | The lesson lint lives in its own file, `class/scripts/lesson_lint.py`, run through the deck build's lint hook | `lesson.py` stays the build glue (kit files, `prepare`); the rules have one home. `prepare` keeps a copy of `data.json` for the lint, so the deck's `build.py` did not change for it. | `tools/check_class.py` |
 | Lesson-shape rules (plan first, problem before formula, limits before next, next last, 8–14 scenes) are warnings, and a test case that is only a fragment expects `builds`, not `clean` | An off switch in the lesson file would be the first thing an agent reaches for to silence a warning. A fragment case states "0 errors and a clean browser check", plus `not:` lines for the messages it must not raise. | `tools/class-cases/minimal-board.yaml` |
 | A symbol may show on the same click as its number (a worked line, a parameter card); an assembled formula's symbols row counts on the click after its numbers row | A worked line writes `d₁ = x₁ − x̄ = 4.3 − 5.70` in one go: the numbers are right there. The formula strip is built to show numbers first. | `tools/class-cases/symbol-before-number.yaml` |
@@ -124,6 +125,22 @@ Sources were checked by web search during 1.0.0 work; effect sizes are as report
 - **Narrative.** Dahlstrom (2014), *PNAS* 111 (Suppl. 4): narrative raises comprehension and engagement for non-experts. Hence the spine and the but/so chain.
 - **Comparing cases, and explaining why.** Comparing two analogous cases helps learners pull out the shared structure and transfer it: Gentner, Loewenstein & Thompson (2003), *Journal of Educational Psychology* 95, 393–408 (comparing two cases beat studying them one at a time). Explaining why a fact holds (elaborative interrogation) and self-explanation were rated moderate utility in Dunlosky et al. (2013), *Psychological Science in the Public Interest* 14(1), doi 10.1177/1529100612453266, with larger benefits when the learner has more prior knowledge. Hence `from:` (why this form, from one the learner knows) and `kin:` (the same shape in other topics). Checked by web search on 2026-10-24.
 - **Fewer words, labels on the picture.** Coherence principle (leave out extraneous words and pictures): supported in 23 of 23 experimental tests, median effect size 0.86, per Mayer & Fiorella's chapter in the *Cambridge Handbook of Multimedia Learning* (2nd ed., 2014; an earlier count was 10 of 11 tests, median 1.32). Spatial contiguity (put words next to the part of the picture they describe): Ginns (2006), *Learning and Instruction* 16, 511–525, a meta-analysis of spatial and temporal contiguity. Hence the word limits, captions that say where to look, and term names under the formula. These are lab effects on short lessons; none tested viz-os.
+- **How the source course spent its time (soft guide, moved from `class/lesson.md` §6).** The course this skill learned from spent its teaching time roughly as below, code segments removed. The beat labels are a model's reading of captions, so the shares are rough. That course spent little time on the hand calculation. The class skill spends more, because the learner asked for it: `by-hand` is expected to be the longest scene, or two scenes. The table is never a quota.
+
+| Beat | Share of time (%) |
+|---|---|
+| formula | 15 |
+| picture (geometry) | 13 |
+| compare | 11 |
+| algorithm (the steps of the method) | 9 |
+| limits | 6 |
+| motivation and problem | 10 |
+| real example | 6 |
+| animation (run) | 5 |
+| by-hand, toy data and tables | 9 |
+| plan, recap, summary, next | 9 |
+| analogy, aside, misconception | 5 |
+
 Uncertainty: these are lab and classroom effects on average; none tested viz-os itself. The honest test is whether decks built with the probe and bridges beat decks without them for this learner, with the same topics.
 
 ## Size (measured at 2.0.0 with `wc -w`)

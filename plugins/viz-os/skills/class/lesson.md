@@ -93,23 +93,7 @@ You are a teacher at a whiteboard talking to one student. Each step's `say:` is 
 - **Leads link scenes.** Each scene after the plan has a `lead:`: one short line that ties it to the last. Read the leads in order; they should tell the story alone.
 - **Hard steps get a think stop before them.** Where the learner is most likely to get lost (a sign that flips, a division that seems arbitrary), ask first.
 
-As a soft guide, the course this skill learned from spent its teaching time roughly like this (code segments removed; the beat labels are a model's reading of captions, so the shares are rough):
-
-| Beat | Share of time (%) |
-|---|---|
-| formula | 15 |
-| picture (geometry) | 13 |
-| compare | 11 |
-| algorithm (the steps of the method) | 9 |
-| limits | 6 |
-| motivation and problem | 10 |
-| real example | 6 |
-| animation (run) | 5 |
-| by-hand, toy data and tables | 9 |
-| plan, recap, summary, next | 9 |
-| analogy, aside, misconception | 5 |
-
-That course spent little time on the hand calculation. This skill spends more, because the learner asked for it: expect `by-hand` to be the longest scene, or two scenes. Never treat the table as a quota.
+Expect `by-hand` to be the longest scene, or two scenes.
 
 ## 7. Series
 A topic becomes a series of 2–3 lessons when it has more than about 7 new ideas, or one lesson would need more than 14 scenes.
