@@ -31,7 +31,7 @@ html.ls-page button:focus-visible, html.ls-page input:focus-visible { outline: 3
 
 /* a scene's head: the beat chip and the title on one row, the bridge line under them */
 .s-board .head { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "eb title" "lead lead"; gap: 8px 16px; align-items: center; }
-.s-board .head .eyebrow { grid-area: eb; font-size: 15px; border-color: var(--accent); }
+.s-board .head .eyebrow { grid-area: eb; font-size: 15px; border-color: var(--accent); box-shadow: 3px 3px 0 var(--accent); }
 .s-board .head .h1 { grid-area: title; font-size: 34px; max-width: none; }
 .s-board .head .lead { grid-area: lead; font-size: 21px; max-width: none; }
 .s-board .head .purpose { grid-column: 1 / -1; font-size: 20px; max-width: none; }
