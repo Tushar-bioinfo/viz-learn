@@ -1,6 +1,6 @@
 ---
 name: class
-description: Board lessons that teach like a good teacher at a whiteboard. One long page that scrolls, worked by hand on the learner's own toy table, then the formula built from those numbers, a picture, and where the method breaks. Big topics become a What / How / Why series. Use for "teach me X like a class", "a lesson on X", "explain X on a board", "work X out by hand with me", "teach me X step by step from scratch", "a series on X", "next lesson", or "continue the series". For a slide deck, use the sibling `deck` skill.
+description: Board lessons on one long scrolling page. The method worked by hand on the learner's own toy table, then its formula, its picture and where it breaks. Big topics become a What / How / Why series. Use for "teach me X like a class", "a lesson on X", "explain X on a board", "work X out by hand with me", "teach me X step by step from scratch", "a series on X", "next lesson", or "continue the series". For a slide deck, use the sibling `deck` skill.
 ---
 
 # viz-os class: a lesson on one page that scrolls
