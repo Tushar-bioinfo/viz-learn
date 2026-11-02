@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.0.0 (2026-11-01)
 
-A class lesson is now one long page that scrolls, in a new look. Decks and sketch pages are unchanged.
+A class lesson is now one long page that scrolls, in a new look. A lesson written for 2.x that has `type: quiz` or `recall:` no longer builds: delete them. Decks and sketch pages are unchanged.
 
 - The page reads top to bottom, and what is written stays. Text starts at the page's left edge, and figures and equations sit in the middle, like a paper. A wide figure is 1100 to 1280 px. A figure with text beside it is sized first and stays in view, and the text takes the rest of the page, 20 px away; a figure that changes has its own Back and Next.
 - The scene chip is all orange. Callouts, number cards and think cards have no box and no lines; a lit one shows a bar in the margin.
