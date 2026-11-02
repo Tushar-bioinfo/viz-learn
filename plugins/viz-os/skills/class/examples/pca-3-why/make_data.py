@@ -83,7 +83,7 @@ data = {
     "h1": HAND[0], "h2": HAND[1], "ha": ha, "hb": hb, "hb2": hb * hb, "s2h": spread2(HAND),
     "ax": a * v[0], "ay": a * v[1],                                # the PC1 part of u, drawn
     # three markers
-    "cmat3": [{"name": nm, "cd3": r[0], "cd19": r[1], "cd14": r[2]} for nm, r in zip(MARK, C3)],
+    "cmat3": [{"name": nm, "CD3": r[0], "CD19": r[1], "CD14": r[2]} for nm, r in zip(MARK, C3)],
     "L1": lams[0], "L2": lams[1], "L3": lams[2], "tot3": tot3,
     "e1": vecs[0], "e2": vecs[1], "e3": vecs[2], "cv1": cv1, "ratio_cv": [c / e for c, e in zip(cv1, vecs[0])],
     "z1": [z[0] for z in Z], "z2": [z[1] for z in Z], "z3": [z[2] for z in Z],

@@ -30,7 +30,7 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 | `says` | its meaning in plain words (about 6 words) |
 | `short` | 2–3 words, the label under the symbol in a formula and on a parameter card |
 | `fmt` | how its number is shown in working (`2`, `s3`, `,`) |
-| `color` | a fixed colour for the symbol, its number, its table column and every place it shows in math: `s1` to `s5`, `good`, `bad`. A symbol keeps one colour across the page. Without `color` it takes the next unused colour at the start, in the order listed, and `ink` once they run out; a `kind: operator` symbol takes none. Set it to pair symbols that belong together, like `w_1` and `x_1` |
+| `color` | a fixed colour for the symbol, its number, its table column and every place it shows in math: `s1` to `s5`, `good`, `bad`. A symbol keeps one colour across the page, and across every lesson of a series: set `color` by hand when it returns, since the automatic pick depends on what else the lesson lists. Without `color` it takes the next unused colour at the start, in the order listed, and `ink` once they run out; a `kind: operator` symbol takes none. Set it to pair symbols that belong together, like `w_1` and `x_1` |
 | `kind` | `index` (i, j) or `operator` (Σ): no number to show first, so the symbol ledger skips it |
 
 A symbol shows only after its number (`lesson.md` §3). A table column, a worked line, a `{{name}}` in text, or a parameter card all count as showing the number.
@@ -224,7 +224,7 @@ An `image` is only for when the user asks for a picture (`D/scripts/image.py`). 
 ### `plane`: geometry with equal scales
 A coordinate plane with one scale for both axes, so a slope, a right angle and a square look like what they are. It fills its room by showing more of the plane: both axes widen on both sides at one scale, and ticks, grid and shading follow. The `x` and `y` ranges you write are the least it shows.
 
-Add `fill: true` to a plane that is a scatter, a line or a shaded side, with no right angle or length the lesson relies on. It takes the chart shape, 16:9 (up to 2:1 on a short window), with its own scale per axis, and fills its column. It cannot hold a `vector`, `foot` or `square`.
+Add `fill: true` to a plane that is a scatter, a line or a shaded side, with no right angle or length the lesson relies on. It takes the chart shape, 16:9 (up to 2:1 on a short window), with its own scale per axis, and fills its column. It cannot hold a `vector`, `foot` or `square`. Leave it off when the lesson compares the spread along the two axes, as a plot of PC scores does: one scale keeps that comparison true.
 ```yaml
 add:
   plane:

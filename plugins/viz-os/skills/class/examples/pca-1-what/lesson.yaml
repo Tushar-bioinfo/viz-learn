@@ -14,8 +14,9 @@ symbols:
   m2: {tex: '\bar{x}_2', says: the mean CD19 level, short: mean CD19, color: s2, fmt: 2}
   d1: {tex: 'd_1', says: CD3 measured from the middle, short: CD3 from the middle, color: s1, fmt: 2}
   d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
-  n: {tex: 'n', says: the number of cells, short: cells}
-  i: {tex: 'i', says: which cell, kind: index}
+  n: {tex: 'n', says: the number of cells, short: cells, color: ink}
+  i: {tex: 'i', says: which cell, color: s4, kind: index}
+  j: {tex: 'j', says: which marker, color: s5, kind: index}
   v_cd3: {tex: 's_1^2', says: the spread of the shadows on the CD3 line, short: CD3 spread, color: s1, fmt: 3}
   v_cd19: {tex: 's_2^2', says: the spread of the shadows on the CD19 line, short: CD19 spread, color: s2, fmt: 3}
   tot: {tex: 'S', says: the total spread of both markers, short: total spread, fmt: 3}
@@ -346,7 +347,7 @@ slides:
           caption: 'Each extra marker multiplies the lines by {{grid2}}.'
       - say: 'A {{m_panel}}-marker panel needs a {{log_grid30 + 1|0}}-digit count of lines. No computer tries that.'
       - say: Second, PC1 follows whatever varies most in the cells you give it.
-        add: {note: '**{{n_t}} T cells** alone: PC1 turns to **{{th_t|0}}°**, keeps {{lam1_t|2}} of spread: both markers rising together.'}
+        add: {note: '**{{n_t}} T cells** alone: PC1 turns to **{{th_t|0}}°**, spread {{lam1_t|2}}: both markers rising, not cell type.'}
       - think:
           q: So does PC1 always mean T versus B?
           a: No. It is the biggest spread in this sample. Change which cells go in, and PC1 changes.

@@ -13,7 +13,7 @@ screen after every Next; Next onto a think step takes two presses; rows fit thei
 screen at three windows; a filled plane and a table fill their room; the first stop has no line;
 Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen.
 """
-import importlib.util, sys
+import importlib.util, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -537,6 +537,21 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("the reading column's edges line up", edges), ("a symbol has one colour", one_colour), ("cards wear the figure's frame", frames), ("legends have room above them", legend_room)]
 
 
+def series_of(name):
+    m = re.search(r"^series:\s*(\S+)", (EX / name / "lesson.yaml").read_text(), re.M)
+    return m.group(1) if m else None
+
+
+def series_colours(books):
+    """A symbol keeps its colour in every lesson of a series. books: {lesson: {symbol: colour}}, one series."""
+    seen = {}
+    for book in books.values():
+        for q, c in book.items():
+            seen.setdefault(q, set()).add(c)
+    bad = sorted(q for q, c in seen.items() if len(c) > 1)
+    return not bad, f"{bad[:6]}" if bad else f"{len(seen)} symbols"
+
+
 def main(names):
     try:
         from playwright.sync_api import sync_playwright
@@ -544,7 +559,7 @@ def main(names):
         print("board ui tests: playwright is not installed: not checked")
         return 2
     names = names or sorted(p.parent.name for p in EX.glob("*/lesson.yaml"))
-    res = []
+    res, series = [], {}
     with sync_playwright() as p:
         try:
             br = check.launch(p)
@@ -561,8 +576,15 @@ def main(names):
                     ok, why = False, str(e).splitlines()[0][:160]
                 res.append(ok)
                 print(f"board ui {name}: {label} | {'ok' if ok else 'FAIL: ' + str(why)}")
+            if series_of(name):
+                # by the symbol as written, the first listed wins as in the page: two lessons may use one key for different symbols
+                series.setdefault(series_of(name), {})[name] = page.evaluate("() => { const S = VizOS.slides[0].ctx.symbols || {}, out = {}; Object.keys(S).forEach(q => { const t = S[q].tex || q; if (S[q].color && !(t in out)) out[t] = S[q].color; }); return out; }")
             page.close()
         br.close()
+    for s, books in sorted(series.items()):
+        ok, why = series_colours(books)
+        res.append(ok)
+        print(f"board ui series {s}: a symbol keeps its colour across the series | {'ok' if ok else 'FAIL: ' + str(why)}")
     print(f"board ui tests: {sum(res)}/{len(res)} ok")
     return 0 if all(res) else 1
 

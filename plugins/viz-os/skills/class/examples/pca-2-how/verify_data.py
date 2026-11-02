@@ -29,7 +29,7 @@ for k, c in enumerate(D["cells"]):
 
 C = np.cov(X, rowvar=False)
 ok("v_cd3", D["v_cd3"], C[0, 0]); ok("v_cd19", D["v_cd19"], C[1, 1]); ok("c12", D["c12"], C[0, 1])
-ok("cmat", [[r["cd3"], r["cd19"]] for r in D["cmat"]], C); assert [r["name"] for r in D["cmat"]] == ["CD3", "CD19"]
+ok("cmat", [[r["CD3"], r["CD19"]] for r in D["cmat"]], C); assert [r["name"] for r in D["cmat"]] == ["CD3", "CD19"]
 # the three numbers are episode 1's
 ok("ep1 spreads", [D["v_cd3"], D["v_cd19"], D["c12"]], [E1["v_cd3"], E1["v_cd19"], E1["c12"]], 1e-12)
 

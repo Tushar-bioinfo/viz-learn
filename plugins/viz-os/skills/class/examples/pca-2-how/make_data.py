@@ -82,7 +82,7 @@ data = {
     "cells": cells, "ids": PICK, "n": n, "cd3": cd3, "cd19": cd19, "m1": m1, "m2": m2, "d1": d1, "d2": d2, "prod": prod,
     "n_neg": sum(q < 0 for q in prod),
     "v_cd3": s11, "v_cd19": s22, "c12": s12,
-    "cmat": [{"name": "CD3", "cd3": s11, "cd19": s12}, {"name": "CD19", "cd3": s12, "cd19": s22}],
+    "cmat": [{"name": "CD3", "CD3": s11, "CD19": s12}, {"name": "CD19", "CD3": s12, "CD19": s22}],
     "u1": HAND[0], "u2": HAND[1], "uvec": list(HAND), "th_hand": deg(*HAND),
     "p0": p0, "s2u": quad(HAND), "cu1": hu[0], "cu2": hu[1], "cu_th": deg(*hu),
     "ths": ths, "n_lines": len(ths), "sweep": [quad((a, b)) for a, b in zip(ux, uy)], "ux": ux, "uy": uy, "cux": cux, "cuy": cuy, "cth": cth, "gap": gap,

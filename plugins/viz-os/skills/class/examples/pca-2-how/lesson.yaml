@@ -173,7 +173,7 @@ slides:
         add:
           ops:
             notation: false
-            matrix: {name: covariance matrix C, from: cmat, cols: [cd3, cd19], rowKey: name, row: marker, col: marker, says: 'marker $i$ with marker $j$', fmt: 3, focus: CD3}
+            matrix: {name: covariance matrix C, from: cmat, cols: [CD3, CD19], rowKey: name, row: marker, col: marker, says: 'marker $i$ with marker $j$', fmt: 3, focus: CD3}
             steps:
               - {op: dot, with: uvec, wtex: 'u', withLabel: arrow u, name: cuv, tex: '(Cu)', label: C times u, fmt: 3, say: Multiply each row of C by u, why: 'Two parts come out, so C u is an arrow too.'}
       - say: 'Draw both. $u$ points at {{th_hand|0}} degrees, but $C u$ points at {{cu_th|0}} degrees.'

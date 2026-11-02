@@ -26,7 +26,7 @@ ok("n", D["n"], n); ok("d1", D["d1"], Z[:, 0]); ok("d2", D["d2"], Z[:, 1]); ok("
 C = np.cov(X, rowvar=False)
 ok("v_cd3 v_cd19 c12", [D["v_cd3"], D["v_cd19"], D["c12"]], [C[0, 0], C[1, 1], C[0, 1]])
 ok("v_cd14 c13 c23", [D["v_cd14"], D["c13"], D["c23"]], [C[2, 2], C[0, 2], C[1, 2]])
-ok("cmat3", [[r["cd3"], r["cd19"], r["cd14"]] for r in D["cmat3"]], C); assert [r["name"] for r in D["cmat3"]] == D["markers"]
+ok("cmat3", [[r["CD3"], r["CD19"], r["CD14"]] for r in D["cmat3"]], C); assert [r["name"] for r in D["cmat3"]] == D["markers"]
 ok("2-D spreads = ep2", [D["v_cd3"], D["v_cd19"], D["c12"]], [E2["v_cd3"], E2["v_cd19"], E2["c12"]], 1e-12)
 
 # two markers
