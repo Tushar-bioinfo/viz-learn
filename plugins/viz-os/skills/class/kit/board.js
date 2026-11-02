@@ -222,7 +222,7 @@
   }
 
   // ---------- how much room a figure gets ----------
-  const FIG = 520, SIDE = 300, GAP = 20, UNDER = 1280, READ = 1100;   // beside needs 520 px of figure and 300 of side column; the reading column is 1100, a figure in it may reach 1280
+  const FIG = 520, SIDE = 300, GAP = 20, UNDER = 1280, READ = 1100;   // beside needs 520 px of figure and 300 of side column; a wide figure's column is 1100, and a figure in it may reach 1280
   const sideOf = W => Math.max(SIDE, Math.ceil(W * .3));              // the figure is sized from the 70%; the text then takes all that is left
   const SHAPE = 16 / 9, WIDEST = 2, FIGH = 820;                       // a chart's shape unless it has a ratio; how wide it may go in a short window; the tallest figure
   // the width a figure aims for: 16:9 at the height it may take, never short of its column, never past its room
@@ -584,8 +584,8 @@
     // a figure's rows take its width
     const sized = (fg, room) => { const w = fg.size(room); fg.wrap.style.width = w + 'px'; return w; };
     // the figures: how each sizes itself. Two figures on one step stand in a row above their lines
-    // The reading column is 1100 px, or a matrix panel's page; a figure wider than that widens it for the whole scene, so the edges stay one
-    const place = () => { const page = root.clientWidth, read0 = broad ? page : Math.min(READ, page); let read = read0; root.style.setProperty('--read', read0 + 'px');
+    // A wide figure's column is 1100 px, or a matrix panel's page; a figure wider than that widens it for the whole scene. Text takes the page
+    const place = () => { const page = root.clientWidth, read0 = broad ? page : Math.min(READ, page); let read = read0; root.style.setProperty('--read', read0 + 'px'); root.style.setProperty('--col', page + 'px');
       blocks.forEach(b => { if (b.wide) return;
       const W = b.node.parentElement.clientWidth, side = sideOf(W), many = b.figs.length > 1, inPair = b.node.closest('.bpair:not(.stacked)');
       const beside = !b.over && !inPair && !many && b.side.children.length > 0 && W - side - GAP >= FIG;

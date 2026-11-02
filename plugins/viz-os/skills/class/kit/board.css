@@ -43,16 +43,16 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .bpair.stacked { display: flex; flex-direction: column; gap: 28px; align-items: stretch; }
 .board .tcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: sticky; top: 24px; align-self: start; }
 .board .bpair.stacked .tcol, .board .tcol.nostick { position: static; }
-.board .bpair.stacked .tcol { align-self: center; }
+.board .bpair.stacked .tcol { align-self: stretch; }
+.board .bpair.stacked .tcard { align-self: center; }
 .board .tcol > .note { width: 0; min-width: 100%; box-sizing: border-box; }
 html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: var(--card); border: 1px solid var(--thin); box-shadow: none; }
 .board .tcard table.t { width: 100%; }
 .board .fb { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 .board .ffig { display: flex; flex-direction: column; gap: 18px; min-width: 0; align-self: center; }
 .board .fside { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
-/* one reading column: what is not side by side shares one centred pair of edges. board.js sets --read (the page, in a scene with a matrix panel) */
-.board > .lines > *, .board > .bpair.stacked > .lines > *, .board > .st.wide, .board > .controls, .board .fb.many > .fside > .st, .board .fb.many .st.intro > * { width: var(--read); max-width: 100%; box-sizing: border-box; align-self: center; }
-.board > .lines > .fb.beside, .board > .lines > .fb.many, .board > .bpair.stacked > .lines > .fb.beside, .board > .bpair.stacked > .lines > .fb.many { width: 100%; }
+/* like a paper: what is not side by side starts at the page's left edge, and only figures and equations sit in its middle. Controls with no figure take a wide figure's place; board.js sets --read */
+.board > .controls, .board > .lines > .controls, .board > .bpair.stacked > .lines > .controls { width: var(--read); max-width: 100%; box-sizing: border-box; align-self: center; }
 /* beside a figure: it sits at the left of the page, the gap is 20 px, and the text takes the rest */
 .board .fb.beside { display: grid; grid-template-columns: var(--fig, 70%) minmax(0, 1fr); gap: 20px; align-items: start; }
 .board .fb.beside > .ffig { justify-self: start; align-self: start; }
@@ -68,6 +68,8 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 .board .fg > .controls + .stage { margin-top: 8px; }
 .board .stopl { margin-top: 8px; font-size: 17px; line-height: 1.32; color: var(--mist); text-align: center; }
 .board .fb.beside .stopl { display: none; }
+/* under a wide figure the line by the buttons is text like any other: it leaves the figure's width for the page's left edge. board.js sets --col */
+.board > .lines > .fb:not(.beside, .many) .stopl, .board > .bpair.stacked > .lines > .fb:not(.beside, .many) .stopl, .board .st.wide .stopl { width: var(--col); margin-left: calc((100% - var(--col)) / 2); text-align: left; }
 /* wide pictures sit centred; their line of text stays lined up with the other lines */
 .board .st.wide .fg, .board > .fg { align-self: center; }
 
@@ -126,9 +128,9 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .math .katex-html { white-space: nowrap; }
 .board .cline .math { min-width: 0; }
 .board .cline .math.wrapped > .part + .part { margin-left: 0; }
-/* with no figure beside them, equations sit centred in the reading column; in a side column they stay left */
-.board > .lines > .st :is(.cline, .fline) .math, .board > .lines > .fb:not(.beside) :is(.cline, .fline) .math, .board > .bpair.stacked :is(.cline, .fline) .math { grid-column: 1 / -1; text-align: center; justify-content: center; }
-.board > .lines > .st .cline .math.wrapped, .board > .lines > .fb:not(.beside) .cline .math.wrapped, .board > .bpair.stacked .cline .math.wrapped { align-items: center; }
+/* with nothing beside them, equations sit in the middle of the page; in a side column they stay left */
+.board :is(.cline, .fline):not(.fb.beside *, .bpair:not(.stacked) *) .math { grid-column: 1 / -1; text-align: center; justify-content: center; }
+.board .cline:not(.fb.beside *, .bpair:not(.stacked) *) .math.wrapped { align-items: center; }
 /* the key row: each symbol in its colour, then its plain name */
 .board .wkey { flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: inherit; gap: 2px 8px; margin-top: 6px; font: 400 16px/1.5 var(--f-ui); color: var(--mist); text-align: left; }
 .board .wk { display: inline-flex; align-items: baseline; gap: 6px; }
@@ -138,7 +140,7 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .fline .say { font-size: 18px; font-weight: 400; line-height: 1.5; }
 .board .fline .math, .board .asm .math { position: relative; min-width: 0; }
 .board .fline .math { font-size: 30px; }
-.board .asm { padding: 14px 24px; display: flex; flex-direction: column; gap: 14px; }
+.board .asm { padding: 14px 0; display: flex; flex-direction: column; gap: 14px; }
 .board .asm .say { font-size: 20px; font-weight: 650; }
 .board .asm .abridge .say { font-size: 18px; font-weight: 400; }
 .board .arow { display: grid; grid-template-columns: 132px minmax(0, 1fr) 132px; column-gap: 16px; align-items: center; }
