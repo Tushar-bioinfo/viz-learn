@@ -4,7 +4,8 @@
 
 A class lesson is now one long page that scrolls, in a new look. Decks and sketch pages are unchanged.
 
-- The page reads top to bottom, and what is written stays. Text, formulas and wide figures share one centred column up to 1100 px. A figure is sized first and stays in view, and its lines take the rest of the page beside it, 20 px away; a figure that changes has its own Back and Next.
+- The page reads top to bottom, and what is written stays. Text starts at the page's left edge, and figures and equations sit in the middle, like a paper. A wide figure is 1100 to 1280 px. A figure with text beside it is sized first and stays in view, and the text takes the rest of the page, 20 px away; a figure that changes has its own Back and Next.
+- The scene chip is all orange. Callouts, number cards and think cards have no box and no lines; a lit one shows a bar in the margin.
 - Every figure owns its shape. An equal plane now fills its room by widening both axes at one scale. A plane can say `fill: true` to take a chart's shape when no right angle or length matters.
 - Formulas stay on one row and shrink to 20 px; term labels that would stack become one key row.
 - A symbol keeps one colour across the page, from its `symbols` entry; `s4` and `s5` join the palette. A bare symbol name in a line warns.

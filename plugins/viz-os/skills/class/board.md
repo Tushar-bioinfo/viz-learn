@@ -306,9 +306,9 @@ lessons/
 - A later lesson reaches back with a think stop near its start, not with cards (`lesson.md` §7). Copy any number it needs into this lesson's data with `make_data.py`, or compute it with `{{…}}`. If `make_data.py` reads an earlier lesson's `data.json` and that lesson was tidied, run `tidy.py --restore` on it first.
 - `home: <name>` names the home table (`C/scripts/home.py`, written to `~/.viz-os/home/<name>.json`, or under `$VIZOS_HOME` when it is set). `make_data.py` reads that file and writes the rows it uses into `data.json`, plus `"home": {"name": …, "provenance": {…}}` copied from the file, so each lesson keeps its own copy and says where it came from. The build does not read the home file; it reads only `data.json`.
 
+## The plan and the summary
 The plan is its picture: a `plan` scene has one step, `add` with a `flow`, and no `say`. The `flow` draws as a row of numbered squares, the first one filled, with each `title` under its square and any `sub` under that.
 
-## The plan and the summary
 The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [ … ]}`. Any other deck slide type (`predict`, `table`, `bridge`, …) may sit between board scenes when it teaches better, and counts as a scene.
 
 ## Lint messages
@@ -329,7 +329,7 @@ The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [
 | `no lead` | one short line linking the scene to the last |
 | `N steps (≤ 10)` | split the scene |
 | `6 steps in a row with no think stop` | add a `think` step |
-| `` `say` has N words (≤ 24) `` | move the rest to the next step |
+| `` `say` has N words (≤ 14) ``; also `think q` and an item's `say` (≤ 14), `note` (≤ 16), `think a` (≤ 18) | cut it, or move the rest to the next step |
 | `` `beat` is …; use one of … `` | a beat from the list above |
 | `unknown step field` / `a step needs say` | steps take `say`, `add`, `mark`, `think`, `frame` |
 | `` `calc` has no field X `` (also `col`, `eqn`, `assemble`, `params`) | a comma inside an unquoted `{ }` value split it into a second key: quote the value |

@@ -29,9 +29,9 @@ Codex, Cursor, Grok Build, Muse Code, Antigravity CLI and Gemini CLI each have t
 A deck is done only when four gates pass: lint (0 errors, 0 warnings), browser check (0 warnings on a desktop screen), numbers (seeded, recomputed independently, and no worked line that fails to add up) and eyes (contact sheet opened and reviewed).
 
 ## Class lessons (the `class` skill)
-A second skill, for lessons taught the way a good classroom teacher works a board: a problem first, numbers worked by hand on a small table, the formula built from those numbers, then symbols, a "what if" slider, an iteration you can play, limits, and review cards. Ask for "a viz-os class on <topic>" or run `/viz-os:class <topic>`.
+A second skill, for lessons taught the way a good classroom teacher works a board: a problem first, numbers worked by hand on a small table, the formula built from those numbers, then symbols, a "what if" slider, an iteration you can play, and limits. Ask for "a viz-os class on <topic>" or run `/viz-os:class <topic>`.
 - The agent writes `lesson.yaml`: a deck file whose scenes are `board` slides. The lesson is one long page that fills up like a board (table, worked lines, pictures), with a teacher line for each step. A figure that changes has Back and Next. `think` steps ask before they answer.
-- `lesson.py` builds it with the deck's own kit and lint, plus the lesson rules (numbers before symbols, a think stop at least every 6 steps, no typed numbers, at most 24 words per teacher line). The deck's `check.py` audits it.
+- `lesson.py` builds it with the deck's own kit and lint, plus the lesson rules (numbers before symbols, a think stop at least every 6 steps, no typed numbers, at most 14 words per teacher line). The deck's `check.py` audits it.
 - Lessons can form a series on one toy data table (`home.py`, seeded), and each part reaches back to the last with a think stop. `tidy.py` clears a finished lesson's folder to its page and its yaml, and can bring the rest back. Series memory lives in `~/.viz-os/series/` (set `VIZOS_HOME` to keep the profile, home tables and series somewhere else).
 - Examples: `variance`, `perceptron-trick`, the three-part PCA series (`pca-1-what`, `pca-2-how`, `pca-3-why`) and `board-gallery` (every scene kind).
 
