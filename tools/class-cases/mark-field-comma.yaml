@@ -1,0 +1,24 @@
+# expect: plane mark 1 (`vector`) has no field `drawn from the middle`
+# expect: it looks like the end of a sentence
+# an unquoted comma inside a mark's says: cuts it, and the tail becomes a key: the lint names the key and says to quote
+title: A plane key
+question: Does the plane key read at a glance?
+answer: Short legend entries, and every name is said.
+data: {ux: 1, uy: 0.5, vx: -0.5, vy: 1}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Two arrows
+    steps:
+      - say: The two arrows start at the middle.
+        add:
+          plane:
+            x: {label: x, min: -2, max: 2}
+            y: {label: y, min: -1.5, max: 1.5}
+            marks:
+              - {vector: [ux, uy], color: accent, name: w, says: the weight arrow, drawn from the middle}
+      - say: Each arrow keeps its own direction.
+  - type: recap
+    answer: The key reads at a glance.

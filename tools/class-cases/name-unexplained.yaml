@@ -1,0 +1,24 @@
+# expect: builds
+# expect: say what w is: add says: to the mark, or name it in a teacher line first
+# a name the lesson never explains warns
+title: A plane key
+question: Does the plane key read at a glance?
+answer: Short legend entries, and every name is said.
+data: {ux: 1, uy: 0.5, vx: -0.5, vy: 1}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Two arrows
+    steps:
+      - say: The two arrows start at the middle.
+        add:
+          plane:
+            x: {label: x, min: -2, max: 2}
+            y: {label: y, min: -1.5, max: 1.5}
+            marks:
+              - {vector: [ux, uy], color: accent, name: w}
+      - say: Each arrow keeps its own direction.
+  - type: recap
+    answer: The key reads at a glance.

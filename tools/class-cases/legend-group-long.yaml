@@ -1,0 +1,24 @@
+# expect: builds
+# expect: legend label “the T cells”: legend labels are for a quick read: 2 words at most
+# a points mark's colour-group labels are legend entries too, so the 2-word limit holds for them
+title: A plane key
+question: Does the plane key read at a glance?
+answer: Short legend entries, and every name is said.
+data: {cells: [{x: 1, y: 1, k: T}, {x: 2, y: 3, k: B}]}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Two groups
+    steps:
+      - say: Each dot is a cell, coloured by its type.
+        add:
+          plane:
+            x: {label: x, min: 0, max: 4}
+            y: {label: y, min: 0, max: 4}
+            marks:
+              - points: {from: cells, x: x, y: y, by: k, colors: {T: {color: s1, label: the T cells}, B: {color: s2, label: B cell}}}
+      - say: The two types sit apart.
+  - type: recap
+    answer: The key reads at a glance.

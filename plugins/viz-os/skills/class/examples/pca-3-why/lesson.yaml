@@ -16,10 +16,10 @@ symbols:
   j: {tex: 'j', says: which marker, color: s5, kind: index}
   u1: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3 part, color: s1}
   u2: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19 part, color: s2}
-  v1: {tex: 'v_1', says: PC1's arrow, CD3 part, short: PC1's CD3 part, color: s1, fmt: 3}
-  v2: {tex: 'v_2', says: PC1's arrow, CD19 part, short: PC1's CD19 part, color: s2, fmt: 3}
-  w1: {tex: 'w_1', says: PC2's arrow, CD3 part, short: PC2's CD3 part, fmt: 3}
-  w2: {tex: 'w_2', says: PC2's arrow, CD19 part, short: PC2's CD19 part, fmt: 3}
+  v1: {tex: 'v_1', says: "PC1's arrow, CD3 part", short: PC1's CD3 part, color: s1, fmt: 3}
+  v2: {tex: 'v_2', says: "PC1's arrow, CD19 part", short: PC1's CD19 part, color: s2, fmt: 3}
+  w1: {tex: 'w_1', says: "PC2's arrow, CD3 part", short: PC2's CD3 part, fmt: 3}
+  w2: {tex: 'w_2', says: "PC2's arrow, CD19 part", short: PC2's CD19 part, fmt: 3}
   a: {tex: 'a', says: how much of u points along PC1, short: PC1 part, color: accent, fmt: 3}
   b: {tex: 'b', says: how much of u points along PC2, short: PC2 part, color: s3, fmt: 3}
   v_cd3: {tex: 's_1^2', says: the spread of CD3, short: CD3 spread, color: s1, fmt: 3}
@@ -86,9 +86,9 @@ slides:
             marks:
               - {line: [0, '-v2', v1], color: mist, label: PC1}
               - {line: [0, '-w2', w1], color: mist, dash: true, label: PC2}
-              - {vector: [u1, u2], color: ink, name: u, label: the arrow u}
-              - {vector: [ax, ay], color: accent, name: a · PC1, label: its PC1 part, step: 2}
-              - {vector: ['u1 - ax', 'u2 - ay'], from: [ax, ay], color: s3, name: b · PC2, label: its PC2 part, step: 3}
+              - {vector: [u1, u2], color: ink, name: u, says: 'the flat arrow, along CD3'}
+              - {vector: [ax, ay], color: accent, name: a, says: how far u goes along PC1, step: 2}
+              - {vector: ['u1 - ax', 'u2 - ay'], from: [ax, ay], color: s3, name: b, says: how far u goes along PC2, step: 3}
       - say: How much of u points along PC1? Its dot product with PC1's arrow.
         add: {calc: {say: u's PC1 part, expr: u1 * v1 + u2 * v2, name: a, fmt: 3}}
       - say: And along PC2, its dot product with PC2's arrow.
@@ -149,7 +149,7 @@ slides:
               marks:
                 - {line: [0, '-v2', v1], color: mist, label: PC1}
                 - {line: [0, '-w2', w1], color: mist, dash: true, label: PC2}
-                - {vector: [ex, ey], color: accent, name: u, label: the mixed arrow}
+                - {vector: [ex, ey], color: accent, name: u, says: the arrow with the share on PC1 you set}
       - think:
           q: Where on the slider is the spread biggest, and where smallest?
           a: 'At 1 it is {{lam1|3}}, PC1. At 0 it is {{lam2|3}}, PC2. Every arrow sits in between.'
@@ -229,8 +229,8 @@ slides:
             marks:
               - points: {from: cells, x: z1, y: z2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
               - {line: [0, 0, 1], color: accent, label: PC1 kept}
-              - {foot: {from: ['at(z1, 3)', 'at(z2, 3)'], line: [0, 0, 1]}, color: ink, label: c4's drop to PC1}
-              - {square: [['at(z1, 3)', 0], ['at(z1, 3)', 'at(z2, 3)']], color: accent, label: the squared drop, step: 2}
+              - {foot: {from: ['at(z1, 3)', 'at(z2, 3)'], line: [0, 0, 1]}, color: ink, name: drop, says: how far c4 falls to PC1 when the other PCs go}
+              - {square: [['at(z1, 3)', 0], ['at(z1, 3)', 'at(z2, 3)']], color: accent, label: squared drop, says: 'the drop, squared: what c4 loses, as an area', step: 2}
       - say: The loss is the squared drop. PC3's part is tiny but counts too.
         add: {calc: {say: What c4 loses, why: 'PC3 adds only {{at(z3, 3)^2|3}}.', expr: 'at(z2, 3)^2 + at(z3, 3)^2', name: lost4, fmt: 3}}
       - say: Add the loss over all six cells.

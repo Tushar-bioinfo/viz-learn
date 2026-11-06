@@ -25,12 +25,12 @@ symbols:
   p1: {tex: 'p_{c1}', says: c1's shadow on the tilted line, short: c1's shadow, fmt: 2}
   p: {tex: 'p', says: a cell's shadow on the line, short: shadow, fmt: 2}
   s2u: {tex: 's_u^2', says: the spread of the shadows on the line, short: spread along u, fmt: 3}
-  th: {tex: '\theta', says: the angle of the line, in degrees, short: angle, fmt: 0}
+  th: {tex: '\theta', says: "the angle of the line, in degrees", short: angle, fmt: 0}
   sp: {tex: 's_\theta^2', says: the spread of the shadows at this angle, short: spread now, fmt: 3}
   alen: {tex: 'L', says: the arrow's length, short: arrow length, fmt: 1}
   spl_now: {tex: 's_{L}^2', says: the spread with the stretched arrow, short: spread now, fmt: 3}
-  v1: {tex: 'v_1', says: PC1's arrow, its CD3 part, short: PC1's CD3 part, color: s1, fmt: 3}
-  v2: {tex: 'v_2', says: PC1's arrow, its CD19 part, short: PC1's CD19 part, color: s2, fmt: 3}
+  v1: {tex: 'v_1', says: "PC1's arrow, its CD3 part", short: PC1's CD3 part, color: s1, fmt: 3}
+  v2: {tex: 'v_2', says: "PC1's arrow, its CD19 part", short: PC1's CD19 part, color: s2, fmt: 3}
   z: {tex: 'z', says: a cell's score on PC1, short: PC1 score, fmt: 2}
   lam1: {tex: 's_{\text{PC1}}^2', says: the spread of the PC1 scores, short: PC1 spread, fmt: 3}
   share1: {tex: 'f_1', says: the share of the total spread PC1 keeps, short: share kept, fmt: '%'}
@@ -111,7 +111,7 @@ slides:
             marks:
               - points: {from: cells, x: cd3, y: cd19, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
               - {point: [m1, m2], name: middle, color: accent}
-              - {line: ['-m1', 1, 0], color: mist, dash: true, label: new zero lines, step: 4}
+              - {line: ['-m1', 1, 0], color: mist, dash: true, label: zero lines, says: the middle becomes zero on each axis, step: 4}
               - {line: ['-m2', 0, 1], color: mist, dash: true, step: 4}
       - say: Measure every cell from the middle. Call these distances $d_1$ and $d_2$.
         add:
@@ -168,7 +168,7 @@ slides:
             y: {label: CD19 from the middle, min: -2.5, max: 3}
             marks:
               - points: {from: cells, x: d1, y: d2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
-              - {line: [0, '-u2', u1], color: accent, label: the tilted line}
+              - {line: [0, '-u2', u1], color: accent, label: tilted line}
               - {vector: [u1, u2], color: ink, name: u}
               - {foot: {from: ['at(d1, 0)', 'at(d2, 0)'], dir: [u1, u2]}, color: ink, label: shadow, step: 2}
               - {foot: {from: ['at(d1, 1)', 'at(d2, 1)'], dir: [u1, u2]}, color: ink, step: 3}
@@ -229,7 +229,7 @@ slides:
               y: {label: CD19 from the middle, min: -2.5, max: 3}
               marks:
                 - points: {from: cells, x: d1, y: d2, by: type, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
-                - {line: [0, '-uy', ux], color: accent, label: the line now}
+                - {line: [0, '-uy', ux], color: accent, label: line now}
                 - {foot: {from: ['at(d1, 0)', 'at(d2, 0)'], dir: [ux, uy]}, color: ink, label: shadow}
                 - {foot: {from: ['at(d1, 1)', 'at(d2, 1)'], dir: [ux, uy]}, color: ink}
                 - {foot: {from: ['at(d1, 2)', 'at(d2, 2)'], dir: [ux, uy]}, color: ink}
@@ -293,7 +293,7 @@ slides:
               y: {label: CD19 from the middle, min: -2.5, max: 3}
               marks:
                 - points: {from: cells, x: d1, y: d2, by: type, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
-                - {line: [0, '-v2', v1], color: accent, label: the best line}
+                - {line: [0, '-v2', v1], color: accent, label: best line}
                 - {vector: ['alen * v1', 'alen * v2'], color: ink, name: u}
                 - {foot: {from: ['at(d1, 0)', 'at(d2, 0)'], dir: [v1, v2]}, color: ink, label: shadow}
                 - {foot: {from: ['at(d1, 1)', 'at(d2, 1)'], dir: [v1, v2]}, color: ink}

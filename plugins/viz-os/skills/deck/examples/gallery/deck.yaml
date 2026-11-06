@@ -107,7 +107,7 @@ slides:
     code: cpm = x / N * 1e6
     note: The same gene now reads {{cpmA|0}} in both samples.
     hook: Like a percentage, but per million reads instead of per hundred.
-    from: {name: a percentage, tex: '\dfrac{\text{part}}{\text{whole}} \times 100', move: count per million reads, not per hundred}
+    from: {name: a percentage, tex: '\dfrac{\text{part}}{\text{whole}} \times 100', move: "count per million reads, not per hundred"}
     kin:
       - {where: cricket, name: run rate, tex: '\dfrac{\text{runs}}{\text{overs}}'}
       - {where: chemistry, name: parts per million, tex: '\dfrac{\text{solute}}{\text{solution}} \times 10^6'}

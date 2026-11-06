@@ -1,0 +1,26 @@
+# expect: builds
+# expect: not: is: add says: to the mark
+# a name in TeX or Greek matches the teacher line however it is written: $x$ and x, α and $\alpha$, $\beta$ and β
+title: A plane key
+question: Does the plane key read at a glance?
+answer: Short legend entries, and every name is said.
+data: {ux: 1, uy: 0.5, vx: -0.5, vy: 1}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Two arrows
+    steps:
+      - say: 'The point x is one cell; the arrow $\alpha$ is the weight; β is the bias arrow.'
+        add:
+          plane:
+            x: {label: x, min: -2, max: 2}
+            y: {label: y, min: -1.5, max: 1.5}
+            marks:
+              - {point: [ux, uy], color: s1, name: '$x$'}
+              - {vector: [ux, uy], color: accent, name: α}
+              - {vector: [vx, vy], color: s2, name: '$\beta$'}
+      - say: Each arrow keeps its own direction.
+  - type: recap
+    answer: The key reads at a glance.

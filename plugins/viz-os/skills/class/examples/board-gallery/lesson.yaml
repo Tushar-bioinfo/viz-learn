@@ -113,10 +113,10 @@ slides:
             marks:
               - points: {from: cells, x: i, y: cd3, label: id}
               - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|1}}'}
-              - {foot: {from: [far_i, 'at(cd3, far_i - 1)'], line: ['-xbar', 0, 1]}, color: ink, label: distance to the mean, step: 2}
+              - {foot: {from: [far_i, 'at(cd3, far_i - 1)'], line: ['-xbar', 0, 1]}, color: ink, name: d, label: distance, says: the drop from the cell to the mean line, step: 2}
               - {square: [[far_i, xbar], [far_i, 'at(cd3, far_i - 1)']], color: s2, label: its square, step: 3}
               - {text: 'd² = {{far_dev^2|2}}', at: ['far_i - far_dev / 2', 'xbar + far_dev + 0.4'], step: 3}
-      - say: '{{far_id}} sits {{far_dev|1}} above the mean: the drop to the line.'
+      - say: '==#7cc4e8:{{far_id}}== sits {{far_dev|1}} above the mean: the drop to the line.'
       - say: 'Squared, that distance is the area of this square, {{far_dev^2|2}}.'
       - think:
           q: One cell sits twice as far out. How much bigger is its square?
@@ -204,7 +204,7 @@ slides:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
                 - {shade: [w0, w1, w2], color: s1, label: called T}
                 - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev}
-                - {line: [w0, w1, w2], color: accent, label: the line now}
+                - {line: [w0, w1, w2], color: accent, label: line now}
                 - {ring: ['at(next_x, t)', 'at(next_y, t)'], when: 'at(has_next, t)'}
       - say: 'One update: each weight moves by $\eta$ = {{eta}} times the ringed cell''s values.'
         add: {note: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$, with $x_0 = 1$ and $y = +1$ for a T cell, $-1$ for a B cell.'}

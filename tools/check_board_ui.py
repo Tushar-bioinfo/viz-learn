@@ -13,9 +13,10 @@ screen after every Next; Next onto a think step takes two presses; rows fit thei
 screen at three windows; a filled plane and a table fill their room; the first stop has no line;
 Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen;
 text not side by side starts at the page's left edge while figures and equations centre on it; callouts and thinks have
-no lines and no indent, stand 12 px from their line, and show a bar when lit without moving their text.
+no lines and no indent, stand 12 px from their line, and show a bar when lit without moving their text. The pause button
+shows only with `says`, keeps clear of the rail, quiets pointing but not a click, and survives a reload.
 """
-import importlib.util, re, sys
+import importlib.util, re, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -574,6 +575,65 @@ def legend_room(page):
     return not bad, f"{len(r)} legends" + (f", tight: {bad[:4]}" if bad else "")
 
 
+# the pause button: what it shows, and whether the first name with `says` that is on the page opens its pop-up
+PAUSE = """() => { const b = document.getElementById('lspause'); return b && [b.getAttribute('aria-pressed'), b.getAttribute('aria-label')]; }"""
+POP_OPEN = "() => !!document.querySelector('.board .ptip.on')"
+
+
+def hover_pause(page):
+    """Pause hover pop-ups: a button only on a page with `says`, in the margin above the rail at 1280 and 1000 px;
+    while paused, pointing opens nothing and a click still does; the choice survives a reload; pausing closes a hover pop-up."""
+    n = page.evaluate("document.querySelectorAll('.says').length")
+    if not n:
+        return page.evaluate(PAUSE) is None, "no says, no button"
+    bad = []
+    for w, hh in ((1280, 900), (1000, 800)):
+        page.set_viewport_size({"width": w, "height": hh}); page.wait_for_timeout(250)
+        r = page.evaluate("""() => { const b = document.getElementById('lspause').getBoundingClientRect(), r = document.getElementById('lsrail').getBoundingClientRect(), l = document.getElementById('lesson').getBoundingClientRect();
+          return [Math.round(r.top - b.bottom), Math.round(b.left - l.right), Math.round(innerWidth - b.right), b.width, Math.round(b.top)]; }""")
+        if r[0] < 2 or r[1] < 0 or r[2] < 0 or r[3] < 16 or r[4] < 0:
+            bad.append(f"{w}: gap to rail {r[0]}, to page {r[1]}, to edge {r[2]}, width {r[3]}")
+    page.set_viewport_size({"width": 1440, "height": 900}); page.wait_for_timeout(250)
+    if page.evaluate(PAUSE)[0] == "true":
+        page.click("#lspause")
+    # the first name with says that is drawn and not waiting for its step
+    # every stepped figure to its last stop, so names that come in on a later step are up
+    page.evaluate("VizOS.slides.forEach(sl => (sl.r.stages || []).forEach(S => { for (let k = 0; k < 40 && S.move(1); k++); }))")
+    pick = """() => { const e = [...document.querySelectorAll('.board .says')].find(e => e.getClientRects().length && !e.closest('[data-step]:not(.shown)')); if (!e) return null; e.scrollIntoView({block: 'center'}); const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }"""
+    xy = page.evaluate(pick)
+    if not xy:
+        return False, "no name with says is shown"
+    page.wait_for_timeout(150); xy = page.evaluate(pick); page.wait_for_timeout(100)
+    away = lambda: (page.mouse.move(5, 300), page.wait_for_timeout(100))
+    page.mouse.move(*xy); page.wait_for_timeout(100)
+    hover_on = page.evaluate(POP_OPEN)
+    # pause from the keyboard while the pointer rests on the name: its pop-up closes
+    page.focus("#lspause"); page.keyboard.press("Enter"); page.wait_for_timeout(100)
+    closed = not page.evaluate(POP_OPEN); state = page.evaluate(PAUSE)
+    away(); page.mouse.move(*xy); page.wait_for_timeout(100)
+    paused_hover = page.evaluate(POP_OPEN)
+    page.mouse.click(*xy); page.wait_for_timeout(100)
+    paused_click = page.evaluate(POP_OPEN)
+    page.mouse.click(5, 300); page.wait_for_timeout(100)
+    page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
+    kept = page.evaluate(PAUSE)
+    page.click("#lspause"); page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
+    back = page.evaluate(PAUSE)
+    want = (hover_on, closed, state == ["true", "Resume hover pop-ups"], not paused_hover, paused_click, kept and kept[0] == "true", back == ["false", "Pause hover pop-ups"])
+    ok = all(want) and not bad
+    return ok, f"{n} names; hover, closes, pressed, quiet, click, kept, resumed: {want}" + (f"; {bad}" if bad else "")
+
+
+def no_says_page(ctx):
+    """A lesson with no `says` on any name or legend entry has no pause button."""
+    case, html = ROOT / "tools/class-cases/clean-lesson.yaml", ROOT / "out/board-ui/no-says.html"
+    html.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run([sys.executable, ROOT / "plugins/viz-os/skills/class/scripts/lesson.py", case, "-o", html, "--quiet"], capture_output=True)
+    page = ctx.new_page(); page.goto(html.as_uri()); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
+    r = page.evaluate("[document.querySelectorAll('.says').length, !!document.getElementById('lspause')]"); page.close()
+    return r == [0, False], f"says, button: {r}"
+
+
 TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a line goes to its stop", click_line), ("a think step's stop opens it", think_stop),
          ("Show answer grows its card from a fixed top", show_answer), ("a slider changes a number", slider), ("a run's scrubber moves the lit line", scrubber),
          ("scrolling lights steps and fills columns, figures stay", scrolling), ("no sideways scroll; planes equal; charts and images keep their ratio", widths),
@@ -586,7 +646,8 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("no piece of a formula on two rows", one_row), ("a formula shrinks to fit, never under 20 px", formula_floor), ("term labels never stack", no_stack),
          ("the text sits 20 px from its figure", side_gap), ("figures fill their room at 1480 x 800", fills_room), ("equal planes keep one scale", equal_units),
          ("all text starts at the page's left edge", edges), ("figures and equations centre on the page", centres), ("a symbol has one colour", one_colour), ("cards wear the figure's frame", frames),
-         ("callouts and thinks have no lines and no indent", no_lines), ("a line stands 12 px from its card", card_gap), ("a lit callout shows its mark, its text stays", lit_mark), ("legends have room above them", legend_room)]
+         ("callouts and thinks have no lines and no indent", no_lines), ("a line stands 12 px from its card", card_gap), ("a lit callout shows its mark, its text stays", lit_mark), ("legends have room above them", legend_room),
+         ("pause hover pop-ups: hover quiet, click opens, kept", hover_pause)]
 
 
 def series_of(name):
@@ -632,6 +693,12 @@ def main(names):
                 # by the symbol as written, the first listed wins as in the page: two lessons may use one key for different symbols
                 series.setdefault(series_of(name), {})[name] = page.evaluate("() => { const S = VizOS.slides[0].ctx.symbols || {}, out = {}; Object.keys(S).forEach(q => { const t = S[q].tex || q; if (S[q].color && !(t in out)) out[t] = S[q].color; }); return out; }")
             page.close()
+        try:
+            ok, why = no_says_page(ctx)
+        except Exception as e:
+            ok, why = False, str(e).splitlines()[0][:160]
+        res.append(ok)
+        print(f"board ui no-says case: no pause button without says | {'ok' if ok else 'FAIL: ' + str(why)}")
         br.close()
     for s, books in sorted(series.items()):
         ok, why = series_colours(books)

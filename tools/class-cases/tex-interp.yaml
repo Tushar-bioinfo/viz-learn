@@ -1,0 +1,24 @@
+# expect: builds
+# expect: 4.57
+# expect: 2.13
+# expect: not: could not compute
+# expect: not: ⟨?⟩
+# A live number {{x|2}} inside $…$ in a teacher line and a note: KaTeX gets the number, not a placeholder.
+title: A number inside the maths
+question: Does a live number inside the maths show its value?
+answer: Yes, the maths is drawn with the value filled in.
+data: {xbar: 4.567, sd: 2.1349}
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean}
+  sd: {tex: 's', says: the standard deviation}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: The mean, written as maths
+    steps:
+      - say: 'The mean is $\bar{x} = {{xbar|2}}$.'
+        add: {note: 'The spread is $s = {{sd|2}}$, about half the mean.'}
+      - say: Both numbers sit inside the maths.
+  - type: recap
+    answer: A live number inside the maths is drawn by KaTeX.

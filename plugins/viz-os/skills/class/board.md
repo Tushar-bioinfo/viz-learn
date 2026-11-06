@@ -109,6 +109,7 @@ A think step's `say` is optional; its question is the line. A think question has
 ### Highlights in text
 The kit colours worked lines and their table cells for you. In your own text:
 - `==s1:CD3==`: the words in bold, in that colour (`s1` to `s5`, `good`, `bad`, `mist`). Match a term's symbol and column colour. A few words per scene, never a whole sentence.
+- `==#cc6600:orange==`: the same, in a hex colour.
 - `**3.1×**`: bold, for a result.
 - `==text==`: an orange underline. Rare: once or twice a lesson, for the line to remember.
 - `$…$`: maths, in KaTeX.
@@ -253,13 +254,14 @@ Every mark also takes:
 | Field | What it does |
 |---|---|
 | `step` | the board step it appears on (default: the step that adds the plane) |
-| `color` | `accent`, `s1` to `s5`, `ink`, `mist`, `good`, `bad`, … |
-| `label` | its legend entry above the plane |
-| `name` | a label beside the mark itself (point, segment, vector, foot) |
+| `color` | `accent`, `s1` to `s5`, `ink`, `mist`, `good`, `bad`, …, or a hex like `#cc6600` |
+| `label` | its short legend entry above the plane, 2 words at most (`PC1`, `bad line`), even when it also has `name` |
+| `name` | a label beside the mark itself (point, segment, vector, foot), 2 words at most like a legend entry (`1 unit`, not `1 unit of CD3`; `$a \cdot b$` counts as one): the rest goes in `says:`. A vector's, a segment's and a foot's sit beside the middle of the line, off to one side |
+| `says` | the longer meaning (`how far u goes along PC1`); it pops up when the learner points at, taps or tabs to the name or legend entry, which get a dotted underline. `{{…}}` and markdown work |
 | `dash` | `true` for a dashed line or segment |
 | `when` | an expression; the mark is drawn only while it is not 0 (`when: prev` with a toggle; `when: 'at(has_next, t)'` in a run) |
 
-Labels are placed clear of dots, lines and other labels; when no place is clear, the check warns. A mark outside the box warns too: widen `min`/`max`.
+Labels are placed clear of dots, lines, arrows, right-angle ticks, the edges of squares and shaded halves, and other labels; when no place is clear, the check warns. Keep 5 legend entries or fewer. Every `name` needs `says:`, or a teacher line that names it at or before its step; the lint warns otherwise, since a pop-up is not seen in print or a screenshot. A mark outside the box warns too: widen `min`/`max`.
 
 ## Controls
 `controls:` on a scene takes three kinds. Each `name` becomes a variable for expressions on that scene.

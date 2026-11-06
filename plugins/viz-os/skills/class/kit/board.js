@@ -11,14 +11,34 @@
 (function () {
   'use strict';
   const L = window.VizOS, h = L.h;
-  // ==text== is the deck's orange underline; ==s1:text== (s2 to s5, good, bad) is bold text in that colour, no underline
-  const md = s => L.md(s).replace(/<mark class="hi">(accent|s1|s2|s3|s4|s5|good|bad|mist):/g, (_, c) => `<mark class="hi tc" style="--hc:var(--${c})">`);
+  // ==text== is the deck's orange underline; ==s1:text== (s2 to s5, good, bad, or a hex like #cc6600) is bold text in that colour, no underline
+  const md = s => L.md(s).replace(/<mark class="hi">(accent|s1|s2|s3|s4|s5|good|bad|mist|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}):/g, (_, c) => `<mark class="hi tc" style="--hc:${c[0] === '#' ? c : `var(--${c})`}">`);
   const SVG = 'http://www.w3.org/2000/svg';
   // what follows the window on every board: a held figure lets go, and the line by the buttons steps aside
   let watching = false;
   addEventListener('scroll', () => { if (watching) return; watching = true; requestAnimationFrame(() => { watching = false; (L.slides || []).forEach(sl => sl.r.watch && sl.r.watch()); }); }, { passive: true });
   const sv = (tag, attrs, parent) => { const e = document.createElementNS(SVG, tag); for (const k in attrs || {}) if (attrs[k] != null) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const list = x => Array.isArray(x) ? x : x == null ? [] : [x];
+  // pause hover pop-ups: while paused, pointing at a name no longer opens its `says`; a tap, a click or a focus still does.
+  // The button sits in the right margin just above the scene rail, made the first time a name or legend entry has `says`.
+  // The choice is kept per viewer; storage may be blocked (a file page, a strict browser), so the page works without it
+  const PAUSE_KEY = 'vizos-hover-paused';
+  let hoverOff = false, pauseBtn = null;
+  try { hoverOff = localStorage.getItem(PAUSE_KEY) === '1'; } catch (e) { /* storage blocked: start unpaused */ }
+  const PAUSE_ICON = { on: '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="1" width="2.5" height="8" fill="currentColor"/><rect x="6" y="1" width="2.5" height="8" fill="currentColor"/></svg>',
+    off: '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><polygon points="2,1 9,5 2,9" fill="currentColor"/></svg>' };
+  const pauseShow = () => { const t = hoverOff ? 'Resume hover pop-ups' : 'Pause hover pop-ups';
+    pauseBtn.innerHTML = hoverOff ? PAUSE_ICON.off : PAUSE_ICON.on; pauseBtn.title = t; pauseBtn.setAttribute('aria-label', t); pauseBtn.setAttribute('aria-pressed', String(hoverOff)); };
+  let railSeen = null;   // the rail may be built after the first board: watch it once it exists, so the button follows its height
+  const pausePlace = () => { const rail = document.getElementById('lsrail'), r = rail && rail.getBoundingClientRect();
+    if (rail && rail !== railSeen && window.ResizeObserver) { railSeen = rail; new ResizeObserver(pausePlace).observe(rail); }
+    pauseBtn.style.bottom = (r && r.height ? Math.round(innerHeight - r.top + 4) : 10) + 'px'; };
+  const pauseButton = () => {
+    if (pauseBtn || !document.body) return;
+    pauseBtn = h('button'); pauseBtn.id = 'lspause'; pauseBtn.type = 'button'; pauseShow(); document.body.appendChild(pauseBtn);
+    pauseBtn.addEventListener('click', () => { hoverOff = !hoverOff; try { localStorage.setItem(PAUSE_KEY, hoverOff ? '1' : '0'); } catch (e) { /* not kept */ }
+      pauseShow(); document.dispatchEvent(new CustomEvent('vizos-hoverpause')); });
+    pausePlace(); requestAnimationFrame(pausePlace); addEventListener('resize', pausePlace); addEventListener('load', pausePlace); };
   const COLOR = { accent: 1, tint: 1, s1: 1, s2: 1, s3: 1, s4: 1, s5: 1, ink: 1, mist: 1, haze: 1, line: 1, good: 1, bad: 1 };
   const col = c => COLOR[c] ? `var(--${c})` : c || 'var(--mist)';
   // ---------- one colour per symbol: a notation keeps its colour wherever it appears, so the eye can track it ----------
@@ -110,6 +130,35 @@
     const svg = sv('svg', { class: 'pl' }, wrap);
     const R = { node, issues: [], kind: 'plane', w: 0, h: 0, leg: LEG, view: null };
     const num = (x, where) => L.val(x, ctx.scope, where);
+    // `says`: a small pop-up when the learner points at, taps or tabs to a mark's name or legend entry. It sits by the name,
+    // inside the figure, never over the name; its text fills only while open, so the page audit never reads its 11px
+    const pop = h('div', 'ptip'); node.appendChild(pop); let popFor = null;
+    const SW = { line: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:3"/>', dash: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:2.5;stroke-dasharray:5 3"/>',
+      arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>' };
+    let pinned = null;   // the name a click or tap opened: a second click or tap closes it; a point or a focus alone only shows it
+    const hide = () => { pop.classList.remove('on'); pop.innerHTML = ''; popFor = null; pinned = null; };
+    const show = (el, mk, c, kind) => {
+      if (el.closest('[data-step]:not(.shown)')) return;
+      popFor = el; pop.innerHTML = `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg><span>${md(mk.says)}</span>`; L.fill(pop, ctx.scope);
+      pop.classList.add('on');
+      const fr = node.getBoundingClientRect(), nb = el.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight, gap = 6;
+      const n = { l: nb.left - fr.left, r: nb.right - fr.left, t: nb.top - fr.top, b: nb.bottom - fr.top }, cx = (n.l + n.r) / 2 - pw / 2, cy = (n.t + n.b) / 2 - ph / 2;
+      const clamp = (x, y) => [Math.max(0, Math.min(fr.width - pw, x)), Math.max(0, Math.min(fr.height - ph, y))];
+      const free = ([x, y]) => x >= n.r || x + pw <= n.l || y >= n.b || y + ph <= n.t;
+      const at = [[cx, n.b + gap], [cx, n.t - gap - ph], [n.r + gap, cy], [n.l - gap - pw, cy]].map(([x, y]) => clamp(x, y)).find(free) || clamp(cx, n.b + gap);
+      pop.style.left = at[0] + 'px'; pop.style.top = at[1] + 'px'; };
+    const tipOn = (el, mk, c, kind) => {
+      el.classList.add('says'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope));
+      pauseButton();
+      el.addEventListener('mouseenter', () => { if (!hoverOff) show(el, mk, c, kind); }); el.addEventListener('mouseleave', () => { if (document.activeElement !== el) hide(); });
+      el.addEventListener('focus', () => show(el, mk, c, kind)); el.addEventListener('blur', hide);
+      // a tap focuses the name (which shows the pop-up) and then clicks it, so the click pins it open rather than toggling
+      el.addEventListener('click', e => { e.stopPropagation(); if (pinned === el) { hide(); el.blur(); } else { show(el, mk, c, kind); if (popFor === el) pinned = el; } }); };
+    document.addEventListener('click', e => { if (popFor && !popFor.contains(e.target)) hide(); });
+    // pausing closes a pop-up that pointing opened; one a click pinned or a focus opened stays
+    document.addEventListener('vizos-hoverpause', () => { if (hoverOff && popFor && popFor !== pinned && document.activeElement !== popFor) hide(); });
+    // Escape closes an open pop-up wherever it came from: a point, a tap or a focus
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && popFor) { const el = popFor; hide(); if (document.activeElement === el) el.blur(); } });
     const m = { l: 62, r: 18, t: 14, b: 60 }, boxOf = () => { const X = p.x || {}, Y = p.y || {}; return [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)]; };
     // the picture takes its room. An equal plane keeps one scale on both axes and shows more of the plane on both sides, so the
     // data stay at true scale in any shape. With `fill` the plot holds 16:9, going to 2:1 if the window is short, each axis at its own scale
@@ -118,7 +167,7 @@
       const gw = R.w - m.l - m.r, gh = R.h - m.t - m.b, xs = b[1] - b[0], ys = b[3] - b[2], u = Math.min(gw / xs, gh / ys), cx = (b[0] + b[1]) / 2, cy = (b[2] + b[3]) / 2;
       R.view = p.fill ? b : [cx - gw / u / 2, cx + gw / u / 2, cy - gh / u / 2, cy + gh / u / 2]; return R.w + PAD; };
     R.layout = () => {
-      svg.innerHTML = ''; leg.innerHTML = ''; R.issues = [];
+      svg.innerHTML = ''; leg.innerHTML = ''; R.issues = []; hide();
       const W = R.w, H = R.h; if (W < 40 || H < 40) { R.issues.push('the picture has no room'); return; }
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       const X = p.x || {}, Y = p.y || {}, own = boxOf(), box = R.view || own;
@@ -134,20 +183,38 @@
       sv('rect', { class: 'pbox', x: ox, y: oy, width: gw, height: gh }, svg);
       if (X.label) sv('text', { class: 'axt', x: ox + gw / 2, y: oy + gh + 54, 'text-anchor': 'middle' }, svg).textContent = L.plain(X.label, ctx.scope);
       if (Y.label) sv('text', { class: 'axt', x: 0, y: 0, 'text-anchor': 'middle', transform: `translate(${ox - 44} ${oy + gh / 2}) rotate(-90)` }, svg).textContent = L.plain(Y.label, ctx.scope);
-      const legend = [], dots = [], placed = [], segs = [], inBox = (x, y) => x >= own[0] - 1e-9 && x <= own[1] + 1e-9 && y >= own[2] - 1e-9 && y <= own[3] + 1e-9;
+      const legend = [], dots = [], placed = [], segs = [], fills = [], inBox = (x, y) => x >= own[0] - 1e-9 && x <= own[1] + 1e-9 && y >= own[2] - 1e-9 && y <= own[3] + 1e-9;
       const pt = (v, where) => list(v).map(x => num(x, where));
       // a name beside its dot: the first spot that clears every dot, line and name already placed; none clear is an issue
       const cross = (b, [X0, Y0, X1, Y1]) => { const n = Math.ceil(Math.hypot(X1 - X0, Y1 - Y0) / 4);
         for (let q = 0; q <= n; q++) { const x = X0 + (X1 - X0) * q / n, y = Y0 + (Y1 - Y0) * q / n; if (x > b.x0 - 3 && x < b.x1 + 3 && y > b.y0 - 3 && y < b.y1 + 3) return true; } return false; };
+      // a name would rather sit outside a filled square than on its fill: a box whose middle is inside one is a last resort
+      const inside = (x, y, P) => { let c = false; for (let a = 0, z = P.length - 1; a < P.length; z = a++) if ((P[a][1] > y) !== (P[z][1] > y) && x < (P[z][0] - P[a][0]) * (y - P[a][1]) / (P[z][1] - P[a][1]) + P[a][0]) c = !c; return c; };
+      const filled = b => fills.some(P => inside((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, P));
       const hit = b => placed.some(q => b.x0 < q.x1 && b.x1 > q.x0 && b.y0 < q.y1 && b.y1 > q.y0) || dots.some(([cx, cy, r = 11]) => cx + r > b.x0 && cx - r < b.x1 && cy + r > b.y0 && cy - r < b.y1) || segs.some(sg => cross(b, sg));
-      const name = (t, cx, cy, g, cls, free) => { t = L.plain(String(t ?? ''), ctx.scope); if (!t) return; const tw = t.length * 13 + 4;
-        const opts = [...(free ? [[-tw / 2, 6, 2]] : []), [14, -10, 0], [14, 24, 0], [-14, -10, 1], [-14, 24, 1], [-tw / 2, -18, 2], [-tw / 2, 36, 2], [27, -18, 0], [27, 32, 0], [-27, -18, 1], [-27, 32, 1], [-tw / 2, -30, 2], [-tw / 2, 48, 2]].map(([dx, dy, a]) => {
-          const x0 = a === 1 ? cx + dx - tw : cx + dx; return { x0, x1: x0 + tw, y0: cy + dy - 19, y1: cy + dy + 4, a, dx, dy }; });
-        let b = opts.find(o => !hit(o)); if (!b) { b = opts[0]; R.issues.push(`the plane label "${t}" overlaps another label or dot`); } placed.push(b);
-        sv('text', { class: cls || 'plab', x: b.a === 1 ? cx + b.dx : b.x0, y: cy + b.dy, 'text-anchor': b.a === 1 ? 'end' : 'start' }, g).textContent = t; };
+      // `spots` (centre points, for a vector's middle) replace the spots round a tip; `mk` with `says` makes the name open its pop-up
+      const name = (t, cx, cy, g, cls, free, spots, mk, c, kind) => { t = L.plain(String(t ?? ''), ctx.scope); if (!t) return; const tw = t.length * 11 + 4;
+        const box = (x0, y, end) => ({ x0, x1: x0 + tw, y0: y - 16, y1: y + 4, tx: end ? x0 + tw : x0, ty: y, end });   // `end`: right-aligned, so a name left of its dot never runs into it
+        const opts = spots ? spots.map(([x, y]) => box(x - tw / 2, y + 6)) : [...(free ? [[-tw / 2, 6, 2]] : []), [14, -10, 0], [14, 22, 0], [-14, -10, 1], [-14, 22, 1], [-tw / 2, -16, 2], [-tw / 2, 32, 2], [27, -16, 0], [27, 30, 0], [-27, -16, 1], [-27, 30, 1], [-tw / 2, -28, 2], [-tw / 2, 44, 2]].map(([dx, dy, a]) => box(a === 1 ? cx + dx - tw : cx + dx, cy + dy, a === 1));
+        let b = opts.find(o => !hit(o) && !filled(o)) || opts.find(o => !hit(o)); if (!b) { b = opts[0]; R.issues.push(`the plane label "${t}" overlaps another label or dot`); } placed.push(b);
+        const el = sv('text', { class: cls || 'plab', x: b.tx, y: b.ty, 'text-anchor': b.end ? 'end' : 'start' }, g); el.textContent = t;
+        if (mk && mk.says) tipOn(el, mk, c, kind); };
       const seg = (a, b, g, c, dash, w) => sv('line', { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]), style: `stroke:${c};stroke-width:${w || (dash ? 3 : 4.5)}${dash ? ';stroke-dasharray:10 8' : ''}` }, g);
+      // a foot: the point q, its projection f on the line (or direction), the line's direction d, and the right-angle tick in pixels
+      const footOf = (F, where) => { if (!F || !F.from || !(F.line || F.dir)) return null; const q = pt(F.from, where); let f, d;
+        if (F.line) { const w = pt(F.line, where), nn = w[1] * w[1] + w[2] * w[2], k = (w[0] + w[1] * q[0] + w[2] * q[1]) / nn; f = [q[0] - k * w[1], q[1] - k * w[2]]; d = [-w[2], w[1]]; }
+        else { d = pt(F.dir, where); const dd = d[0] * d[0] + d[1] * d[1], k = (q[0] * d[0] + q[1] * d[1]) / dd; f = [k * d[0], k * d[1]]; }
+        const Ld = Math.hypot(d[0], -d[1]) || 1, ax = d[0] / Ld, ay = -d[1] / Ld, Lq = Math.hypot(sx(q[0]) - sx(f[0]), sy(q[1]) - sy(f[1])); let tick = null;
+        if (Lq > 20) { const bx = (sx(q[0]) - sx(f[0])) / Lq, by = (sy(q[1]) - sy(f[1])) / Lq, r = 12, X = sx(f[0]), Y = sy(f[1]), A = [X + ax * r, Y + ay * r], B = [A[0] + bx * r, A[1] + by * r], C = [X + bx * r, Y + by * r];
+          tick = [[...A, ...B], [...B, ...C]]; }
+        return { q, f, tick }; };
+      // spots beside the middle of a drawn line from (X0, Y0) to (X1, Y1), off to either side; a line too short to have a middle gets null,
+      // so its name takes the spots round a point instead
+      const midSpots = (X0, Y0, X1, Y1) => { const L0 = Math.hypot(X1 - X0, Y1 - Y0); if (L0 < 1) return null;
+        const ux = (X1 - X0) / L0, uy = (Y1 - Y0) / L0, MX = (X0 + X1) / 2, MY = (Y0 + Y1) / 2, spots = [];
+        [20, 32, 46].forEach(d => [0, -.2, .2].forEach(t => [1, -1].forEach(s => spots.push([MX - uy * d * s + ux * L0 * t, MY + ux * d * s + uy * L0 * t])))); return spots; };
       const outside = (i, kind, ...ps) => { if (ps.some(([x, y]) => !inBox(x, y))) R.issues.push(`plane mark ${i + 1} (${kind}) is outside the box: widen x/y or move it`); };
-      const key = (mk, c, kind, st) => { if (mk.label && !mk.name) legend.push({ text: mk.label, c, kind, st }); };
+      const key = (mk, c, kind, st) => { if (mk.label) legend.push({ text: mk.label, c, kind, st, mk }); };   // `name` sits beside the mark, `label` in the legend: a mark may have both
       // dots, named points and lines first, so every name placed after them clears them
       list(p.marks).forEach(mk => { const where = `slide ${ctx.index + 1} plane`; if (mk.when != null && !num(mk.when, where)) return;
         if (mk.points) list(L.val(mk.points.from, ctx.scope, where)).forEach(r => dots.push([sx(r[mk.points.x]), sy(r[mk.points.y])]));
@@ -155,12 +222,15 @@
         if (mk.ring) { const [x, y] = pt(mk.ring, where); dots.push([sx(x), sy(y), 23]); }
         const L2 = mk.line ? clipLine(pt(mk.line, where), box) : mk.segment ? list(mk.segment).map(q => pt(q, where)) : null;
         if (L2) segs.push([sx(L2[0][0]), sy(L2[0][1]), sx(L2[1][0]), sy(L2[1][1])]);
+        if (mk.shade) { const e = clipLine(pt(mk.shade, where), box); if (e) segs.push([sx(e[0][0]), sy(e[0][1]), sx(e[1][0]), sy(e[1][1])]); }   // a shaded half's edge
+        if (mk.foot) { const ft = footOf(mk.foot, where); if (ft) { segs.push([sx(ft.q[0]), sy(ft.q[1]), sx(ft.f[0]), sy(ft.f[1])]); if (ft.tick) segs.push(...ft.tick); } }   // the drop and its right-angle tick
+        if (mk.vector) { const o = mk.from ? pt(mk.from, where) : [0, 0], v = pt(mk.vector, where); segs.push([sx(o[0]), sy(o[1]), sx(o[0] + v[0]), sy(o[1] + v[1])]); }   // names clear the arrows too
         if (mk.square) { const [a, b] = list(mk.square).map(q => pt(q, where)), sg = mk.side === 'right' ? -1 : 1, dx = b[0] - a[0], dy = b[1] - a[1];
-          const cs = [a, b, [b[0] - sg * dy, b[1] + sg * dx], [a[0] - sg * dy, a[1] + sg * dx]]; cs.forEach((q, j) => { const r = cs[(j + 1) % 4]; segs.push([sx(q[0]), sy(q[1]), sx(r[0]), sy(r[1])]); }); } });
+          const cs = [a, b, [b[0] - sg * dy, b[1] + sg * dx], [a[0] - sg * dy, a[1] + sg * dx]]; fills.push(cs.map(q => [sx(q[0]), sy(q[1])])); cs.forEach((q, j) => { const r = cs[(j + 1) % 4]; segs.push([sx(q[0]), sy(q[1]), sx(r[0]), sy(r[1])]); }); } });
       list(p.marks).forEach((mk, i) => {
         const where = `slide ${ctx.index + 1} plane mark ${i + 1}`;
         const g = sv('g', { class: 'pm' }, svg); const st = mk.step != null ? clickOf(mk.step) : at; if (st > at) g.dataset.step = st;
-        const c = col(mk.color);
+        const c = mk.point && !mk.color ? 'var(--s1)' : col(mk.color);   // a point with no colour is drawn in s1, and its legend swatch must match
         if (mk.when != null && !num(mk.when, where)) return;
         if (mk.shade) {
           const w = list(mk.shade).map(x => num(x, where)), poly = halfBox(w, box, mk.side === '-' ? -1 : 1);
@@ -179,28 +249,27 @@
           Object.entries(colors).forEach(([k, v]) => legend.push({ text: (v && v.label) || k, c: col(v && v.color || v), kind: 'dot', st }));
         } else if (mk.point) {
           const [x, y] = pt(mk.point, where); outside(i, 'point', [x, y]);
-          sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${mk.color ? c : 'var(--s1)'}` }, g); name(mk.name, sx(x), sy(y), g); key(mk, c, 'dot', st);
+          sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${c}` }, g); name(mk.name, sx(x), sy(y), g, null, false, null, mk, c, 'dot'); key(mk, c, 'dot', st);
         } else if (mk.segment) {
           const [a, b] = list(mk.segment).map(q => pt(q, where)); outside(i, 'segment', a, b);
-          seg(a, b, g, c, mk.dash); if (mk.name) name(mk.name, sx((a[0] + b[0]) / 2), sy((a[1] + b[1]) / 2), g); key(mk, c, mk.dash ? 'dash' : 'line', st);
+          seg(a, b, g, c, mk.dash); if (mk.name) name(mk.name, sx((a[0] + b[0]) / 2), sy((a[1] + b[1]) / 2), g, null, false, midSpots(sx(a[0]), sy(a[1]), sx(b[0]), sy(b[1])), mk, c, mk.dash ? 'dash' : 'line'); key(mk, c, mk.dash ? 'dash' : 'line', st);
         } else if (mk.vector) {
           // an arrow from `from` (the origin by default) to from + vector, its head drawn in screen units
           const o = mk.from ? pt(mk.from, where) : [0, 0], v = pt(mk.vector, where), e = [o[0] + v[0], o[1] + v[1]]; outside(i, 'vector', o, e);
           const X0 = sx(o[0]), Y0 = sy(o[1]), X1 = sx(e[0]), Y1 = sy(e[1]), L0 = Math.hypot(X1 - X0, Y1 - Y0) || 1, ux = (X1 - X0) / L0, uy = (Y1 - Y0) / L0, hd = Math.min(18, L0 / 2);
           sv('line', { x1: X0, y1: Y0, x2: X1 - ux * hd * .8, y2: Y1 - uy * hd * .8, style: `stroke:${c};stroke-width:4.5` }, g);
           sv('polygon', { points: `${X1},${Y1} ${X1 - ux * hd - uy * hd * .55},${Y1 - uy * hd + ux * hd * .55} ${X1 - ux * hd + uy * hd * .55},${Y1 - uy * hd - ux * hd * .55}`, style: `fill:${c}` }, g);
-          name(mk.name, X1, Y1, g); key(mk, c, 'line', st);
+          // its name beside the middle of the arrow, off to one side, so two arrows that end at one point keep their names apart;
+          // an arrow of length 0 is a dot, so its name goes round that point
+          name(mk.name, (X0 + X1) / 2, (Y0 + Y1) / 2, g, null, false, midSpots(X0, Y0, X1, Y1), mk, c, 'arrow'); key(mk, c, 'arrow', st);
         } else if (mk.foot) {
           // the projection of a point onto a line (w0 + w1 x + w2 y = 0) or onto a direction through the origin: a dashed drop and a right-angle tick
-          const F = mk.foot, q = pt(F.from, where); let f, d;
-          if (F.line) { const w = pt(F.line, where), nn = w[1] * w[1] + w[2] * w[2], k = (w[0] + w[1] * q[0] + w[2] * q[1]) / nn; f = [q[0] - k * w[1], q[1] - k * w[2]]; d = [-w[2], w[1]]; }
-          else { d = pt(F.dir, where); const dd = d[0] * d[0] + d[1] * d[1], k = (q[0] * d[0] + q[1] * d[1]) / dd; f = [k * d[0], k * d[1]]; }
+          const F = footOf(mk.foot, where); if (!F) return; const { q, f, tick } = F;
           outside(i, 'foot', q, f);
           seg(q, f, g, c, true, 3); sv('circle', { cx: sx(f[0]), cy: sy(f[1]), r: 6, style: `fill:${c};stroke:none` }, g);
-          const Ld = Math.hypot(d[0], -d[1]) || 1, ax = d[0] / Ld, ay = -d[1] / Ld, Lq = Math.hypot(sx(q[0]) - sx(f[0]), sy(q[1]) - sy(f[1]));
-          if (Lq > 20) { const bx = (sx(q[0]) - sx(f[0])) / Lq, by = (sy(q[1]) - sy(f[1])) / Lq, r = 12, X = sx(f[0]), Y = sy(f[1]);
-            sv('polyline', { points: `${X + ax * r},${Y + ay * r} ${X + ax * r + bx * r},${Y + ay * r + by * r} ${X + bx * r},${Y + by * r}`, style: `fill:none;stroke:${c};stroke-width:2.5` }, g); }
-          name(mk.name, sx(f[0]), sy(f[1]), g); key(mk, c, 'dash', st);
+          if (tick) sv('polyline', { points: `${tick[0][0]},${tick[0][1]} ${tick[0][2]},${tick[0][3]} ${tick[1][2]},${tick[1][3]}`, style: `fill:none;stroke:${c};stroke-width:2.5` }, g);
+          // its name beside the middle of the drop, clear of the tick at the foot
+          name(mk.name, sx(f[0]), sy(f[1]), g, null, false, midSpots(sx(q[0]), sy(q[1]), sx(f[0]), sy(f[1])), mk, c, 'dash'); key(mk, c, 'dash', st);
         } else if (mk.square) {
           // the square built on a segment (a squared distance you can see), on its left unless side: right
           const [a, b] = list(mk.square).map(q => pt(q, where)), sgn = mk.side === 'right' ? -1 : 1, dx = b[0] - a[0], dy = b[1] - a[1];
@@ -214,7 +283,8 @@
         }
       });
       leg.style.paddingLeft = `${Math.max(0, ox - 8)}px`;   // the legend starts where the plot does
-      legend.forEach(e => { const it = h('span', 'pk ' + e.kind); it.style.setProperty('--c', e.c); it.innerHTML = `<i></i>${md(e.text)}`; if (e.st > at) it.dataset.step = e.st; leg.appendChild(it); });
+      legend.forEach(e => { const it = h('span', 'pk ' + e.kind); it.style.setProperty('--c', e.c); it.innerHTML = `<i></i><span>${md(e.text)}</span>`; if (e.st > at) it.dataset.step = e.st; leg.appendChild(it);
+        if (e.mk && e.mk.says) tipOn(it.lastChild, e.mk, e.c, e.kind); });
       L.fill(leg, ctx.scope);
       const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was;   // a legend on two rows takes its room from the plot: the caller sizes again
     };

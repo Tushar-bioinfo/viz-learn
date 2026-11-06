@@ -1,0 +1,30 @@
+# expect: builds
+# expect: not: more than 5 is a wall
+# A matrix with a matrix inside it is still one object: the outer brackets count once, so 1 + 4 = 5 terms, no wall.
+title: A matrix inside a matrix is one term
+question: Does a nested matrix count as one term?
+answer: Yes, the outer brackets hold it all.
+data: {a: 2, b: 1, c: 0, d: 3, e: 4, f: 5, g: 6, h: 7, y: 8}
+symbols:
+  a: {tex: 'a', says: the top-left entry}
+  b: {tex: 'b', says: the inner entry}
+  c: {tex: 'c', says: the bottom-left entry}
+  d: {tex: 'd', says: the bottom-right entry}
+  e: {tex: 'e', says: the first shift}
+  f: {tex: 'f', says: the second shift}
+  g: {tex: 'g', says: the third shift}
+  h: {tex: 'h', says: the fourth shift}
+  y: {tex: 'y', says: the output}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A block matrix plus four shifts
+    steps:
+      - say: 'The entries are {{a}}, {{b}}, {{c}} and {{d}}.'
+      - say: 'The shifts are {{e}}, {{f}}, {{g}} and {{h}}; the output {{y}}.'
+      - say: The block matrix acts as one object, then four shifts add on.
+        add: {eqn: {say: The output, lhs: y, tex: '\begin{bmatrix}[a]&\begin{bmatrix}[b]\end{bmatrix}\\[c]&[d]\end{bmatrix}+[e]+[f]+[g]+[h]'}}
+      - say: The inner block is part of the outer one.
+  - type: recap
+    answer: A nested matrix reads as one term.

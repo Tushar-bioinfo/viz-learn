@@ -1,0 +1,26 @@
+# expect: builds
+# expect: name “the weight arrow”: names on the plot are for a quick read: 2 words at most
+# expect: not: name “$a \cdot b$”
+# a 3-word name on the plot warns; a name written as maths is one word
+title: A plane key
+question: Does the plane key read at a glance?
+answer: Short names on the plot, and every name is said.
+data: {ux: 1, uy: 0.5, vx: -0.5, vy: 1}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Two arrows
+    steps:
+      - say: The two arrows start at the middle.
+        add:
+          plane:
+            x: {label: x, min: -2, max: 2}
+            y: {label: y, min: -1.5, max: 1.5}
+            marks:
+              - {vector: [ux, uy], color: accent, name: the weight arrow, says: 'the weight arrow, {{ux|1}} along x'}
+              - {vector: [vx, vy], color: s1, name: '$a \cdot b$', says: the dot product of the two arrows}
+      - say: Each arrow keeps its own direction.
+  - type: recap
+    answer: The key reads at a glance.

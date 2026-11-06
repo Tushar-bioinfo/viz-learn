@@ -753,8 +753,9 @@ table.t td.cur.now { color: var(--on) !important; }
   L.md = function md(s) {
     if (s == null) return '';
     const keep = [];
-    let t = String(s).replace(/\{\{([\s\S]+?)\}\}/g, (_, x) => { keep.push(`<span class="iv" data-x="${esc(x)}"></span>`); return `\u0001${keep.length - 1}\u0002`; })
-      .replace(/(?<![\\$\w])\$(?!\s)([^$\n]+?)(?<!\s)\$(?![\w$])/g, (_, x) => { keep.push(`<span class="tx" data-tex="${esc(x)}"></span>`); return `\u0001${keep.length - 1}\u0002`; });
+    // $…$ first: a {{x}} inside it stays in the TeX, and L.fill writes its live value when the maths renders
+    let t = String(s).replace(/(?<![\\$\w])\$(?!\s)([^$\n]+?)(?<!\s)\$(?![\w$])/g, (_, x) => { keep.push(`<span class="tx" data-tex="${esc(x)}"></span>`); return `\u0001${keep.length - 1}\u0002`; })
+      .replace(/\{\{([\s\S]+?)\}\}/g, (_, x) => { keep.push(`<span class="iv" data-x="${esc(x)}"></span>`); return `\u0001${keep.length - 1}\u0002`; });
     t = esc(t).replace(/\\\$/g, '$')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')

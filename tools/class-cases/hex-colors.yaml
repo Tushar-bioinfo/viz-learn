@@ -1,0 +1,36 @@
+# expect: builds
+# expect: not: error: formula
+# Hex colours on a plane mark, a points `colors` entry, a chart series and a text highlight.
+title: Hex colours
+question: Does a hex colour work wherever a colour goes?
+answer: Yes, on marks, dots, series and highlighted words.
+data:
+  cells: [{id: c1, x: 1, y: 2, kind: T}, {id: c2, x: 3, y: 4, kind: B}]
+  xs: [1, 2, 3]
+  ys: [2, 3, 5]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Colours by hex
+    steps:
+      - say: 'The ==#e8a33d:orange words== and the line share one colour.'
+        add:
+          plane:
+            x: {label: x, min: 0, max: 5}
+            y: {label: y, min: 0, max: 5}
+            marks:
+              - points: {from: cells, x: x, y: y, by: kind, label: id, colors: {T: {color: '#5fb3e8', label: T cell}, B: {color: '#e86f9a', label: B cell}}}
+              - {line: [-1, -1, 1], color: '#e8a33d', label: a hex line}
+              - {point: [4, 1], name: p, color: '#9ad36a', label: a named point}
+      - say: 'A chart series takes a hex too.'
+        add:
+          caption: The line rises left to right.
+          chart:
+            x: {label: x}
+            y: {label: y}
+            series:
+              - {name: rising, x: xs, y: ys, kind: line, color: '#5fb3e8'}
+  - type: recap
+    answer: Hex colours work on every colour field.

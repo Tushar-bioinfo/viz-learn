@@ -75,7 +75,7 @@ slides:
             marks:
               - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
               - {shade: [w0, w1, w2], color: s1, label: called T}
-              - {line: [w0, w1, w2], color: accent, label: the bad line}
+              - {line: [w0, w1, w2], color: accent, label: bad line}
               - {ring: [c5_cd3, c5_cd19], step: 3}
       - say: '{{n_wrong0}} of {{n}} cells sit wrong: every B cell and two T cells.'
       - say: 'Each wrong cell objects. c5 says: “I am B. Move past me!”'
@@ -100,8 +100,8 @@ slides:
             y: {label: CD19, min: 0, max: 5}
             marks:
               - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-              - {line: [w0, w1, w2], color: accent, label: the bad line}
-              - {shade: [w0, w1, w2], color: s1, label: score 0 or more, step: 4}
+              - {line: [w0, w1, w2], color: accent, label: bad line}
+              - {shade: [w0, w1, w2], color: s1, label: called T, says: the side where the score is 0 or more, step: 4}
       - think:
           q: Off the line, the sum is above or below 0. Which side is T?
           a: You cannot tell by looking. Plug in a cell and read the sign.
@@ -169,10 +169,10 @@ slides:
             y: {label: CD19, min: 0, max: 5}
             marks:
               - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-              - {line: [w0, w1, w2], color: accent, label: the bad line}
+              - {line: [w0, w1, w2], color: accent, label: bad line}
               - {ring: [c5_cd3, c5_cd19]}
-              - {line: [wb0, wb1, wb2], color: s3, label: after one full step, step: 3}
-              - {shade: [wb0, wb1, wb2], color: s1, label: called T now, step: 3}
+              - {line: [wb0, wb1, wb2], color: s3, label: full step, says: the line after one full step, step: 3}
+              - {shade: [wb0, wb1, wb2], color: s1, label: T now, says: the side the stepped line calls T, step: 3}
         mark: col:xv
       - say: 'Put a {{x0}} in front for the offset. Now both have three numbers.'
         mark: row:0
@@ -199,7 +199,7 @@ slides:
             y: {label: CD19, min: 0, max: 5}
             marks:
               - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-              - {line: [w0, w1, w2], color: accent, label: the bad line}
+              - {line: [w0, w1, w2], color: accent, label: bad line}
               - {line: [wb0, wb1, wb2], color: mist, dash: true, label: full step}
               - {ring: [c5_cd3, c5_cd19]}
               - {line: [ws0, ws1, ws2], color: s3, label: small step, step: 3}
@@ -264,7 +264,7 @@ slides:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
                 - {shade: [w0, w1, w2], color: s1, label: called T}
                 - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev}
-                - {line: [w0, w1, w2], color: accent, label: the line now}
+                - {line: [w0, w1, w2], color: accent, label: line now}
                 - {ring: ['at(next_x, t)', 'at(next_y, t)'], when: 'at(has_next, t)'}
       - say: 'The first wrong cell is {{at(next_id, 0)}}, our hand step. The line turns a little.'
         frame: 1
@@ -321,10 +321,10 @@ slides:
               y: {label: CD19, min: 0, max: 5}
               marks:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-                - {line: [w0, w1, w2], color: accent, label: the final line}
-                - {segment: [[1, 'icept + slope'], [2, 'icept + slope']], color: ink, name: '1 unit of CD3', step: 2}
-                - {segment: [[2, 'icept + slope'], [2, 'icept + 2 * slope']], color: s2, name: 'm', step: 2}
-                - {point: [0, icept], color: accent, name: b, step: 3}
+                - {line: [w0, w1, w2], color: accent, label: final line}
+                - {segment: [[1, 'icept + slope'], [2, 'icept + slope']], color: ink, name: '1 unit', says: one step to the right in CD3, step: 2}
+                - {segment: [[2, 'icept + slope'], [2, 'icept + 2 * slope']], color: s2, name: 'm', says: 'the slope: how far CD19 rises per unit of CD3', step: 2}
+                - {point: [0, icept], color: accent, name: b, says: 'the crossing: where the line meets the CD19 axis', step: 3}
       - say: Slope first. One unit more CD3 moves the line this much in CD19.
         add: {calc: {say: The slope, expr: -w1 / w2, name: slope, fmt: 2}}
       - say: Then where it crosses the CD19 axis, at CD3 = 0.
@@ -349,7 +349,7 @@ slides:
             y: {label: CD19, min: 0, max: 5}
             marks:
               - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-              - {line: [wf0, wf1, wf2], color: accent, label: from the bad line}
+              - {line: [wf0, wf1, wf2], color: accent, label: bad start, says: the line learned starting from the bad line}
               - {line: [wg0, wg1, wg2], color: s3, label: from zeros}
               - {ring: [graze_x, graze_y], step: 2}
               - {segment: [['at(cd3, 0)', 'at(cd19, 0)'], ['at(cd3, 2)', 'at(cd19, 2)']], color: ink, dash: true, step: 4}
@@ -384,7 +384,7 @@ slides:
             x: {label: CD4, min: 0, max: 5}
             y: {label: CD8, min: 0, max: 5}
             marks:
-              - points: {from: thymo, x: cd4, y: cd8, by: y, colors: {1: {color: s1, label: single-positive}, 0: {color: s2, label: double-negative or double-positive}}}
+              - points: {from: thymo, x: cd4, y: cd8, by: y, colors: {1: {color: s1, label: single-positive}, 0: {color: s2, label: DN/DP}}}
               - {text: DN, at: [1.5, 1.5]}
               - {text: DP, at: [3, 3]}
               - {text: CD4 only, at: [4, 1.6]}

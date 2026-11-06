@@ -155,7 +155,7 @@ slides:
             marks:
               - points: {from: tcells, x: slot, y: cd3, label: id}
               - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|2}}'}
-              - {segment: [['at(slots, 0)', xbar], ['at(slots, 0)', 'at(cd3, 0)']], color: ink, label: distance to the mean, step: 2}
+              - {segment: [['at(slots, 0)', xbar], ['at(slots, 0)', 'at(cd3, 0)']], color: ink, label: distance, says: the drop from the cell to the mean line, step: 2}
               - {segment: [['at(slots, 1)', xbar], ['at(slots, 1)', 'at(cd3, 1)']], color: ink, step: 2}
               - {segment: [['at(slots, 2)', xbar], ['at(slots, 2)', 'at(cd3, 2)']], color: ink, step: 2}
               - {segment: [['at(slots, 3)', xbar], ['at(slots, 3)', 'at(cd3, 3)']], color: ink, step: 2}

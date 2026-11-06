@@ -36,7 +36,12 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` `rows: X` names data, which a table cannot read `` | write `from: X` |
 | `the line for X has its own name as its formula` | write the formula from the names it is made of |
 | `plane mark N is one of …` / `plane line takes 3 values` | one mark kind per entry; quote expressions with commas |
+| `plane mark N (kind) has no field X` | X is not a mark field; when X reads like the end of a sentence, a comma in an unquoted `says:` or `label:` cut it off: quote the value |
 | `a plane with fill stretches its axes` | delete `fill`, or drop the `vector`, `foot` or `square` |
+| `legend labels are for a quick read: 2 words at most` | cut the `label` to 2 words; move the rest to the mark's `says:` |
+| `names on the plot are for a quick read: 2 words at most` | cut the mark's `name` to 2 words (`$…$` and `{{…}}` count as one); move the rest to its `says:` |
+| `N legend entries on one plane: more than 5` | name marks on the plot with `name:` and `says:`, or split the plane |
+| `say what X is: add says: to the mark, or name it in a teacher line first` | give the mark `says:`, or name X in a `say` at or before the step that draws it (the later of the plane's step and the mark's own). `$x$` and `x`, `$\alpha$` and `α` count as the same name |
 | `` control …: `run` is the number of frames `` / `stops … are not frames` | `run` ≥ 2; stops between 0 and run − 1 |
 | `the run stops on N frames, one per step, but the scene has M steps` | one stop per step, or `frame:` on the steps |
 | `one run per scene` | split the scene |

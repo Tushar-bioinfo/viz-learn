@@ -1,0 +1,24 @@
+# expect: builds
+# expect: legend label “the first arrow”: legend labels are for a quick read: 2 words at most
+# a 3-word legend label warns
+title: A plane key
+question: Does the plane key read at a glance?
+answer: Short legend entries, and every name is said.
+data: {ux: 1, uy: 0.5, vx: -0.5, vy: 1}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Two arrows
+    steps:
+      - say: The two arrows start at the middle.
+        add:
+          plane:
+            x: {label: x, min: -2, max: 2}
+            y: {label: y, min: -1.5, max: 1.5}
+            marks:
+              - {vector: [ux, uy], color: accent, label: the first arrow}
+      - say: Each arrow keeps its own direction.
+  - type: recap
+    answer: The key reads at a glance.

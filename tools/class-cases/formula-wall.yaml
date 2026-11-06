@@ -1,0 +1,23 @@
+# expect: 6 terms: more than 5 is a wall
+# Six separate terms, no matrix: still a wall.
+title: A real wall
+question: Does a six-term formula still warn?
+answer: Yes.
+symbols:
+  a: {tex: 'a', says: the first term}
+  b: {tex: 'b', says: the second term}
+  c: {tex: 'c', says: the third term}
+  d: {tex: 'd', says: the fourth term}
+  e: {tex: 'e', says: the fifth term}
+  f: {tex: 'f', says: the sixth term}
+  y: {tex: 'y', says: the output}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Six terms at once
+    steps:
+      - say: Six terms in one line.
+        add: {eqn: {say: The output, lhs: y, tex: '[a] + [b] + [c] + [d] + [e] + [f]'}}
+  - type: recap
+    answer: Six terms warn.

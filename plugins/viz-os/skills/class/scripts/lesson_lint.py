@@ -19,6 +19,27 @@ FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"k
           "params": {"say", "names", "side", "id"}}
 TERM = re.compile(r"\[([A-Za-z_]\w*)\]")
 TAGGED = re.compile(r"\[([A-Za-z_]\w*):([^\]]*)\]")
+MATENV = re.compile(r"\\(begin|end)\{[bpvBV]?matrix\}|\\mat\{[^}]*\}")
+
+
+def bracket_objects(tex):
+    """(tex with each outermost matrix or \\mat{NAME} blanked, how many there were): a matrix inside a matrix is part of it."""
+    out, n, depth, start, last = [], 0, 0, 0, 0
+    for m in MATENV.finditer(tex):
+        if m.group(1) is None:              # \mat{NAME}
+            if depth == 0:
+                out.append(tex[last:m.start()] + " "); last = m.end(); n += 1
+        elif m.group(1) == "begin":
+            if depth == 0:
+                start = m.start()
+            depth += 1
+        elif depth:
+            depth -= 1
+            if depth == 0:
+                out.append(tex[last:start] + " "); last = m.end(); n += 1
+    if depth:                               # an unclosed matrix: leave its terms to count one by one
+        return tex, n
+    return "".join(out) + tex[last:], n
 # what a step can light for one click: a table row, column or cell (rows count from 0, as in at()), or an item by id
 MARK = re.compile(r"^(row:\d+|col:.+|cell:\d+:.+|#.+)$")
 
@@ -74,11 +95,35 @@ PLANE = {"points": "{from, x, y, by, label, colors}", "shade": "[w0, w1, w2]", "
          "square": "[[x1, y1], [x2, y2]]", "text": "a label (and at: [x, y])", "ring": "[x, y]"}
 
 
+MARK_FIELDS = {"step", "color", "label", "name", "says", "dash", "when", "side", "from", "at"}   # what every mark may also take (board.md)
+LEGEND_WORDS, LEGEND_MAX = 2, 5   # a plane legend is for a quick read: short entries, few of them
+
+
+def words(t):
+    """Words a reader reads in a label: a {{number}} or $maths$ is one."""
+    return len(HIDE.sub(" N ", str(t)).split())
+
+
 def lint_plane(B, Lx, w, pl, names):
-    """Each mark is one kind, with the right number of values, and every value is an expression the page can work out."""
+    """Each mark is one kind, with the right number of values, and every value is an expression the page can work out.
+    The legend stays short. Returns the marks that carry a `name`, for the "say what it is" check."""
     if not isinstance(pl, dict):
         Lx.err(w, "`plane` is a mapping with `x`, `y` and `marks`")
-        return
+        return []
+    marks = [mk for mk in as_list(pl.get("marks")) if isinstance(mk, dict)]
+    keys = [mk["label"] for mk in marks if mk.get("label") and "points" not in mk]
+    for mk in marks:   # a points mark's legend holds one entry per colour group: its label, or the group's own name
+        if isinstance(mk.get("points"), dict) and isinstance(mk["points"].get("colors"), dict):
+            keys += [(v.get("label") if isinstance(v, dict) else None) or k for k, v in mk["points"]["colors"].items()]
+    for t in keys:
+        if words(t) > LEGEND_WORDS:
+            Lx.warn(w, f"legend label “{t}”: legend labels are for a quick read: {LEGEND_WORDS} words at most; put the rest in says:")
+    for mk in marks:   # a name on the plot is read at a glance too, beside its mark
+        if mk.get("name") and words(mk["name"]) > LEGEND_WORDS:
+            Lx.warn(w, f"name “{mk['name']}”: names on the plot are for a quick read: {LEGEND_WORDS} words at most; put the rest in says:")
+    n = len(keys)
+    if n > LEGEND_MAX:
+        Lx.warn(w, f"{n} legend entries on one plane: more than {LEGEND_MAX} is too many for a quick read; name marks on the plot (name:) or split the plane")
     def ex(v):
         B.check_expr(Lx, w + " plane", v, names)
 
@@ -97,6 +142,10 @@ def lint_plane(B, Lx, w, pl, names):
             Lx.err(w, f"plane mark {i + 1} is one of {', '.join(PLANE)}; got {mk!r}")
             continue
         k, v = kind[0], mk[kind[0]]
+        for x in sorted(set(mk) - set(PLANE) - MARK_FIELDS, key=str):
+            prose = " " in str(x) or mk.get(x) is None   # a key with no value, or with spaces, is the tail of a cut-off sentence
+            Lx.err(w, f"plane mark {i + 1} (`{k}`) has no field `{x}` (it takes {', '.join(sorted(MARK_FIELDS))})"
+                      + ("; it looks like the end of a sentence: a comma inside an unquoted `{ }` value splits it, so quote that value" if prose else ""))
         if pl.get("fill") and k in ("vector", "foot", "square"):
             Lx.err(w, f"a plane with `fill` stretches its axes, so a `{k}` would not read true: delete `fill`, or drop the mark")
         if mk.get("when") is not None:
@@ -126,6 +175,47 @@ def lint_plane(B, Lx, w, pl, names):
                 Lx.err(w, f"plane `points` takes {PLANE['points']}")
             else:
                 ex(v["from"])
+    return [mk for mk in marks if mk.get("name") is not None]
+
+
+GREEK = {g: chr(c) for g, c in zip("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho varsigma sigma tau upsilon phi chi psi omega".split(), range(0x3B1, 0x3CA))}
+GREEK |= {g: chr(c) for g, c in zip("Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi Rho".split(), range(0x391, 0x3A2))}
+GREEK |= {g: chr(c) for g, c in zip("Sigma Tau Upsilon Phi Chi Psi Omega".split(), range(0x3A3, 0x3AA))}
+GREEK |= {"varepsilon": "ε", "vartheta": "θ", "varphi": "φ", "varrho": "ρ", "varpi": "π"}
+
+
+def norm_greek(t):
+    return re.sub(r"\\([A-Za-z]+)", lambda m: GREEK.get(m.group(1), m.group(0)), str(t))
+
+
+def norm_name(t):
+    """A name as the reader sees it: no `$`, Greek TeX commands as their letters (\\alpha is α), no spaces."""
+    return re.sub(r"\s+", "", norm_greek(str(t).replace("$", "")))
+
+
+def explained(name, lines, symbols):
+    """Is a plane mark's on-plot name said in one of these teacher lines: as a word, or as its symbol in the maths?
+    Both sides are compared as the reader sees them, so `$x$`, `\\alpha` and `α` match their plain forms."""
+    raw = str(name).strip()
+    if not raw or "{{" in raw:
+        return True                          # a name that is a number explains itself
+    t = norm_name(raw)
+    if not t:
+        return True
+    sym = next((v for k, v in symbols.items() if isinstance(v, dict) and k in (raw, t)), None)
+    texs = {t} | ({norm_name(sym["tex"])} if sym and sym.get("tex") else set()) | {norm_name(v["tex"]) for v in symbols.values() if isinstance(v, dict) and norm_name(v.get("tex", "")) == t}
+    texs.discard("")
+    word = re.compile(r"(?<![\w])" + re.escape(t) + r"(?![\w])")
+    for ln in lines:
+        ln = str(ln)
+        if t not in PLAIN and word.search(norm_greek(HIDE.sub(" ", ln))):
+            return True
+        for m in re.findall(r"\$([^$]+)\$", ln):
+            m = norm_name(EXPRS.sub(" ", m))
+            for x in texs:
+                if re.search((r"(?<![A-Za-z\\])" if x[:1].isalpha() else "") + re.escape(x) + (r"(?![A-Za-z])" if x[-1:].isalpha() else ""), m):
+                    return True
+    return False
 
 
 def lint_formula(B, Lx, w, f, kind, names, symbols):
@@ -142,8 +232,11 @@ def lint_formula(B, Lx, w, f, kind, names, symbols):
     for n in terms:
         if not (isinstance(symbols.get(n), dict) and symbols[n].get("says")):
             Lx.err(w, f"`{kind}` term [{n}] has no meaning: add `{n}: {{tex: ..., says: ...}}` under symbols")
-    if len(set(terms)) > 5:
-        Lx.warn(w, f"{len(set(terms))} terms: more than 5 is a wall; build the formula over two scenes")
+    # a bracket object (a matrix, or \mat{NAME}) reads as one term, however many [name] tags it holds
+    rest, objs = bracket_objects(str(f["tex"]))
+    count = len(set(TERM.findall(rest))) + objs
+    if count > 5:
+        Lx.warn(w, f"{count} terms: more than 5 is a wall; build the formula over two scenes")
     if kind != "assemble":
         return
     plug = f.get("plug")
@@ -161,9 +254,11 @@ def lint_formula(B, Lx, w, f, kind, names, symbols):
 def lint_scenes(B, Lx, deck, glob):
     """Each board scene on its own: its fields, steps, items and controls."""
     symbols = deck.get("symbols") or {}
+    said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
             continue
+        named = []   # (where, mark, the step that draws it, from 1)
         where = f"slide {i + 1} (board “{str(s.get('title') or '')[:38]}”)"
         if s.get("beat") not in BEATS:
             Lx.err(where, f"`beat` is {s.get('beat')!r}; use one of {', '.join(sorted(BEATS))}")
@@ -213,7 +308,8 @@ def lint_scenes(B, Lx, deck, glob):
                             if nm not in names and nm not in symbols:
                                 Lx.err(w, f"`params` name `{nm}` is not in data, derive or the worked lines so far")
                 if "plane" in it:
-                    lint_plane(B, Lx, w, it["plane"], names)
+                    # a mark shows at the later of its own step and the plane's: a mark can't come before its plane
+                    named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_plane(B, Lx, w, it["plane"], names)]
                 if VIS & set(it):
                     B.lint_visual(Lx, w, {x: y for x, y in it.items() if x != "id"}, names)
                 lint_formula(B, Lx, w, it.get("eqn"), "eqn", names, symbols)
@@ -255,6 +351,12 @@ def lint_scenes(B, Lx, deck, glob):
             for mark in as_list(st.get("mark")):
                 if not isinstance(mark, str) or not MARK.match(mark):
                     Lx.err(w, f"`mark: {mark!r}` is not a target: use row:<i>, col:<key>, cell:<i>:<key> or #<id> (rows count from 0)")
+        # a name on the plot is a word the learner must know: the mark says it (hover), or a teacher line has named it by then
+        lines = [st.get("say") for st in steps if isinstance(st, dict)]
+        for w, mk, at in named:
+            if not mk.get("says") and not explained(mk["name"], said + [x for x in lines[:at] if x], symbols):
+                Lx.warn(w, f"say what {mk['name']} is: add says: to the mark, or name it in a teacher line first")
+        said += [x for x in lines if x]
 
 
 
@@ -269,7 +371,7 @@ STEP_CAP, THINK_GAP = 10, 6      # steps in one scene; steps in a row with no th
 SCENES = (8, 14)
 CARDS = (5, 8)
 # keys whose text the learner reads; a number typed here goes stale when the data changes
-PROSE = {"say", "q", "a", "text", "note", "title", "lead", "subtitle", "question", "answer", "caption", "label", "sub",
+PROSE = {"say", "q", "a", "text", "note", "title", "lead", "subtitle", "question", "answer", "caption", "label", "sub", "says",
          "value", "alt", "points", "breaks", "why", "read", "more", "verdict", "next"}
 TYPED = re.compile(r"(?<![\w.])([-−]?)(\d+\.\d+|\d{2,})(?![\w]|\.\d)")
 HIDE = re.compile(r"\{\{[\s\S]*?\}\}|\$[^$]*\$|`[^`]*`")
@@ -429,6 +531,7 @@ class Ledger:
         """`{{x}}` shows x's number; a symbol's TeX inside $...$ shows its symbol."""
         self.number(expr_names(self.B, s), pos, by_hand)
         for m in re.findall(r"\$([^$]+)\$", s):
+            m = EXPRS.sub(" ", m)   # a {{x}} in the maths shows x's number (counted above), not its symbol
             for n, t in self.tex:
                 pat = (r"(?<![A-Za-z\\])" if t[:1].isalpha() else "") + re.escape(t) + (r"(?![A-Za-z])" if t[-1:].isalpha() else "")
                 if re.search(pat, m):

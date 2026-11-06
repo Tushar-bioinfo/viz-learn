@@ -1,0 +1,26 @@
+# expect: builds
+# expect: not: say what w is: add says
+# a mark shows at the later of its own step and its plane's: a name said before the plane appears counts
+title: A plane key
+question: Does the plane key read at a glance?
+answer: Short legend entries, and every name is said.
+data: {ux: 1, uy: 0.5, vx: -0.5, vy: 1}
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Two arrows
+    steps:
+      - say: The two arrows start at the middle.
+      - say: The arrow w is the weight arrow.
+      - say: Here it is on the plane.
+        add:
+          plane:
+            x: {label: x, min: -2, max: 2}
+            y: {label: y, min: -1.5, max: 1.5}
+            marks:
+              - {vector: [ux, uy], color: accent, name: w, step: 1}
+      - say: Each arrow keeps its own direction.
+  - type: recap
+    answer: The key reads at a glance.

@@ -33,6 +33,7 @@ A biologist and bioinformatician who learns visually. Each deck should show intu
 | `docs/testing.md` | before you say a change works; to run a cold-start test |
 | `plugins/viz-os/docs/design.md` | before you reverse or redo something; it says why things are the way they are |
 | `docs/backlog.md` | you look for open problems, or you leave one behind |
+| `docs/todo-draw-math.md` | the user says "work on our to-do list": do the first change not `done`, one per session, following its "How we work" |
 | `docs/release.md` | you bump the version, add an agent harness, commit, or push |
 
 ## Rules

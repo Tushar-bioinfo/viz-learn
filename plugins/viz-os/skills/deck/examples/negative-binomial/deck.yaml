@@ -373,4 +373,4 @@ slides:
     cards:
       - {q: 'A gene averages 100 reads. What SD does counting alone give?', a: '√100 = **10** reads.'}
       - {q: 'What does α measure?', a: "How much each sample's true level wobbles around the gene's average.", tag: meaning}
-      - {q: 'Why do Poisson tests give too many hits?', a: They miss the wobble, so ordinary gaps look significant., tag: reversed}
+      - {q: 'Why do Poisson tests give too many hits?', a: "They miss the wobble, so ordinary gaps look significant.", tag: reversed}
