@@ -1,0 +1,26 @@
+# expect: builds
+# expect: not: wide per 1 tall
+# Arrows that lie almost flat: the generated plane pads its short axis, so its shape stays inside the audit at every
+# slider value (the check moves the slider to both ends).
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {F: [[8, 0], [1, 0]], o: [1, 1]}
+symbols:
+  F: {tex: F, says: a rule that flattens, short: flat rule, kind: matrix}
+  o: {tex: '\vec{o}', says: two ones scaled by the slider, short: ones, kind: vector}
+  os: {tex: '\vec{s}', says: the ones scaled, short: scaled ones, kind: vector}
+  fo: {tex: 'F\vec{s}', says: where the flat rule sends them, short: flat result, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A flat plane
+    controls: [{name: k, min: 1, max: 4, step: 1, value: 1, label: scale}]
+    derive: {os: o * k}
+    steps:
+      - say: The rule and the scaled ones.
+        add: [{matrix: F}, {vec: os}]
+      - add: {product: {m: F, v: os, way: cols, name: fo, plane: true}}
+  - type: recap
+    answer: Yes.

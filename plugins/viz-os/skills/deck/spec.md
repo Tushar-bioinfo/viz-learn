@@ -257,7 +257,7 @@ chart:
 ## Expressions (in derive, expr, fn, marks, {{…}})
 Operators `+ - * / ^`, comparisons give 1/0, `[a, b]` lists, and maths on lists works element by element.
 - Maths: `abs sqrt exp log ln log2 log10 log1p round floor ceil pow min max sign clamp`
-- Lists: `sum mean var sd median geomean quantile count len sort rank cumsum seq(a,b,step) at(list,i) first last where(cond,a,b)` (`at` counts from 0; `var` divides by n − 1)
+- Lists: `sum mean var sd median geomean quantile count len sort rank cumsum seq(a,b,step) at(list,i) first last where(cond,a,b) matmul(A,b)` (`at` counts from 0; `var` divides by n − 1; `matmul` is a matrix, a list of rows, times a vector or a matrix)
 - Distributions: `normPdf normCdf normInv tPdf tCdf binomPmf binomCdf poisPmf poisCdf nbPmf(k,mu,alpha) nbCdf gammaPdf(x,shape,rate) betaPdf betaCdf choose factorial`
 - Seeded random draws: `rnorm(n,mu,sd,seed) runif(n,a,b,seed) rpois(n,lambda,seed) rnb(n,mu,alpha,seed) rgamma(n,shape,rate,seed) rbinom(n,size,p,seed)`
 - Constants: `pi`, `e`, `inf`.

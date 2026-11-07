@@ -9,7 +9,10 @@ have nearly the same mean while donor B is more spread out, that cells.png
 is 1200 by 360 pixels, that each cell's i is its 1-based position, and that
 far_i is the 1-based position of the farthest cell. Rebuilds the bracket
 scene's matrix (first three cells by CD3 and CD19), its first row (cell c1),
-and the CD3 and distance-from-mean vectors from the cell records.
+and the CD3 and distance-from-mean vectors from the cell records. Checks the
+worked products: a spot holding 0.6 of cell c1 and 0.4 of c2 (its CD3 and
+CD19), and each of the first three cells' two scores (CD3 minus CD19, and
+the mean of the two), from the cell records by plain sums.
 
 Recomputes the perceptron on pcells. Checks eight cells, ids p1-p8, four T
 and four B, markers on a 0.4-9.6 scale with at most one decimal, and no pair
@@ -300,6 +303,17 @@ def main():
     report("c1row", len(data["c1row"]) == 2 and close(data["c1row"], c1row), data["c1row"], c1row.tolist())
     report("xvec", len(data["xvec"]) == 6 and close(data["xvec"], cd3), data["xvec"], cd3.tolist())
     report("dvec", len(data["dvec"]) == 6 and close(data["dvec"], dev), data["dvec"], dev.tolist())
+
+    # the worked products: the spot's reading as the two cells' columns mixed 0.6 / 0.4, and each cell's two scores
+    # (CD3 - CD19, and their mean), rebuilt from the cell records by plain sums rather than a matrix product
+    c1, c2 = cells[0], cells[1]
+    report("prof", close(data["prof"], [[c1["cd3"], c2["cd3"]], [c1["cd19"], c2["cd19"]]]), data["prof"], None)
+    report("mix", close(data["mix"], [0.6, 0.4]), data["mix"], [0.6, 0.4])
+    spot = [0.6 * c1["cd3"] + 0.4 * c2["cd3"], 0.6 * c1["cd19"] + 0.4 * c2["cd19"]]
+    report("spot", close(data["spot"], spot), data["spot"], spot)
+    report("wts", close(data["wts"], [[1, 0.5], [-1, 0.5]]), data["wts"], None)
+    scores = [[c["cd3"] - c["cd19"], (c["cd3"] + c["cd19"]) / 2] for c in cells[:3]]
+    report("scores", close(data["scores"], scores), data["scores"], scores)
 
     if failed:
         print("MISMATCH")

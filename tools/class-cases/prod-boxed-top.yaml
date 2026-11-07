@@ -1,0 +1,18 @@
+# expect: deck: `\fbox` draws a box
+# expect: not: `\boxed` draws a box
+# A box in the top-level answer is caught; `\boxed` written as code in backticks is text about TeX and passes.
+title: A product case
+question: Does the board get it right?
+answer: 'Yes: $\fbox{1}$.'
+symbols:
+  a: {tex: a, says: 'one number, never written as `\boxed`', short: a number}
+data: {a: 1}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Text about TeX
+    steps:
+      - say: 'Never write `\boxed` round the answer: the number is {{a}}.'
+  - type: recap
+    answer: Yes.

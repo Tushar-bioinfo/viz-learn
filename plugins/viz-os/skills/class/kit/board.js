@@ -504,13 +504,20 @@
     const rowsOf = () => s.table ? list(L.val(s.table.from, ctx.scope, `slide ${ctx.index + 1} table.from`)) : [];
     const kindOf = q => ((ctx.symbols || {})[q] || {}).kind;
     // a value data.json (or the top-level derive) already holds must come out the same on the board (KTD21)
-    const given = Object.getPrototypeOf(ctx.scope) || {}, clash = [];
+    const given = Object.getPrototypeOf(ctx.scope) || {}, clash = [], pclash = [];   // pclash: products, kept from the last check at the start
     const store = (q, v) => { if (!q) return; ctx.scope[q] = v;
       if (typeof given[q] === 'number' && typeof v === 'number' && Math.abs(given[q] - v) > 1e-9 * Math.max(1, Math.abs(v)))
         clash.push(`\`${q}\` works out to ${L.fmt(v, 's4')} on the board but the data says ${L.fmt(given[q], 's4')}: make_data.py and the page disagree`); };
     // each worked line's numbers, in order, so a later line (and the first {{}} fill) can read an earlier result
     const work = () => {
       const rows = rowsOf(); clash.length = 0;
+      // a worked product's result (lesson.py writes it as `name: matmul(m, v)`) must match the data's copy too; the copy
+      // holds the starting numbers, so compare only while every control is where it starts
+      const atStart = (s.controls || []).every(c => !c || ctx.scope[c.name] === +(c.value ?? c.min));
+      if (atStart) pclash.length = 0;
+      if (atStart) Object.entries(s.derive || {}).forEach(([q, x]) => { const a = ctx.scope[q], b = given[q]; if (!/^matmul\(/.test(String(x)) || !Array.isArray(a) || !Array.isArray(b)) return;
+        const fa = [].concat(...a), fb = [].concat(...b); if (fa.length !== fb.length || fa.some((y, k) => Math.abs(y - fb[k]) > 1e-9 * Math.max(1, Math.abs(y))))
+          pclash.push(`\`${q}\` works out to [${fa.map(y => L.fmt(y, 's4')).join(', ')}] on the board but the data says [${fb.map(y => L.fmt(y, 's4')).join(', ')}]: make_data.py and the page disagree`); });
       lines.forEach(ln => { if (!ln.c) return; const c = ln.c, where = `slide ${ctx.index + 1} board line`;
         ln.sc = c.row != null && rows[c.row] ? L.scope(ctx.scope, rows[c.row]) : ctx.scope;
         ln.val = c.expr ? L.try(c.expr, ln.sc, where) : null; store(c.name, ln.val);
@@ -759,7 +766,7 @@
         vis.forEach(V => out.push(...V.audit())); figs.forEach(fg => fg.O && out.push(...fg.O.audit()));
         root.querySelectorAll('.approx').length && out.push('a worked line does not add up by hand at the rounding shown (it reads ≈): give its inputs a finer fmt');
         root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = m.closest('.st, .asm'); if (kx && box && kx.getBoundingClientRect().right > box.getBoundingClientRect().right + 2) out.push(`a formula is wider than its box at ${FLOOR}px: shorten it or split the line`); });
-        out.push(...clash);
+        out.push(...clash, ...pclash);
         return out;
       },
     };

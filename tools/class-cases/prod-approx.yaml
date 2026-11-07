@@ -1,0 +1,22 @@
+# expect: does not add up by hand at the rounding shown
+# expect: ≈
+# 0.333 shows as 0.33, so 0.33 · 3 is 0.99 by hand, not the 1.00 the exact sum rounds to: the line reads ≈, never =.
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {T: [[0.333]], u: [3]}
+symbols:
+  T: {tex: T, says: a third, nearly, short: near third, kind: matrix}
+  u: {tex: '\vec{u}', says: three of something, short: three, kind: vector}
+  r: {tex: 'T\vec{u}', says: about one, short: about one, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: The product
+    steps:
+      - say: The two numbers.
+        add: [{matrix: T}, {vec: u}]
+      - add: {product: {m: T, v: u, name: r}}
+  - type: recap
+    answer: Yes.

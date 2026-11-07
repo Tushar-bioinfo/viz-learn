@@ -86,6 +86,17 @@ data.update({
     "xvec": cd3, "dvec": dev,
 })
 
+# worked products: a spot on the slide that holds 0.6 of cell c1 and 0.4 of c2 reads M w, where M holds the two cells'
+# CD3 and CD19 as columns; and two scores per cell (CD3 minus CD19, and their average) as C W
+matmul = lambda A, B: [[sum(A[i][k] * B[k][j] for k in range(len(B))) for j in range(len(B[0]))] for i in range(len(A))]
+prof = [[cells[0]["cd3"], cells[1]["cd3"]], [cells[0]["cd19"], cells[1]["cd19"]]]
+mix = [0.6, 0.4]
+W = [[1, 0.5], [-1, 0.5]]
+data.update({
+    "prof": prof, "mix": mix, "spot": [r[0] for r in matmul(prof, [[x] for x in mix])],
+    "wts": W, "scores": matmul(data["cellmat"], W),
+})
+
 (HERE / "data.json").write_text(json.dumps(data, indent=1) + "\n")
 
 # the picture: six cells in a row, brighter orange for more CD3; no words or numbers on it (the kit draws the labels)

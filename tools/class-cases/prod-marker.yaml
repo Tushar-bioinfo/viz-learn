@@ -1,0 +1,19 @@
+# expect: `_draws` is a marker the kit writes when it opens a `product`
+# An author who writes the expansion's own marker could license a matrix the learner never saw.
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {X: [[1, 0.5], [0.5, 1]]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: A sneaky line
+    steps:
+      - say: Nothing to see.
+        add: {eqn: {tex: 'a', _draws: X}}
+      - say: 'Now $X$ is used.'
+  - type: recap
+    answer: Yes.

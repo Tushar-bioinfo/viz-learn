@@ -58,9 +58,10 @@ CHART = {"x", "y", "series", "marks", "legend", "table", "alt", "controls"}
 SERIES_KINDS = {"line", "area", "bars", "hist", "dots", "lollipop", "step"}
 MARK_KINDS = {"vline", "hline", "band", "point", "label", "arrow", "line", "fn", "area", "span"}
 CONTENT = {"idea", "equation", "calc", "table", "bridge", "compare", "statement", "map", "ops"}
-FUNCS = set("""abs sqrt exp log ln log2 log10 log1p floor ceil sign round pow sum mean var sd min max median count len quantile cumsum sort rank at first last
+FUNCS = set("""abs sqrt exp log ln log2 log10 log1p floor ceil sign round pow sum mean var sd min max median count len quantile cumsum sort rank at first last matmul
 seq where clamp choose factorial geomean normPdf normCdf normInv tPdf tCdf binomPmf poisPmf nbPmf gammaPdf betaPdf betaCdf poisCdf binomCdf nbCdf rnorm runif rpois rgamma rnb rbinom""".split())
 CONSTS = {"pi", "e", "inf"}
+BOXED = re.compile(r"\\(boxed|fbox|framebox|colorbox|fcolorbox)(?![A-Za-z])")
 BANNED = re.compile(r"\b(imagine|clearly|obviously|of course|simply|trivially|it is easy to see|it's easy to see|as you know|intuitively|just)\b", re.I)
 ABBR = re.compile(r"(?<![\w$\\{])([A-Z][A-Z0-9]{1,5})(?![\w}])")
 ABBR_OK = {"OK", "I", "A", "TV", "US", "UK", "PC", "AI", "ID", "QA", "II", "III", "IV", "VS", "AND", "OR", "NOT", "A1", "A2", "B1", "B2"}
@@ -113,6 +114,29 @@ def load(path):
 
 def words(s):
     return len(re.sub(r"\$[^$]*\$|\{\{[^}]*\}\}", "x", str(s or "")).split())
+
+
+def texts(node):
+    """Every string inside a slide, however deep."""
+    if isinstance(node, dict):
+        for v in node.values():
+            yield from texts(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from texts(v)
+    elif isinstance(node, str):
+        yield node
+
+
+def boxed(Lx, where, node):
+    """No box round an answer: the last line of the working is the answer (deck, lesson and page alike). Code in
+    backticks is text about TeX, not TeX, so it may name the command."""
+    for x in texts(node):
+        m = BOXED.search(re.sub(r"`[^`]*`", " ", x))
+        if m:
+            Lx.err(where, f"`\\{m.group(1)}` draws a box: the last line of the working is the answer, so drop the box; "
+                   "to make its number stand out, write it as `\\mathbf{…}` in maths or `**…**` in text")
+            return
 
 
 def idents(expr):
@@ -256,9 +280,11 @@ def lint(deck, lint_extra_names=(), extra_data=None, ext=None):
         Lx.warn("slide 1", "start with a `title` slide that asks the deck's question")
     if not deck.get("question"):
         Lx.warn("deck", "no `question`: say what question the deck answers (it frames the story and the recap)")
+    boxed(Lx, "deck", {k: v for k, v in deck.items() if k not in ("slides", "data", "derive")})   # question, answer, symbols
     for i, s in enumerate(slides):
         t = s.get("type") or "idea"
         where = f"slide {i + 1} ({t}{(' “' + str(s.get('title') or s.get('q') or s.get('text') or '')[:38] + '”') if (s.get('title') or s.get('q') or s.get('text')) else ''})"
+        boxed(Lx, where, s)
         if t not in fields:
             Lx.err(where, f"unknown type `{t}`; use one of {', '.join(sorted(fields))}")
             continue

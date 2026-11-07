@@ -1,0 +1,47 @@
+# expect: builds
+# expect: not: before it is drawn
+# expect: not: formula error
+# expect: not: disagree
+# expect: Row 1 of X times
+# All three ways from one line each, and a pixel a slider remakes: every line, the plane and the result follow it.
+title: The worked product
+question: Can one line of YAML work a product by hand?
+answer: Yes, one board step per line.
+data: {X: [[1, 0.5], [0.5, 1]], p5: [8, 4], P: [[8, 2], [4, 6]], y: [10, 8]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector}
+  ps: {tex: '\vec{s}', says: the pixel made brighter by the slider, short: bright pixel, kind: vector}
+  ys: {tex: 'X\vec{s}', says: what the sensors read for the bright pixel, short: bright readings, kind: vector}
+  P: {tex: P, says: two pixels side by side, short: two pixels, kind: matrix}
+  XP: {tex: XP, says: the readings for both pixels, short: both readings, kind: matrix}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Rows, then columns
+    steps:
+      - say: The mixing rule and the pixel.
+        add: [{matrix: X}, {vec: p5}]
+      - add: {product: {m: X, v: p5, way: rows, name: y}}
+      - think: {q: 'Will the columns way agree?', a: Yes.}
+      - add: {product: {m: X, v: p5, way: cols, name: y, says: [Take each column., Scale them., Add them.]}}
+  - type: board
+    beat: picture
+    title: Under a slider
+    controls: [{name: k, min: 1, max: 3, step: 1, value: 2, label: brightness}]
+    derive: {ps: p5 * k}
+    steps:
+      - say: 'The pixel, brighter: $\vec{s} = \mat{ps}$.'
+      - add: {product: {m: X, v: ps, way: cols, name: ys, plane: true, axes: [red level, green level]}}
+  - type: board
+    beat: by-hand
+    title: Two pixels at once
+    steps:
+      - say: Two pixels side by side.
+        add: {matrix: P}
+      - add: {product: {m: X, v: P, way: rows, name: XP, show: [[1, 2], [2, 1]]}}
+      - add: {product: {m: X, v: P, way: cols, name: XP, show: [2]}}
+  - type: recap
+    answer: One line, one board step per line of working.

@@ -1,0 +1,25 @@
+# expect: builds
+# expect: Take 1.5 of column 1 and 1.5 of column 2.
+# The teacher line takes v's numbers in the format the formula gives them now, not the starting data's: v is [1, 1]
+# in data.json but starts at 1.5 here (tools/check_board_ui.py also moves the slider and reads the line again).
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {X: [[1, 0.5], [0.5, 1]], v: [1, 1], v0: [1, 1]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  v: {tex: '\vec{v}', says: the base pixel scaled by the slider, short: scaled pixel, kind: vector}
+  yv: {tex: 'X\vec{v}', says: what the sensors read for it, short: its readings, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Under a slider
+    controls: [{name: k, min: 1, max: 2, step: 0.5, value: 1.5, label: brightness}]
+    derive: {v: v0 * k}
+    steps:
+      - say: The rule and the pixel.
+        add: [{matrix: X}, {vec: v}]
+      - add: {product: {m: X, v: v, way: cols, name: yv, plane: true}}
+  - type: recap
+    answer: Yes.

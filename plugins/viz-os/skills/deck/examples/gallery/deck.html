@@ -902,6 +902,9 @@ table.t td.cur.now { color: var(--on) !important; }
     quantile: (a, p) => quant(flat([a]), p), cumsum: a => { let s = 0; return a.map(x => s += x); }, sort: a => [...a].sort((x, y) => x - y),
     rank: a => { const s = a.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]), r = []; s.forEach(([, i], k) => r[i] = k + 1); return r; },
     at: (a, i) => a[i], first: a => a[0], last: a => a[a.length - 1],
+    // matrix times vector (a list) or matrix (a list of rows): rows of a times columns of b
+    matmul: (a, b) => { const B = Array.isArray(b[0]) ? b : b.map(x => [x]); if (!a.every(r => r.length === B.length)) throw new Error(`matmul: ${a[0].length} columns times ${B.length} rows`);
+      const C = a.map(r => B[0].map((_, j) => r.reduce((s, x, k) => s + x * B[k][j], 0))); return Array.isArray(b[0]) ? C : C.map(r => r[0]); },
     seq: (a, b, step = 1) => { const out = []; for (let x = a; step > 0 ? x <= b + 1e-9 : x >= b - 1e-9; x += step) out.push(+x.toFixed(10)); return out; },
     where: vec((c, a, b) => c ? a : b), clamp: vec((x, a, b) => Math.max(a, Math.min(b, x))),
     choose: (n, k) => Math.round(Math.exp(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1))), factorial: n => Math.round(Math.exp(lgamma(n + 1))),
@@ -1490,7 +1493,7 @@ table.t td.cur.now { color: var(--on) !important; }
   const splitFmt = raw => { const k = raw.lastIndexOf('|'); if (k > 0 && FMT.test(raw.slice(k + 1).trim())) { const f = raw.slice(k + 1).trim(); return [raw.slice(0, k), /^\d+$/.test(f) ? +f : f]; } return [raw, undefined]; };
   L.interp = function (s, scope, inTex) {
     const t = String(s ?? '').replace(/\{\{([\s\S]+?)\}\}/g, (_, raw) => { const [x, f] = splitFmt(raw); const v = L.try(x, scope, `text {{${raw}}}`); return inTex ? L.numTex(v, f) : L.fmt(v, f); });
-    return inTex ? t.replace(MAT, (_, id, d) => L.matTex(id, scope, d == null ? undefined : +d)) : t;
+    return inTex ? t.replace(MAT, (_, id, d) => L.matTex(id, scope, d == null ? undefined : +d)).replace(PART, (_, m, v, n, p, ix) => L.prodTex(m, v, n, p, ix.split('|').filter(Boolean).map(q => +q - 1), scope)) : t;
   };
   // \mat{X} or \mat{X|2} (2 decimals): a matrix or vector from the data, in brackets, read from the scope, so it follows a
   // slider as {{…}} does. Its symbol's `cols` colour each column, `rows` each row (a vector's entries). One format per
@@ -1498,22 +1501,75 @@ table.t td.cur.now { color: var(--on) !important; }
   // A slot as wide as a minus sits before the right bracket only when a number is negative, so both brackets clear the numbers evenly
   const MAT = /\\mat\{([A-Za-z_]\w*)(?:\|(\d))?\}/g;
   const kc = (c, t) => !c ? t : /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(c) ? `\\textcolor{${c}}{${t}}` : `\\htmlClass{kc kc-${c}}{${t}}`;
+  const symOfId = id => ((L.deck && L.deck.symbols) || {})[id] || {};
+  const okNum = x => typeof x === 'number' && Number.isFinite(x);
+  const places = x => [0, 1, 2].find(d => Math.abs(+x.toFixed(d) - x) < 1e-9) ?? 2;
+  const decOf = (S, M) => typeof S.fmt === 'number' ? S.fmt : Math.max(...M.flat().map(places));
+  // a name's numbers as rows (a vector is one column, or one row with `row`), or null when they are not numbers
+  const gridOf = (v, row) => { const M = Array.isArray(v) && v.length ? (Array.isArray(v[0]) ? v : row ? [v] : v.map(x => [x])) : null;
+    return M && M.every(r => Array.isArray(r) && r.length === M[0].length && r.every(okNum)) ? M : null; };
+  // the one bracket drawer: rows of numbers, one format `d`, a colour per cell (or none); `cells` gives ready TeX per cell
+  // instead of a number. mt-<id>: a board opens id's card on it
+  const brackets = (id, M, d, colour, cells) => {
+    const body = M.map((r, i) => r.map((x, j) => cells ? cells[i][j] : kc(colour && colour(i, j), L.numTex(x, d))).join(' & ')).join(' \\\\ ');
+    const neg = !cells && M.flat().some(x => L.fmt(x, d).startsWith('−'));
+    return `\\htmlClass{mt mt-${id}}{\\left[\\mkern-1mu\\begin{array}{${'r'.repeat(M[0].length)}} ${body} \\end{array}${neg ? '\\hphantom{-}' : ''}\\mkern-1mu\\right]}`;
+  };
   L.matTex = function (id, scope, dec, row) {
-    const S = ((L.deck && L.deck.symbols) || {})[id] || {}, v = scope ? scope[id] : undefined;
-    const ok = x => typeof x === 'number' && Number.isFinite(x);
-    const M = Array.isArray(v) && v.length ? (Array.isArray(v[0]) ? v : row ? [v] : v.map(x => [x])) : null;
-    if (!M || !M.every(r => Array.isArray(r) && r.length === M[0].length && r.every(ok))) { L.err('formula', `\\mat{${id}}: ${id} is not a list of numbers (a vector) or a list of equal rows (a matrix) in the data`); return '\\text{?}'; }
-    const all = M.flat(), places = x => [0, 1, 2].find(d => Math.abs(+x.toFixed(d) - x) < 1e-9) ?? 2;
-    const d = dec ?? (typeof S.fmt === 'number' ? S.fmt : Math.max(...all.map(places)));
+    const S = symOfId(id), v = scope ? scope[id] : undefined, M = gridOf(v, row);
+    if (!M) { L.err('formula', `\\mat{${id}}: ${id} is not a list of numbers (a vector) or a list of equal rows (a matrix) in the data`); return '\\text{?}'; }
     const vecRow = !Array.isArray(v[0]), colour = (i, j) => (S.cols || [])[j] || (S.rows || [])[vecRow && row ? j : i];
-    const body = M.map((r, i) => r.map((x, j) => kc(colour(i, j), L.numTex(x, d))).join(' & ')).join(' \\\\ ');
-    const neg = all.some(x => L.fmt(x, d).startsWith('−'));
-    return `\\htmlClass{mt mt-${id}}{\\left[\\mkern-1mu\\begin{array}{${'r'.repeat(M[0].length)}} ${body} \\end{array}${neg ? '\\hphantom{-}' : ''}\\mkern-1mu\\right]}`;   // mt-<id>: a board opens id's card on it
+    return brackets(id, M, dec ?? decOf(S, M), colour);
+  };
+  // \prodpart{m|v|name|part|i|j}: one piece of the worked product name = m v, read live from the scope (class's lesson.py
+  // writes these when it opens a `product` item). The inner index k takes m's cols[k] colour, else v's rows[k], else the
+  // k-th series colour (class product.py gives plane arrows the same), on both numbers of a pair; the result stays ink.
+  // Indices are 1-based in the TeX; a part with one index (row, col, mcol, rcol) reads it as `i`.
+  // Pieces: row i of m; col j of v; dot i j (m_i1·v_1j + …); res i j (the bold sum); sums (every entry's sum, in
+  // brackets); all (the result, ink); mcol k (column k of m); coef k j (v_kj); num k j (v_kj plain, for a teacher line);
+  // scaled k j (v_kj times column k of m); rcol j (column j of the result).
+  // Relations: eq i j (dot to res), eqs (sums to all), eqcol j (coef·mcol sums to rcol j), eqsc j (coef·mcol to scaled),
+  // eqadd j (scaled columns to the result). Each is `=` when the numbers shown add up by hand at their rounding, else
+  // ≈ (class approx), which the board's audit reports, as a worked `calc` line does: never a false `=`.
+  const PART = /\\prodpart\{([A-Za-z_]\w*)\|([A-Za-z_]\w*)\|([A-Za-z_]\w*)\|([a-z]+)((?:\|\d+)*)\}/g;
+  const PAIR = ['s1', 's2', 's3', 's4'];
+  L.prodTex = function (m, v, name, part, ix, scope) {
+    const A = gridOf(scope && scope[m]), B = gridOf(scope && scope[v]);
+    if (!A || !B || A[0].length !== B.length) { L.err('formula', `product ${m} × ${v}: both must be numbers in the data, and ${m}'s columns must match ${v}'s rows`); return '\\text{?}'; }
+    const Sm = symOfId(m), Sv = symOfId(v), da = decOf(Sm, A), db = decOf(Sv, B), K = B.length;
+    const C = A.map(r => B[0].map((_, j) => r.reduce((s, a, k) => s + a * B[k][j], 0))), dc = decOf(symOfId(name), C);
+    const col = k => (Sm.cols || [])[k] || (Sv.rows || [])[k] || PAIR[k];
+    const mt = (id, t) => `\\htmlClass{mt mt-${id}}{${t}}`, wrap = (x, d, first) => first || x >= 0 ? L.numTex(x, d) : `(${L.numTex(x, d)})`;
+    const [i, j] = ix, sh = L.shown, same = (x, y, d) => L.fmt(x, d) === L.fmt(y, d);
+    const rel = ok => ok ? '=' : '\\htmlClass{approx}{\\approx}';
+    const hand = (i, j) => [...Array(K)].reduce((s, _, k) => s + sh(A[i][k], da) * sh(B[k][j], db), 0);   // the sum from the numbers shown
+    const handOk = (i, j) => same(hand(i, j), C[i][j], dc);
+    const S = jj => A.map(r => [...Array(K)].map((_, k) => r[k] * B[k][jj])), dsOf = jj => decOf({}, S(jj));   // one format across a line's scaled columns
+    const dot = (i, j) => [...Array(K)].map((_, k) => kc(col(k), `${mt(m, wrap(A[i][k], da, !k))} \\cdot ${mt(v, wrap(B[k][j], db))}`)).join(' + ');
+    switch (part) {
+      case 'row': return brackets(m, [A[i]], da, (_, k) => col(k));
+      case 'col': return brackets(v, B.map(r => [r[i]]), db, k => col(k));
+      case 'dot': return dot(i, j);
+      case 'res': return mt(name, `\\mathbf{${L.numTex(C[i][j], dc)}}`);
+      case 'sums': return brackets(name, C, dc, null, C.map((r, i) => r.map((_, j) => dot(i, j))));
+      case 'all': return brackets(name, C, dc);
+      case 'mcol': return brackets(m, A.map(r => [r[i]]), da, () => col(i));
+      case 'coef': return kc(col(i), mt(v, wrap(B[i][j], db, !i)));
+      case 'num': return L.numTex(B[i][j], db);
+      case 'scaled': return brackets(m, S(j).map(r => [r[i]]), dsOf(j), () => col(i));
+      case 'rcol': return brackets(name, C.map(r => [r[i]]), dc);
+      case 'eq': return rel(handOk(i, j));
+      case 'eqs': return rel(C.every((r, i) => r.every((_, j) => handOk(i, j))));
+      case 'eqcol': return rel(C.every((_, r) => handOk(r, i)));
+      case 'eqsc': { const d = dsOf(i), M = S(i); return rel(M.every((r, a) => r.every((x, k) => same(sh(A[a][k], da) * sh(B[k][i], db), x, d)))); }
+      case 'eqadd': { const d = dsOf(i); return rel(S(i).every((r, a) => same(r.reduce((s, x) => s + sh(x, d), 0), C[a][i], dc))); }
+    }
+    L.err('formula', `\\prodpart: unknown part “${part}”`); return '\\text{?}';
   };
   L.plain = (s, scope) => L.texPlain(L.interp(String(s ?? ''), scope).replace(/\$([^$]+)\$/g, '$1')).replace(/\*\*|==|`/g, '').replace(/(?<!\w)\*(\S.*?\S|\S)\*(?!\w)/g, '$1');
   L.fill = function (root, scope) {
     root.querySelectorAll('.iv').forEach(sp => { const [x, f] = splitFmt(sp.dataset.x); try { sp.textContent = L.fmt(L.eval(x, scope), f); sp.classList.remove('bad'); } catch (e) { sp.textContent = '⟨?⟩'; sp.classList.add('bad'); L.err('text', `${e.message} in {{${sp.dataset.x}}}`); } });
-    root.querySelectorAll('.tx').forEach(sp => { const raw = sp.dataset.tex; if (sp.dataset.done && !raw.includes('{{') && !raw.includes('\\mat{')) return; L.renderTex(sp, L.interp(raw, scope, true), false); sp.dataset.done = 1; });
+    root.querySelectorAll('.tx').forEach(sp => { const raw = sp.dataset.tex; if (sp.dataset.done && !raw.includes('{{') && !raw.includes('\\mat{') && !raw.includes('\\prodpart{')) return; L.renderTex(sp, L.interp(raw, scope, true), false); sp.dataset.done = 1; });
   };
 
   // ---------- symbols ----------

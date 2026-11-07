@@ -1,0 +1,24 @@
+# expect: `y` is already the result of `matmul(X, p5)` in this scene
+# Two products in one scene with one result name but other inputs: the second would overwrite the first.
+# (The same product twice, rows way then columns way, stays legal: see prod-good.)
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {X: [[1, 0.5], [0.5, 1]], p5: [8, 4], q: [1, 2]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector}
+  q: {tex: '\vec{q}', says: a second pixel, short: second pixel, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: The product
+    steps:
+      - say: The rule and two pixels.
+        add: [{matrix: X}, {vec: p5}, {vec: q}]
+      - add: {product: {m: X, v: p5, name: y}}
+      - add: {product: {m: X, v: q, name: y}}
+  - type: recap
+    answer: Yes.

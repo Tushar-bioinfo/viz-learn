@@ -1,0 +1,21 @@
+# expect: `X` has 2 columns but `q` has 3 entries
+title: A product case
+question: Does the lint catch it?
+answer: Yes.
+data: {q: [1, 2, 3], X: [[1, 0.5], [0.5, 1]], p5: [8, 4], P: [[8, 2], [4, 6]]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector}
+  q: {tex: '\vec{q}', says: three numbers in a list, short: three numbers, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: The product
+    steps:
+      - say: The rule and the pixel.
+        add: [{matrix: X}, {vec: p5}]
+      - add: {product: {m: X, v: q, name: y}}
+  - type: recap
+    answer: Yes.

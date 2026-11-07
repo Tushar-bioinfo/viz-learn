@@ -50,6 +50,17 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` a matrix's `fmt` is its number of decimals `` | `fmt: 1`, a whole number; `s3` and `,` do not apply to brackets |
 | `N legend entries on one plane: more than 5` | name marks on the plot with `name:` and `says:`, or split the plane |
 | `say what X is: add says: to the mark, or name it in a teacher line first` | give the mark `says:`, or name X in a `say` at or before the step that draws it (the later of the plane's step and the mark's own). `$x$` and `x`, `$\alpha$` and `α` count as the same name |
+| `` `\boxed` draws a box `` (also `\fbox`, `\framebox`, `\colorbox`, `\fcolorbox`) | delete the box: the last line of the working is the answer. To make its number stand out, bold it: `\mathbf{…}` in maths, `**…**` in text |
+| `` a `product` step holds only the product `` | move the step's `say`, `mark`, `think` or other items to the step before or after; to change its lines, give `says:` |
+| `` `X` has N columns but `v` has M entries `` | the product needs `m`'s columns = `v`'s rows: check which is which, or transpose one in make_data.py |
+| `` `name: X` is also an input `` / `` `y` is already the result of … `` | give the result its own symbol; the same product twice (rows way, then columns way) may share one |
+| `` `v` was drawn as a row … but a product reads it as a column `` | draw it as a column (`vec: v`) before the product, or make it a one-row matrix |
+| `` `_draws` is a marker the kit writes `` (any key starting with `_`) | delete it: only the kit writes these |
+| `` `says:` has N line(s), but this product writes M lines `` | one teacher line per line of working, in order (the message gives the count) |
+| `` `plane: true` needs `way: cols`, a vector `v`, and an `m` with 2 rows `` | a plane has two axes, one per row of `m`: drop `plane`, or use the columns way on a 2-row matrix |
+| `` `name` comes out as a vector / matrix `` / `data.json holds name as …` | give the result's symbol the kind and the shape the product makes |
+| `cannot tell the size of X` | keep X's (starting) numbers in data.json, even when a derive remakes it |
+| `` X works out to [...] on the board but the data says [...] `` | the product and data.json's copy of its result disagree: fix make_data.py, or drop the copy |
 | `` control …: `run` is the number of frames `` / `stops … are not frames` | `run` ≥ 2; stops between 0 and run − 1 |
 | `the run stops on N frames, one per step, but the scene has M steps` | one stop per step, or `frame:` on the steps |
 | `one run per scene` | split the scene |

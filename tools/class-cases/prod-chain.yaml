@@ -1,0 +1,24 @@
+# expect: builds
+# expect: not: cannot tell the size
+# A product's result feeds a later product in the same scene without a copy in data.json.
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {X: [[1, 0.5], [0.5, 1]], p5: [8, 4]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector}
+  z: {tex: 'XX\vec{x}', says: the readings mixed once more, short: mixed twice, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Twice
+    steps:
+      - say: The rule and the pixel.
+        add: [{matrix: X}, {vec: p5}]
+      - add: {product: {m: X, v: p5, name: y}}
+      - add: {product: {m: X, v: y, name: z}}
+  - type: recap
+    answer: Yes.

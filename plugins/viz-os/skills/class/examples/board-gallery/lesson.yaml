@@ -22,6 +22,11 @@ symbols:
   c1row: {tex: '\vec{c}_1', says: 'row one of C, cell c1', short: cell c1, kind: vector, rows: [s1, s2]}
   xvec: {tex: '\vec{x}', says: the CD3 levels of all six cells, short: CD3 levels, kind: vector}
   dvec: {tex: '\vec{d}', says: each cell's distance from the mean, short: distances, kind: vector}
+  prof: {tex: 'M', says: 'cells c1 and c2, one column each: CD3 above, CD19 below', short: two cells, kind: matrix, cols: [s3, s4]}
+  mix: {tex: '\vec{w}', says: how much of each cell the spot holds, short: cell shares, kind: vector}
+  spot: {tex: 'M\vec{w}', says: 'the spot''s CD3 and CD19, a mix of the two cells', short: spot reading, kind: vector}
+  wts: {tex: 'W', says: 'two scores from the markers: CD3 minus CD19, and their average', short: score weights, kind: matrix}
+  scores: {tex: 'CW', says: each cell's two scores, one row per cell, short: cell scores, kind: matrix}
 slides:
   - type: title
 
@@ -220,15 +225,23 @@ slides:
   - type: board
     beat: picture
     title: What the numbers stand for
-    lead: Brighter cells carry more CD3.
+    lead: Brighter cells carry more CD3, and a spot reads a mix of its cells.
     steps:
-      - say: Six cells under the scope. Brighter means more CD3.
+      - say: Six cells under the scope. Brighter means more CD3, so c5 leads.
         add:
           image: cells.png
           alt: six round cells in a row, glowing orange in different strengths
-          labels: [{text: c1, at: [0.083, 0.88]}, {text: c5, at: [0.75, 0.88], step: 2}]
-      - say: c5 is the brightest, the one far above the mean.
-        add: {params: {say: 'What we worked out', names: [n, xbar, s2, sd]}}
+          labels: [{text: c1, at: [0.083, 0.88]}, {text: c5, at: [0.75, 0.88]}]
+      - say: 'A spot on the slide holds parts of c1 and c2, in these shares.'
+        add: [{matrix: prof}, {vec: mix}]
+      - think:
+          q: Will the spot's CD3 sit nearer c1's or c2's?
+          a: 'Nearer c1, since the spot holds more of it: {{at(mix, 0)}} against {{at(mix, 1)}}.'
+      - add: {product: {m: prof, v: mix, way: rows, name: spot}}
+      - think:
+          q: Scale each cell's column by its share and add. Same reading?
+          a: Yes. A row at a time or a column at a time, the sums are the same.
+      - add: {product: {m: prof, v: mix, way: cols, name: spot, plane: true, axes: [CD3, CD19]}}
 
   - type: board
     beat: aside
@@ -240,14 +253,15 @@ slides:
       - think:
           q: 'Which column of $C$ holds CD19?'
           a: The second. Each column is one marker, CD3 first.
-      - say: 'Row one of $C$ on its own: cell c1, its two markers.'
-        add: {vec: c1row, row: true}
+      - say: 'Row one of $C$ on its own: cell c1. And two scores per cell.'
+        add: [{vec: c1row, row: true}, {matrix: wts}]
       - say: Take the mean from every cell at once.
         add: {eqn: {say: Each cell's distance from the mean, tex: '[dvec] = \mat{xvec} - [xbar] = \mat{dvec}'}}
       - say: 'Cells below the mean get a minus sign in $\vec{d}$.'
       - think:
           q: 'Which entry of $\vec{d}$ sits farthest from zero?'
           a: '{{far_id}}, the cell far from the mean.'
+      - add: {product: {m: cellmat, v: wts, way: rows, name: scores, show: [[1, 2]]}}
 
   - type: board
     beat: limits

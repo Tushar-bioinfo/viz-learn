@@ -232,6 +232,23 @@ A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows 
 
 An `image` is only for when the user asks for a picture (`D/scripts/image.py`). The picture has no text; put labels on it: `labels: [{text: c1, at: [0.08, 0.88]}]` (fractions from the top left, ≤ 4 words), and always `alt`.
 
+### `product`: a matrix times a vector or a matrix, worked by hand
+```yaml
+symbols:
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector}
+add: {product: {m: X, v: p5, way: rows, name: y}}                    # a row at a time
+add: {product: {m: X, v: p5, way: cols, name: y, plane: true}}       # a column at a time, as arrows tip to tail
+add: {product: {m: X, v: P, way: rows, name: XP, show: [[1, 2]]}}    # matrix × matrix: entry (1, 2), then all
+```
+One step opens into one board step per line of working, each with its own teacher line:
+- `way: rows` (the default), vector: `[row i] [v] = sum = entry i` for each row, then `name = [sums] = [result]`.
+- `way: cols`, vector: `name = v₁[col 1] + v₂[col 2]`, then the scaled columns, then `= [result]`.
+- Matrix × matrix, rows: one line per entry in `show` (`[row, column]`, from 1; default `[[1, 1]]`), then the whole result. Cols: one line per column of `v` in `show` (`[2]`; default `[1]`), then the whole result.
+`m` is a `kind: matrix` symbol; `v` a vector or matrix; both up to 4 × 4, drawn first with their numbers, and `m`'s columns must match `v`'s rows. `name` is a `kind: matrix|vector` symbol for the result: the kit computes it, so data.json need not hold it (if it does, they must agree at the controls' starting values), and a later product in the scene may use it. It may not be `m` or `v`. Its TeX heads the last line. Each matching pair of numbers shares a colour: `m`'s `cols`, else `v`'s `rows`. Every line follows a slider when a `derive` makes `m` or `v`.
+- `says: [..]`: your own teacher lines, one per line of working, in order.
+- `plane: true` (columns way, a vector, `m` with 2 rows): a plane with an arrow per scaled column, tip to tail, and a dot at the result; `axes: [CD3, CD19]` names its axes (default `entry 1`, `entry 2`).
+The `product` step holds nothing else: put a `think` or another item on the step before or after. No box round the answer anywhere (a lint error): the last line is the answer.
+
 ### `plane`: geometry with equal scales
 A coordinate plane with one scale for both axes, so a slope, a right angle and a square look like what they are. It fills its room by showing more of the plane: both axes widen on both sides at one scale, and ticks, grid and shading follow. The `x` and `y` ranges you write are the least it shows.
 

@@ -1,0 +1,22 @@
+# expect: builds
+# No colours on either input, and a result symbol with its own colours: the pairs take the series colours, the plane's
+# arrows the same ones, and the final answer stays ink (tools/check_board_ui.py reads the colours).
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {X: [[1, 0.5], [0.5, 1]], p5: [8, 4]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector}
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector, rows: [s3, s4]}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Colours
+    steps:
+      - say: The rule and the pixel.
+        add: [{matrix: X}, {vec: p5}]
+      - add: {product: {m: X, v: p5, way: cols, name: y, plane: true}}
+  - type: recap
+    answer: Yes.

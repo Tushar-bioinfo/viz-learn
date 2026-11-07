@@ -205,6 +205,9 @@
     quantile: (a, p) => quant(flat([a]), p), cumsum: a => { let s = 0; return a.map(x => s += x); }, sort: a => [...a].sort((x, y) => x - y),
     rank: a => { const s = a.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]), r = []; s.forEach(([, i], k) => r[i] = k + 1); return r; },
     at: (a, i) => a[i], first: a => a[0], last: a => a[a.length - 1],
+    // matrix times vector (a list) or matrix (a list of rows): rows of a times columns of b
+    matmul: (a, b) => { const B = Array.isArray(b[0]) ? b : b.map(x => [x]); if (!a.every(r => r.length === B.length)) throw new Error(`matmul: ${a[0].length} columns times ${B.length} rows`);
+      const C = a.map(r => B[0].map((_, j) => r.reduce((s, x, k) => s + x * B[k][j], 0))); return Array.isArray(b[0]) ? C : C.map(r => r[0]); },
     seq: (a, b, step = 1) => { const out = []; for (let x = a; step > 0 ? x <= b + 1e-9 : x >= b - 1e-9; x += step) out.push(+x.toFixed(10)); return out; },
     where: vec((c, a, b) => c ? a : b), clamp: vec((x, a, b) => Math.max(a, Math.min(b, x))),
     choose: (n, k) => Math.round(Math.exp(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1))), factorial: n => Math.round(Math.exp(lgamma(n + 1))),

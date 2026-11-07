@@ -418,7 +418,8 @@ def one_row(page):
     return not bad, "; ".join(bad[:3]) or "5 windows"
 
 
-FLOOR = """s => { const out = []; document.querySelectorAll(s).forEach(m => { const fs = parseFloat(getComputedStyle(m).fontSize), b = m.closest('.st, .asm, .slide').getBoundingClientRect(), k = [...m.querySelectorAll('.katex')].filter(e => !e.closest('.wkey')).map(e => e.getBoundingClientRect());
+# a step that only wraps (display: contents, a stacked figure's lead step) has no box: measure against the one around it
+FLOOR = """s => { const out = []; document.querySelectorAll(s).forEach(m => { const fs = parseFloat(getComputedStyle(m).fontSize), box = e => { let q = e.closest('.st, .asm, .slide'); while (q && !q.getBoundingClientRect().width) q = q.parentElement.closest('.st, .asm, .fb, .slide'); return q; }, b = box(m).getBoundingClientRect(), k = [...m.querySelectorAll('.katex')].filter(e => !e.closest('.wkey')).map(e => e.getBoundingClientRect());
   if (!k.length) return; if (fs < 20 || Math.max(...k.map(r => r.right)) > b.right + 2) out.push([m.closest('.slide').id, fs, Math.round(Math.max(...k.map(r => r.right)) - b.right)]); });
   return [out, [...document.querySelectorAll(s)].filter(m => m.style.fontSize).length]; }"""
 
@@ -654,6 +655,39 @@ def slider_card(ctx):
 SET_K = "v => { const e = document.querySelector('input[type=range]'); e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); }"
 # which v is lit: its place among the page's v brackets, whether it sits in a teacher line, and whether the card is open
 LIT_V = "() => [[...document.querySelectorAll('.mt-v')].findIndex(e => e.classList.contains('act')), !!document.querySelector('.say .mt-v.act'), !!document.querySelector('.vpop.on')]"
+
+
+ALL_STEPS = "VizOS.slides.forEach(sl => (sl.r.stages || []).forEach(S => { for (let k = 0; k < 40 && S.move(1); k++); }))"
+SAY_WITH = "t => ([...document.querySelectorAll('.st .say')].map(e => e.textContent.replace(/\\s+/g, ' ').trim()).find(x => x.startsWith(t)) || '')"
+
+
+def prod_live(ctx):
+    """A worked product under a slider: a scene derive that reads the result keeps up (prod-derive-order), and the
+    teacher line gives v's numbers in the format the formula gives them now (prod-say-format)."""
+    page = case_page(ctx, "prod-derive-order")
+    a = page.evaluate(SAY_WITH, "Twice"); page.evaluate(SET_K, 3); page.wait_for_timeout(300); b = page.evaluate(SAY_WITH, "Twice"); page.close()
+    page = case_page(ctx, "prod-say-format")
+    got = []
+    for k in (2, 1, 1.5):
+        page.evaluate(SET_K, k); page.wait_for_timeout(300)
+        got.append(page.evaluate(SAY_WITH, "Take"))
+    page.close()
+    want = ["Twice the first reading is 20.", "Twice the first reading is 60.", "Take 2 of column 1 and 2 of column 2.",
+            "Take 1 of column 1 and 1 of column 2.", "Take 1.5 of column 1 and 1.5 of column 2."]
+    return [a, b, *got] == want, f"lines: {[a, b, *got]}"
+
+
+def prod_colours(ctx):
+    """With no input colours the pairs take the series colours s1, s2, the plane's arrows the same two, and the final
+    answer stays ink even though the result's symbol has colours of its own (prod-colours)."""
+    page = case_page(ctx, "prod-colours")
+    page.evaluate(ALL_STEPS); page.wait_for_timeout(300)
+    r = page.evaluate("""() => { const c = q => { const e = document.querySelector('.fline .kc-' + q); return e ? getComputedStyle(e).color : null; };
+      const fl = [...document.querySelectorAll('.fline')], last = fl[fl.length - 1];
+      const strokes = [...document.querySelectorAll('.board svg line')].map(l => getComputedStyle(l).stroke);
+      return [c('s1'), c('s2'), strokes.includes(c('s1')), strokes.includes(c('s2')), last.querySelectorAll('.mt-y').length, last.querySelectorAll('.mt-y .kc').length]; }""")
+    page.close()
+    return bool(r[0] and r[1] and r[2] and r[3] and r[4] and r[5] == 0), f"s1, s2 in terms; arrows s1, s2; answer brackets, coloured cells in them: {r}"
 
 
 def say_refind(ctx):
@@ -892,7 +926,8 @@ def main(names):
             ok, why = False, str(e).splitlines()[0][:160]
         res.append(ok)
         print(f"board ui pop-slider case: a card's value follows the slider | {'ok' if ok else 'FAIL: ' + str(why)}")
-        for label, fn in (("pop-slider case: the card stays on the same term in a teacher line", say_refind), ("board-gallery: a card stays inside the window", clamp_card)):
+        for label, fn in (("pop-slider case: the card stays on the same term in a teacher line", say_refind), ("board-gallery: a card stays inside the window", clamp_card),
+                          ("product cases: lines follow the slider in their own format", prod_live), ("product cases: pairs, arrows and answer share one colour rule", prod_colours)):
             try:
                 ok, why = fn(ctx)
             except Exception as e:

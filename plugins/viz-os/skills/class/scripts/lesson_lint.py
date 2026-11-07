@@ -15,13 +15,16 @@ VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
 ITEMS = {"calc", "plane", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
-          "eqn": {"say", "lhs", "expr", "tex", "id"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
+          "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
           "params": {"say", "names", "side", "id"}}
 TERM = re.compile(r"\[([A-Za-z_]\w*)\]")
 TAGGED = re.compile(r"\[([A-Za-z_]\w*):([^\]]*)\]")
 MATREF = re.compile(r"\\mat\{([A-Za-z_]\w*)(?:\|\d)?\}")   # \mat{X} or \mat{X|2}: a matrix or vector drawn from the data
 OBJ = {"matrix": "matrix", "vector": "vec"}   # symbol kinds drawn in brackets, and the item that draws each
-MATENV = re.compile(r"\\(begin|end)\{[bpvBV]?matrix\}|\\mat\{[^}]*\}")
+# a bracket a worked product draws (product.py) is one object too; its numbers and sums are not terms
+MATENV = re.compile(r"\\(begin|end)\{[bpvBV]?matrix\}|\\mat\{[^}]*\}|\\prodpart\{(?:[^}|]*\|){3}(?:row|col|sums|mcol|scaled|rcol)[|\d]*\}")
+PRODPART = re.compile(r"\\prodpart\{[^}]*\}")
+PRODREF = re.compile(r"\\prodpart\{([A-Za-z_]\w*)\|([A-Za-z_]\w*)\|([A-Za-z_]\w*)\|")
 
 
 def bracket_objects(tex):
@@ -552,7 +555,7 @@ class Ledger:
         self.number(expr_names(self.B, s), pos, by_hand)
         for m in re.findall(r"\$([^$]+)\$", re.sub(r"`[^`]*`", " ", s)):   # \mat draws only inside maths
             self.maths(m, pos, by_hand)
-            m = MATREF.sub(" ", EXPRS.sub(" ", m))   # a {{x}} in the maths shows x's number (counted above), not its symbol
+            m = PRODPART.sub(" ", MATREF.sub(" ", EXPRS.sub(" ", m)))   # a {{x}} (or a product's number) shows a number, not a symbol
             for n, t in self.tex:
                 pat = (r"(?<![A-Za-z\\])" if t[:1].isalpha() else "") + re.escape(t) + (r"(?![A-Za-z])" if t[-1:].isalpha() else "")
                 if re.search(pat, m):
@@ -622,6 +625,8 @@ def scan(B, L, i, s):
                 L.number(ids, p, hand)
                 L.symbol(ids, p, "a worked line")
             if isinstance(e, dict):
+                L.symbol(as_list(e.get("_uses")), p, "a `product` item")   # a product's lines use its m and v (product.py)
+                L.draw(as_list(e.get("_draws")), p, hand)                     # and its last line draws its result
                 L.maths(str(e.get("tex") or ""), p, hand, e.get("lhs"))
                 ids = (B.idents(e["expr"]) if e.get("expr") else TERM.findall(str(e.get("tex") or ""))) + as_list(e.get("lhs"))
                 L.symbol(ids, p, "an equation")
@@ -901,7 +906,7 @@ def card_symbols(B, deck):
         if s.get("type") != "board":
             continue
         for x in strings(s):
-            out |= set(MATREF.findall(x))
+            out |= set(MATREF.findall(x)) | {q for t in PRODREF.findall(x) for q in t}
         for _, it in items_of(s):
             for k in ("matrix", "vec"):
                 if isinstance(it.get(k), str):

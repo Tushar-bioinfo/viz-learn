@@ -1,0 +1,22 @@
+# expect: `plane: true` needs `way: cols`, a vector `v`, and an `m` with 2 rows (one per axis): `T` has 3 rows
+title: A product case
+question: Does the lint catch it?
+answer: Yes.
+data: {T: [[1, 0], [0, 1], [1, 1]], X: [[1, 0.5], [0.5, 1]], p5: [8, 4], P: [[8, 2], [4, 6]]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector}
+  T: {tex: T, says: three rows of two numbers, short: three rows, kind: matrix}
+  t: {tex: 'T\vec{x}', says: the table times the pixel, short: table output, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: The product
+    steps:
+      - say: The table and the pixel.
+        add: [{matrix: T}, {vec: p5}]
+      - add: {product: {m: T, v: p5, way: cols, name: t, plane: true}}
+  - type: recap
+    answer: Yes.

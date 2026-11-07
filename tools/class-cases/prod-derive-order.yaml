@@ -1,0 +1,27 @@
+# expect: builds
+# expect: not: unknown name
+# expect: Twice the first reading is 20.
+# A scene derive that reads the product's result (twice) is worked out after it, at the start and under the slider
+# (tools/check_board_ui.py moves the slider and reads the line again).
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {X: [[1, 0.5], [0.5, 1]], p5: [8, 4]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  ps: {tex: '\vec{s}', says: the pixel made brighter by the slider, short: bright pixel, kind: vector}
+  ys: {tex: 'X\vec{s}', says: what the sensors read for the bright pixel, short: bright readings, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Under a slider
+    controls: [{name: k, min: 1, max: 3, step: 1, value: 1, label: brightness}]
+    derive: {twice: 'at(ys, 0) * 2', ps: p5 * k}
+    steps:
+      - say: 'The pixel, brighter: $\vec{s} = \mat{ps}$, and the rule $X = \mat{X}$.'
+      - add: {product: {m: X, v: ps, name: ys}}
+      - say: 'Twice the first reading is {{twice}}.'
+  - type: recap
+    answer: Yes.

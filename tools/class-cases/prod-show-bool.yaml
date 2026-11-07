@@ -1,0 +1,23 @@
+# expect: `show: [[1, 2]]` lists entries as [row, column], counting from 1
+# true is not a row number (Python counts it as 1).
+title: A product case
+question: Does the board get it right?
+answer: Yes.
+data: {X: [[1, 0.5], [0.5, 1]], P: [[8, 2], [4, 6]]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  y: {tex: 'X\vec{x}', says: what the sensors read for the pixel, short: readings, kind: vector}
+  P: {tex: P, says: two pixels side by side, short: two pixels, kind: matrix}
+  XP: {tex: XP, says: the readings for both pixels, short: both readings, kind: matrix}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: The product
+    steps:
+      - say: The rule and two pixels.
+        add: [{matrix: X}, {matrix: P}]
+      - add: {product: {m: X, v: P, name: XP, show: [[true, 1]]}}
+  - type: recap
+    answer: Yes.
