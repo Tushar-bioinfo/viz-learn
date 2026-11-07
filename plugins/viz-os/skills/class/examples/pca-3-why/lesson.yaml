@@ -8,26 +8,26 @@ home: cells
 data_file: data.json
 abbr: {PCA: principal component analysis, PC1: the first principal component, PC2: the second principal component, PC3: the third principal component, CD3: a T-cell surface marker, CD19: a B-cell surface marker, CD14: a monocyte surface marker, SVD: singular value decomposition, UMAP: uniform manifold approximation and projection}
 symbols:
-  d1: {tex: 'd_1', says: CD3 measured from the middle, short: CD3 from the middle, color: s1, fmt: 2}
-  d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
-  d3: {tex: 'd_3', says: CD14 measured from the middle, short: CD14 from the middle, color: s3, fmt: 2}
+  d1: {tex: 'd_1', says: CD3 measured from the middle, short: centred CD3, color: s1, fmt: 2}
+  d2: {tex: 'd_2', says: CD19 measured from the middle, short: centred CD19, color: s2, fmt: 2}
+  d3: {tex: 'd_3', says: CD14 measured from the middle, short: centred CD14, color: s3, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
   i: {tex: 'i', says: which cell, color: s4, kind: index}
   j: {tex: 'j', says: which marker, color: s5, kind: index}
-  u1: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3 part, color: s1}
-  u2: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19 part, color: s2}
-  v1: {tex: 'v_1', says: "PC1's arrow, CD3 part", short: PC1's CD3 part, color: s1, fmt: 3}
-  v2: {tex: 'v_2', says: "PC1's arrow, CD19 part", short: PC1's CD19 part, color: s2, fmt: 3}
-  w1: {tex: 'w_1', says: "PC2's arrow, CD3 part", short: PC2's CD3 part, fmt: 3}
-  w2: {tex: 'w_2', says: "PC2's arrow, CD19 part", short: PC2's CD19 part, fmt: 3}
+  u1: {tex: 'u_1', says: how far the arrow goes along CD3, short: u's CD3, color: s1}
+  u2: {tex: 'u_2', says: how far the arrow goes along CD19, short: u's CD19, color: s2}
+  v1: {tex: 'v_1', says: "PC1's arrow, CD3 part", short: PC1's CD3, color: s1, fmt: 3}
+  v2: {tex: 'v_2', says: "PC1's arrow, CD19 part", short: PC1's CD19, color: s2, fmt: 3}
+  w1: {tex: 'w_1', says: "PC2's arrow, CD3 part", short: PC2's CD3, fmt: 3}
+  w2: {tex: 'w_2', says: "PC2's arrow, CD19 part", short: PC2's CD19, fmt: 3}
   a: {tex: 'a', says: how much of u points along PC1, short: PC1 part, color: accent, fmt: 3}
   b: {tex: 'b', says: how much of u points along PC2, short: PC2 part, color: s3, fmt: 3}
-  v_cd3: {tex: 's_1^2', says: the spread of CD3, short: CD3 spread, color: s1, fmt: 3}
+  v_cd3: {tex: 's_1^2', says: how far CD3 levels scatter, short: CD3 spread, color: s1, fmt: 3}
   c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 3}
   lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, fmt: 3}
   lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, fmt: 3}
-  s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: spread along u, fmt: 3}
-  p: {tex: 'a^2', says: the share of the arrow on PC1, short: share on PC1, color: accent, fmt: 2}
+  s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: u spread, fmt: 3}
+  p: {tex: 'a^2', says: the share of the arrow on PC1, short: PC1 share, color: accent, fmt: 2}
   sp: {tex: 's_u^2', says: the spread along the mixed arrow, short: spread now, fmt: 3}
   prod13: {tex: 'd_1 d_3', says: a cell's CD3 and CD14 distances multiplied, short: product, fmt: 2}
   c13: {tex: 'c_{13}', says: the covariance of CD3 and CD14, short: covariance, fmt: 3}
@@ -39,7 +39,7 @@ symbols:
   z2: {tex: 'z_2', says: a cell's score on PC2, short: PC2 score, fmt: 2}
   z3: {tex: 'z_3', says: a cell's score on PC3, short: PC3 score, fmt: 2}
   e2: {tex: 'q', says: PC2's arrow for three markers, short: PC2's arrow, fmt: 3}
-  z2c4: {tex: 'z_{2,c4}', says: c4's score on PC2, short: c4 on PC2, fmt: 2}
+  z2c4: {tex: 'z_{2,c4}', says: c4's score on PC2, short: c4's PC2, fmt: 2}
   lost4: {tex: 'e_{c4}', says: what c4 loses when only PC1 is kept, short: c4's loss, fmt: 3}
   lostall: {tex: 'E', says: what all six cells lose when only PC1 is kept, short: total loss, fmt: 3}
 slides:

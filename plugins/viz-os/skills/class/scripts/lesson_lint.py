@@ -12,13 +12,15 @@ BEATS = {"plan", "problem", "data", "by-hand", "picture", "formula", "run", "wha
 STEP = {"say", "add", "mark", "think", "frame"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "note", "col", "params", "eqn", "assemble", "compare", "ops"} | VIS
+ITEMS = {"calc", "plane", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
           "params": {"say", "names", "side", "id"}}
 TERM = re.compile(r"\[([A-Za-z_]\w*)\]")
 TAGGED = re.compile(r"\[([A-Za-z_]\w*):([^\]]*)\]")
+MATREF = re.compile(r"\\mat\{([A-Za-z_]\w*)(?:\|\d)?\}")   # \mat{X} or \mat{X|2}: a matrix or vector drawn from the data
+OBJ = {"matrix": "matrix", "vector": "vec"}   # symbol kinds drawn in brackets, and the item that draws each
 MATENV = re.compile(r"\\(begin|end)\{[bpvBV]?matrix\}|\\mat\{[^}]*\}")
 
 
@@ -510,7 +512,7 @@ class Ledger:
 
     def __init__(self, B, symbols):
         self.B, self.symbols = B, symbols
-        self.num, self.sym, self.hand = {}, {}, set()
+        self.num, self.sym, self.hand, self.drawn = {}, {}, set(), {}
         tex = [(n, str(v.get("tex"))) for n, v in symbols.items() if isinstance(v, dict) and v.get("tex") and v.get("kind") not in EXEMPT]
         self.tex = sorted(tex, key=lambda x: -len(x[1]))   # longest first, so s^2 is read before s
 
@@ -521,6 +523,24 @@ class Ledger:
                 if by_hand:
                     self.hand.add(n)
 
+    def draw(self, names, pos, by_hand=False):
+        """A matrix or vector drawn as `name = [numbers]`: its number shows, and it may be used by name after."""
+        self.number(names, pos, by_hand)
+        for n in names:
+            self.drawn.setdefault(n, pos)
+
+    def maths(self, tex, pos, by_hand=False, lhs=None):
+        """\\mat{id} in a formula shows id's numbers; it draws id only when the formula also writes `id =` (its TeX or
+        [id], or the `lhs`), so the learner sees the name beside the brackets once before a line uses it."""
+        ids = MATREF.findall(tex)
+        self.number(ids, pos, by_hand)
+        full = (f"[{lhs}] = " if lhs else "") + tex
+        for n in ids:
+            v = self.symbols.get(n) if isinstance(self.symbols.get(n), dict) else {}
+            names = [re.escape(f"[{n}]")] + ([r"(?<![A-Za-z\\])" + re.escape(str(v["tex"]))] if v.get("tex") else [])
+            if re.search(r"(?:" + "|".join(names) + r")\s*=", full):
+                self.drawn.setdefault(n, pos)
+
     def symbol(self, names, pos, what):
         for n in names:
             v = self.symbols.get(n)
@@ -530,8 +550,9 @@ class Ledger:
     def text(self, s, pos, by_hand=False):
         """`{{x}}` shows x's number; a symbol's TeX inside $...$ shows its symbol."""
         self.number(expr_names(self.B, s), pos, by_hand)
-        for m in re.findall(r"\$([^$]+)\$", s):
-            m = EXPRS.sub(" ", m)   # a {{x}} in the maths shows x's number (counted above), not its symbol
+        for m in re.findall(r"\$([^$]+)\$", re.sub(r"`[^`]*`", " ", s)):   # \mat draws only inside maths
+            self.maths(m, pos, by_hand)
+            m = MATREF.sub(" ", EXPRS.sub(" ", m))   # a {{x}} in the maths shows x's number (counted above), not its symbol
             for n, t in self.tex:
                 pat = (r"(?<![A-Za-z\\])" if t[:1].isalpha() else "") + re.escape(t) + (r"(?![A-Za-z])" if t[-1:].isalpha() else "")
                 if re.search(pat, m):
@@ -566,6 +587,7 @@ def scan(B, L, i, s):
         for k, v in prose({x: y for x, y in s.items() if x not in ("title", "lead")}):
             L.text(v, (i, 0))
         if t == "equation":
+            L.maths(str(s.get("tex") or ""), (i, 0), lhs=s.get("lhs"))
             ids = B.idents(s["expr"]) if s.get("expr") else TERM.findall(str(s.get("tex") or ""))
             L.symbol(ids + as_list(s.get("lhs")), (i, 0), "an equation")
             if s.get("expr"):
@@ -591,16 +613,23 @@ def scan(B, L, i, s):
             if not isinstance(it, dict):
                 continue
             c, e, a, pr, op, col = (it.get(k) for k in ("calc", "eqn", "assemble", "params", "ops", "col"))
+            for k in ("matrix", "vec"):
+                if isinstance(it.get(k), str):
+                    L.draw([it[k]], p, hand)
+                    L.symbol([it[k]], p, f"a `{k}` item")
             if isinstance(c, dict) and c.get("expr"):
                 ids = B.idents(c["expr"]) + as_list(c.get("name"))
                 L.number(ids, p, hand)
                 L.symbol(ids, p, "a worked line")
             if isinstance(e, dict):
+                L.maths(str(e.get("tex") or ""), p, hand, e.get("lhs"))
                 ids = (B.idents(e["expr"]) if e.get("expr") else TERM.findall(str(e.get("tex") or ""))) + as_list(e.get("lhs"))
                 L.symbol(ids, p, "an equation")
                 if e.get("expr"):
                     L.number(ids, p, hand)
             if isinstance(a, dict):   # numbers row on this click, symbols row on the next
+                L.maths(str(a.get("plug") or ""), p, hand, a.get("lhs"))
+                L.maths(str(a.get("tex") or ""), (i, j + 1), hand, a.get("lhs"))
                 L.number([n for n, _ in TAGGED.findall(str(a.get("plug") or ""))] + as_list(a.get("lhs")), p, hand)
                 L.symbol(TERM.findall(str(a.get("tex") or "")) + as_list(a.get("lhs")), (i, j + 1), "the formula strip")
             if isinstance(pr, dict):
@@ -642,6 +671,13 @@ def lint_order(B, Lx, deck):
                 Lx.err(slide_where(i, s), "a formula scene builds its formula with an `assemble` item, from numbers worked by hand earlier")
         scan(B, L, i, s)
     for n, ((i, j), what) in sorted(L.sym.items(), key=lambda x: x[1][0]):
+        k = symbols[n].get("kind")
+        if k in OBJ:   # show before using: a matrix or vector is drawn with its numbers before its name is used
+            d = L.drawn.get(n)
+            if d is None or d > (i, j):
+                Lx.err(slide_where(i, slides[i]), f"`{n}` (${symbols[n].get('tex') or n}$) is a {k} used on {at(i, j)} ({what}) before it is drawn with its numbers"
+                       f"{' (first drawn on ' + at(*d) + ')' if d else ''}: draw it first with `add: {{{OBJ[k]}: {n}}}`, or as `{symbols[n].get('tex') or n} = \\mat{{{n}}}` in a formula")
+            continue
         p = L.num.get(n)
         if p is None or p > (i, j):
             tex = symbols[n].get("tex")
@@ -746,6 +782,161 @@ def lint_known(B, Lx, deck, glob):
                          "so put it in data.json (make_data.py) or the top-level `derive:`")
 
 
+def shape_of(v):
+    """(rows, columns) of a list of equal rows of numbers, (n, None) of a flat list of numbers, else None."""
+    num = lambda x: isinstance(x, (int, float)) and not isinstance(x, bool)
+    if isinstance(v, list) and v and all(num(x) for x in v):
+        return len(v), None
+    if isinstance(v, list) and v and all(isinstance(r, list) and r and all(num(x) for x in r) for r in v) and len({len(r) for r in v}) == 1:
+        return len(v), len(v[0])
+    return None
+
+
+def strings(node):
+    if isinstance(node, dict):
+        for v in node.values():
+            yield from strings(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from strings(v)
+    elif isinstance(node, str):
+        yield node
+
+
+def lint_objects(Lx, deck, data, glob):
+    """A `kind: matrix|vector` symbol: its numbers are in the data, in that shape, with one colour per column or row;
+    every `matrix`, `vec` item and \\mat{} names such a symbol."""
+    symbols = deck.get("symbols") or {}
+    values = {**(deck.get("data") or {}), **(data or {})}
+    glob = set(glob) | {k for s in deck.get("slides") or [] if isinstance(s.get("derive"), dict) for k in s["derive"]}
+    for n, v in symbols.items():
+        if not isinstance(v, dict):
+            continue
+        k, w = v.get("kind"), f"symbols.{n}"
+        if k not in OBJ:
+            if v.get("cols") is not None or v.get("rows") is not None:
+                Lx.err(w, "`cols:` and `rows:` colour a matrix or a vector: add `kind: matrix` or `kind: vector`")
+            continue
+        same = [m for m, u in symbols.items() if m != n and isinstance(u, dict) and v.get("tex") and norm_name(u.get("tex", "")) == norm_name(v["tex"])]
+        if same:
+            Lx.err(w, f"`{n}` and `{same[0]}` are both written ${v['tex']}$: a {k} needs its own TeX, so the learner can tell which one a line means")
+        if v.get("cols") is not None and v.get("rows") is not None:
+            Lx.err(w, "give `cols:` or `rows:`, not both: a cell takes one colour")
+        if k == "vector" and v.get("cols") is not None:
+            Lx.err(w, "a vector takes `rows:` (one colour per entry), not `cols:`")
+        if v.get("fmt") is not None and (isinstance(v["fmt"], bool) or not isinstance(v["fmt"], int)):
+            Lx.err(w, f"a {k}'s `fmt` is its number of decimals (`fmt: 1`); `{v['fmt']}` does not apply to brackets")
+        if n not in values:
+            if n not in glob:
+                Lx.err(w, f"`kind: {k}` draws `{n}` from the data, but data.json has no `{n}`: write its numbers in make_data.py")
+            continue
+        sh = shape_of(values[n])
+        if sh is None:
+            Lx.err(w, f"`{n}` in the data is not a list of numbers (a vector) or a list of equal rows of numbers (a matrix)")
+            continue
+        r, c = sh
+        if k == "matrix" and c is None:
+            Lx.err(w, f"`{n}` is a flat list of {r} numbers, a vector: write `kind: vector`, or make it a list of rows")
+            continue
+        if k == "vector" and c is not None:
+            Lx.err(w, f"`{n}` is {r} rows of {c}, a matrix: write `kind: matrix`, or make it a flat list")
+            continue
+        for f, want in (("cols", c), ("rows", r)):
+            got = v.get(f)
+            if got is not None and want is not None and (not isinstance(got, list) or len(got) != want):
+                Lx.err(w, f"`{f}:` gives {len(got) if isinstance(got, list) else 1} colour(s), but `{n}` has {want} {'columns' if f == 'cols' else 'rows'}: one colour each")
+    def ref(where, n, item=None):
+        v = symbols.get(n)
+        if not isinstance(v, dict):
+            Lx.err(where, f"`{n}` is not a symbol: add `{n}: {{tex: ..., says: ..., kind: matrix}}` (or `kind: vector`) under symbols")
+        elif v.get("kind") not in OBJ:
+            Lx.err(where, f"`{n}` has no `kind: matrix` or `kind: vector`, so it cannot be drawn in brackets: add the kind")
+        elif item and OBJ[v["kind"]] != item:
+            Lx.err(where, f"`{n}` is a {v['kind']}: draw it with `{OBJ[v['kind']]}: {n}`, not `{item}: {n}`")
+    def places(n, d):
+        """The decimals \\mat{n|d} shows, as slides.js picks them; None when the data cannot say (a derived name)."""
+        v = symbols.get(n) if isinstance(symbols.get(n), dict) else {}
+        if d:
+            return int(d)
+        if isinstance(v.get("fmt"), int) and not isinstance(v.get("fmt"), bool):
+            return v["fmt"]
+        sh = shape_of(values.get(n))
+        if sh is None:
+            return None
+        flat = [x for r in values[n] for x in (r if isinstance(r, list) else [r])]
+        return max(next((p for p in (0, 1, 2) if abs(round(x, p) - x) < 1e-9), 2) for x in flat)
+    for i, s in enumerate(deck.get("slides") or []):
+        w = slide_where(i, s)
+        for n in dict.fromkeys(m for x in strings(s) for m in MATREF.findall(x)):
+            ref(w, n)
+        for k, x in prose(s):
+            if MATREF.search(re.sub(r"`[^`]*`|\$[^$]*\$", " ", x)):
+                Lx.err(w, f"`{k}` has \\mat{{…}} outside $…$, where it shows as plain text: write it inside $…$")
+        for x in strings(s):
+            for f in re.findall(r"\$([^$]+)\$", x) or [x]:
+                ds = {places(n, d) for n, d in re.findall(r"\\mat\{([A-Za-z_]\w*)(?:\|(\d))?\}", f)} - {None}
+                if len(ds) > 1:
+                    Lx.warn(w, f"one formula shows its \\mat objects with {' and '.join(map(str, sorted(ds)))} decimals: use one format across it (\\mat{{X|d}})")
+        for _, it in items_of(s):
+            for k in ("matrix", "vec"):
+                if k in it:
+                    if not isinstance(it[k], str):
+                        Lx.err(w, f"`{k}:` takes a symbol's name: `add: {{{k}: X}}`")
+                        continue
+                    ref(w, it[k], k)
+                    extra = set(it) - {k, "id"} - ({"row"} if k == "vec" else set())
+                    if extra:
+                        Lx.err(w, f"`{k}: {it[k]}` takes only `id`{' and `row: true`' if k == 'vec' else ''}; got {', '.join(sorted(extra))}")
+
+
+SHORT_WORDS = 2
+FILLER = {"a", "an", "the", "of", "level", "value", "its", "each", "for", "in", "on", "to", "is"}   # words that add nothing to a name
+
+
+def card_symbols(B, deck):
+    """The symbols whose name opens a pop-up card on the board: a formula's terms and left side, a worked line's inputs and
+    result, and every matrix or vector drawn in brackets."""
+    out = set()
+    for s in deck.get("slides") or []:
+        if s.get("type") != "board":
+            continue
+        for x in strings(s):
+            out |= set(MATREF.findall(x))
+        for _, it in items_of(s):
+            for k in ("matrix", "vec"):
+                if isinstance(it.get(k), str):
+                    out.add(it[k])
+            for k in ("eqn", "assemble", "calc"):
+                f = it.get(k)
+                if isinstance(f, dict):
+                    out |= set(TERM.findall(str(f.get("tex") or ""))) | {n for n, _ in TAGGED.findall(str(f.get("plug") or ""))}
+                    out |= set(B.idents(str(f.get("expr") or ""))) | set(as_list(f.get("lhs"))) | set(as_list(f.get("name")))
+    return out
+
+
+def lint_names(B, Lx, deck):
+    """A symbol that opens a card has a `short` name of at most 2 words, and its `says` adds words beyond that name."""
+    words_of = lambda t: re.findall(r"[a-z0-9]+", L_plain(t).lower())
+    symbols = deck.get("symbols") or {}
+    used = card_symbols(B, deck)
+    for n, v in symbols.items():
+        if not isinstance(v, dict):
+            continue
+        w, short = f"symbols.{n}", v.get("short")
+        if short is not None and len(str(short).split()) > SHORT_WORDS:
+            Lx.err(w, f"`short` “{short}” has {len(str(short).split())} words: a name is {SHORT_WORDS} words at most (the card's bold title); the rest goes in `says`")
+        if n in used and not short:
+            Lx.err(w, f"`{n}` opens a pop-up card on the board, so it needs `short:` (its name, {SHORT_WORDS} words at most)")
+        if short and v.get("says"):
+            extra = set(words_of(v["says"])) - set(words_of(short)) - FILLER
+            if not extra:
+                Lx.warn(w, f"`says` “{v['says']}” only repeats `short` “{short}”: say what it means, what it is made from, or where it sits")
+
+
+def L_plain(t):
+    return re.sub(r"\\[A-Za-z]+|[{}$_^\\]", " ", str(t))
+
+
 def lint_recall(Lx, deck, state):
     """R23: what `recall:` could not do, and a later episode that recalls nothing."""
     for msg in state.get("errs", ()):
@@ -760,5 +951,5 @@ def make_lint(B, data):
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
-        lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob)
+        lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck)
     return lesson_lint

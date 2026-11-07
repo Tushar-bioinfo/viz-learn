@@ -9,8 +9,8 @@ A learner lost the thread of a matrix lesson: matrices were described in words b
 
 ## How we work (the user's rules)
 1. **Explain first, in plain words and pictures.** Before finalizing any visual or conceptual change, show the user what the learner will see (mock-up or screenshot), the YAML an author writes, its token cost and what the lint says. The user does not read diffs: show before/after pictures of real figures or boards (2–3 examples is enough). Wait for approval.
-2. **Implement by delegation** (agent-delegate skill): Opus 5.5 medium implements (`--to claude --model opus --effort medium`); Sol 6.1 xhigh reviews the diff (`--to codex --model sol-6.1-xhigh --role reviewer`); Terra 6.1 xhigh researches (`--to codex --model gpt-6.1-terra --effort xhigh`, slug not yet tested). If a run's status is not success or its model differs, report `error_message` and `.model` verbatim and stop.
-3. After each change: run `tools/check-all.sh` yourself and compare with the previous counts; send Sol's findings back to Opus; show the user before/after; get approval; then commit (and push only when the user says so).
+2. **Implement by delegation** (agent-delegate skill): Opus 5.5 medium implements (`--to claude --model opus --effort medium`); Grok 4.7 high reviews the diff (`--to grok --model grok-4.7 --effort high --role reviewer`; it runs unsandboxed, so check `git status` after it); Terra 6.1 xhigh researches (`--to codex --model gpt-6.1-terra --effort xhigh`, slug not yet tested). If a run's status is not success or its model differs, report `error_message` and `.model` verbatim and stop.
+3. After each change: run `tools/check-all.sh` yourself and compare with the previous counts; send Grok's findings back to Opus; show the user before/after; get approval; then commit (and push only when the user says so).
 4. **Token efficiency:** a run of the plugin pays for every line in `SKILL.md`, `board.md`, `lesson.md`. Budget for the whole effort: `board.md` ≤ +60 lines, `lesson.md` ≤ +10, `SKILL.md` ≤ +3. New rules go into lints (messages in `lint.md`, read only after an error), not prose. "adv" guidance lives in its own file.
 5. Leave the user's own uncommitted edits in `docs/backlog.md` and `docs/release.md` alone. No installs, version bumps or publishing without asking. Never edit the installed plugin cache.
 6. When a change is done, set its status here, add one line under "Decisions" for anything someone could undo by mistake, and commit this file with the change.
@@ -20,7 +20,7 @@ A learner lost the thread of a matrix lesson: matrices were described in words b
 |---|---|---|
 | 1 | Kit bug fixes: legend kept marks with `name`+`label`; `{{…}}` inside `$…$`; a bracket matrix counts as one term; hex colours everywhere (incl. `==#cc6600:text==`) | **done** |
 | 1b | Figure key: short legend at top (≤2 words, ≤5 entries); on-plot names ≤2 words, 18 px, beside the middle of arrows/segments, clear of shapes; long text in `says:` → pop-up on hover/tap/Tab; pause-pop-ups button above the step rail; lints for long labels, too many entries, unexplained names, unknown mark keys (unquoted commas) | **done** |
-| 2 | Matrices and vectors as board items from `data.json` (below) | next |
+| 2 | Matrices and vectors as board items from `data.json` (below); names in formulas move to pop-up cards (user's "Yours" card look) | **done** |
 | 3 | Worked product: `add: {product: {m: X, v: p5, way: rows|cols}}`, up to 4×4, matrix × matrix too; one board step per line; optional tip-to-tail plane mark. **Ask the user:** auto-generated lines vs. author picks which lines to show | todo |
 | 4 | Show the real effect: `swatch` item/mark in true colour from numbers, before → after; point to `units` for counts; fact-check lint (colour name must match computed colour: equal red + green, no blue = yellow); `lesson.md`: "show the change, don't name it" | todo |
 | 5 | Controls explain themselves: every slider/run has a plain `label` (≤6 words) and a live readout (e.g. `\mat{Xs}` with `derive`); lint warns when nothing on the scene reads the control; one `fmt` per matrix (no mixed 1 / 1.00) | todo |
@@ -42,5 +42,12 @@ A learner lost the thread of a matrix lesson: matrices were described in words b
 
 ## Decisions (do not undo by mistake)
 - Legend = short tags at the top; explanations live in `says:` pop-ups, not under the plot (user disliked a key below the figure).
-- Pop-up text is 11 px (user's pick in the playground), below the page's 15 px floor; recorded in `plugins/viz-os/docs/design.md`.
+- Pop-up text is 14 px (user's pick in change 2; it was 11 px in 1b), below the page's 15 px floor; recorded in `plugins/viz-os/docs/design.md`.
 - Pause button pauses hover only; tap, click and Tab still open a pop-up.
+- Change 2: one step gap of 18 px everywhere on a board (`.board .st`, and a stacked figure's line via `margin-bottom: -10px`); `check_board_ui.py` tests 18. An `ops` card is capped so it, the line above it and its buttons fit the window with the scene head in view (it was 2 px over at 1280 × 720 after the gap change).
+- Change 2: a row vector is drawn as `<tex> = [ … ]` with no ⊤, as the spec says; `\mat{}` colours ship in `vizos.css` (`.kc-*`), so decks get them; sketch is not tested.
+- Change 2 review: a matrix or vector counts as drawn only as `name = [numbers]` (an item, or `X = \mat{X}` inside maths, an `lhs` counts); bare brackets or `\mat` outside `$…$` show numbers but do not license the name. A kind: matrix|vector symbol may not share its TeX. The board's colouring skips `\mkern` sizes.
+- Change 2 round 3: no dotted underline on pop-up targets; a target lifts (brighter, a glow in its colour) and the rest of its formula fades (dim). One card look for every pop-up on a board.
+- Change 2 round 3: the pop-up card is 50% see-through (rgba(11,12,14,.5)); the user kept it knowing numbers behind show through.
+- Change 2 round 3: names in formulas live in pop-ups only (option F): no names under symbols or brackets, no key row; a teacher line still names a plane mark's name (lint).
+- Change 2 round 4: every symbol that opens a card has a `short` of ≤ 2 words (error); `says` that adds no words beyond `short` warns. The glow colour is a plain rgba worked out in board.js (a filter with nested var()/color-mix computes to no shadow); keyboard focus also gets an orange ring. An open card follows its term through any redraw by the term's kind and its place among terms of that kind.

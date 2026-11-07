@@ -1,0 +1,23 @@
+# expect: has \mat{…} outside $…$, where it shows as plain text
+# expect: `cellmat` ($C$) is a matrix used on slide 2 step 2 (in the text) before it is drawn
+# expect: `p5` ($\vec{x}$) is a vector used on slide 2 step 4 (in the text) before it is drawn
+# \mat outside maths, or in a code span, shows as plain text: it neither draws the matrix nor lets a later line name it.
+title: Brackets outside maths
+question: Does \mat in plain text draw anything?
+answer: No.
+data: {cellmat: [[4.3, 3.5], [5.3, 1.4]], p5: [8, 4]}
+symbols:
+  cellmat: {tex: C, says: two cells by two markers, kind: matrix}
+  p5: {tex: '\vec{x}', says: the orange pixel, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Plain text
+    steps:
+      - say: 'Use \mat{cellmat} in the notes.'
+      - say: 'Now look at $C$.'
+      - say: 'Type `\mat{p5}` to draw the pixel.'
+      - say: 'Now look at $\vec{x}$.'
+  - type: recap
+    answer: Brackets live in maths.

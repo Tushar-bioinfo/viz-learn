@@ -6,15 +6,15 @@ question: Does a nested matrix count as one term?
 answer: Yes, the outer brackets hold it all.
 data: {a: 2, b: 1, c: 0, d: 3, e: 4, f: 5, g: 6, h: 7, y: 8}
 symbols:
-  a: {tex: 'a', says: the top-left entry}
-  b: {tex: 'b', says: the inner entry}
-  c: {tex: 'c', says: the bottom-left entry}
-  d: {tex: 'd', says: the bottom-right entry}
-  e: {tex: 'e', says: the first shift}
-  f: {tex: 'f', says: the second shift}
-  g: {tex: 'g', says: the third shift}
-  h: {tex: 'h', says: the fourth shift}
-  y: {tex: 'y', says: the output}
+  a: {tex: 'a', says: the top-left entry, short: top-left entry}
+  b: {tex: 'b', says: the inner entry, short: inner entry}
+  c: {tex: 'c', says: the bottom-left entry, short: bottom-left entry}
+  d: {tex: 'd', says: the bottom-right entry, short: bottom-right entry}
+  e: {tex: 'e', says: the first shift, short: first shift}
+  f: {tex: 'f', says: the second shift, short: second shift}
+  g: {tex: 'g', says: the third shift, short: third shift}
+  h: {tex: 'h', says: the fourth shift, short: fourth shift}
+  y: {tex: 'y', says: the output, short: output}
 slides:
   - type: title
   - type: board

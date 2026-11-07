@@ -26,7 +26,7 @@ The lint checks the ends: `plan` first, a `problem` before any `formula`, `limit
 | `data` | Puts the learner's toy table on the board and points at what matters in it. | a `table`, a chart of it, a mark on a row or column |
 | `by-hand` | Works the method on the table, one operation per step, and names each new number. The core of every lesson. | `table`, `calc` lines, new `col`s, `mark` |
 | `picture` | Shows what the numbers look like: a distance as a drop, a square as an area, a weight as a slope. | `plane` (equal scales), chart, image |
-| `formula` | Builds the formula from the by-hand numbers (`assemble`): our numbers, then the symbols under them, each term named. | `assemble`, `eqn` |
+| `formula` | Builds the formula from the by-hand numbers (`assemble`): our numbers, then the symbols under them; the next line names the terms (each also has its pop-up card). | `assemble`, `eqn` |
 | `run` | Runs an iterative method frame by frame, or the same rule across a whole table. | a run control, `plane`, `params`, `ops` |
 | `what-if` | Changes one input and shows what moves: a slider, a flipped count, one cell removed. The change moves a picture, not only numbers. | a slider or toggle with a `chart` or `plane`, a `compare` |
 | `limits` | Shows where the method breaks or what it assumes, on the same data where possible. | `parts`, a chart, a think stop |

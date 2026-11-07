@@ -1,0 +1,19 @@
+# expect: builds
+# expect: not: formula error
+# A formula with no named terms (plain TeX) and no plane: nothing opens a card, so the page has no pause button
+# (tools/check_board_ui.py checks the page).
+title: A formula with no names
+question: Does a formula need a card?
+answer: Only when it names a symbol.
+data: {n: 3}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Plain maths
+    steps:
+      - say: 'There are {{n}} cells.'
+      - say: A rule written out.
+        add: {eqn: {say: Pythagoras, tex: 'a^2 + b^2 = c^2'}}
+  - type: recap
+    answer: Cards come from symbols.

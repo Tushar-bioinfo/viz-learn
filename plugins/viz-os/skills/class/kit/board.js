@@ -45,7 +45,8 @@
   // A symbol's own `color` wins. One with none takes the next unused colour at boot, in the order the lesson lists them;
   // operators are left out, a symbol that is a whole expression stays ink, and when the five run out the rest stay ink. An ink symbol is
   // still ink everywhere: it does not take the grey of the card it stands on
-  const PALETTE = ['s1', 's2', 's3', 's4', 's5'], ARGS = new Set(['\\htmlClass', '\\text', '\\textbf', '\\mathrm', '\\operatorname', '\\begin', '\\end', '\\color']);
+  const PALETTE = ['s1', 's2', 's3', 's4', 's5'], ARGS = new Set(['\\htmlClass', '\\text', '\\textbf', '\\mathrm', '\\operatorname', '\\begin', '\\end', '\\color', '\\textcolor']);
+  const KERN = /^\\(?:mkern|mskip|kern|hskip|mspace)$/;
   const atomic = t => !/[\s+=]|.-/.test(t);
   let book = null;
   const bookOf = () => { const S = L.deck && L.deck.symbols; if (!S) return null; if (book && book.S === S) return book;
@@ -59,7 +60,9 @@
   const paint = tex => { const B = bookOf(); if (!B || !B.list.length) return tex; let out = '', i = 0; const cls = (q, t) => `\\htmlClass{sy sy-${q}}{${t}}`;
     while (i < tex.length) {
       const hit = B.list.find(x => tex.startsWith(x.tex, i)); if (hit) { out += cls(hit.q, hit.tex); i += hit.tex.length; continue; }
-      if (tex[i] === '\\') { const w = /^\\(?:[A-Za-z]+\*?|[\s\S])/.exec(tex.slice(i))[0]; out += w; i += w.length; if (ARGS.has(w)) { const e = closeOf(tex, i); out += tex.slice(i, e); i = e; } continue; }
+      if (tex[i] === '\\') { const w = /^\\(?:[A-Za-z]+\*?|[\s\S])/.exec(tex.slice(i))[0]; out += w; i += w.length; if (ARGS.has(w)) { let e = closeOf(tex, i); if (w === '\\begin') e = closeOf(tex, e); out += tex.slice(i, e); i = e; }
+        else if (KERN.test(w)) { const z = /^\s*-?[\d.]+\s*[a-z]{2}/.exec(tex.slice(i)); if (z) { out += z[0]; i += z[0].length; } }   // \mkern-1mu: its size is not a symbol
+        continue; }   // an array's column letters too
       const m = tex[i] === '_' && /^_(?:\{([a-z](?:,?[a-z])*)\}|([a-z]))/.exec(tex.slice(i));
       if (m && [...(m[1] ?? m[2])].every(c => c === ',' || B.index[c])) { out += `_{${[...(m[1] ?? m[2])].map(c => B.index[c] ? cls(B.index[c], c) : c).join('')}}`; i += m[0].length; continue; }
       out += tex[i++]; }
@@ -67,7 +70,94 @@
   // all math on the page comes through here, the deck's matrix cards too
   const renderTex = L.renderTex;
   L.renderTex = (el, tex, display) => { const ok = renderTex(el, paint(tex), display); const B = bookOf();
-    if (B) el.querySelectorAll('.sy').forEach(e => { const x = B.S[[...e.classList].find(c => c.startsWith('sy-')).slice(3)]; if (x) e.style.color = col(x.color); }); return ok; };
+    if (B) el.querySelectorAll('.sy').forEach(e => { const x = B.S[[...e.classList].find(c => c.startsWith('sy-')).slice(3)]; if (x) e.style.color = col(x.color); });
+    if (B) el.querySelectorAll('.lt, .mt').forEach(tg => { const sym = B.S[termOf(tg)]; if (!sym || !sym.says) return;   // a formula's term, or \mat's brackets: one term with its card
+      tg.classList.add('vt', 'says'); tg.tabIndex = 0; glow(tg, hue(sym.color)); tg.setAttribute('aria-description', L.plain(String(sym.says))); pauseButton(); });
+    return ok; };
+  const termOf = el => { const cl = [...el.classList].find(k => k.startsWith('lt-') || k.startsWith('mt-')); return cl ? cl.slice(3) : null; };
+  const hue = c => !c || c === 'ink' ? 'var(--mist)' : col(c);   // an ink symbol's card and glow are grey
+  // the glow's colour, worked out once per colour as a plain rgba: a filter cannot take a colour built from nested var()s
+  const glows = {};
+  const glow = (el, c) => { if (!(c in glows)) { const probe = document.createElement('span'); probe.style.color = c; document.body.appendChild(probe);
+      const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(probe).color); probe.remove(); const [r, g, b] = m ? m[1].split(',').map(Number) : [162, 159, 151]; glows[c] = `rgba(${r}, ${g}, ${b}, 0.45)`; }
+    el.style.setProperty('--hc', c); el.style.setProperty('--hg', glows[c]); };
+
+  // ---------- pop-up cards: one look for every name on a board (a formula's term, a matrix, a plane mark, a legend entry) ----------
+  // The title line is the notation in its colour, the bold `short` name and its value now (a number); then `says`; then its
+  // shape, worked out from the data. The card is half see-through, framed in the term's colour, and as wide as its widest line.
+  // It opens on point, tap, click or Tab; a click pins it. Pointing at a term lifts it (brighter, a glow in its colour), and the
+  // rest of its formula fades. Its text fills only while open, so the page audit never reads it. Listeners sit on the document,
+  // because a formula is drawn again when a slider moves
+  let card = null, cur = null, pinned = null;
+  const slideOf = el => (L.slides || []).find(sl => sl.r && sl.r.node && sl.r.node.contains(el));
+  const symCard = el => { const q = termOf(el), B = bookOf(), S = (B && B.S[q]) || {}, sl = slideOf(el), scope = sl ? sl.ctx.scope : {}, v = scope[q];
+    let shape = null, value = null;
+    if (S.kind === 'matrix' || S.kind === 'vector') { if (Array.isArray(v)) shape = Array.isArray(v[0]) ? `${v.length} × ${v[0].length}` : el.closest('.mrow') ? `1 × ${v.length}` : `${v.length} × 1`; }
+    else if (S.kind !== 'index' && S.kind !== 'operator' && typeof v === 'number') { value = L.fmt(v, S.fmt ?? 's4'); shape = 'one number'; }
+    return { tex: S.tex || L.autoSym(q), c: hue(S.color), ink: !S.color || S.color === 'ink', name: S.short, says: S.says, value, shape, scope }; };
+  // the card as wide as its widest line, so its left and right padding match
+  const fitCard = k => { k.style.width = ''; const r = k.getBoundingClientRect(), rg = document.createRange(), wk = document.createTreeWalker(k, NodeFilter.SHOW_TEXT); let max = r.left;
+    while (wk.nextNode()) { if (wk.currentNode.parentElement.closest('.katex-mathml')) continue; rg.selectNodeContents(wk.currentNode); for (const q of rg.getClientRects()) if (q.width) max = Math.max(max, q.right); }
+    k.querySelectorAll('.katex-html, svg, .chip').forEach(q => { max = Math.max(max, q.getBoundingClientRect().right); });
+    const cs = getComputedStyle(k); k.style.width = Math.ceil(max - r.left + parseFloat(cs.paddingRight) + parseFloat(cs.borderRightWidth)) + 'px'; };
+  // a KaTeX span is one line tall, so a term's box is the union of what it draws (a tall bracket, a fraction)
+  const termBox = el => { const r = [el, ...el.querySelectorAll('*')].map(e => e.getBoundingClientRect()).filter(q => q.width && q.height)
+    .reduce((u, q) => ({ left: Math.min(u.left, q.left), right: Math.max(u.right, q.right), top: Math.min(u.top, q.top), bottom: Math.max(u.bottom, q.bottom) }), el.getBoundingClientRect());
+    return { ...r, width: r.right - r.left, height: r.bottom - r.top }; };
+  // under the term, its pointer at the term's middle; above it when there is more room there; always inside the window
+  const place = (k, el) => { k.style.left = '0px'; k.style.top = '0px'; fitCard(k);
+    const r = termBox(el), w = k.offsetWidth, hh = k.offsetHeight, gap = 9, vw = document.documentElement.clientWidth, mid = r.left + r.width / 2;
+    const below = innerHeight - r.bottom - gap, above = r.top - gap, up = below < hh && (above >= hh || above > below), x = Math.max(6, Math.min(vw - 6 - w, mid - 22));
+    const y = Math.max(6, Math.min(innerHeight - 6 - hh, up ? r.top - gap - hh : r.bottom + gap));
+    k.classList.toggle('up', up); k.querySelector('.caret').style.left = Math.max(6, Math.min(w - 18, mid - x - 6)) + 'px';
+    k.style.left = x + scrollX + 'px'; k.style.top = y + scrollY + 'px'; at = [r.left, r.top, r.right, r.bottom].map(Math.round).join();
+    // keyboard focus: one ring round the whole term (an outline on a KaTeX span breaks into a box per piece)
+    if (!ring) { ring = h('div', 'vring'); document.body.appendChild(ring); }
+    const kb = document.activeElement === el && el.matches(':focus-visible'); ring.classList.toggle('on', kb);
+    if (kb) Object.assign(ring.style, { left: r.left - 4 + scrollX + 'px', top: r.top - 4 + scrollY + 'px', width: r.width + 8 + 'px', height: r.height + 8 + 'px' }); };
+  const undim = () => { document.querySelectorAll('.board .dm').forEach(e => e.classList.remove('dm')); if (cur) cur.classList.remove('act'); };
+  // the rest of the formula fades: every other piece of its maths, at each level from the term up to the formula
+  const dim = el => { const m = el.closest('.math'), root = el.closest('.katex-html'); if (!m || !root) return;
+    m.querySelectorAll('.katex-html').forEach(kh => { if (kh !== root) kh.classList.add('dm'); });
+    for (let n = el; n !== root; n = n.parentElement) [...n.parentElement.children].forEach(sib => { if (sib !== n) sib.classList.add('dm'); }); };
+  // where the open term sits, so a redraw (a slider, a run, a resize, a font, a plane laid out again) finds the same one:
+  // its kind of term and its place among the page's terms of that kind
+  const keyOf = el => termOf(el) ? [...el.classList].find(k => /^(lt|mt)-/.test(k)) : `mk:${el.textContent}`;
+  const sameAs = key => [...document.querySelectorAll('.vt')].filter(x => keyOf(x) === key);
+  let where = null, sig = '', at = '', ticker = 0, focused = false, ring = null;
+  const sigOf = d => JSON.stringify([d.tex, d.name, d.value, d.shape, d.c, L.plain(String(d.says || ''), d.scope || {})]);
+  const tick = () => { if (!cur) { clearInterval(ticker); ticker = 0; return; }
+    const was = pinned, wasF = focused;
+    if (!cur.isConnected) { const el = where && sameAs(where.key)[where.i]; if (!el) { popHide(); return; }
+      popShow(el); if (was) pinned = el; if (wasF) { el.focus({ preventScroll: true }); focused = true; } return; }
+    const d = cur._pd ? cur._pd() : symCard(cur), r = termBox(cur);
+    if (sigOf(d) !== sig) { popShow(cur); if (was) pinned = cur; }
+    else if ([r.left, r.top, r.right, r.bottom].map(Math.round).join() !== at) place(card, cur); };
+  const popHide = () => { undim(); if (ring) ring.classList.remove('on'); if (card) { card.classList.remove('on'); card.innerHTML = ''; } cur = pinned = where = null; focused = false; };
+  const popShow = el => {
+    if (el.closest('[data-step]:not(.shown)')) return;
+    undim(); const d = el._pd ? el._pd() : symCard(el);
+    const key = keyOf(el); where = { key, i: sameAs(key).indexOf(el) }; sig = sigOf(d); focused = document.activeElement === el;
+    if (!ticker) ticker = setInterval(tick, 150);
+    if (!card) { card = h('div', 'vpop'); card.setAttribute('role', 'tooltip'); document.body.appendChild(card); }
+    cur = el; el.classList.add('act'); dim(el); card.style.setProperty('--bc', d.c);
+    card.innerHTML = `<div class="ttl">${d.swatch || '<span class="nt"></span>'}${d.name ? `<b>${md(d.name)}</b>` : ''}${d.value != null ? `<span class="vv">= ${L.esc(d.value)}</span>` : ''}</div>` +
+      `${d.says ? `<div class="ds">${md(d.says)}</div>` : ''}${d.shape ? `<span class="chip">${L.esc(d.shape)}</span>` : ''}<i class="caret"></i>`;
+    const nt = card.querySelector('.nt'); if (nt) { renderTex(nt, d.tex, false); nt.style.color = d.ink ? 'var(--ink)' : d.c; }
+    L.fill(card, d.scope || {}); card.classList.add('on'); place(card, el); };
+  const vt = e => e && e.closest ? e.closest('.vt') : null;
+  // a redraw under a still pointer sends a mouseover to the new drawing: leave that to tick, which keeps the focus
+  document.addEventListener('mouseover', e => { const tg = vt(e.target); if (tg && tg !== cur && !hoverOff && !pinned && !(cur && !cur.isConnected)) popShow(tg); });
+  document.addEventListener('mouseout', e => { const tg = vt(e.target); if (tg && tg === cur && !tg.contains(e.relatedTarget) && pinned !== tg && document.activeElement !== tg) popHide(); });
+  document.addEventListener('focusin', e => { const tg = vt(e.target); if (tg && tg !== cur) popShow(tg); });
+  document.addEventListener('focusout', e => { const tg = vt(e.target); if (tg && tg === cur && pinned !== tg && tg.isConnected) requestAnimationFrame(() => { if (cur === tg && tg.isConnected && document.activeElement !== tg) popHide(); }); });
+  // a tap focuses the term (which opens the card) and then clicks it, so the click pins it open rather than toggling
+  document.addEventListener('click', e => { const tg = vt(e.target);
+    if (tg) { if (pinned === tg) { popHide(); tg.blur(); } else { if (cur !== tg) popShow(tg); if (cur === tg) pinned = tg; } }
+    else if (cur && !(card && card.contains(e.target))) popHide(); });
+  // Escape closes an open card wherever it came from; pausing closes one that pointing opened; a redraw that drops the term closes it
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && cur) { const el = cur; popHide(); if (document.activeElement === el) el.blur(); } });
+  document.addEventListener('vizos-hoverpause', () => { if (hoverOff && cur && cur !== pinned && document.activeElement !== cur) popHide(); });
   const BEAT = { 'by-hand': 'By hand', 'what-if': 'What if', misconception: 'A common mix-up' };
   const beatLabel = b => BEAT[b] || (b ? b[0].toUpperCase() + b.slice(1).replace(/-/g, ' ') : '');
 
@@ -83,25 +173,6 @@
   const FLOOR = 20, wideOf = m => Math.max(0, ...[...m.querySelectorAll('.katex')].filter(k => !k.closest('.wkey')).map(k => k.getBoundingClientRect().width));
   const fitMath = ms => { ms.forEach(m => { m.style.fontSize = ''; }); const k = Math.min(1, ...ms.map(m => { const w = wideOf(m); return w && m.clientWidth ? m.clientWidth / w : 1; }));
     if (k < 1) ms.forEach(m => { m.style.fontSize = Math.max(FLOOR, Math.floor(parseFloat(getComputedStyle(m).fontSize) * k * 2) / 2) + 'px'; }); };
-  // names under the formula's symbols, centred on the symbol, sliding a little to clear each other. If two would touch, or the
-  // formula has a fraction, they never stack: one key row goes under the formula instead, each symbol in its colour, then its name
-  function names(part, items, key) {
-    const math = part.closest('.math') || part; part.style.paddingBottom = '';
-    part.querySelectorAll(':scope > .wl').forEach(e => e.remove()); math.querySelectorAll(':scope > .wkey').forEach(e => e.remove());
-    const base = part.getBoundingClientRect(), top0 = base.height + 14, placed = [], edge = part.closest('.slide').getBoundingClientRect().right - base.left;   // a name stays on the page
-    const shown = items.filter(({ n }) => { const sp = part.querySelector(`.lt-${CSS.escape(n)}`); return sp && sp.getBoundingClientRect().width; });
-    let touch = !!part.querySelector('.mfrac');
-    if (!touch) for (const { n, text } of shown) { const r = part.querySelector(`.lt-${CSS.escape(n)}`).getBoundingClientRect();
-      const lab = h('div', 'wl', L.esc(text)); part.appendChild(lab);
-      const w = lab.offsetWidth, hh = lab.offsetHeight, cx = r.left + r.width / 2 - base.left, prev = placed.reduce((m, b) => Math.max(m, b.cx + b.w / 2 + 10), -1e9);
-      const cxp = Math.min(Math.max(cx, prev + w / 2), edge - w / 2);
-      if (prev - (cx - w / 2) > w / 3 || cxp - w / 2 < prev - 1) { touch = true; break; }   // past a third of its width it no longer reads as under its symbol
-      placed.push({ cx: cxp, w, bottom: top0 + hh });
-      Object.assign(lab.style, { left: cxp + 'px', top: top0 + 'px' }); }
-    if (touch) { part.querySelectorAll(':scope > .wl').forEach(e => e.remove()); if (shown.length) key(math, shown); }
-    else if (placed.length) part.style.paddingBottom = Math.max(...placed.map(b => b.bottom)) - base.height + 4 + 'px';
-  }
-
   // ---------- plane: one scale for both axes, so a slope and a right angle look like what they are ----------
   const niceStep = span => { const raw = span / 5, p = 10 ** Math.floor(Math.log10(raw)); return [1, 2, 5, 10].map(m => m * p).find(s => s >= raw) || p * 10; };
   // the part of the box where w0 + w1 x + w2 y has the given sign (Sutherland–Hodgman on the four corners)
@@ -130,35 +201,12 @@
     const svg = sv('svg', { class: 'pl' }, wrap);
     const R = { node, issues: [], kind: 'plane', w: 0, h: 0, leg: LEG, view: null };
     const num = (x, where) => L.val(x, ctx.scope, where);
-    // `says`: a small pop-up when the learner points at, taps or tabs to a mark's name or legend entry. It sits by the name,
-    // inside the figure, never over the name; its text fills only while open, so the page audit never reads its 11px
-    const pop = h('div', 'ptip'); node.appendChild(pop); let popFor = null;
+    // `says`: the name or legend entry opens the board's pop-up card (see pop-up cards), with the mark's swatch for notation
     const SW = { line: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:3"/>', dash: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:2.5;stroke-dasharray:5 3"/>',
       arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>' };
-    let pinned = null;   // the name a click or tap opened: a second click or tap closes it; a point or a focus alone only shows it
-    const hide = () => { pop.classList.remove('on'); pop.innerHTML = ''; popFor = null; pinned = null; };
-    const show = (el, mk, c, kind) => {
-      if (el.closest('[data-step]:not(.shown)')) return;
-      popFor = el; pop.innerHTML = `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg><span>${md(mk.says)}</span>`; L.fill(pop, ctx.scope);
-      pop.classList.add('on');
-      const fr = node.getBoundingClientRect(), nb = el.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight, gap = 6;
-      const n = { l: nb.left - fr.left, r: nb.right - fr.left, t: nb.top - fr.top, b: nb.bottom - fr.top }, cx = (n.l + n.r) / 2 - pw / 2, cy = (n.t + n.b) / 2 - ph / 2;
-      const clamp = (x, y) => [Math.max(0, Math.min(fr.width - pw, x)), Math.max(0, Math.min(fr.height - ph, y))];
-      const free = ([x, y]) => x >= n.r || x + pw <= n.l || y >= n.b || y + ph <= n.t;
-      const at = [[cx, n.b + gap], [cx, n.t - gap - ph], [n.r + gap, cy], [n.l - gap - pw, cy]].map(([x, y]) => clamp(x, y)).find(free) || clamp(cx, n.b + gap);
-      pop.style.left = at[0] + 'px'; pop.style.top = at[1] + 'px'; };
     const tipOn = (el, mk, c, kind) => {
-      el.classList.add('says'); el.setAttribute('tabindex', '0'); el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope));
-      pauseButton();
-      el.addEventListener('mouseenter', () => { if (!hoverOff) show(el, mk, c, kind); }); el.addEventListener('mouseleave', () => { if (document.activeElement !== el) hide(); });
-      el.addEventListener('focus', () => show(el, mk, c, kind)); el.addEventListener('blur', hide);
-      // a tap focuses the name (which shows the pop-up) and then clicks it, so the click pins it open rather than toggling
-      el.addEventListener('click', e => { e.stopPropagation(); if (pinned === el) { hide(); el.blur(); } else { show(el, mk, c, kind); if (popFor === el) pinned = el; } }); };
-    document.addEventListener('click', e => { if (popFor && !popFor.contains(e.target)) hide(); });
-    // pausing closes a pop-up that pointing opened; one a click pinned or a focus opened stays
-    document.addEventListener('vizos-hoverpause', () => { if (hoverOff && popFor && popFor !== pinned && document.activeElement !== popFor) hide(); });
-    // Escape closes an open pop-up wherever it came from: a point, a tap or a focus
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && popFor) { const el = popFor; hide(); if (document.activeElement === el) el.blur(); } });
+      el.classList.add('says', 'vt'); el.setAttribute('tabindex', '0'); glow(el, c === 'var(--ink)' ? 'var(--mist)' : c); el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope)); pauseButton();
+      el._pd = () => ({ swatch: `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg>`, c: c === 'var(--ink)' ? 'var(--mist)' : c, name: mk.name ?? mk.label, says: mk.says, shape: kind === 'dot' ? 'one point' : null, scope: ctx.scope }); };
     const m = { l: 62, r: 18, t: 14, b: 60 }, boxOf = () => { const X = p.x || {}, Y = p.y || {}; return [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)]; };
     // the picture takes its room. An equal plane keeps one scale on both axes and shows more of the plane on both sides, so the
     // data stay at true scale in any shape. With `fill` the plot holds 16:9, going to 2:1 if the window is short, each axis at its own scale
@@ -167,7 +215,7 @@
       const gw = R.w - m.l - m.r, gh = R.h - m.t - m.b, xs = b[1] - b[0], ys = b[3] - b[2], u = Math.min(gw / xs, gh / ys), cx = (b[0] + b[1]) / 2, cy = (b[2] + b[3]) / 2;
       R.view = p.fill ? b : [cx - gw / u / 2, cx + gw / u / 2, cy - gh / u / 2, cy + gh / u / 2]; return R.w + PAD; };
     R.layout = () => {
-      svg.innerHTML = ''; leg.innerHTML = ''; R.issues = []; hide();
+      svg.innerHTML = ''; leg.innerHTML = ''; R.issues = [];
       const W = R.w, H = R.h; if (W < 40 || H < 40) { R.issues.push('the picture has no room'); return; }
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       const X = p.x || {}, Y = p.y || {}, own = boxOf(), box = R.view || own;
@@ -386,7 +434,7 @@
       if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin', `<div class="tq"><span class="btag">Think</span><span class="tqt">${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
         e.dataset.at = c.at; e.querySelector('.tb').onclick = () => answer(e); el.appendChild(e); thinks.push(e); }
       stepEls.push(el); el.addEventListener('mouseenter', () => R.hover(c.at)); el.addEventListener('mouseleave', () => R.hover(null));
-      el.addEventListener('click', e => { if (e.target.closest('button, input, label, a') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
+      el.addEventListener('click', e => { if (e.target.closest('button, input, label, a, .vt') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
       return el;
     };
 
@@ -395,6 +443,9 @@
       if (it.calc) { const row = tag(h('div', 'cline bi'), at, it.calc.id);
         row.innerHTML = `<div class="num">${lines.filter(x => x.c).length + 1}</div><div class="say">${md(it.calc.say || '')}${it.calc.why ? `<span class="cwhy">${md(it.calc.why)}</span>` : ''}</div><div class="math"></div>`;
         lines.push({ c: it.calc, at, row, el: row }); slot.appendChild(row); }
+      // a matrix or vector from the data, in brackets: its symbol = its numbers (\mat in slides.js draws them)
+      else if (it.matrix || it.vec) { const q = it.matrix || it.vec, e = tag(h('div', it.vec && it.row ? 'fline bi mrow' : 'fline bi'), at, it.id);
+        e.innerHTML = '<div class="math"></div>'; lines.push({ f: { mat: q, row: !!(it.vec && it.row) }, at, el: e }); slot.appendChild(e); }
       else if (it.eqn) { const e = tag(h('div', 'fline bi'), at, it.eqn.id);
         e.innerHTML = `${it.eqn.say ? `<div class="say">${md(it.eqn.say)}</div>` : ''}<div class="math"></div>`; lines.push({ f: it.eqn, at, el: e }); slot.appendChild(e); }
       // the formula built from our numbers (R4): the numbers row, the next step's line, then the symbols row with each term named
@@ -422,7 +473,11 @@
         const stops = Array.from({ length: T + 1 }, (_, t) => clk(t)), rows = list(L.val(it.ops.matrix && (it.ops.matrix.values ?? it.ops.matrix.from), ctx.scope, 'ops')).length || 4;
         const w = { wide: true, figs: [] }; zone = w; const fg = { node: e, O, kind: 'ops', issues: [], stops: stops.slice(1), w: 0, h: 0 };
         fg.paint = c => O.show(1 + stops.slice(1).filter(q => q <= c).length);
-        fg.size = room => { fg.w = room.w; body.style.height = ''; O.layout(); const vecs = list(it.ops.steps).length; fg.h = Math.max(body.offsetHeight, Math.round(46 * (rows + 3 + Math.min(vecs, 2)))); body.style.height = fg.h + 'px'; return fg.w; };
+        fg.size = room => { fg.w = room.w; body.style.height = ''; O.layout(); const vecs = list(it.ops.steps).length; fg.h = Math.max(body.offsetHeight, Math.round(46 * (rows + 3 + Math.min(vecs, 2))));
+          // with the scene's head at the top of the window, the card, the line above it and its buttons stay on screen
+          const st = fg.wrap && fg.wrap.closest('.st'), rc = x => x.getBoundingClientRect(), above = st ? rc(e).top - rc(st).top : 0, foot = fg.wrap ? fg.wrap.offsetHeight - e.offsetHeight : 0;
+          if (room.h && st) fg.h = Math.min(fg.h, Math.max(Math.round(46 * (rows + 2)), room.h - above - foot));
+          body.style.height = fg.h + 'px'; return fg.w; };
         holder(fg, at, it.ops); w.figs.push(fg); blocks.push(w); slot.appendChild(fg.wrap); }
       else if (it.note != null) { const nt = typeof it.note === 'string' ? { text: it.note } : it.note;
         const e = tag(h('div', 'bi note g rl', md(nt.text || '')), at, nt.id); lines.push({ note: e, at, el: e }); (nt.side && zl ? zl : slot).appendChild(e); }
@@ -466,14 +521,13 @@
     // a formula from an expression or from TeX with [name] terms, each input's symbol wrapped for its colour and name
     const sym = q => symOf(ctx, q), lt = (q, tx) => `\\htmlClass{lt lt-${q}}{${tx}}`;
     const formTex = f => {
+      if (f.mat) return { tex: `${lt(f.mat, sym(f.mat))} = ${L.matTex(f.mat, ctx.scope, undefined, f.row)}`, ids: [] };
       // only the author's own tex is read for {{…}}: kit-made TeX can hold {{ (a wrapped {x}_{3}) that is not a number
       const ids = [], body = f.expr ? L.tex(f.expr, { sym, wrap: lt }) : L.interp(String(f.tex || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*)\]/g, (_, q) => { if (!ids.includes(q)) ids.push(q); return lt(q, sym(q)); });
       if (f.expr) ids.push(...L.names(f.expr));
       return { tex: f.lhs ? `${lt(f.lhs, sym(f.lhs))} = ${body}` : body, ids: ids.filter(q => q !== f.lhs) };
     };
-    const keyRow = (math, items) => { const e = h('div', 'wkey', items.map(({ text }) => `<span class="wk"><span class="wm"></span>${L.esc(text)}</span>`).join('')); math.appendChild(e);
-      e.querySelectorAll('.wm').forEach((m, i) => { L.renderTex(m, lt(items[i].n, sym(items[i].n)), false); tint(m, symColor); }); };
-    const termNames = (ids, skip) => ids.filter(q => !kindOf(q) && !(skip && skip.has(q))).map(q => { if (skip) skip.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; });
+    // a term's name is on its pop-up card, not under the formula (the user's pick: names live in pop-ups only)
     const drawAsm = () => asm.forEach(A => {
       const a = A.a, [nm, sy] = A.e.querySelectorAll('.arow .math'), { tex, ids } = formTex(a);
       let nums;
@@ -482,24 +536,22 @@
         nums = `${sub} ${eq} \\htmlClass{res}{${L.numTex(v, a.fmt)}}`; }
       else nums = L.interp(String(a.plug || ''), ctx.scope, true).replace(/\[([A-Za-z_]\w*):([^\]]*)\]/g, (_, q, x) => q === a.lhs ? `\\htmlClass{res}{${x}}` : lt(q, x)).replace(/\[([A-Za-z_]\w*)\]/g, (_, q) => lt(q, sym(q)));
       L.renderTex(nm, nums, false); L.renderTex(sy, tex, false); tint(nm, symColor); tint(sy, symColor); fitMath([nm, sy]);
-      names(sy, termNames(ids), keyRow);   // every term gets its plain name here (R4), even one named earlier in the scene
     });
     // write each worked line: symbol = formula, = numbers, = result (stacked at the = signs when too long for a row)
     const drawLines = () => {
       work();
-      const named = new Set(), shownFmt = {};
+      const shownFmt = {};
       lines.forEach(ln => {
-        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, symColor); fitMath([m]); names(m, termNames(ids, named), keyRow); return; }
+        if (ln.f) { const m = ln.el.querySelector('.math'), { tex, ids } = formTex(ln.f); L.renderTex(m, tex, false); tint(m, symColor); fitMath([m]); return; }
         if (!ln.c) return; const c = ln.c, math = ln.row.querySelector('.math'); math.innerHTML = ''; math.classList.remove('wrapped');
         if (!c.expr) return;
         const f = L.tex(c.expr, { sym, wrap: (q, tx) => lt(q, tx) });
         const { tex: sub, eq } = L.work(c.expr, { slash: true, val: q => typeof ln.sc[q] === 'number' ? ln.sc[q] : null, arr: q => Array.isArray(ln.sc[q]) ? ln.sc[q] : null, wrap: (q, tx) => lt(q, tx),
           fmt: c.fmt, lit: null, fmtOf: (q, x) => subFmt(ctx, q, x, shownFmt[q]) }, ln.val, c.fmt, ln.sc);
-        const parts = [[c.name ? `${sym(c.name)} = ${f}` : f, 'f'], [`= ${sub}`, 'sub'], [`${eq} \\htmlClass{res}{${L.numTex(ln.val, c.fmt)}}`, 'r']];
+        const parts = [[c.name ? `${lt(c.name, sym(c.name))} = ${f}` : f, 'f'], [`= ${sub}`, 'sub'], [`${eq} \\htmlClass{res}{${L.numTex(ln.val, c.fmt)}}`, 'r']];
         parts.forEach(([tx, cls]) => { const sp = h('span', 'part ' + cls); math.appendChild(sp); L.renderTex(sp, tx, false); });
         const ps = [...math.children]; ps.slice(0, 2).forEach(q => tint(q, symColor)); fitMath([math]); if (ps.some((e, q) => q && e.offsetTop >= ps[q - 1].offsetTop + ps[q - 1].offsetHeight - 2)) math.classList.add('wrapped');
         if (c.name) shownFmt[c.name] = c.fmt;
-        names(ps[0], L.names(c.expr).filter(q => !named.has(q) && q !== c.name).map(q => { named.add(q); return { n: q, text: L.plain(shortOf(ctx, q), ctx.scope) }; }), keyRow);
       });
     };
     // a parameter card: each named number with its symbol in its colour, its value now and its name (it follows the sliders)

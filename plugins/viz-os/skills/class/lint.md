@@ -25,6 +25,12 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` `mark: …` is not a target `` | `row:<i>`, `col:<key>`, `cell:<i>:<key>`, `#<id>` |
 | `symbol X shows on slide …, but its number first shows on …` | show the number first: a worked line, a column, or `{{name}}` |
 | `` `assemble` uses X, whose number was not worked in an earlier by-hand scene `` | work it by hand first |
+| `X is a matrix used on … before it is drawn with its numbers` | draw it first: `add: {matrix: X}` (or `vec:`), or `X = \mat{X}` inside `$…$` or a formula. Brackets with no `X =` beside them, or `\mat` outside maths, do not count |
+| `kind: matrix draws X from the data, but data.json has no X` / `X … is not a list of numbers` / `is a flat list … a vector` / `is N rows of M, a matrix` | write X in make_data.py as a list of rows (a matrix) or a flat list (a vector), and give the `kind` that fits |
+| `cols: gives N colour(s), but X has M columns` (also `rows:`) / `a vector takes rows:` | one colour per column or row; a vector takes `rows:` |
+| `X is not a symbol` / `X has no kind: matrix or kind: vector` / `draw it with vec: X, not matrix: X` | `matrix:`, `vec:` and `\mat{}` name a symbol with `kind: matrix` or `kind: vector`, by the item that fits its kind |
+| `cols: and rows: colour a matrix or a vector` / `give cols: or rows:, not both` | add `kind: matrix` or `kind: vector`; keep one colour list |
+| `\mat{…} outside $…$` / `X and Y are both written $X$` / `one formula shows its \mat objects with 1 and 2 decimals` | put it inside `$…$`; give the matrix its own TeX; use one `\mat{X|d}` across the formula |
 | `a formula scene builds its formula with an assemble item` | add the `assemble` |
 | `` `assemble` has a line between its numbers and its symbols `` | add a step after it |
 | `an assemble with tex needs plug` / `a number in plug has no tag` | write `plug` with each number as `[name:number]` |
@@ -40,6 +46,8 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `a plane with fill stretches its axes` | delete `fill`, or drop the `vector`, `foot` or `square` |
 | `legend labels are for a quick read: 2 words at most` | cut the `label` to 2 words; move the rest to the mark's `says:` |
 | `names on the plot are for a quick read: 2 words at most` | cut the mark's `name` to 2 words (`$…$` and `{{…}}` count as one); move the rest to its `says:` |
+| `` X opens a pop-up card on the board, so it needs short: `` / `` `short` … has N words `` / `` `says` … only repeats `short` `` | give every symbol in a formula or brackets a `short` of 2 words at most; `says` adds what it means or is made from |
+| `` a matrix's `fmt` is its number of decimals `` | `fmt: 1`, a whole number; `s3` and `,` do not apply to brackets |
 | `N legend entries on one plane: more than 5` | name marks on the plot with `name:` and `says:`, or split the plane |
 | `say what X is: add says: to the mark, or name it in a teacher line first` | give the mark `says:`, or name X in a `say` at or before the step that draws it (the later of the plane's step and the mark's own). `$x$` and `x`, `$\alpha$` and `α` count as the same name |
 | `` control …: `run` is the number of frames `` / `stops … are not frames` | `run` ≥ 2; stops between 0 and run − 1 |

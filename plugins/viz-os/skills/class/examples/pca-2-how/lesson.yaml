@@ -8,35 +8,35 @@ home: cells
 data_file: data.json
 abbr: {PCA: principal component analysis, PC1: the first principal component, PC2: the second principal component, CD3: a T-cell surface marker, CD19: a B-cell surface marker, SD: standard deviation}
 symbols:
-  d1: {tex: 'd_1', says: CD3 measured from the middle, short: CD3 from the middle, color: s1, fmt: 2}
-  d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
+  d1: {tex: 'd_1', says: CD3 measured from the middle, short: centred CD3, color: s1, fmt: 2}
+  d2: {tex: 'd_2', says: CD19 measured from the middle, short: centred CD19, color: s2, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
   i: {tex: 'i', says: which cell, color: s4, kind: index}
   j: {tex: 'j', says: which marker, color: s5, kind: index}
   prod: {tex: 'd_1 d_2', says: a cell's two distances multiplied, short: product, fmt: 2}
   c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 3}
-  v_cd3: {tex: 's_1^2', says: the spread of CD3, short: CD3 spread, color: s1, fmt: 3}
-  v_cd19: {tex: 's_2^2', says: the spread of CD19, short: CD19 spread, color: s2, fmt: 3}
-  u1: {tex: 'u_1', says: the arrow's CD3 part, short: arrow's CD3 part, color: s1}
-  u2: {tex: 'u_2', says: the arrow's CD19 part, short: arrow's CD19 part, color: s2}
+  v_cd3: {tex: 's_1^2', says: how far CD3 levels scatter, short: CD3 spread, color: s1, fmt: 3}
+  v_cd19: {tex: 's_2^2', says: how far CD19 levels scatter, short: CD19 spread, color: s2, fmt: 3}
+  u1: {tex: 'u_1', says: how far the arrow goes along CD3, short: arrow's CD3, color: s1}
+  u2: {tex: 'u_2', says: how far the arrow goes along CD19, short: arrow's CD19, color: s2}
   p0: {tex: 'p_{c1}', says: c1's shadow on the tilted line, short: c1's shadow, fmt: 2}
   sq0: {tex: 'p_{c1}^2', says: c1's shadow squared, short: shadow squared, fmt: 3}
-  s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: spread along u, fmt: 3}
-  cu1: {tex: '(Cu)_1', says: the CD3 part of C times u, short: Cu's CD3 part, fmt: 3}
-  cu2: {tex: '(Cu)_2', says: the CD19 part of C times u, short: Cu's CD19 part, fmt: 3}
+  s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: u spread, fmt: 3}
+  cu1: {tex: '(Cu)_1', says: the CD3 part of C times u, short: Cu's CD3, fmt: 3}
+  cu2: {tex: '(Cu)_2', says: the CD19 part of C times u, short: Cu's CD19, fmt: 3}
   th: {tex: '\theta', says: "the angle of the arrow u, in degrees", short: u's angle, fmt: 0}
-  ex: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3 part, fmt: 2}
-  ey: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19 part, fmt: 2}
-  cx: {tex: '(Cu)_1', says: the CD3 part of C times u, short: Cu's CD3 part, fmt: 2}
-  cy: {tex: '(Cu)_2', says: the CD19 part of C times u, short: Cu's CD19 part, fmt: 2}
+  ex: {tex: 'u_1', says: the arrow's CD3 part, short: u's CD3, fmt: 2}
+  ey: {tex: 'u_2', says: the arrow's CD19 part, short: u's CD19, fmt: 2}
+  cx: {tex: '(Cu)_1', says: the CD3 part of C times u, short: Cu's CD3, fmt: 2}
+  cy: {tex: '(Cu)_2', says: the CD19 part of C times u, short: Cu's CD19, fmt: 2}
   cang: {tex: '\theta_{Cu}', says: the angle of C times u, short: Cu's angle, fmt: 0}
   gp: {tex: '\Delta\theta', says: how many degrees apart u and Cu point, short: degrees apart, fmt: 0}
   lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, fmt: 3}
   lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, fmt: 3}
-  ca1: {tex: '(Ca)_1', says: the CD3 part of C times the start arrow, short: Ca's CD3 part, fmt: 3}
-  ca2: {tex: '(Ca)_2', says: the CD19 part of C times the start arrow, short: Ca's CD19 part, fmt: 3}
+  ca1: {tex: '(Ca)_1', says: the CD3 part of C times the start arrow, short: Ca's CD3, fmt: 3}
+  ca2: {tex: '(Ca)_2', says: the CD19 part of C times the start arrow, short: Ca's CD19, fmt: 3}
   blen: {tex: '|Ca|', says: the length of C times the start arrow, short: length, fmt: 3}
-  nu1: {tex: 'u_1', says: the new arrow's CD3 part, short: new CD3 part, fmt: 3}
+  nu1: {tex: 'u_1', says: the new arrow's CD3 part, short: new CD3, fmt: 3}
   qth: {tex: '\theta', says: the arrow's angle after this many repeats, short: angle now, fmt: 1}
   qs: {tex: 's_u^2', says: the spread along the arrow now, short: spread now, fmt: 3}
 slides:

@@ -61,7 +61,7 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 .board .fb.beside > .ffig { justify-self: start; align-self: start; }
 /* a figure above its lines: the line that brings it in stays above it, and the rest of that step stays under it */
 .board .fb:not(.beside) > .fside, .board .fb:not(.beside) > .fside > .st.intro { display: contents; }
-.board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; margin-bottom: -16px; }
+.board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; margin-bottom: -10px; }
 .board .fb.beside .ffig { position: sticky; top: 24px; }
 .board .fb.beside .ffig.nostick { position: static; }
 .board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: center; align-self: stretch; }
@@ -76,9 +76,9 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 /* wide pictures sit centred; their line of text stays lined up with the other lines */
 .board .st.wide .fg, .board > .fg { align-self: center; }
 
-/* a step: the teacher's line, then what it adds, 12 px apart; steps stand 28 px apart. The one being read is lit by a bar
+/* a step: the teacher's line, then what it adds, 18 px apart; steps stand 28 px apart. The one being read is lit by a bar
    hung in the margin, so the text keeps the column's edge; nothing goes grey once it is past */
-.board .st { position: relative; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.board .st { position: relative; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .board .st::before { content: ""; position: absolute; left: -12px; top: 0; bottom: 0; width: 4px; background: transparent; transition: background .25s var(--ease); pointer-events: none; }
 .board .st.wide::before, .board .abridge .st::before { display: none; }
 .board .st.now::before, .board .st.atstop::before { background: var(--accent); }
@@ -135,10 +135,6 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board :is(.cline, .fline):not(.fb.beside *, .bpair:not(.stacked) *) .math { grid-column: 1 / -1; text-align: center; justify-content: center; }
 .board .cline:not(.fb.beside *, .bpair:not(.stacked) *) .math.wrapped { align-items: center; }
 /* the key row: each symbol in its colour, then its plain name */
-.board .wkey { flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: inherit; gap: 2px 8px; margin-top: 6px; font: 400 16px/1.5 var(--f-ui); color: var(--mist); text-align: left; }
-.board .wk { display: inline-flex; align-items: baseline; gap: 6px; }
-.board .wk + .wk::before { content: "·"; margin-right: 2px; }
-.board .wl { position: absolute; transform: translateX(-50%); white-space: nowrap; font: 600 16px var(--f-ui); color: var(--ink); line-height: 1.2; }
 .board .fline { display: flex; flex-direction: column; gap: 14px; }
 .board .fline .say { font-size: 18px; font-weight: 400; line-height: 1.5; }
 .board .fline .math, .board .asm .math { position: relative; min-width: 0; }
@@ -148,7 +144,6 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .asm .abridge .say { font-size: 18px; font-weight: 400; }
 .board .arow { display: grid; grid-template-columns: 132px minmax(0, 1fr) 132px; column-gap: 16px; align-items: center; }
 .board .arow .math { font-size: 32px; text-align: center; }
-.board .arow .wkey { justify-content: center; }
 .board .atag { font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tint); }
 .board .note { font-size: 18px; line-height: 1.5; }
 .board .hl { box-shadow: 4px 4px 0 var(--accent); }
@@ -265,16 +260,29 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .board svg.pl .tick { font-size: 15px; fill: var(--haze); }
 .board svg.pl .axt { font-size: 16px; fill: var(--mist); font-weight: 600; }
 .board svg .plab { font-size: 18px; fill: var(--mist); font-weight: 600; }
-/* a name or legend entry with `says`: a dotted underline and the help cursor; it opens .ptip on point, tap or focus */
-.board .plane .says { text-decoration: underline dotted; text-underline-offset: 5px; text-decoration-thickness: 1.5px; cursor: help; outline: none; }
+/* a pop-up's term (a formula's term, a matrix, a plane name or legend entry): no underline. Pointing, focus or an open card
+   lifts it, brighter with a soft glow in its own colour (--hc); the rest of its formula fades (.dm) */
+.board .vt { cursor: help; outline: none; border-radius: 3px; transition: filter .12s, opacity .12s; }
+/* --hg is a plain rgba set by board.js: a filter built from nested var()s computes to nothing */
+.board .vt:hover, .board .vt.act, .board .vt:focus-visible { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.vring { position: absolute; z-index: 59; display: none; box-sizing: border-box; border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
+.vring.on { display: block; }   /* the keyboard-focus ring, drawn by board.js round the whole term */
+.board .math .dm { opacity: .28; transition: opacity .12s; }
+/* the card: half see-through (the user's pick), framed in the term's colour, 14 px, as wide as its widest line, a pointer in the frame's colour */
+.vpop { position: absolute; z-index: 60; display: none; box-sizing: border-box; width: max-content; max-width: 230px; padding: 5px 8px; background: rgba(11, 12, 14, .5);
+  border: 1px solid var(--bc, var(--mist)); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .55); font: 400 14px/1.4 var(--f-ui); color: var(--ink); pointer-events: none; text-align: left; }
+.vpop.on { display: block; }
+.vpop .ttl { display: flex; gap: 9px; align-items: baseline; margin-bottom: 4px; }
+.vpop .ttl .katex { font-size: 1.45em; }
+.vpop .ttl > svg { flex: none; align-self: center; }
+.vpop .vv { opacity: .7; white-space: nowrap; }
+.vpop .chip { display: inline-block; margin-top: 5px; padding: 1px 6px; border: 1px solid rgba(255, 255, 255, .18); font: 600 .85em var(--f-mono); }
+.vpop .caret { position: absolute; top: -6px; width: 12px; height: 6px; background: var(--bc, var(--mist)); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.vpop.up .caret { top: auto; bottom: -6px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 /* the marks never take the pointer, so a shape drawn in a later step cannot cover a name; only names with `says` take it */
 .board .plane svg.pl * { pointer-events: none; }
 .board .plane svg.pl .says { pointer-events: auto; }
-.board .plane .says:focus-visible { text-decoration-style: solid; text-decoration-color: var(--accent); }
 .board .plane [data-step]:not(.shown) .says, .board .plane .pk[data-step]:not(.shown) > .says { visibility: hidden; }   /* not reachable by Tab before its step */
-.board .ptip { position: absolute; z-index: 6; display: none; align-items: center; gap: 8px; max-width: 280px; padding: 5px 9px; background: var(--surf); border: 1px solid var(--line); font: 400 11px/1.35 var(--f-ui); color: var(--mist); pointer-events: none; }
-.board .ptip.on { display: flex; }
-.board .ptip svg { flex: none; }
 .board svg circle { stroke: var(--bg); stroke-width: 2.5; }
 .board svg .pring { fill: none; stroke: var(--accent); stroke-width: 4; }
 

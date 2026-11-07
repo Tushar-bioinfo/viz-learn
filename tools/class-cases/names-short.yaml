@@ -1,0 +1,25 @@
+# expect: `y` opens a pop-up card on the board, so it needs `short:`
+# expect: `short` “the mean CD3 level” has 4 words: a name is 2 words at most
+# expect: `says` “the CD3 level” only repeats `short` “CD3 level”
+# expect: not: `z` opens a pop-up card
+# A card's bold name is 2 words at most, every symbol in a formula has one, and its description adds to it.
+title: Names on cards
+question: Does each card have a short name and a real description?
+answer: Not here.
+data: {y: 3, m: 4.5, x: 2, z: 7}
+symbols:
+  y: {tex: y, says: the output of the rule}
+  m: {tex: '\bar{x}', says: the average over the cells, short: the mean CD3 level}
+  x: {tex: x, says: the CD3 level, short: CD3 level}
+  z: {tex: z, says: a number only in text}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Names
+    steps:
+      - say: 'The output is {{y}}, the mean {{m}}, the level {{x}}, and {{z}}.'
+      - say: The rule.
+        add: {eqn: {say: The rule, lhs: y, tex: '[m] - [x]'}}
+  - type: recap
+    answer: Short names, real descriptions.

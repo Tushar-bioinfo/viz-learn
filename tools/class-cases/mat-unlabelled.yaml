@@ -1,0 +1,23 @@
+# expect: `dv` ($\vec{d}$) is a vector used on slide 2 step 3 (in the text) before it is drawn with its numbers
+# expect: not: `xv` ($\vec{x}$) is a vector used
+# The result's brackets appear with no `\vec{d} =` beside them, so a later line that names d⃗ names nothing the learner saw.
+title: Brackets with no name
+question: Does an unnamed bracket count as drawn?
+answer: No.
+data: {xv: [4.3, 5.3, 6.7], dv: [-1.1, -0.1, 1.3], m: 5.4}
+symbols:
+  xv: {tex: '\vec{x}', says: three CD3 levels, kind: vector}
+  dv: {tex: '\vec{d}', says: distances from the mean, kind: vector}
+  m: {tex: '\bar{x}', says: the mean}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Unnamed result
+    steps:
+      - say: 'The mean is {{m}}.'
+      - say: Take the mean from each cell.
+        add: {eqn: {say: The distances, tex: '\mat{xv} - [m] = \mat{dv}'}}
+      - say: 'Cells below the mean get a minus sign in $\vec{d}$.'
+  - type: recap
+    answer: Name it beside its brackets.

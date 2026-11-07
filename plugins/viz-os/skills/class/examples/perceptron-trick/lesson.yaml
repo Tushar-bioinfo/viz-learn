@@ -14,7 +14,7 @@ symbols:
   y: {tex: 'y', says: 'the cell''s true type: 1 for T, 0 for B', short: true type}
   call: {tex: '\hat{y}', says: 'what the line calls it: 1 for T, 0 for B', short: called}
   score: {tex: 's', says: 'a cell''s score: 0 or more is called T', short: score, fmt: 2}
-  sc1: {tex: 's_{c1}', says: c1's score on the bad line, short: score of c1, fmt: 2}
+  sc1: {tex: 's_{c1}', says: c1's score on the bad line, short: c1 score, fmt: 2}
   w0: {tex: 'w_0', says: the line's offset, short: offset, color: s3, fmt: 2}
   w1: {tex: 'w_1', says: the line's weight on CD3, short: CD3 weight, color: s1, fmt: 2}
   w2: {tex: 'w_2', says: the line's weight on CD19, short: CD19 weight, color: s2, fmt: 2}
@@ -23,7 +23,7 @@ symbols:
   xv: {tex: 'x_j', says: 'c5''s value for that weight, with a 1 for the offset', short: c5's value, fmt: 1}
   wnew: {tex: 'w_j - x_j', says: the weight after a full step, short: full step, fmt: 2}
   wsmall: {tex: 'w_j - \eta x_j', says: the weight after a small step, short: small step, fmt: 2}
-  w2n: {tex: 'w_2''', says: CD19's weight after the small step, short: new CD19 weight, color: s2, fmt: 2}
+  w2n: {tex: 'w_2''', says: CD19's weight after the small step, short: new w2, color: s2, fmt: 2}
   diff: {tex: 'y - \hat{y}', says: 'true type minus the call', short: direction}
   nw: {tex: 'n_{\text{wrong}}', says: cells on the wrong side of the line, short: cells wrong}
   ep: {tex: 'e', says: 'the epoch: one pass over all eight cells', short: epoch}

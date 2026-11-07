@@ -1,0 +1,25 @@
+# expect: builds
+# expect: not: formula error
+# expect: not: before it is drawn
+# A lesson with symbols written m and u beside a matrix: the board's colouring must leave \mkern-1mu whole.
+title: A slope beside a matrix
+question: Does a matrix keep its brackets next to a symbol written m?
+answer: Yes.
+data: {X: [[1, -0.5], [0.5, 1]], slope: 2, shift: 3}
+symbols:
+  slope: {tex: m, says: the slope, short: slope}
+  shift: {tex: u, says: the shift, short: shift}
+  X: {tex: X, says: the mixing rule, short: mixing rule, kind: matrix, cols: [s1, s2]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A slope and a matrix
+    steps:
+      - say: 'The slope is {{slope}}, the shift {{shift}}.'
+      - say: 'So $m$ and $u$ are known.'
+      - say: The mixing rule.
+        add: {matrix: X}
+      - say: 'In a line: $X = \mat{X}$.'
+  - type: recap
+    answer: The brackets stay.

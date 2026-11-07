@@ -1,0 +1,24 @@
+# expect: `Q` is not a symbol
+# expect: `Z` is not a symbol
+# expect: `y` has no `kind: matrix` or `kind: vector`
+# expect: `p5` is a vector: draw it with `vec: p5`, not `matrix: p5`
+# expect: `vec: p5` takes only `id` and `row: true`; got cols
+# Bracket items and \mat that name the wrong thing.
+title: Wrong names
+question: What can a bracket item name?
+answer: A matrix or vector symbol.
+data: {p5: [8, 4], y: 3}
+symbols:
+  p5: {tex: '\vec{x}', says: the orange pixel, kind: vector}
+  y: {tex: y, says: the output}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Bad names
+    steps:
+      - say: Three wrong items.
+        add: [{matrix: Q}, {matrix: p5}, {vec: p5, cols: [s1]}]
+      - say: 'And two wrong formulas: $\mat{Z}$ and $\mat{y}$.'
+  - type: recap
+    answer: Name a matrix or vector symbol.

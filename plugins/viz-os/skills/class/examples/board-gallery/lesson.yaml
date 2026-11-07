@@ -5,19 +5,23 @@ answer: Take each value's distance from the mean, square it, add the squares, an
 data_file: data.json
 abbr: {SD: standard deviation, CD3: a T-cell surface marker, CD19: a B-cell surface marker, CD4: a helper T-cell marker}
 symbols:
-  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i, color: s1}
+  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 level, color: s1}
   xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean, color: s2, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells}
-  i: {tex: 'i', says: which cell, color: s4, kind: index}
+  i: {tex: 'i', says: which cell, short: cell number, color: s4, kind: index}
   j: {tex: 'j', says: which marker, color: s5, kind: index}
-  ss: {tex: 'SS', says: the sum of squared distances, short: sum of squares, fmt: 2}
-  s2: {tex: 's^2', says: the variance, short: variance, color: s3, fmt: 2}
+  ss: {tex: 'SS', says: the sum of squared distances, short: summed squares, fmt: 2}
+  s2: {tex: 's^2', says: the average squared distance from the mean, short: variance, color: s3, fmt: 2}
   sd: {tex: 's', says: the standard deviation, short: SD, fmt: 2}
-  d1: {tex: 'd_1', says: how far c1 sits from the mean, short: distance of c1, fmt: 2}
+  d1: {tex: 'd_1', says: how far c1 sits from the mean, short: c1 distance, fmt: 2}
   sq: {tex: 'd^2', says: squared distance of each cell, short: squared distance, fmt: 2}
   w0: {tex: 'w_0', says: the line's offset, short: offset, color: s3, fmt: 2}
   w1: {tex: 'w_1', says: the line's weight on CD3, short: CD3 weight, color: s1, fmt: 2}
   w2: {tex: 'w_2', says: the line's weight on CD19, short: CD19 weight, color: s2, fmt: 2}
+  cellmat: {tex: 'C', says: three cells by two markers, short: marker table, kind: matrix, cols: [s1, s2]}
+  c1row: {tex: '\vec{c}_1', says: 'row one of C, cell c1', short: cell c1, kind: vector, rows: [s1, s2]}
+  xvec: {tex: '\vec{x}', says: the CD3 levels of all six cells, short: CD3 levels, kind: vector}
+  dvec: {tex: '\vec{d}', says: each cell's distance from the mean, short: distances, kind: vector}
 slides:
   - type: title
 
@@ -225,6 +229,25 @@ slides:
           labels: [{text: c1, at: [0.083, 0.88]}, {text: c5, at: [0.75, 0.88], step: 2}]
       - say: c5 is the brightest, the one far above the mean.
         add: {params: {say: 'What we worked out', names: [n, xbar, s2, sd]}}
+
+  - type: board
+    beat: aside
+    title: The same cells, as a matrix
+    lead: A table of numbers is a matrix; one row or column is a vector.
+    steps:
+      - say: 'Three cells, two markers: a row per cell, a column per marker.'
+        add: {matrix: cellmat}
+      - think:
+          q: 'Which column of $C$ holds CD19?'
+          a: The second. Each column is one marker, CD3 first.
+      - say: 'Row one of $C$ on its own: cell c1, its two markers.'
+        add: {vec: c1row, row: true}
+      - say: Take the mean from every cell at once.
+        add: {eqn: {say: Each cell's distance from the mean, tex: '[dvec] = \mat{xvec} - [xbar] = \mat{dvec}'}}
+      - say: 'Cells below the mean get a minus sign in $\vec{d}$.'
+      - think:
+          q: 'Which entry of $\vec{d}$ sits farthest from zero?'
+          a: '{{far_id}}, the cell far from the mean.'
 
   - type: board
     beat: limits

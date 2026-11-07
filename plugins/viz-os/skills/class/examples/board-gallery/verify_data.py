@@ -7,7 +7,9 @@ and variance ratio. Compares those with the stored values. Also checks that
 every marker is on a 0.2-9.8 scale with at most one decimal, that the donors
 have nearly the same mean while donor B is more spread out, that cells.png
 is 1200 by 360 pixels, that each cell's i is its 1-based position, and that
-far_i is the 1-based position of the farthest cell.
+far_i is the 1-based position of the farthest cell. Rebuilds the bracket
+scene's matrix (first three cells by CD3 and CD19), its first row (cell c1),
+and the CD3 and distance-from-mean vectors from the cell records.
 
 Recomputes the perceptron on pcells. Checks eight cells, ids p1-p8, four T
 and four B, markers on a 0.4-9.6 scale with at most one decimal, and no pair
@@ -289,6 +291,15 @@ def main():
     report("redo_n", data["redo_n"] == redo_n, data["redo_n"], redo_n)
     report("redo_id", data["redo_id"] == redo_id, data["redo_id"], redo_id)
     report("pseed", type(data["pseed"]) is int, "int", type(data["pseed"]).__name__)
+
+    # the bracket scene: the first three cells' CD3 and CD19 as a 3 x 2 matrix, its first row (cell c1),
+    # and the CD3 levels with their distances from the mean, rebuilt from the cell records
+    cellmat = np.column_stack([cd3, cd19])[:3]
+    report("cellmat", np.shape(data["cellmat"]) == (3, 2) and close(data["cellmat"], cellmat), data["cellmat"], cellmat.tolist())
+    c1row = cellmat[0]   # row one of the matrix: cell c1's CD3 and CD19
+    report("c1row", len(data["c1row"]) == 2 and close(data["c1row"], c1row), data["c1row"], c1row.tolist())
+    report("xvec", len(data["xvec"]) == 6 and close(data["xvec"], cd3), data["xvec"], cd3.tolist())
+    report("dvec", len(data["dvec"]) == 6 and close(data["dvec"], dev), data["dvec"], dev.tolist())
 
     if failed:
         print("MISMATCH")

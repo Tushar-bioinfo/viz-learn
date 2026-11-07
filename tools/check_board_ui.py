@@ -13,10 +13,13 @@ screen after every Next; Next onto a think step takes two presses; rows fit thei
 screen at three windows; a filled plane and a table fill their room; the first stop has no line;
 Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen;
 text not side by side starts at the page's left edge while figures and equations centre on it; callouts and thinks have
-no lines and no indent, stand 12 px from their line, and show a bar when lit without moving their text. The pause button
-shows only with `says`, keeps clear of the rail, quiets pointing but not a click, and survives a reload.
+no lines and no indent, stand 18 px from their line, and show a bar when lit without moving their text. The pause button
+shows only with a pop-up, keeps clear of the rail, quiets pointing but not a click, and survives a reload. Formulas carry
+no names under them: a term's name is on its pop-up card, which is as wide as its text, framed in the term's colour, fades
+the rest of its formula, gives a matrix its shape, and follows a slider.
 """
-import importlib.util, re, subprocess, sys
+import importlib.util, json, re, subprocess, sys
+import yaml
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -431,16 +434,13 @@ def formula_floor(page):
     return not bad and (shrunk > 0 or "perceptron" not in page.url), "; ".join(bad[:3]) or f"{shrunk} shrunk"
 
 
-def no_stack(page):
-    """Term labels sit on one row, clear of each other; if not, the formula has a key row instead."""
-    bad = []
-    for w, h in FIVE:
-        sized(page, w, h)
-        bad += [f"{w}: {x}" for x in page.evaluate("""() => { const out = []; document.querySelectorAll('.cline .part, .fline .math, .asm .math').forEach(p => { const ls = [...p.querySelectorAll(':scope > .wl')].map(e => e.getBoundingClientRect());
-          if (ls.some(a => ls.some(b => a !== b && (Math.abs(a.top - b.top) > 2 || (a.left < b.right && b.left < a.right))))) out.push(p.closest('.slide').id); if (ls.length && p.querySelector('.mfrac')) out.push(p.closest('.slide').id + ' fraction'); }); return out; }""")]
-    sized(page, 1440, 900)
-    return not bad, "; ".join(bad[:3]) or "5 windows"
-
+def no_names(page):
+    """Names in a formula live on its terms' pop-up cards (the user's pick): nothing is written under a formula, and every
+    term whose symbol has `says` is a pop-up target."""
+    r = page.evaluate("""() => { const S = (VizOS.slides[0] || { ctx: {} }).ctx.symbols || {}, terms = [...document.querySelectorAll('.cline .lt, .fline .lt, .asm .lt, .fline .mt, .asm .mt')];
+      const bare = terms.filter(t => { const q = [...t.classList].find(c => /^(lt|mt)-/.test(c)).slice(3); return S[q] && S[q].says && !t.classList.contains('vt'); });
+      return [document.querySelectorAll('.board .wl, .board .wkey').length, terms.length, bare.length]; }""")
+    return r[0] == 0 and r[2] == 0, f"names under formulas {r[0]}, terms {r[1]}, terms with no card {r[2]}"
 
 def side_gap(page):
     """Beside a figure the text starts 20 px from it, whatever the figure's width."""
@@ -544,7 +544,7 @@ def no_lines(page):
 
 
 def card_gap(page):
-    """A line stands 12 px from the card it brings, and level with it; steps stand 28 px apart."""
+    """A line stands 18 px from the card it brings, and level with it; steps stand 28 px apart."""
     sized(page, 1480, 800)
     r = page.evaluate("""() => { const rc = e => e.getBoundingClientRect(), gaps = [], left = [], apart = [];
       document.querySelectorAll('.st > .say').forEach(s => { const c = s.nextElementSibling; if (c && c.matches('.rl, .think, .asm, .cline, .fline') && rc(s).height && rc(c).height) { gaps.push(rc(c).top - rc(s).bottom); if (!c.matches('.cline, .asm')) left.push(rc(c).left - rc(s).left); } });
@@ -552,7 +552,7 @@ def card_gap(page):
       document.querySelectorAll('.fb:not(.beside) .st.intro > .say').forEach(s => { const f = s.closest('.fb').querySelector('.ffig'); if (rc(s).height && rc(f).height) gaps.push(rc(f).top - rc(s).bottom); });
       return [gaps, left, apart]; }""")
     sized(page, 1440, 900)
-    bad = [round(x, 1) for x in r[0] if abs(x - 12) > 1] + [f"left {round(x)}" for x in r[1] if abs(x) > 1] + [f"apart {round(x)}" for x in r[2] if abs(x - 28) > 1]
+    bad = [round(x, 1) for x in r[0] if abs(x - 18) > 1] + [f"left {round(x)}" for x in r[1] if abs(x) > 1] + [f"apart {round(x)}" for x in r[2] if abs(x - 28) > 1]
     return bool(r[0]) and not bad, f"{len(r[0])} gaps, {len(r[2])} steps" + (f", off: {bad[:4]}" if bad else "")
 
 
@@ -577,7 +577,7 @@ def legend_room(page):
 
 # the pause button: what it shows, and whether the first name with `says` that is on the page opens its pop-up
 PAUSE = """() => { const b = document.getElementById('lspause'); return b && [b.getAttribute('aria-pressed'), b.getAttribute('aria-label')]; }"""
-POP_OPEN = "() => !!document.querySelector('.board .ptip.on')"
+POP_OPEN = "() => !!document.querySelector('.vpop.on')"
 
 
 def hover_pause(page):
@@ -624,14 +624,196 @@ def hover_pause(page):
     return ok, f"{n} names; hover, closes, pressed, quiet, click, kept, resumed: {want}" + (f"; {bad}" if bad else "")
 
 
-def no_says_page(ctx):
-    """A lesson with no `says` on any name or legend entry has no pause button."""
-    case, html = ROOT / "tools/class-cases/clean-lesson.yaml", ROOT / "out/board-ui/no-says.html"
+def case_page(ctx, case):
+    """Build a class case into out/board-ui and open it."""
+    html = ROOT / f"out/board-ui/{case}.html"
     html.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run([sys.executable, ROOT / "plugins/viz-os/skills/class/scripts/lesson.py", case, "-o", html, "--quiet"], capture_output=True)
+    subprocess.run([sys.executable, ROOT / "plugins/viz-os/skills/class/scripts/lesson.py", ROOT / f"tools/class-cases/{case}.yaml", "-o", html, "--quiet"], capture_output=True, check=True)
     page = ctx.new_page(); page.goto(html.as_uri()); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
-    r = page.evaluate("[document.querySelectorAll('.says').length, !!document.getElementById('lspause')]"); page.close()
-    return r == [0, False], f"says, button: {r}"
+    return page
+
+
+def no_says_page(ctx):
+    """A lesson whose formula has no symbols (so nothing opens a card) has no targets and no pause button, but has its formula."""
+    page = case_page(ctx, "no-card")
+    r = page.evaluate("[document.querySelectorAll('.katex').length > 0, document.querySelectorAll('.vt, .says').length, !!document.getElementById('lspause')]"); page.close()
+    return r == [True, 0, False], f"formula drawn, targets, button: {r}"
+
+
+def slider_card(ctx):
+    """A term's card says its value now: open on y = 2k, move the slider, and the open card reads the new value."""
+    page = case_page(ctx, "pop-slider")
+    page.evaluate("document.querySelector('.cline .lt-y').scrollIntoView({block: 'center'})"); page.click(".cline .lt-y"); page.wait_for_timeout(150)
+    a = page.evaluate("(document.querySelector('.vpop.on .vv') || {}).textContent")
+    page.evaluate("() => { const e = document.querySelector('input[type=range]'); e.value = 3; e.dispatchEvent(new Event('input', {bubbles: true})); }"); page.wait_for_timeout(300)
+    b = page.evaluate("(document.querySelector('.vpop.on .vv') || {}).textContent")
+    page.close()
+    return (a, b) == ("= 4", "= 6"), f"value before, after: {a!r}, {b!r}"
+
+
+SET_K = "v => { const e = document.querySelector('input[type=range]'); e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); }"
+# which v is lit: its place among the page's v brackets, whether it sits in a teacher line, and whether the card is open
+LIT_V = "() => [[...document.querySelectorAll('.mt-v')].findIndex(e => e.classList.contains('act')), !!document.querySelector('.say .mt-v.act'), !!document.querySelector('.vpop.on')]"
+
+
+def say_refind(ctx):
+    """A slider redraws the teacher lines: a card pinned on the second v (in a say) stays open on that same second v,
+    and a card opened by keyboard focus stays on it with the focus."""
+    page = case_page(ctx, "pop-slider")
+    page.evaluate("VizOS.slides.forEach(sl => (sl.r.stages || []).forEach(S => { for (let k = 0; k < 40 && S.move(1); k++); }))"); page.wait_for_timeout(150)
+    n = page.evaluate("document.querySelectorAll('.say .mt-v.vt').length")
+    page.evaluate("document.querySelectorAll('.mt-v')[1].scrollIntoView({block: 'center'})")
+    page.locator(".mt-v").nth(1).click(); page.wait_for_timeout(150)
+    a = page.evaluate(LIT_V)
+    page.evaluate(SET_K, 3); page.wait_for_timeout(400)
+    b = page.evaluate(LIT_V)
+    page.locator(".mt-v").nth(1).click(); page.wait_for_timeout(100)          # unpin
+    page.keyboard.press("Shift"); page.evaluate("document.querySelectorAll('.mt-v')[1].focus()"); page.wait_for_timeout(150)
+    page.evaluate(SET_K, 1); page.wait_for_timeout(400)
+    c = page.evaluate("(" + LIT_V + ")().concat(document.activeElement === document.querySelectorAll('.mt-v')[1])")
+    page.close()
+    want = [1, True, True]
+    return n == 2 and a == want and b == want and c == want + [True], f"say targets {n}; before {a}, after the slider {b}, focused after {c}"
+
+
+def clamp_card(ctx):
+    """At 1280 x 720 a card on a tall bracket at the bottom of the window, or at its top, stays inside the window."""
+    page = ctx.new_page(); page.set_viewport_size({"width": 1280, "height": 720})
+    page.goto((EX / "board-gallery/lesson.html").as_uri()); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
+    page.evaluate("VizOS.slides.forEach(sl => (sl.r.stages || []).forEach(S => { for (let k = 0; k < 40 && S.move(1); k++); }))"); page.wait_for_timeout(150)
+    out = []
+    for where in ("bottom", "top"):
+        page.mouse.move(2, 2); page.wait_for_timeout(60)
+        box = page.evaluate(f"""() => {{ const e = [...document.querySelectorAll('.mt-cellmat.vt')].find(m => m.getClientRects().length); const r = e.getBoundingClientRect();
+          scrollBy(0, {"r.top - innerHeight + 60" if where == "bottom" else "r.bottom - 60"}); const q = e.getBoundingClientRect(); return [q.left + q.width / 2, {"innerHeight - 30" if where == "bottom" else "30"}]; }}""")
+        page.wait_for_timeout(100); page.mouse.move(*box); page.wait_for_timeout(150)
+        out.append(page.evaluate("() => { const k = document.querySelector('.vpop.on'); if (!k) return null; const r = k.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), innerHeight]; }"))
+    page.close()
+    ok = all(o and o[0] >= 0 and o[1] <= o[2] for o in out)
+    return ok, f"card top, bottom, window (bottom, top): {out}"
+
+
+# the open card: its text's left and right gaps to the frame, its frame colour, the term's own colour (--hc), how much of the
+# formula is faded and whether the term itself is, and its shape chip
+CARD = """t => { const k = document.querySelector('.vpop.on'); if (!k) return null; const r = k.getBoundingClientRect(), rg = document.createRange(), w = document.createTreeWalker(k, NodeFilter.SHOW_TEXT); let lo = 1e9, hi = -1e9;
+  while (w.nextNode()) { if (w.currentNode.parentElement.closest('.katex-mathml')) continue; rg.selectNodeContents(w.currentNode); for (const q of rg.getClientRects()) if (q.width) { lo = Math.min(lo, q.left); hi = Math.max(hi, q.right); } }
+  k.querySelectorAll('.katex-html, svg, .chip').forEach(q => { const b = q.getBoundingClientRect(); if (b.width) { lo = Math.min(lo, b.left); hi = Math.max(hi, b.right); } });
+  const probe = document.createElement('span'); probe.style.color = 'var(--hc)'; t.appendChild(probe); const hc = getComputedStyle(probe).color; probe.remove();
+  const chip = k.querySelector('.chip'), vv = k.querySelector('.vv');
+  return { l: lo - r.left, r: r.right - hi, border: getComputedStyle(k).borderTopColor, hc, dm: document.querySelectorAll('.dm').length, self: !!t.closest('.dm'), chip: chip && chip.textContent, vv: vv && vv.textContent, w: r.width }; }"""
+MARK_T = "e => { e.setAttribute('data-ui-t', '1'); }"
+
+
+def hover_card(page, sel_js):
+    """Point at the first shown target the JS expression picks; returns (the card's measures, the target's selector)."""
+    page.evaluate("document.querySelectorAll('[data-ui-t]').forEach(e => e.removeAttribute('data-ui-t'))")
+    ok = page.evaluate(f"""() => {{ const e = ({sel_js})(); if (!e) return false; e.setAttribute('data-ui-t', '1'); e.scrollIntoView({{block: 'center'}}); return true; }}""")
+    if not ok:
+        return None
+    page.mouse.move(5, 300); page.wait_for_timeout(60)
+    page.hover("[data-ui-t]"); page.wait_for_timeout(120)
+    m = page.evaluate(f"() => ({CARD})(document.querySelector('[data-ui-t]'))")
+    page.mouse.move(5, 300); page.wait_for_timeout(80)
+    return m
+
+
+SHOWN = "e => e.getClientRects().length && !e.closest('[data-step]:not(.shown)') && getComputedStyle(e).visibility !== 'hidden'"
+
+
+PAGE = {}   # the lesson open now: its YAML and data, for the tests that know what the page must have
+
+
+def walk(o):
+    if isinstance(o, dict):
+        yield o
+        for v in o.values(): yield from walk(v)
+    elif isinstance(o, list):
+        for v in o: yield from walk(v)
+
+
+def expected_kinds(Y):
+    """The kinds of pop-up target the lesson's YAML puts on the page."""
+    S, items = Y.get("symbols") or {}, list(walk(Y.get("slides") or []))
+    says = {q for q, v in S.items() if isinstance(v, dict) and v.get("says")}
+    kinds = set()
+    if any(isinstance(d.get("calc"), dict) and d["calc"].get("name") in says for d in items): kinds.add("formula term")
+    if "\\mat{" in PAGE["text"] or any("matrix" in d and isinstance(d.get("matrix"), str) or isinstance(d.get("vec"), str) for d in items): kinds.add("brackets")
+    if any(isinstance(d.get("plane"), dict) and any(isinstance(m, dict) and m.get("says") for m in walk(d["plane"])) for d in items): kinds.add("plane name")
+    return kinds
+
+
+def pop_cards(page):
+    """Every kind of target on the page (a formula term, a matrix's brackets, a plane name or legend entry): its card is as wide as
+    its text (left and right gaps within 1 px), framed in the term's colour; a formula term fades the rest of its formula, not
+    itself, and nothing stays faded once the pointer leaves."""
+    page.evaluate("VizOS.slides.forEach(sl => (sl.r.stages || []).forEach(S => { for (let k = 0; k < 40 && S.move(1); k++); }))")
+    kinds = {"formula term": "'.cline .vt, .fline .lt.vt, .asm .vt'", "brackets": "'.mt.vt'", "plane name": "'.plane .vt'"}
+    out, bad, want = [], [], expected_kinds(PAGE["yaml"])
+    for kind, sel in kinds.items():
+        m = hover_card(page, f"() => [...document.querySelectorAll({sel})].find({SHOWN})")
+        if m is None:
+            if kind in want: bad.append(f"{kind}: the YAML has one, the page has no target")
+            continue
+        out.append(kind)
+        if abs(m["l"] - m["r"]) > 1: bad.append(f"{kind}: gaps {m['l']:.1f} / {m['r']:.1f}")
+        if m["border"] != m["hc"]: bad.append(f"{kind}: frame {m['border']} vs term {m['hc']}")
+        if kind != "plane name" and (not m["dm"] or m["self"]): bad.append(f"{kind}: faded {m['dm']}, itself {m['self']}")
+    left = page.evaluate("[document.querySelectorAll('.dm').length, !!document.querySelector('.vpop.on')]")
+    if left != [0, False]: bad.append(f"after leaving: faded {left[0]}, card {left[1]}")
+    return bool(out) and not bad, f"{', '.join(out)} (YAML wants {', '.join(sorted(want))})" + (f"; {bad[:3]}" if bad else "")
+
+
+def mat_card(page):
+    """\\mat brackets and matrix/vec items open their symbol's card, with its shape worked out here from data.json
+    (rows × columns; a row item is 1 × n). A page whose YAML has brackets must have bracket targets."""
+    has = "brackets" in expected_kinds(PAGE["yaml"])
+    found = page.evaluate(f"() => [...new Set([...document.querySelectorAll('.mt.vt')].filter({SHOWN}).map(e => [...e.classList].find(c => c.startsWith('mt-')).slice(3) + (e.closest('.mrow') ? '|row' : '')))]")
+    if not found:
+        return not has, "no brackets on this page" if not has else "the YAML has brackets, the page has no .mt target"
+    out, bad = [], []
+    for key in found:
+        q, row = key.split("|")[0], key.endswith("|row")
+        v = PAGE["data"].get(q)
+        if not isinstance(v, list) or not v:
+            bad.append(f"{q}: not in data.json"); continue
+        want = f"{len(v)} × {len(v[0])}" if isinstance(v[0], list) else f"1 × {len(v)}" if row else f"{len(v)} × 1"
+        sel = f".mrow .mt-{q}.vt" if row else f".mt-{q}.vt:not(.mrow .mt-{q})"
+        m = hover_card(page, f"() => [...document.querySelectorAll('{sel}')].find({SHOWN})")
+        got = m and m["chip"]
+        out.append(f"{q}{' row' if row else ''} {got}")
+        if got != want: bad.append(f"{q}: chip {got!r}, data.json {want!r}")
+    return not bad, "; ".join(out) + (f"; {bad}" if bad else "")
+
+
+# the term's computed filter; the focus ring's border and whether it holds the whole term; whether the term is :focus-visible
+GLOW = """() => { const e = document.querySelector('[data-ui-t]'), cs = getComputedStyle(e), g = document.querySelector('.vring.on'), b = [...e.querySelectorAll('*')].reduce((u, q) => { const r = q.getBoundingClientRect(); return r.width && r.height ? [Math.min(u[0], r.left), Math.min(u[1], r.top), Math.max(u[2], r.right), Math.max(u[3], r.bottom)] : u; }, [1e9, 1e9, -1e9, -1e9]);
+  const k = g && g.getBoundingClientRect(), gs = g && getComputedStyle(g); return [cs.filter, g ? gs.borderTopStyle : 'none', g ? gs.borderTopWidth : '0px', e.matches(':focus-visible'), !!g && k.left <= b[0] && k.top <= b[1] && k.right >= b[2] && k.bottom >= b[3]]; }"""
+
+
+def glows(f):
+    """The drop-shadow colour in a computed filter, and whether it shows (not transparent, alpha above 0)."""
+    m = re.search(r"drop-shadow\((rgba?\([^)]*\))", f or "")
+    if not m: return None, False
+    n = [float(x) for x in re.findall(r"[\d.]+", m.group(1))]
+    return m.group(1), len(n) == 3 or n[3] > 0
+
+
+def glow_focus(page):
+    """A hovered term glows in a real colour (the filter computes to a drop-shadow that is not transparent), and a term
+    reached by the keyboard glows and wears a focus ring."""
+    if not page.evaluate("document.querySelectorAll('.vt').length"):
+        return not expected_kinds(PAGE["yaml"]), "no targets on this page"
+    page.evaluate("document.querySelectorAll('[data-ui-t]').forEach(e => e.removeAttribute('data-ui-t'))")
+    page.evaluate(f"() => {{ const e = [...document.querySelectorAll('.vt')].find({SHOWN}); e.setAttribute('data-ui-t', '1'); e.scrollIntoView({{block: 'center'}}); }}")
+    page.mouse.move(5, 300); page.hover("[data-ui-t]"); page.wait_for_timeout(200)
+    hov = page.evaluate(GLOW)
+    page.mouse.move(5, 300); page.wait_for_timeout(100)
+    page.keyboard.press("Shift"); page.evaluate("document.querySelector('[data-ui-t]').focus()"); page.wait_for_timeout(200)
+    foc = page.evaluate(GLOW)
+    page.evaluate("document.activeElement.blur()"); page.wait_for_timeout(80)
+    (hc, hok), (fc, fok) = glows(hov[0]), glows(foc[0])
+    ring = foc[3] and foc[1] != "none" and float(foc[2].rstrip("px") or 0) >= 1 and foc[4] and hov[1] == "none"
+    return hok and fok and ring, f"hover glow {hc}, focus glow {fc}, ring {foc[1]} {foc[2]} round the term {foc[4]} (focus-visible {foc[3]}), no ring on hover {hov[1] == 'none'}"
 
 
 TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a line goes to its stop", click_line), ("a think step's stop opens it", think_stop),
@@ -643,11 +825,13 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("every row fits its figure at five widths", rows_fit), ("every row is on screen at three windows", rows_on_screen),
          ("a filled plane fills its room", plane_fills), ("a table fills its column", table_fills), ("the first stop has no line by the buttons", first_stop_quiet),
          ("Next stays under the pointer", stays_put), ("the line by the buttons never repeats words on screen", no_repeat),
-         ("no piece of a formula on two rows", one_row), ("a formula shrinks to fit, never under 20 px", formula_floor), ("term labels never stack", no_stack),
+         ("no piece of a formula on two rows", one_row), ("a formula shrinks to fit, never under 20 px", formula_floor), ("formulas carry no names under them", no_names),
          ("the text sits 20 px from its figure", side_gap), ("figures fill their room at 1480 x 800", fills_room), ("equal planes keep one scale", equal_units),
          ("all text starts at the page's left edge", edges), ("figures and equations centre on the page", centres), ("a symbol has one colour", one_colour), ("cards wear the figure's frame", frames),
-         ("callouts and thinks have no lines and no indent", no_lines), ("a line stands 12 px from its card", card_gap), ("a lit callout shows its mark, its text stays", lit_mark), ("legends have room above them", legend_room),
-         ("pause hover pop-ups: hover quiet, click opens, kept", hover_pause)]
+         ("callouts and thinks have no lines and no indent", no_lines), ("a line stands 18 px from its card", card_gap), ("a lit callout shows its mark, its text stays", lit_mark), ("legends have room above them", legend_room),
+         ("pause hover pop-ups: hover quiet, click opens, kept", hover_pause),
+         ("a pop-up card fits its text, wears its term's colour, fades the rest", pop_cards), ("brackets open their symbol's card with its shape", mat_card),
+         ("a term glows on hover and on keyboard focus, with a focus ring", glow_focus)]
 
 
 def series_of(name):
@@ -681,6 +865,9 @@ def main(names):
             return 2
         ctx = br.new_context(viewport={"width": 1440, "height": 900})
         for name in names:
+            Y = yaml.safe_load((EX / name / "lesson.yaml").read_text())
+            dj = EX / name / (Y.get("data_file") or "data.json")
+            PAGE.update(yaml=Y, text=(EX / name / "lesson.yaml").read_text(), data=json.loads(dj.read_text()) if dj.exists() else (Y.get("data") or {}))
             page = open_page(ctx, name)
             for label, fn in TESTS:
                 try:
@@ -699,6 +886,19 @@ def main(names):
             ok, why = False, str(e).splitlines()[0][:160]
         res.append(ok)
         print(f"board ui no-says case: no pause button without says | {'ok' if ok else 'FAIL: ' + str(why)}")
+        try:
+            ok, why = slider_card(ctx)
+        except Exception as e:
+            ok, why = False, str(e).splitlines()[0][:160]
+        res.append(ok)
+        print(f"board ui pop-slider case: a card's value follows the slider | {'ok' if ok else 'FAIL: ' + str(why)}")
+        for label, fn in (("pop-slider case: the card stays on the same term in a teacher line", say_refind), ("board-gallery: a card stays inside the window", clamp_card)):
+            try:
+                ok, why = fn(ctx)
+            except Exception as e:
+                ok, why = False, str(e).splitlines()[0][:160]
+            res.append(ok)
+            print(f"board ui {label} | {'ok' if ok else 'FAIL: ' + str(why)}")
         br.close()
     for s, books in sorted(series.items()):
         ok, why = series_colours(books)

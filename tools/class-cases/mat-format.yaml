@@ -1,0 +1,22 @@
+# expect: give `cols:` or `rows:`, not both: a cell takes one colour
+# expect: one formula shows its \mat objects with 1 and 2 decimals
+# Both colour lists on one matrix, and one formula that mixes decimal formats.
+title: Colours and formats
+question: Does one formula keep one format?
+answer: It should.
+data: {X: [[1, 0.5], [0.5, 1]], q: [1.5, 2.5]}
+symbols:
+  X: {tex: X, says: the mixing rule, kind: matrix, cols: [s1, s2], rows: [bad, good]}
+  q: {tex: '\vec{q}', says: two shifts, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Formats
+    steps:
+      - say: The matrix.
+        add: {matrix: X}
+      - say: The shifts, in one line with it.
+        add: {eqn: {say: Both, tex: '[X] = \mat{X} \quad [q] = \mat{q|2}'}}
+  - type: recap
+    answer: One format.

@@ -1,0 +1,30 @@
+# expect: `F` is a flat list of 3 numbers, a vector: write `kind: vector`
+# expect: `M2` is 2 rows of 2, a matrix: write `kind: matrix`
+# expect: `cols:` gives 3 colour(s), but `X` has 2 columns
+# expect: `rows:` gives 1 colour(s), but `p5` has 2 rows
+# expect: a vector takes `rows:` (one colour per entry), not `cols:`
+# expect: data.json has no `G`
+# expect: `R` in the data is not a list of numbers (a vector) or a list of equal rows of numbers (a matrix)
+# expect: `cols:` and `rows:` colour a matrix or a vector
+# Symbols whose kind does not fit their data, or whose colours do not fit their shape.
+title: Shapes that do not fit
+question: Does the data fit each symbol's kind?
+answer: Not here.
+data: {F: [1, 2, 3], M2: [[1, 2], [3, 4]], X: [[1, 0.5], [0.5, 1]], p5: [8, 4], R: [[1, 2], [3]], y: 3}
+symbols:
+  F: {tex: F, says: a flat list, kind: matrix}
+  M2: {tex: M, says: a square, kind: vector}
+  X: {tex: X, says: the mixing rule, kind: matrix, cols: [s1, s2, s3]}
+  p5: {tex: '\vec{x}', says: the orange pixel, kind: vector, rows: [s1], cols: [s2]}
+  G: {tex: G, says: not in the data, kind: matrix}
+  R: {tex: R, says: ragged rows, kind: matrix}
+  y: {tex: y, says: the output, cols: [s1]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Shapes
+    steps:
+      - say: 'The output is {{y}}.'
+  - type: recap
+    answer: Fit the kind to the data.

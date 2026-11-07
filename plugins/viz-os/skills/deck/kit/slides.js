@@ -36,12 +36,31 @@
   const FMT = /^(\d+|s\d+|%\d*|e\d*|,|int)$/;
   const splitFmt = raw => { const k = raw.lastIndexOf('|'); if (k > 0 && FMT.test(raw.slice(k + 1).trim())) { const f = raw.slice(k + 1).trim(); return [raw.slice(0, k), /^\d+$/.test(f) ? +f : f]; } return [raw, undefined]; };
   L.interp = function (s, scope, inTex) {
-    return String(s ?? '').replace(/\{\{([\s\S]+?)\}\}/g, (_, raw) => { const [x, f] = splitFmt(raw); const v = L.try(x, scope, `text {{${raw}}}`); return inTex ? L.numTex(v, f) : L.fmt(v, f); });
+    const t = String(s ?? '').replace(/\{\{([\s\S]+?)\}\}/g, (_, raw) => { const [x, f] = splitFmt(raw); const v = L.try(x, scope, `text {{${raw}}}`); return inTex ? L.numTex(v, f) : L.fmt(v, f); });
+    return inTex ? t.replace(MAT, (_, id, d) => L.matTex(id, scope, d == null ? undefined : +d)) : t;
+  };
+  // \mat{X} or \mat{X|2} (2 decimals): a matrix or vector from the data, in brackets, read from the scope, so it follows a
+  // slider as {{…}} does. Its symbol's `cols` colour each column, `rows` each row (a vector's entries). One format per
+  // object: whole numbers stay whole, else every entry takes the decimals the finest one needs (at most 2), so 1 shows as 1.0.
+  // A slot as wide as a minus sits before the right bracket only when a number is negative, so both brackets clear the numbers evenly
+  const MAT = /\\mat\{([A-Za-z_]\w*)(?:\|(\d))?\}/g;
+  const kc = (c, t) => !c ? t : /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(c) ? `\\textcolor{${c}}{${t}}` : `\\htmlClass{kc kc-${c}}{${t}}`;
+  L.matTex = function (id, scope, dec, row) {
+    const S = ((L.deck && L.deck.symbols) || {})[id] || {}, v = scope ? scope[id] : undefined;
+    const ok = x => typeof x === 'number' && Number.isFinite(x);
+    const M = Array.isArray(v) && v.length ? (Array.isArray(v[0]) ? v : row ? [v] : v.map(x => [x])) : null;
+    if (!M || !M.every(r => Array.isArray(r) && r.length === M[0].length && r.every(ok))) { L.err('formula', `\\mat{${id}}: ${id} is not a list of numbers (a vector) or a list of equal rows (a matrix) in the data`); return '\\text{?}'; }
+    const all = M.flat(), places = x => [0, 1, 2].find(d => Math.abs(+x.toFixed(d) - x) < 1e-9) ?? 2;
+    const d = dec ?? (typeof S.fmt === 'number' ? S.fmt : Math.max(...all.map(places)));
+    const vecRow = !Array.isArray(v[0]), colour = (i, j) => (S.cols || [])[j] || (S.rows || [])[vecRow && row ? j : i];
+    const body = M.map((r, i) => r.map((x, j) => kc(colour(i, j), L.numTex(x, d))).join(' & ')).join(' \\\\ ');
+    const neg = all.some(x => L.fmt(x, d).startsWith('−'));
+    return `\\htmlClass{mt mt-${id}}{\\left[\\mkern-1mu\\begin{array}{${'r'.repeat(M[0].length)}} ${body} \\end{array}${neg ? '\\hphantom{-}' : ''}\\mkern-1mu\\right]}`;   // mt-<id>: a board opens id's card on it
   };
   L.plain = (s, scope) => L.texPlain(L.interp(String(s ?? ''), scope).replace(/\$([^$]+)\$/g, '$1')).replace(/\*\*|==|`/g, '').replace(/(?<!\w)\*(\S.*?\S|\S)\*(?!\w)/g, '$1');
   L.fill = function (root, scope) {
     root.querySelectorAll('.iv').forEach(sp => { const [x, f] = splitFmt(sp.dataset.x); try { sp.textContent = L.fmt(L.eval(x, scope), f); sp.classList.remove('bad'); } catch (e) { sp.textContent = '⟨?⟩'; sp.classList.add('bad'); L.err('text', `${e.message} in {{${sp.dataset.x}}}`); } });
-    root.querySelectorAll('.tx').forEach(sp => { const raw = sp.dataset.tex; if (sp.dataset.done && !raw.includes('{{')) return; L.renderTex(sp, L.interp(raw, scope, true), false); sp.dataset.done = 1; });
+    root.querySelectorAll('.tx').forEach(sp => { const raw = sp.dataset.tex; if (sp.dataset.done && !raw.includes('{{') && !raw.includes('\\mat{')) return; L.renderTex(sp, L.interp(raw, scope, true), false); sp.dataset.done = 1; });
   };
 
   // ---------- symbols ----------

@@ -15,7 +15,7 @@ data:
   xbar: 4
 abbr: {CD3: a T-cell surface marker}
 symbols:
-  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 of cell i}
+  cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 level}
   xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean}
   n: {tex: 'n', says: the number of cells, short: cells}
   tot: {tex: 'T', says: the sum of the levels, short: sum}

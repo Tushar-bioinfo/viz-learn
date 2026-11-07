@@ -1,0 +1,21 @@
+# expect: `X` and `scale` are both written $X$
+# A number and a matrix share one TeX: the ledger cannot tell which one $X$ means, so it is an error.
+title: One name, two things
+question: Can a matrix share its TeX?
+answer: No.
+data: {scale: 2, X: [[1, 0.5], [0.5, 1]]}
+symbols:
+  scale: {tex: X, says: the scale}
+  X: {tex: X, says: the mixing rule, kind: matrix}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Shared name
+    steps:
+      - say: 'The scale is {{scale}}.'
+      - say: 'Look at $X$.'
+      - say: The matrix.
+        add: {matrix: X}
+  - type: recap
+    answer: One TeX per thing.

@@ -6,13 +6,13 @@ question: Does a matrix count as one term?
 answer: Yes, however many entries it holds.
 data: {a: 2, b: 1, c: 0, d: 3, v: 4, u: 5, y: 7}
 symbols:
-  a: {tex: 'a', says: the top-left entry}
-  b: {tex: 'b', says: the top-right entry}
-  c: {tex: 'c', says: the bottom-left entry}
-  d: {tex: 'd', says: the bottom-right entry}
-  v: {tex: 'v', says: the input vector}
-  u: {tex: 'u', says: the shift}
-  y: {tex: 'y', says: the output}
+  a: {tex: 'a', says: the top-left entry, short: top-left entry}
+  b: {tex: 'b', says: the top-right entry, short: top-right entry}
+  c: {tex: 'c', says: the bottom-left entry, short: bottom-left entry}
+  d: {tex: 'd', says: the bottom-right entry, short: bottom-right entry}
+  v: {tex: 'v', says: the input vector, short: input vector}
+  u: {tex: 'u', says: the shift, short: shift}
+  y: {tex: 'y', says: the output, short: output}
 slides:
   - type: title
   - type: board

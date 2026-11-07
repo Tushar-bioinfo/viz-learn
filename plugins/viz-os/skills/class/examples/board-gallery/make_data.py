@@ -78,6 +78,14 @@ data.update({
     "redo_id": pcells[max(set(picks), key=lambda i: (picks.count(i), -i))]["id"], "redo_n": max(picks.count(i) for i in set(picks)),
 })
 
+# matrices and vectors for the bracket scene: three cells by two markers, its first row (cell c1), and the six CD3
+# levels with each one's distance from the mean (negative below it)
+data.update({
+    "cellmat": [[c["cd3"], c["cd19"]] for c in cells[:3]],
+    "c1row": [cells[0]["cd3"], cells[0]["cd19"]],
+    "xvec": cd3, "dvec": dev,
+})
+
 (HERE / "data.json").write_text(json.dumps(data, indent=1) + "\n")
 
 # the picture: six cells in a row, brighter orange for more CD3; no words or numbers on it (the kit draws the labels)

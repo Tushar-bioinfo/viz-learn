@@ -1,0 +1,26 @@
+# expect: builds
+# expect: not: formula error
+# A number a slider remakes, in a formula and in brackets: its pop-up card says its value now (tools/check_board_ui.py reads it),
+# and the card on the second v stays on that v when the slider redraws both teacher lines.
+title: A card that follows the slider
+question: Does a term's card follow the slider?
+answer: Yes.
+data: {base: [1, 2]}
+symbols:
+  y: {tex: y, says: twice the slider, short: double}
+  k: {tex: k, says: the slider's value, short: slider}
+  v: {tex: '\vec{v}', says: the base scaled, short: scaled, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Move the slider
+    controls: [{name: k, min: 1, max: 3, step: 1, value: 2, label: scale}]
+    derive: {y: 2 * k, v: base * k}
+    steps:
+      - say: 'The slider is {{k}}, so y is {{y}}.'
+        add: {calc: {say: Twice the slider, expr: 2 * k, name: y}}
+      - say: 'And the base, scaled: $\vec{v} = \mat{v}$.'
+      - say: 'Again, it grows with the slider: $\mat{v}$.'
+  - type: recap
+    answer: The card reads the page.

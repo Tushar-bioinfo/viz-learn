@@ -6,9 +6,9 @@ question: Can a formula name one entry of a list?
 answer: Yes, as x with a subscript.
 data: {x: [1, 4, 7], m: 4}
 symbols:
-  x: {tex: 'x', says: a level}
-  m: {tex: 'm', says: the mean}
-  d: {tex: 'd', says: a gap}
+  x: {tex: 'x', says: a level, short: level}
+  m: {tex: 'm', says: the mean, short: mean}
+  d: {tex: 'd', says: a gap, short: gap}
 slides:
   - type: title
   - type: board

@@ -28,10 +28,11 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 |---|---|
 | `tex` | how the symbol is written, in single quotes: `'\bar{x}'` |
 | `says` | its meaning in plain words (about 6 words) |
-| `short` | 2–3 words, the label under the symbol in a formula and on a parameter card |
-| `fmt` | how its number is shown in working (`2`, `s3`, `,`) |
+| `short` | ≤ 2 words, the bold name on the symbol's pop-up card and on a parameter card |
+| `fmt` | how its number is shown in working (`2`, `s3`, `,`); for a matrix or vector, decimals only (`fmt: 1`) |
 | `color` | a fixed colour for the symbol, its number, its table column and every place it shows in math: `s1` to `s5`, `good`, `bad`. A symbol keeps one colour across the page, and across every lesson of a series: set `color` by hand when it returns, since the automatic pick depends on what else the lesson lists. Without `color` it takes the next unused colour at the start, in the order listed, and `ink` once they run out; a `kind: operator` symbol takes none. Set it to pair symbols that belong together, like `w_1` and `x_1` |
-| `kind` | `index` (i, j) or `operator` (Σ): no number to show first, so the symbol ledger skips it |
+| `kind` | `index` (i, j) or `operator` (Σ): no number to show first, so the symbol ledger skips it. `matrix` or `vector`: its numbers come from the data under the symbol's name (a list of rows, or a flat list), and it is drawn in brackets (see `matrix` and `vec`) |
+| `cols`, `rows` | a matrix or vector's colours: one per column (`cols`), or one per row or entry (`rows`), as `s1`…`s5` or a hex |
 
 ## A board scene
 ```yaml
@@ -145,7 +146,17 @@ Adds a column worked on every row. It keeps its place, with its row lines, and f
 ```yaml
 add: {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
 ```
-`lhs` is the name on the left; `expr` (an expression, drawn as TeX) or `tex` (TeX with `[name]` terms, as in `assemble`) is the right. Each term takes its colour and its `short` name under it; when two names would touch, or the formula has a fraction, they move to one key row under the formula. No numbers: use it after the numbers are known.
+`lhs` is the name on the left; `expr` (an expression, drawn as TeX) or `tex` (TeX with `[name]` terms, as in `assemble`) is the right. Each term takes its colour. Nothing is written under a formula: pointing at, tapping or tabbing to a term (or a matrix's brackets) opens its card, with its notation, `short` name, value now, `says` and shape. No numbers: use it after the numbers are known.
+
+### `matrix` and `vec`: a matrix or vector with its numbers
+```yaml
+symbols:
+  X: {tex: X, says: the scanner's mixing rule, kind: matrix, cols: [s3, s2]}   # data.json: X: [[1, 0.5], [0.5, 1]]
+  p5: {tex: '\vec{x}', says: the orange pixel, kind: vector, rows: [s3, s2]}   # data.json: p5: [8, 4]
+add: {matrix: X}            # X = [1.0 0.5; 0.5 1.0], each column in its colour
+add: {vec: p5, row: true}   # a row vector; leave out row for a column
+```
+Drawn as the symbol = its numbers in brackets, right-aligned, one number format for the whole object. Each takes an `id`. In maths (`$…$`, or an `eqn` or `assemble`'s TeX), `\mat{X}` (or `\mat{X|2}`, 2 decimals) draws the same brackets; write `X = \mat{X}` the first time, so the name stands beside them. They follow a slider when a `derive` makes the name.
 
 ### `assemble`: the formula built from our numbers
 The formula scene's core (`lesson.md` §3). One full-width plate holds **Our numbers**, then the next step's line, then **In symbols**, each term in the same colour and named. So the step after it must say what the symbols are.
@@ -257,7 +268,7 @@ Every mark also takes:
 | `color` | `accent`, `s1` to `s5`, `ink`, `mist`, `good`, `bad`, …, or a hex like `#cc6600` |
 | `label` | its short legend entry above the plane, 2 words at most (`PC1`, `bad line`), even when it also has `name` |
 | `name` | a label beside the mark itself (point, segment, vector, foot), 2 words at most like a legend entry (`1 unit`, not `1 unit of CD3`; `$a \cdot b$` counts as one): the rest goes in `says:`. A vector's, a segment's and a foot's sit beside the middle of the line, off to one side |
-| `says` | the longer meaning (`how far u goes along PC1`); it pops up when the learner points at, taps or tabs to the name or legend entry, which get a dotted underline. `{{…}}` and markdown work |
+| `says` | the longer meaning (`how far u goes along PC1`); it opens on the board's pop-up card when the learner points at, taps or tabs to the name or legend entry, which brightens instead of an underline. `{{…}}` and markdown work |
 | `dash` | `true` for a dashed line or segment |
 | `when` | an expression; the mark is drawn only while it is not 0 (`when: prev` with a toggle; `when: 'at(has_next, t)'` in a run) |
 

@@ -1,0 +1,32 @@
+# expect: builds
+# expect: not: before it is drawn
+# expect: not: is not a symbol
+# expect: not: \mat{
+# A matrix, a column vector, a row vector, \mat in an eqn and in $…$, and a vector a slider remakes: drawn, then used.
+title: Brackets from the data
+question: Can a lesson draw a matrix from its data?
+answer: Yes, in brackets, with its numbers.
+data: {X: [[1, 0.5], [0.5, 1]], p5: [8, 4], q: [-1.5, 2, 0.25]}
+symbols:
+  X: {tex: X, says: the mixing rule, short: mixing rule, kind: matrix, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel, short: orange pixel, kind: vector, rows: [s3, s2]}
+  q: {tex: '\vec{q}', says: three shifts, short: three shifts, kind: vector}
+  ps: {tex: '\vec{s}', says: the pixel scaled, short: pixel scaled, kind: vector}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A matrix and a pixel
+    controls: [{name: k, min: 1, max: 3, step: 1, value: 2, label: scale}]
+    derive: {ps: p5 * k}
+    steps:
+      - say: The scanner's rule, one column per colour.
+        add: {matrix: X}
+      - say: 'Then $X$ meets the pixel.'
+        add: [{vec: p5}, {vec: p5, row: true, id: prow}]
+      - say: Three shifts, some below zero.
+        add: {eqn: {say: The shifts, tex: '[q] = \mat{q|2}'}}
+      - say: 'Scaled by the slider: $\vec{s} = \mat{ps}$.'
+        add: {note: 'The pixel $\mat{p5}$ grows to $\mat{ps}$.'}
+  - type: recap
+    answer: Draw it, then use it.

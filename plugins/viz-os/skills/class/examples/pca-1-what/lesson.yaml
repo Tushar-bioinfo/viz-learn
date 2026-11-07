@@ -10,32 +10,32 @@ abbr: {PCA: principal component analysis, PC1: the first principal component, PC
 symbols:
   cd3: {tex: 'x_1', says: a cell's CD3 level, short: CD3, color: s1, fmt: 1}
   cd19: {tex: 'x_2', says: a cell's CD19 level, short: CD19, color: s2, fmt: 1}
-  m1: {tex: '\bar{x}_1', says: the mean CD3 level, short: mean CD3, color: s1, fmt: 2}
-  m2: {tex: '\bar{x}_2', says: the mean CD19 level, short: mean CD19, color: s2, fmt: 2}
-  d1: {tex: 'd_1', says: CD3 measured from the middle, short: CD3 from the middle, color: s1, fmt: 2}
-  d2: {tex: 'd_2', says: CD19 measured from the middle, short: CD19 from the middle, color: s2, fmt: 2}
+  m1: {tex: '\bar{x}_1', says: CD3 averaged over the cells, short: mean CD3, color: s1, fmt: 2}
+  m2: {tex: '\bar{x}_2', says: CD19 averaged over the cells, short: mean CD19, color: s2, fmt: 2}
+  d1: {tex: 'd_1', says: CD3 measured from the middle, short: centred CD3, color: s1, fmt: 2}
+  d2: {tex: 'd_2', says: CD19 measured from the middle, short: centred CD19, color: s2, fmt: 2}
   n: {tex: 'n', says: the number of cells, short: cells, color: ink}
   i: {tex: 'i', says: which cell, color: s4, kind: index}
   j: {tex: 'j', says: which marker, color: s5, kind: index}
   v_cd3: {tex: 's_1^2', says: the spread of the shadows on the CD3 line, short: CD3 spread, color: s1, fmt: 3}
   v_cd19: {tex: 's_2^2', says: the spread of the shadows on the CD19 line, short: CD19 spread, color: s2, fmt: 3}
   tot: {tex: 'S', says: the total spread of both markers, short: total spread, fmt: 3}
-  u1: {tex: 'u_1', says: how much the arrow moves in CD3, short: arrow's CD3 part, color: s1}
-  u2: {tex: 'u_2', says: how much the arrow moves in CD19, short: arrow's CD19 part, color: s2}
+  u1: {tex: 'u_1', says: how much the arrow moves in CD3, short: arrow's CD3, color: s1}
+  u2: {tex: 'u_2', says: how much the arrow moves in CD19, short: arrow's CD19, color: s2}
   p1: {tex: 'p_{c1}', says: c1's shadow on the tilted line, short: c1's shadow, fmt: 2}
   p: {tex: 'p', says: a cell's shadow on the line, short: shadow, fmt: 2}
-  s2u: {tex: 's_u^2', says: the spread of the shadows on the line, short: spread along u, fmt: 3}
+  s2u: {tex: 's_u^2', says: the spread of the shadows on the line, short: u spread, fmt: 3}
   th: {tex: '\theta', says: "the angle of the line, in degrees", short: angle, fmt: 0}
   sp: {tex: 's_\theta^2', says: the spread of the shadows at this angle, short: spread now, fmt: 3}
   alen: {tex: 'L', says: the arrow's length, short: arrow length, fmt: 1}
   spl_now: {tex: 's_{L}^2', says: the spread with the stretched arrow, short: spread now, fmt: 3}
-  v1: {tex: 'v_1', says: "PC1's arrow, its CD3 part", short: PC1's CD3 part, color: s1, fmt: 3}
-  v2: {tex: 'v_2', says: "PC1's arrow, its CD19 part", short: PC1's CD19 part, color: s2, fmt: 3}
+  v1: {tex: 'v_1', says: "PC1's arrow, its CD3 part", short: PC1's CD3, color: s1, fmt: 3}
+  v2: {tex: 'v_2', says: "PC1's arrow, its CD19 part", short: PC1's CD19, color: s2, fmt: 3}
   z: {tex: 'z', says: a cell's score on PC1, short: PC1 score, fmt: 2}
   lam1: {tex: 's_{\text{PC1}}^2', says: the spread of the PC1 scores, short: PC1 spread, fmt: 3}
   share1: {tex: 'f_1', says: the share of the total spread PC1 keeps, short: share kept, fmt: '%'}
   c12: {tex: 'c_{12}', says: 'the covariance of CD3 and CD19', short: covariance, color: s3, fmt: 3}
-  chk: {tex: 's_u^2', says: the hand tilt's spread from three numbers, short: spread along u, fmt: 3}
+  chk: {tex: 's_u^2', says: the hand tilt's spread from three numbers, short: u spread, fmt: 3}
 slides:
   - type: title
 

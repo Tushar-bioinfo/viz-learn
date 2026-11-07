@@ -1,0 +1,22 @@
+# expect: `X` ($X$) is a matrix used on slide 2 step 1 (in the text) before it is drawn with its numbers (first drawn on slide 2 step 2)
+# expect: `p5` ($\vec{x}$) is a vector used on slide 2 step 2 (an equation) before it is drawn
+# The matrix is named before it is drawn; the vector is used in a formula and never drawn.
+title: Named before drawn
+question: Can a line use a matrix before the board shows it?
+answer: No.
+data: {X: [[1, 0.5], [0.5, 1]], p5: [8, 4], y: 3}
+symbols:
+  X: {tex: X, says: the mixing rule, kind: matrix}
+  p5: {tex: '\vec{x}', says: the orange pixel, kind: vector}
+  y: {tex: y, says: the output}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Too early
+    steps:
+      - say: 'Here $X$ mixes the colours.'
+      - say: 'The output is {{y}}.'
+        add: [{matrix: X}, {eqn: {say: The output, lhs: y, tex: '[X] [p5]'}}]
+  - type: recap
+    answer: Draw first.

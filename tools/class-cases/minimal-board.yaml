@@ -5,8 +5,8 @@ answer: Yes, through lesson.py.
 data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}], cd3: [4, 6]}
 abbr: {CD3: a T-cell surface marker}
 symbols:
-  xbar: {tex: '\bar{x}', says: mean CD3}
-  cd3: {tex: 'x_i', says: CD3 of cell i}
+  xbar: {tex: '\bar{x}', says: mean CD3, short: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i, short: CD3 cell}
 slides:
   - type: title
   - type: board

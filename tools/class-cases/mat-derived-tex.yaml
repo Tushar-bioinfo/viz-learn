@@ -1,0 +1,21 @@
+# expect: `Y` and `scale` are both written $X$
+# expect: a vector's `fmt` is its number of decimals
+# A matrix that exists only as a derived name still may not share its TeX, and its fmt is decimals only.
+title: A derived matrix with a borrowed name
+question: Is a derived matrix checked too?
+answer: Yes.
+data: {scale: 2, base: [1, 2]}
+symbols:
+  scale: {tex: X, says: the scale factor, short: scale}
+  Y: {tex: X, says: the base scaled, short: scaled base, kind: vector, fmt: s3}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Derived
+    derive: {Y: base * scale}
+    steps:
+      - say: 'The scale is {{scale}}.'
+      - say: 'So $X = \mat{Y}$.'
+  - type: recap
+    answer: One TeX per thing.
