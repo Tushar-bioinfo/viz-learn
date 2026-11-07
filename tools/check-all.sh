@@ -32,6 +32,10 @@ done
 uu=$(python3 "$ROOT/tools/check_board_ui.py"); code=$?
 echo "$uu" | grep -v ' | ok$'
 [ "$code" = 0 ] || fail=1
+# dots in their true colour: drawn fills against colours worked out apart from the kit (tools/check_rgb.py)
+rr=$(python3 "$ROOT/tools/check_rgb.py"); code=$?
+echo "$rr" | grep -v ' | ok$'
+[ "$code" = 0 ] || fail=1
 # sketch pages: build in place and check like a deck
 K="$ROOT/plugins/viz-os/skills/sketch"
 for l in "$K"/examples/*/page.yaml; do

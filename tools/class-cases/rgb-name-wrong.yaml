@@ -1,0 +1,26 @@
+# expect: plane mark 2: name “red” says red, but its colour (8, 4, 0) reads as orange (#cc6600)
+# expect: not: name it by id
+# A named point whose colour word is wrong at the start.
+title: A wrong colour word
+question: Does the check catch a name that says the wrong colour?
+answer: Yes.
+data:
+  pixels: [{id: p1, red: 10, green: 0}, {id: p2, red: 0, green: 10}, {id: p3, red: 8, green: 4}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    steps:
+      - say: 'The dot named red sits at red 8, green 4.'
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 10}
+            y: {label: green level, min: 0, max: 10}
+            marks:
+              - points: {from: pixels, x: red, y: green, label: id}
+              - {point: [8, 4], rgb: 10, name: red, says: the pixel}
+      - say: The check names the wrong word.
+  - type: recap
+    answer: A colour word must fit the colour drawn.

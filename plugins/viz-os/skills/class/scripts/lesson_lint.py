@@ -100,7 +100,7 @@ PLANE = {"points": "{from, x, y, by, label, colors}", "shade": "[w0, w1, w2]", "
          "square": "[[x1, y1], [x2, y2]]", "text": "a label (and at: [x, y])", "ring": "[x, y]"}
 
 
-MARK_FIELDS = {"step", "color", "label", "name", "says", "dash", "when", "side", "from", "at"}   # what every mark may also take (board.md)
+MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "dash", "when", "side", "from", "at"}   # what every mark may also take (board.md)
 LEGEND_WORDS, LEGEND_MAX = 2, 5   # a plane legend is for a quick read: short entries, few of them
 
 
@@ -155,6 +155,21 @@ def lint_plane(B, Lx, w, pl, names):
             Lx.err(w, f"a plane with `fill` stretches its axes, so a `{k}` would not read true: delete `fill`, or drop the mark")
         if mk.get("when") is not None:
             ex(mk["when"])
+        if mk.get("rgb") is not None:   # a dot in its true colour: rgb: 10 (x = red, y = green), or {r, g, b, max}
+            rg = mk["rgb"]
+            if mk.get("color") is not None or (k == "points" and isinstance(v, dict) and v.get("colors")):
+                Lx.err(w, f"plane mark {i + 1} (`{k}`) has both `rgb` and `{'color' if mk.get('color') is not None else 'colors'}`: use one")
+            if k not in ("point", "points"):
+                Lx.err(w, f"plane mark {i + 1} (`{k}`): `rgb` colours a `point` or `points` dot; give a `{k}` a `color`")
+            elif isinstance(rg, dict):
+                for x in sorted(set(rg) - {"r", "g", "b", "max"}, key=str):
+                    Lx.err(w, f"plane mark {i + 1} `rgb` has no field `{x}` (it takes r, g, b, max)")
+                ex(rg.get("max"))
+                if k == "point":   # on a points mark r, g, b are row keys, like x and y
+                    for q in ("r", "g", "b"):
+                        ex(rg.get(q))
+            else:
+                ex(rg)
         if k in ("shade", "line"):
             pts(v, 3, k)
         elif k in ("point", "ring", "vector"):

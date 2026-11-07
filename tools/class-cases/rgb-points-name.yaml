@@ -1,0 +1,27 @@
+# expect: plane mark 1: name “blue” says blue, but dot p1's colour (10, 0, 0) reads as red (#ff0000)
+# A points mark's own name is checked against every dot it draws.
+title: A points mark's name
+question: Is a points mark's own name checked against its dots?
+answer: Yes.
+data:
+  pixels: [{id: p1, red: 10, green: 0}, {id: p2, red: 0, green: 10}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    steps:
+      - say: 'Two pixels, the mark named blue.'
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 12}
+            y: {label: green level, min: 0, max: 12}
+            marks:
+              - points: {from: pixels, x: red, y: green, label: id}
+                rgb: {r: red, g: green, max: 10}
+                name: blue
+                says: the pixels
+      - say: The check reads every colour word.
+  - type: recap
+    answer: A colour word must fit the colour drawn.

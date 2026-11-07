@@ -1,0 +1,27 @@
+# expect: dot “red” says red, but its colour (10, 10, 0) reads as yellow (#ffff00) at leak s = 1: name it by id, or by a word that stays true
+# Two dots share the label red: one is green from the start, the other turns yellow only under the slider, and that one still gets the control note.
+title: Two dots, one label
+question: Does each dot keep its own start state?
+answer: Yes.
+data:
+  pixels: [{id: red, x: 2, y: 3, r: 10, g: 0, change: 10}, {id: red, x: 6, y: 7, r: 0, g: 10, change: 0}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    controls:
+      - {name: s, label: leak, min: 0, max: 1, step: 1, value: 0}
+    steps:
+      - say: 'Two dots, both labelled red.'
+        add:
+          plane:
+            x: {label: x, min: 0, max: 10}
+            y: {label: y, min: 0, max: 10}
+            marks:
+              - points: {from: pixels, x: x, y: y, label: id}
+                rgb: {r: r, g: g + change * s, max: 10}
+      - say: The check reads every colour word.
+  - type: recap
+    answer: A colour word must fit the colour drawn.

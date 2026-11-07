@@ -43,6 +43,9 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `the line for X has its own name as its formula` | write the formula from the names it is made of |
 | `plane mark N is one of …` / `plane line takes 3 values` | one mark kind per entry; quote expressions with commas |
 | `plane mark N (kind) has no field X` | X is not a mark field; when X reads like the end of a sentence, a comma in an unquoted `says:` or `label:` cut it off: quote the value |
+| `` has both `rgb` and `color` `` (or `colors`): `use one` / `` `rgb` colours a `point` or `points` dot `` / `rgb has no field X` | keep `rgb` for a dot whose colour comes from its numbers, `color` for a fixed one; `rgb` takes a number or `{r, g, b, max}` |
+| `` name “X” says red, but its colour (8, 4, 0) reads as orange (#cc6600) `` (also a `label`, a dot's label, or a `points` mark's own name read against each dot; a typed hex too) | the colour word does not fit what is drawn: change the word to the one it reads as, or name the mark by its id (`p5`). A word before a channel noun (`red level`, `green sensor`, `red channel`) is not checked. With `at leak s = 1`, the word is true at the start but not at that control's end: name it by id, or by a word that stays true |
+| `its rgb does not work out to numbers with a max above 0` / `row N has no number for rgb r: key` | each of `r`, `g`, `b` and `max` must be a number or an expression the page can work out, and `max` above 0. On `points`, a channel written as a name is that row's key, never a value from `data`: give every row the key |
 | `a plane with fill stretches its axes` | delete `fill`, or drop the `vector`, `foot` or `square` |
 | `legend labels are for a quick read: 2 words at most` | cut the `label` to 2 words; move the rest to the mark's `says:` |
 | `names on the plot are for a quick read: 2 words at most` | cut the mark's `name` to 2 words (`$…$` and `{{…}}` count as one); move the rest to its `says:` |

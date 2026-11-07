@@ -1,0 +1,24 @@
+# expect: has both `rgb` and `color`: use one
+# rgb and color on one mark.
+title: Two colours on one dot
+question: Does the lint stop rgb and color together?
+answer: Yes.
+data:
+  pixels: [{id: p1, red: 10, green: 0}, {id: p2, red: 0, green: 10}, {id: p3, red: 8, green: 4}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    steps:
+      - say: 'One dot, two colours.'
+        add:
+          plane:
+            x: {label: x, min: 0, max: 10}
+            y: {label: y, min: 0, max: 10}
+            marks:
+              - {point: [8, 4], rgb: 10, color: s1, name: p5, says: the pixel}
+      - say: The lint stops it.
+  - type: recap
+    answer: Use one.

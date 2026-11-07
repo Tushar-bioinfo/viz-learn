@@ -1,0 +1,27 @@
+# expect: name “red” says red, but its colour (10, 10, 0) reads as yellow (#ffff00) at leak s = 1: name it by id, or by a word that stays true
+# expect: not: (10, 0, 0) reads
+# A name that is true at the start (10, 0 is red) and wrong at the slider's end (10, 10 is yellow).
+title: A word that stops being true
+question: Does the check catch a colour word that is wrong only under the slider?
+answer: Yes.
+data:
+  pixels: [{id: p1, red: 10, green: 0}, {id: p2, red: 0, green: 10}, {id: p3, red: 8, green: 4}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    controls:
+      - {name: s, label: leak, min: 0, max: 1, step: 0.1, value: 0}
+    steps:
+      - say: 'The dot named red starts at red 10, green 0; the leak adds green.'
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 12}
+            y: {label: green level, min: 0, max: 12}
+            marks:
+              - {point: [10, '10 * s'], rgb: 10, name: red, says: the red pixel before the leak}
+      - say: Move the leak to its end.
+  - type: recap
+    answer: Name a moving dot by a word that stays true.

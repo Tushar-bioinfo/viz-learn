@@ -283,6 +283,7 @@ Every mark also takes:
 |---|---|
 | `step` | the board step it appears on (default: the step that adds the plane) |
 | `color` | `accent`, `s1` to `s5`, `ink`, `mist`, `good`, `bad`, …, or a hex like `#cc6600` |
+| `rgb` | a `point` or `points` dot in its true colour, worked out on every redraw: `rgb: 10` reads x as red and y as green (blue 0), full at 10, so (8, 4) is `#cc6600`; `rgb: {r, g, b, max}` takes any numbers (left out = 0, `max` 1; on `points` they are row keys). Past `max` clips. Not with `color`. A colour word in a true-coloured mark's `name`, `label` or dot label must fit the colour drawn, under every control (the check warns; `red level` names a channel and is fine) |
 | `label` | its short legend entry above the plane, 2 words at most (`PC1`, `bad line`), even when it also has `name` |
 | `name` | a label beside the mark itself (point, segment, vector, foot), 2 words at most like a legend entry (`1 unit`, not `1 unit of CD3`; `$a \cdot b$` counts as one): the rest goes in `says:`. A vector's, a segment's and a foot's sit beside the middle of the line, off to one side |
 | `says` | the longer meaning (`how far u goes along PC1`); it opens on the board's pop-up card when the learner points at, taps or tabs to the name or legend entry, which brightens instead of an underline. `{{…}}` and markdown work |

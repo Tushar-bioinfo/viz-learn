@@ -41,6 +41,33 @@
     pausePlace(); requestAnimationFrame(pausePlace); addEventListener('resize', pausePlace); addEventListener('load', pausePlace); };
   const COLOR = { accent: 1, tint: 1, s1: 1, s2: 1, s3: 1, s4: 1, s5: 1, ink: 1, mist: 1, haze: 1, line: 1, good: 1, bad: 1 };
   const col = c => COLOR[c] ? `var(--${c})` : c || 'var(--mist)';
+  // ---------- a dot in its true colour, and colour words that must fit it ----------
+  // `rgb: 10` paints a dot the colour its place makes (x = red level, y = green, blue 0, full at 10); `rgb: {r, g, b, max}` from
+  // any numbers. Each channel is a straight share of full, clipped at full: a sensor cannot read brighter than full
+  const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+  const toHex = (lv, mx) => '#' + lv.map(q => Math.round(255 * Math.min(1, Math.max(0, q / mx))).toString(16).padStart(2, '0')).join('');
+  const hsvOf = hex => { const hx = hex.slice(1), f = hx.length === 3 ? [...hx].map(q => q + q) : [hx.slice(0, 2), hx.slice(2, 4), hx.slice(4, 6)], [r, g, b] = f.map(q => parseInt(q, 16) / 255);
+    const mx = Math.max(r, g, b), d = mx - Math.min(r, g, b); let hh = 0;
+    if (d) hh = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return { h: (hh * 60 + 360) % 360, s: mx ? d / mx : 0, v: mx }; };
+  // each word's fit, in hue degrees (lo to hi, red wraps round 0) and limits on s and v; a hued word also needs s ≥ .25 and v ≥ .15
+  const HUE = { red: [340, 20], orange: [15, 50, .5], amber: [35, 55], yellow: [45, 70, .5], olive: [45, 80, 0, .65], brown: [10, 50, 0, .65], lime: [70, 110],
+    green: [75, 165], teal: [160, 200, 0, .7], cyan: [165, 200], blue: [195, 255], purple: [250, 300], violet: [250, 300], magenta: [285, 330], pink: [300, 355] };
+  const GREY = { black: { vmax: .2 }, white: { smax: .2, vmin: .8 }, grey: { smax: .25, vmin: .15, vmax: .9 }, gray: { smax: .25, vmin: .15, vmax: .9 } };
+  const ruleOf = w => { if (GREY[w]) return { smin: 0, vmin: 0, smax: 1, vmax: 1, ...GREY[w] }; const [lo, hi, vmin = .15, vmax = 1] = HUE[w]; return { lo, hi, smin: .25, vmin: Math.max(.15, vmin), smax: 1, vmax }; };
+  // the edges count as inside, give or take float rounding (#8c8368's hue works out to 44.99999999999994)
+  const EPS = 1e-6, fits = (w, mod, hsv) => { const R0 = ruleOf(w), vmin = mod === 'dark' ? 0 : R0.vmin, smin = mod === 'light' || mod === 'pale' ? 0 : R0.smin;
+    if (hsv.s < smin - EPS || hsv.s > R0.smax + EPS || hsv.v < vmin - EPS || hsv.v > R0.vmax + EPS) return false;
+    return R0.lo == null || (R0.lo <= R0.hi ? hsv.h >= R0.lo - EPS && hsv.h <= R0.hi + EPS : hsv.h >= R0.lo - EPS || hsv.h <= R0.hi + EPS); };
+  // what a colour reads as: a grey word if one fits, else the hued word whose middle is nearest
+  const readAs = hsv => { const g = Object.keys(GREY).find(w => fits(w, null, hsv)); if (g) return g;
+    const mid = w => { const [lo, hi] = HUE[w]; return lo <= hi ? (lo + hi) / 2 : 0; }, far = w => { const d = Math.abs(hsv.h - mid(w)) % 360; return Math.min(d, 360 - d); };
+    const ok = Object.keys(HUE).filter(w => fits(w, null, hsv)).sort((a, b) => far(a) - far(b)); return ok[0] || `hue ${Math.round(hsv.h)}°`; };
+  // a colour word that names a channel ("red level", "green sensor") is not a claim about the mark's colour
+  const CHANNEL = 'levels?|sensors?|channels?|readings?|light|share|part|signal|values?|axis|intensity|counts?';
+  const WORD = new RegExp(`\\b(?:(dark|light|pale)[\\s-]+)?(${[...Object.keys(GREY), ...Object.keys(HUE)].join('|')})\\b(?![\\s-]+(?:${CHANNEL})\\b)`, 'gi');
+  // the colour words in a text that do not fit the colour: numbers ({{…}}) and maths ($…$) are left out
+  const wrongWords = (t, hex) => { const hsv = hsvOf(hex), bad = []; String(t ?? '').replace(/\{\{[^}]*\}\}|\$[^$]*\$/g, ' ').replace(WORD, (m, mod, w) => { if (!fits(w.toLowerCase(), mod && mod.toLowerCase(), hsv)) bad.push(m); return m; }); return bad; };
   // ---------- one colour per symbol: a notation keeps its colour wherever it appears, so the eye can track it ----------
   // A symbol's own `color` wins. One with none takes the next unused colour at boot, in the order the lesson lists them;
   // operators are left out, a symbol that is a whole expression stays ink, and when the five run out the rest stay ink. An ink symbol is
@@ -215,7 +242,7 @@
       const gw = R.w - m.l - m.r, gh = R.h - m.t - m.b, xs = b[1] - b[0], ys = b[3] - b[2], u = Math.min(gw / xs, gh / ys), cx = (b[0] + b[1]) / 2, cy = (b[2] + b[3]) / 2;
       R.view = p.fill ? b : [cx - gw / u / 2, cx + gw / u / 2, cy - gh / u / 2, cy + gh / u / 2]; return R.w + PAD; };
     R.layout = () => {
-      svg.innerHTML = ''; leg.innerHTML = ''; R.issues = [];
+      svg.innerHTML = ''; leg.innerHTML = ''; R.issues = []; R.later = [];
       const W = R.w, H = R.h; if (W < 40 || H < 40) { R.issues.push('the picture has no room'); return; }
       svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       const X = p.x || {}, Y = p.y || {}, own = boxOf(), box = R.view || own;
@@ -275,11 +302,31 @@
         if (mk.vector) { const o = mk.from ? pt(mk.from, where) : [0, 0], v = pt(mk.vector, where); segs.push([sx(o[0]), sy(o[1]), sx(o[0] + v[0]), sy(o[1] + v[1])]); }   // names clear the arrows too
         if (mk.square) { const [a, b] = list(mk.square).map(q => pt(q, where)), sg = mk.side === 'right' ? -1 : 1, dx = b[0] - a[0], dy = b[1] - a[1];
           const cs = [a, b, [b[0] - sg * dy, b[1] + sg * dx], [a[0] - sg * dy, a[1] + sg * dx]]; fills.push(cs.map(q => [sx(q[0]), sy(q[1])])); cs.forEach((q, j) => { const r = cs[(j + 1) % 4]; segs.push([sx(q[0]), sy(q[1]), sx(r[0]), sy(r[1])]); }); } });
+      // a mark drawn in a true colour (a hex, or rgb) must not carry a colour word that does not fit it. The check runs on every
+      // redraw, so it sees the colour under any slider; a word that is wrong only away from the start names the control
+      const ctls = ((ctx.deck.slides || [])[ctx.index] || {}).controls || [], moved = ctls.filter(c => c && ctx.scope[c.name] !== +(c.value ?? c.min));
+      if (!moved.length) R.startBad = new Set();
+      // on a points mark (`row` given) a channel written as a bare name is that row's key, never a lesson-wide value of that name
+      const rgbOf = (spec, x, y, sc, where, i, row, j, who) => { const o = spec && typeof spec === 'object' && !Array.isArray(spec), gone = [], at = q => q == null ? 0 : L.val(q, sc, where);
+        const ch = (q, k) => { if (!row || q == null || !/^[A-Za-z_]\w*$/.test(String(q))) return at(q); const v = row[q]; if (typeof v !== 'number' || !Number.isFinite(v)) gone.push(`${k}: ${q}`); return v; };
+        const lv = o ? [ch(spec.r, 'r'), ch(spec.g, 'g'), ch(spec.b, 'b')] : [x, y, 0], mx = o ? (spec.max == null ? 1 : at(spec.max)) : L.val(spec, sc, where);
+        if (gone.length) { R.issues.push(`plane mark ${i + 1}: row ${j + 1}${who != null ? ` (${who})` : ''} has no number for rgb ${gone.join(', ')}: give every row that key`); return { hex: null, lv }; }
+        if (![...lv, mx].every(Number.isFinite) || !(mx > 0)) { R.issues.push(`plane mark ${i + 1}: its rgb does not work out to numbers with a max above 0`); return { hex: '#000000', lv }; }
+        return { hex: toHex(lv, mx), lv }; };
+      // a word is checked only once its mark is shown (R.later holds its step); `j` keeps two dots with one label apart
+      const trueCheck = (i, hex, lv, texts, st, j, who) => { if (!HEX.test(hex || '')) return;
+        texts.forEach(([what, t]) => wrongWords(t, hex).forEach(wd => { const k = `${i}|${j ?? ''}|${what}|${t}|${wd}`, shown = lv ? `(${lv.map(q => L.fmt(q)).join(', ')}) ` : '';
+          let msg = `plane mark ${i + 1}: ${what} “${t}” says ${wd}, but ${who != null ? `dot ${who}'s` : 'its'} colour ${shown}reads as ${readAs(hsvOf(hex))} (${hex.toLowerCase()})`;
+          if (!moved.length) R.startBad.add(k);
+          else if (!(R.startBad || new Set()).has(k)) msg += ` at ${moved.map(c => `${c.label ? L.plain(c.label, ctx.scope) + ' ' : ''}${c.name} = ${L.fmt(ctx.scope[c.name])}`).join(', ')}: name it by id, or by a word that stays true`;
+          R.later.push({ st, msg }); })); };
       list(p.marks).forEach((mk, i) => {
         const where = `slide ${ctx.index + 1} plane mark ${i + 1}`;
         const g = sv('g', { class: 'pm' }, svg); const st = mk.step != null ? clickOf(mk.step) : at; if (st > at) g.dataset.step = st;
-        const c = mk.point && !mk.color ? 'var(--s1)' : col(mk.color);   // a point with no colour is drawn in s1, and its legend swatch must match
+        let c = mk.point && !mk.color ? 'var(--s1)' : col(mk.color), lv = null;   // a point with no colour is drawn in s1, and its legend swatch must match
         if (mk.when != null && !num(mk.when, where)) return;
+        if (mk.point && mk.rgb != null) { const [x, y] = pt(mk.point, where); ({ hex: c, lv } = rgbOf(mk.rgb, x, y, ctx.scope, where, i)); }   // its legend dot takes the colour too
+        if (!mk.points && !mk.text && !mk.ring) trueCheck(i, c, lv, [['name', mk.name], ['label', mk.label]], st);
         if (mk.shade) {
           const w = list(mk.shade).map(x => num(x, where)), poly = halfBox(w, box, mk.side === '-' ? -1 : 1);
           if (poly.length > 2) sv('polygon', { points: poly.map(([x, y]) => `${sx(x)},${sy(y)}`).join(' '), style: `fill:${c};fill-opacity:.13` }, g);
@@ -290,11 +337,17 @@
           seg(sg[0], sg[1], g, c, mk.dash); key(mk, c, mk.dash ? 'dash' : 'line', st);
         } else if (mk.points) {
           const P = mk.points, rows = list(L.val(P.from, ctx.scope, where)), colors = P.colors || {};
-          rows.forEach(r => { const x = r[P.x], y = r[P.y], gk = P.by ? r[P.by] : null;
+          // with rgb, each dot takes its own row's colour (r, g, b are row keys, like x and y), so there is no colour key
+          // the mark's own name and label must fit every dot; the first dot a word misses is reported
+          const seen = new Set(), whole = (j, own, who) => trueCheck(i, own.hex, own.lv, [['name', mk.name], ['label', mk.label]].filter(([w, t]) => t != null && wrongWords(t, own.hex || '#000').length && !seen.has(w) && seen.add(w)), st, j, who);
+          rows.forEach((r, j) => { const x = r[P.x], y = r[P.y], gk = P.by ? r[P.by] : null, who = P.label ? r[P.label] : null;
             if (!inBox(x, y)) R.issues.push(`point ${r[P.label] ?? ''} is outside the picture`);
-            sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${col(colors[gk] && colors[gk].color || colors[gk] || mk.color || 's1')}` }, g); });
+            const own = mk.rgb != null ? rgbOf(mk.rgb, x, y, L.scope(ctx.scope, r), where, i, r, j, who) : { hex: colors[gk] && colors[gk].color || colors[gk] || mk.color || 's1', lv: null };
+            if (P.label) trueCheck(i, own.hex, own.lv, [['dot', r[P.label]]], st, j);
+            if (HEX.test(own.hex || '')) whole(j, own, who ?? `row ${j + 1}`);
+            sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${col(own.hex)}` }, g); });
           if (P.label) rows.forEach(r => name(r[P.label], sx(r[P.x]), sy(r[P.y]), g));
-          Object.entries(colors).forEach(([k, v]) => legend.push({ text: (v && v.label) || k, c: col(v && v.color || v), kind: 'dot', st }));
+          if (mk.rgb == null) Object.entries(colors).forEach(([k, v]) => { const hx = v && v.color || v; trueCheck(i, hx, null, [['label', (v && v.label) || k]], st); legend.push({ text: (v && v.label) || k, c: col(hx), kind: 'dot', st }); });
         } else if (mk.point) {
           const [x, y] = pt(mk.point, where); outside(i, 'point', [x, y]);
           sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${c}` }, g); name(mk.name, sx(x), sy(y), g, null, false, null, mk, c, 'dot'); key(mk, c, 'dot', st);
@@ -758,7 +811,7 @@
       audit: () => {
         const out = [];
         missing.forEach(t => out.push(`mark target not found: ${t}`));
-        figs.forEach(fg => { out.push(...(fg.issues || []));
+        figs.forEach(fg => { out.push(...(fg.issues || []), ...(fg.later || []).filter(e => e.st <= read).map(e => e.msg));
           if (['plane', 'chart', 'image', 'units'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
         node.querySelectorAll('.board .vis .chart').forEach(c => { const r = c.getBoundingClientRect(), q = r.width / (r.height || 1); if (q < 1 || q > 2.2) out.push(`a chart is ${Math.round(r.width)} × ${Math.round(r.height)} px: its shape must stay between 1:1 and 2.2:1, so set its \`ratio\``); });
         root.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { if (parseFloat(getComputedStyle(m).fontSize) < FLOOR) out.push(`a formula renders under ${FLOOR}px`); });

@@ -1,0 +1,38 @@
+# expect: label “orange in” says orange, but its colour (0, 10, 0) reads as green (#00ff00)
+# expect: not: “red level
+# expect: not: “green sensor
+# expect: not: “red channel
+# expect: not: “green readings
+# expect: not: “red light
+# expect: not: “green share
+# expect: not: “red part
+# expect: not: “red signal
+# expect: not: “green values
+# expect: not: “red axis
+# expect: not: “green intensity
+# expect: not: “red counts
+# A colour word followed by a channel noun names a channel, not the dot's colour; "orange in" on a green dot is still wrong.
+title: Channel words
+question: Are channel names left alone while a wrong colour word is caught?
+answer: Yes.
+data:
+  pixels: [{id: red level, x: 1, y: 2, red: 0, green: 10}, {id: green sensor, x: 4, y: 2, red: 0, green: 10}, {id: red channel, x: 7, y: 2, red: 0, green: 10}, {id: green readings, x: 10, y: 2, red: 0, green: 10}, {id: red light, x: 1, y: 6, red: 0, green: 10}, {id: green share, x: 4, y: 6, red: 0, green: 10}, {id: red part, x: 7, y: 6, red: 0, green: 10}, {id: red signal, x: 10, y: 6, red: 0, green: 10}, {id: green values, x: 1, y: 10, red: 0, green: 10}, {id: red axis, x: 4, y: 10, red: 0, green: 10}, {id: green intensity, x: 7, y: 10, red: 0, green: 10}, {id: red counts, x: 10, y: 10, red: 0, green: 10}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    steps:
+      - say: 'One green pixel, its channels named in many ways.'
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 13}
+            y: {label: green level, min: 0, max: 13}
+            marks:
+              - points: {from: pixels, x: x, y: y, label: id}
+                rgb: {r: red, g: green, max: 10}
+              - {point: [12, 12], rgb: {g: 10, max: 10}, label: orange in, says: the pixel going in}
+      - say: The check reads every colour word.
+  - type: recap
+    answer: A colour word must fit the colour drawn.

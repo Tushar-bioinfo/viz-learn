@@ -71,6 +71,7 @@ Pick the moves the topic needs; this is a menu, not a template. Each line says w
 17. **Board style.** Always: the page accumulates. Earlier items stay, in their colours, so the learner can scroll back to them.
 18. **Limitation as its own beat.** Always: one whole scene, on the same data.
 19. **Simplify first.** The method has several parameters. Freeze all but one, learn that one, then free the rest ("fix the slope and learn only the offset").
+20. **Show the change, don't name it.** When a step changes a colour, a count or a place, draw before and after: a colour as dots in their true colour (`rgb:`), a count as `units`, a place as plane marks.
 
 ## 5. Voice
 You are a teacher at a whiteboard talking to one student. Each step's `say:` is the one line you would say while writing.

@@ -296,4 +296,6 @@ slides:
             y: {label: CD19, min: 0, max: 10}
             marks:
               - points: {from: cells, x: cd3, y: cd19, label: id}
+                rgb: 10
+      - say: 'A chosen code, not true colour: CD3 as red, CD19 as green.'
       - say: 'The same move, distance from the mean, multiplied across two markers: covariance.'

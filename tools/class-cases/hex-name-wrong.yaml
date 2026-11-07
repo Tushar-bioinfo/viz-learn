@@ -1,0 +1,24 @@
+# expect: plane mark 1: name “red” says red, but its colour reads as orange (#cc6600)
+# A hand-typed hex whose colour word is wrong.
+title: A typed hex with the wrong word
+question: Does the check read a typed hex too?
+answer: Yes.
+data:
+  pixels: [{id: p1, red: 10, green: 0}, {id: p2, red: 0, green: 10}, {id: p3, red: 8, green: 4}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    steps:
+      - say: 'The dot named red is typed as #cc6600.'
+        add:
+          plane:
+            x: {label: x, min: 0, max: 10}
+            y: {label: y, min: 0, max: 10}
+            marks:
+              - {point: [2, 2], color: '#cc6600', name: red, says: the pixel}
+      - say: The check names the wrong word.
+  - type: recap
+    answer: A typed colour is checked too.

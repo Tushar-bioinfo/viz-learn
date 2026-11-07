@@ -1,0 +1,26 @@
+# expect: step 2: plane mark 1: name “red” says red
+# expect: not: step 1: plane mark 1
+# A mark that comes in on step 2 is checked only once it is shown.
+title: A later mark
+question: Is a mark checked only from the step it appears on?
+answer: Yes.
+data:
+  pixels: [{id: p1, red: 8, green: 4}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    steps:
+      - say: 'The plane first, the dot named red on the next step.'
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 12}
+            y: {label: green level, min: 0, max: 12}
+            marks:
+              - {point: [8, 4], rgb: 10, name: red, says: the pixel, step: 2}
+      - say: The dot named red sits at red 8, green 4.
+      - say: The check reads every colour word.
+  - type: recap
+    answer: A colour word must fit the colour drawn.

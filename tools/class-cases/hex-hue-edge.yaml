@@ -1,0 +1,27 @@
+# expect: builds
+# expect: not: says yellow
+# expect: not: says olive
+# #8c8368 has hue 45 (44.99999999999994 in floats): on the edge of yellow and olive, so both words fit.
+title: A hue on the edge
+question: Does a colour on a range's edge fit the word?
+answer: Yes.
+data:
+  pixels: [{id: p1, red: 1, green: 1}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    steps:
+      - say: 'Two dots in one colour, on the edge of yellow and olive.'
+        add:
+          plane:
+            x: {label: x, min: 0, max: 10}
+            y: {label: y, min: 0, max: 10}
+            marks:
+              - {point: [3, 3], color: '#8c8368', name: yellow, says: a dull yellow}
+              - {point: [7, 7], color: '#8c8368', name: olive, says: the same colour}
+      - say: The check reads every colour word.
+  - type: recap
+    answer: A colour word must fit the colour drawn.

@@ -1,0 +1,28 @@
+# expect: builds
+# Dots in their true colour: rgb: 10 on a point, rgb: {r, g} on a points mark, under a slider; names stay true.
+title: True colours
+question: Does each dot take the colour its numbers make?
+answer: Yes, and it changes as the leak grows.
+data:
+  pixels: [{id: p1, red: 10, green: 0}, {id: p2, red: 0, green: 10}, {id: p3, red: 8, green: 4}]
+symbols: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Pixels as dots
+    controls:
+      - {name: s, label: leak, min: 0, max: 1, step: 0.1, value: 0}
+    steps:
+      - say: 'Each pixel sits at its red and green levels, drawn in their colour.'
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 12}
+            y: {label: green level, min: 0, max: 12}
+            marks:
+              - points: {from: pixels, x: red, y: green, label: id}
+                rgb: {r: red, g: green, max: 10}
+              - {point: ['8 + 2 * s', '4 + 4 * s'], rgb: 10, name: p5, says: the pixel read through the leak}
+      - say: Move the leak and watch p5 turn from orange towards yellow.
+  - type: recap
+    answer: A dot's colour comes from its numbers, so it stays true under the slider.
