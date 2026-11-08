@@ -1,0 +1,42 @@
+# expect: 7 legend entries on one chart: more than 5 is too many for a quick read; set legend: false on context series, leave a reference line unnamed
+# expect: not: 6 legend entries
+# change 6 review: one warning per chart, with the true total (six series and one named mark = 7).
+title: Six cells and their mean
+question: Where do six cells sit around their mean?
+answer: Around the mean, some far.
+data: {cd3: [4.3, 4.9, 4.6, 4.0, 4.5, 4.4], lo: 4.2, hi: 4.7}
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean CD3 level of the six cells, short: mean, fmt: 2}
+  top: {tex: 'x_{\max}', says: the highest CD3 level of the six, short: top cell, fmt: 1}
+  k: {tex: k, says: how far the second cell is moved, short: shift, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: what-if
+    title: Move one cell, watch the mean
+    lead: One cell moves; the mean follows.
+    controls:
+      - {name: k, min: 0, max: 2, step: 0.5, value: 0}
+    derive:
+      cw: cd3 + (seq(0, 5, 1) == 1) * k
+      xbar: mean(cw)
+      top: max(cw)
+    steps:
+      - say: Six cells, and their mean as a dashed line.
+        add:
+          chart:
+            x: {cats: [c1, c2, c3, c4, c5, c6], label: cell}
+            y: {label: CD3 level, min: 3, max: 7.5}
+            series:
+              - {name: cell a, kind: dots, x: '[0]', y: '[at(cw, 0)]', color: mist}
+              - {name: cell b, kind: dots, x: '[1]', y: '[at(cw, 1)]', color: mist}
+              - {name: cell c, kind: dots, x: '[2]', y: '[at(cw, 2)]', color: mist}
+              - {name: cell d, kind: dots, x: '[3]', y: '[at(cw, 3)]', color: mist}
+              - {name: cell e, kind: dots, x: '[4]', y: '[at(cw, 4)]', color: mist}
+              - {name: cell f, kind: dots, x: '[5]', y: '[at(cw, 5)]', color: mist}
+            marks:
+              - {kind: hline, y: 5, name: line a, says: a reference line}
+          caption: The dashed line is the mean.
+      - say: Drag the shift and the mean climbs a little.
+  - type: recap
+    answer: Around the mean, some far.

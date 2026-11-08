@@ -116,6 +116,29 @@ def words(s):
     return len(re.sub(r"\$[^$]*\$|\{\{[^}]*\}\}", "x", str(s or "")).split())
 
 
+# a legend (a deck chart's, a lesson's plane or chart) is for a quick read: short names, few of them.
+# One home for the limits: the class lint uses these too.
+LEGEND_WORDS, LEGEND_MAX = 2, 5
+NAME_SPAN = re.compile(r"\{\{[\s\S]*?\}\}|\$[^$]*\$|`[^`]*`")
+
+
+def name_words(t):
+    """Words a reader reads in a name or label: a {{number}}, a $maths$ span or `code` is one; a token of marks only
+    (`**`, `(`, `÷`, `—`, `:`) is none."""
+    return sum(1 for tok in NAME_SPAN.sub(" N ", str(t)).split() if re.search(r"[^\W_]", tok))
+
+
+def is_name(x):
+    """A series name the legend can show: text or a number (a list or mapping is an error in lint_visual)."""
+    return isinstance(x, (str, int, float)) and not isinstance(x, bool)
+
+
+def legend_series(c):
+    """The series a chart's legend lists (as chart.js draws it): named, legend not false, 2 or more, chart legend not false."""
+    named = [s for s in c.get("series") or [] if isinstance(s, dict) and is_name(s.get("name")) and s.get("name") != "" and s.get("legend") is not False]
+    return named if len(named) >= 2 and c.get("legend") is not False else []
+
+
 def texts(node):
     """Every string inside a slide, however deep."""
     if isinstance(node, dict):
@@ -686,7 +709,7 @@ def lint_dist(Lx, where, d, scope, main=True):
                     check_expr(Lx, f"{where} dist x", x, scope)
 
 
-def lint_visual(Lx, where, v, scope):
+def lint_visual(Lx, where, v, scope, legend_marks=0):
     extra = set(v) - VISUAL
     if extra:
         Lx.err(where, f"unknown visual field(s) {sorted(extra)}")
@@ -755,8 +778,20 @@ def lint_visual(Lx, where, v, scope):
                     check_expr(Lx, f"{where} series {s.get('name', '')}", s[f], names)
             if not s.get("focus") and s.get("color") not in ("mist", "haze", "ink"):
                 colored += 1
+            if s.get("name") is not None and not is_name(s["name"]):
+                Lx.err(where, f"a series name is text (found {type(s['name']).__name__} {s['name']!r}): quote it")
         if colored > 3:
             Lx.warn(where, f"{colored} coloured series: the palette carries 3 safely; grey the context series (color: mist) or split the chart")
+        leg = legend_series(c)
+        for s in leg:
+            n = name_words(s["name"])
+            if n > LEGEND_WORDS:
+                Lx.warn(where, f"legend name “{s['name']}” is {n} words: legend names are for a quick read, {LEGEND_WORDS} words at most; put the rest in the bullets or the caption")
+        # legend_marks: entries a class board adds for its named marks (a deck chart's marks carry tags, not entries)
+        n = len(leg) + legend_marks
+        if n > LEGEND_MAX:
+            fix = "set legend: false on context series, leave a reference line unnamed, or split the chart" if legend_marks else "set legend: false on context series, or split the chart"
+            Lx.warn(where, f"{n} legend entries on one chart: more than {LEGEND_MAX} is too many for a quick read; {fix}")
         for m in c.get("marks") or []:
             if m.get("kind") not in MARK_KINDS:
                 Lx.err(where, f"mark kind `{m.get('kind')}` (use {', '.join(sorted(MARK_KINDS))})")

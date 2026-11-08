@@ -78,7 +78,8 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` chart mark N has `label:` `` (or `text:`) / `` chart mark N is a `label` mark `` | on a board a mark has no tag: give it `name:` (2 words, in the legend) and `says:` (its card), or make its value a symbol (`{kind: hline, y: xbar}`), whose `short` and card it takes. Delete a `kind: label` tag; say it in a teacher line or a `note` |
 | `` chart mark N: name “…” is N words `` | 2 words at most; the rest goes in `says:` |
 | `chart mark N (point) has no name` (also `arrow`) | give it `name:` and `says:`, or a symbol as its `y`; an unnamed line, band or area is fine as a plain reference |
-| `N legend entries on one chart` | series names (when 2 or more) plus named marks: 5 at most. Leave a reference line unnamed, or split the chart |
+| `legend name “…” is N words` | a chart series `name` is 2 words at most (a `{{…}}` or `$…$` counts as one); say the rest in the caption or a teacher line |
+| `N legend entries on one chart` | series names (when 2 or more) plus named marks: 5 at most. Set `legend: false` on context series, leave a reference line unnamed, or split the chart |
 | `` chart mark N: `says` is not shown `` | the mark's value is a symbol, so its card is the symbol's: delete the mark's `says:` (edit the symbol's `says` instead) |
 | `the legend cannot tell X and Y apart` | two named marks of one kind draw in one colour: give one a `color:` (or give its symbol one) |
 | `` a control has no field X `` / `` a symbol has no field X `` | a comma inside an unquoted `{ }` value split it into a second key: quote the value |

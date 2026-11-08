@@ -221,18 +221,18 @@ slides:
     lead: 'A1 and C3 share a level; their variances differ {{at(cvar, 0) / at(cvar, 8)|0}}-fold.'
     title: Across guides, extra spread rises along one line
     points:
-      - 'Fitted to {{nfit|,}} guides of a full screen; our {{ng}} scatter around it.'
+      - 'Fitted to {{nfit|,}} full-screen guides; our {{ng}} scatter around it.'
     visual:
       chart:
         x: {label: 'log₂(median + 1)', min: 4, max: 11.5}
         y: {label: 'log₂(extra spread + 1)', min: 0, max: 19}
         series:
-          - {name: 'full screen ({{nshow}} of {{nfit|,}} guides)', kind: dots, x: fx, y: fy, color: mist}
-          - {name: 'our {{ng}} guides', kind: dots, x: mx, y: my, focus: true, step: 2}
+          - {name: full screen, kind: dots, x: fx, y: fy, color: mist}
+          - {name: our guides, kind: dots, x: mx, y: my, focus: true, step: 2}
         marks:
           - {kind: fn, fn: 'icept + slope * x', label: 'fitted line, slope {{slope|2}}', color: s1, step: 1}
           - {kind: fn, fn: 'yc + 2 * (x - xc)', label: 'NB would force slope 2', color: s2, step: 3}
-      caption: The line, not 3 replicates, sets each guide's noise.
+      caption: 'Grey: {{nshow}} of them. The line, not 3 replicates, sets the noise.'
 
   - type: equation
     uses: [nb, borrow]
@@ -299,8 +299,8 @@ slides:
         x: {label: normalized count, min: 0, max: 900}
         y: {label: chance (density), min: 0, max: 0.0075, fmt: 3}
         series:
-          - {name: 'A1: noise around its control median', kind: area, fn: 'normPdf(x, muA, sqrt(vA))', color: s1}
-          - {name: 'C1: noise around its control median', kind: line, fn: 'normPdf(x, muC, sqrt(vC))', color: s2, step: 2}
+          - {name: A1 noise, kind: area, fn: 'normPdf(x, muA, sqrt(vA))', color: s1}
+          - {name: C1 noise, kind: line, fn: 'normPdf(x, muC, sqrt(vC))', color: s2, step: 2}
         marks:
           - {kind: vline, x: tA, label: 'A1 treated: {{tA|0}}', color: accent, step: 1}
           - {kind: vline, x: tC, label: 'C1 treated: {{tC|0}}', color: s2, step: 3}
@@ -329,8 +329,8 @@ slides:
         x: {label: "treated median of a guide at A1's level", min: 100, max: 650}
         y: {label: 'p.low (log scale)', log: true, min: 1e-12, max: 1}
         series:
-          - {name: 'normal tail (0.5.9.5 code)', kind: line, fn: 'normCdf(x, muA, sqrt(vA))', color: s1}
-          - {name: 'negative binomial tail (2014 paper)', kind: line, fn: 'nbCdf(floor(x), muA, (vA - muA) / muA^2)', color: s2, step: 1}
+          - {name: normal (code), kind: line, fn: 'normCdf(x, muA, sqrt(vA))', color: s1}
+          - {name: NB (paper), kind: line, fn: 'nbCdf(floor(x), muA, (vA - muA) / muA^2)', color: s2, step: 1}
         marks:
           - {kind: vline, x: tA, label: 'A1 treated: {{tA|0}}', color: accent, step: 2}
       caption: They part only far out. RRA uses only the **order**, and both rank our {{ng}} guides alike.
@@ -446,8 +446,8 @@ slides:
         x: {label: 'ρ of a random set of 3 guides', min: 0, max: 1}
         y: {label: number of sets, min: 0, max: 24}
         series:
-          - {name: 'all {{nnull}} random sets', kind: lollipop, x: nullx, y: nully, color: mist}
-          - {name: as good as gene A, kind: lollipop, x: hitx, y: hity, focus: true, step: 2}
+          - {name: random sets, kind: lollipop, x: nullx, y: nully, color: mist}
+          - {name: match A, kind: lollipop, x: hitx, y: hity, focus: true, step: 2}
         marks:
           - {kind: vline, x: rhoA, label: 'gene A: ρ = {{rhoA|3}}', step: 1}
       caption: 'p = {{at(hity, 0)}} / {{nnull}} = **{{pA|3}}**: only sets holding both top guides do as well.'

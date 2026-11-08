@@ -250,7 +250,7 @@ slides:
             x: {cats: [PC1, PC2, PC3], label: principal component}
             y: {label: share of the spread (%), min: 0, max: 100, ticks: [0, 25, 50, 75, 100]}
             series:
-              - {name: each PC's share, kind: bars, x: '[0, 1, 2]', y: '[100 * L1 / tot3, 100 * L2 / tot3, 100 * L3 / tot3]', color: s1}
+              - {name: PC share, kind: bars, x: '[0, 1, 2]', y: '[100 * L1 / tot3, 100 * L2 / tot3, 100 * L3 / tot3]', color: s1}
               - {name: running total, kind: line, x: '[0.5, 1.5, 2.5]', y: '[100 * share1, 100 * share12, 100]', color: accent}
           caption: 'Two PCs keep {{100 * share12|1}}% of the spread.'
       - think:

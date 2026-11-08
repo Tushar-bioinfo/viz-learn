@@ -249,7 +249,7 @@ chart:
     - {kind: label, at: [44, 0.03], text: '{{nout}} of 6 outside'}
   controls: [ … ]                                                            # sliders may sit here too
 ```
-- Series kinds: `line`, `area`, `bars`, `hist`, `dots`, `lollipop`, `step`. Series options: `name`, `kind`, `fn` or `x`/`y` or `values`, `density`, `bins`, `binwidth`, `color`, `focus`, `step`, `dash`, `width`, `opacity`, `legend: false`, `label` (end label), `highlight` (outline one bar by its x).
+- Series kinds: `line`, `area`, `bars`, `hist`, `dots`, `lollipop`, `step`. Series options: `name` (the legend entry: 2 words at most, 5 entries at most), `kind`, `fn` or `x`/`y` or `values`, `density`, `bins`, `binwidth`, `color`, `focus`, `step`, `dash`, `width`, `opacity`, `legend: false`, `label` (end label), `highlight` (outline one bar by its x).
 - Mark options: `step`, `label` (or `text`), `color`, `dash: false` (solid), `place` (`t b l r tl tr bl br c`: where its label goes), `labelAt` (0–1 along a line), `r` (point size), `bend` (arrow), `yf` (span height as a fraction).
 - Colours: `focus: true` = the orange accent, for the one thing that matters now. By order: `s1` blue, `s2` mint, `s3` magenta. Context: `mist` (grey), `haze`, `ink`. Also `good`, `bad`, `accent`. At most 3 coloured series; grey the rest.
 - Every series and mark can have `step`: the chart builds one layer per click. Labels avoid each other and the data; readers get a data table button and a hover readout for free.

@@ -101,12 +101,8 @@ PLANE = {"points": "{from, x, y, by, label, colors}", "shade": "[w0, w1, w2]", "
 
 
 MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "dash", "when", "side", "from", "at"}   # what every mark may also take (board.md)
-LEGEND_WORDS, LEGEND_MAX = 2, 5   # a plane legend is for a quick read: short entries, few of them
-
-
-def words(t):
-    """Words a reader reads in a label: a {{number}} or $maths$ is one."""
-    return len(HIDE.sub(" N ", str(t)).split())
+# legend limits and word counts (a {{number}}, $maths$ or `code` is one word) come from the deck: B.LEGEND_WORDS,
+# B.LEGEND_MAX, B.name_words
 
 
 def lint_plane(B, Lx, w, pl, names):
@@ -121,14 +117,14 @@ def lint_plane(B, Lx, w, pl, names):
         if isinstance(mk.get("points"), dict) and isinstance(mk["points"].get("colors"), dict):
             keys += [(v.get("label") if isinstance(v, dict) else None) or k for k, v in mk["points"]["colors"].items()]
     for t in keys:
-        if words(t) > LEGEND_WORDS:
-            Lx.warn(w, f"legend label “{t}”: legend labels are for a quick read: {LEGEND_WORDS} words at most; put the rest in says:")
+        if B.name_words(t) > B.LEGEND_WORDS:
+            Lx.warn(w, f"legend label “{t}”: legend labels are for a quick read: {B.LEGEND_WORDS} words at most; put the rest in says:")
     for mk in marks:   # a name on the plot is read at a glance too, beside its mark
-        if mk.get("name") and words(mk["name"]) > LEGEND_WORDS:
-            Lx.warn(w, f"name “{mk['name']}”: names on the plot are for a quick read: {LEGEND_WORDS} words at most; put the rest in says:")
+        if mk.get("name") and B.name_words(mk["name"]) > B.LEGEND_WORDS:
+            Lx.warn(w, f"name “{mk['name']}”: names on the plot are for a quick read: {B.LEGEND_WORDS} words at most; put the rest in says:")
     n = len(keys)
-    if n > LEGEND_MAX:
-        Lx.warn(w, f"{n} legend entries on one plane: more than {LEGEND_MAX} is too many for a quick read; name marks on the plot (name:) or split the plane")
+    if n > B.LEGEND_MAX:
+        Lx.warn(w, f"{n} legend entries on one plane: more than {B.LEGEND_MAX} is too many for a quick read; name marks on the plot (name:) or split the plane")
     def ex(v):
         B.check_expr(Lx, w + " plane", v, names)
 
@@ -225,10 +221,31 @@ def mark_color(mk, symbols, q):
 ON_PLOT = "on a board a mark's name goes in the legend and its meaning in a card: use name: and says:, or a symbol as its value"
 
 
-def lint_chart_marks(Lx, w, ch, symbols):
+def board_chart(ch):
+    """A chart as the board draws it (board.js `figure`): when every series name is one of the x-axis `cats`, the
+    legend would only repeat the axis labels, so the board hides it."""
+    cats = as_list((ch.get("x") or {}).get("cats")) if isinstance(ch.get("x"), dict) else []
+    nm = [q["name"] for q in as_list(ch.get("series")) if isinstance(q, dict) and q.get("name")]
+    return dict(ch, legend=False) if cats and nm and all(q in cats for q in nm) else ch
+
+
+def mark_entry(mk, symbols):
+    """The legend entry a chart mark adds on a board: its `name`, else its symbol value's `short`; None for none."""
+    if not isinstance(mk, dict) or mk.get("kind") == "label":
+        return None
+    q = mark_symbol(mk, symbols)
+    return mk.get("name") or (symbols[q].get("short") if q else None)
+
+
+def mark_entries(ch, symbols):
+    """How many legend entries a board chart's marks add (B.lint_visual adds the series and warns past the limit)."""
+    return sum(1 for mk in as_list(ch.get("marks")) if mark_entry(mk, symbols)) if isinstance(ch, dict) else 0
+
+
+def lint_chart_marks(B, Lx, w, ch, symbols):
     """A chart on a board draws no tag on its marks: a named mark takes a legend entry and a card. Returns the named
     marks with no card of their own, for the "say what it is" check."""
-    out, entries, seen = [], 0, {}
+    out, seen = [], {}
     for i, mk in enumerate(as_list(ch.get("marks"))):
         if not isinstance(mk, dict):
             continue
@@ -239,13 +256,12 @@ def lint_chart_marks(Lx, w, ch, symbols):
         for f in ("label", "text"):
             if mk.get(f) is not None:
                 Lx.err(w, f"chart mark {i + 1} ({k}) has `{f}:`: {ON_PLOT}")
-        name = mk.get("name") or (symbols[q].get("short") if q else None)
-        if mk.get("name") is not None and words(mk["name"]) > LEGEND_WORDS:
-            Lx.err(w, f"chart mark {i + 1} ({k}): name “{mk['name']}” is {words(mk['name'])} words: a legend name is {LEGEND_WORDS} words at most; put the rest in says:")
+        name = mark_entry(mk, symbols)
+        if mk.get("name") is not None and B.name_words(mk["name"]) > B.LEGEND_WORDS:
+            Lx.err(w, f"chart mark {i + 1} ({k}): name “{mk['name']}” is {B.name_words(mk['name'])} words: a legend name is {B.LEGEND_WORDS} words at most; put the rest in says:")
         if q and mk.get("says") is not None:
             Lx.warn(w, f"chart mark {i + 1} ({k}): `says` is not shown: the symbol's card is used; delete it")
         if name:
-            entries += 1
             key = (k, mark_color(mk, symbols, q))
             if key in seen and seen[key] != name:
                 Lx.warn(w, f"chart mark {i + 1} ({k}): the legend cannot tell {seen[key]} and {name} apart: give each its own color")
@@ -254,11 +270,6 @@ def lint_chart_marks(Lx, w, ch, symbols):
             Lx.warn(w, f"chart mark {i + 1} ({k}) has no name: give it name: and says:, or a symbol as its value, so the learner can find out what it marks")
         if mk.get("name") and not mk.get("says") and not (q and symbols[q].get("says")):
             out.append(mk)
-    if ch.get("legend") is not False:
-        named = [x for x in as_list(ch.get("series")) if isinstance(x, dict) and x.get("name") and x.get("legend") is not False]
-        entries += len(named) if len(named) >= 2 else 0
-    if entries > LEGEND_MAX:
-        Lx.warn(w, f"{entries} legend entries on one chart: more than {LEGEND_MAX} is too many for a quick read; leave a reference line unnamed, or split the chart")
     return out
 
 
@@ -395,9 +406,10 @@ def lint_scenes(B, Lx, deck, glob):
                     # a mark shows at the later of its own step and the plane's: a mark can't come before its plane
                     named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_plane(B, Lx, w, it["plane"], names)]
                 if VIS & set(it):
-                    B.lint_visual(Lx, w, {x: y for x, y in it.items() if x != "id"}, names)
+                    vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
+                    B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
                 for at, ch in charts_of(it):
-                    named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_chart_marks(Lx, w + at, ch, symbols)]
+                    named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_chart_marks(B, Lx, w + at, ch, symbols)]
                 lint_formula(B, Lx, w, it.get("eqn"), "eqn", names, symbols)
                 a = it.get("assemble")
                 if a is not None:
@@ -413,7 +425,7 @@ def lint_scenes(B, Lx, deck, glob):
                     else:
                         for k in "ab":
                             if isinstance(cp[k].get("visual"), dict):
-                                B.lint_visual(Lx, f"{w} compare {k}", cp[k]["visual"], names)
+                                B.lint_visual(Lx, f"{w} compare {k}", cp[k]["visual"], names, legend_marks=mark_entries(cp[k]["visual"].get("chart"), symbols))
                 op = it.get("ops")
                 if op is not None:
                     if not isinstance(op, dict):
@@ -1082,7 +1094,7 @@ def lint_fields(Lx, deck):
                                        "a comma inside an unquoted `{ }` value splits it: quote the value")
 
 
-def lint_ctl_labels(Lx, deck, glob, data=None):
+def lint_ctl_labels(B, Lx, deck, glob, data=None):
     """A board control explains itself: its label is its symbol or one word, its meaning is on a card, its value column
     shows a value, and something on the scene shows what it changes."""
     symbols, jumpy = deck.get("symbols") or {}, set()
@@ -1117,8 +1129,8 @@ def lint_ctl_labels(Lx, deck, glob, data=None):
                 Lx.err(w, f"no `label`, and `{q}` is not a symbol: add `{q}` under symbols (its TeX becomes the label), or give `label:` one word")
             elif label is not None and sym:
                 Lx.warn(w, f"`label` is not shown, because the symbol `{q}` labels this control: delete it")
-            elif label is not None and words(label) > 1:
-                Lx.err(w, f"`label` “{label}” is {words(label)} words: a label is the symbol or one word; the meaning goes in the symbol's `says` or the control's `says:`")
+            elif label is not None and B.name_words(label) > 1:
+                Lx.err(w, f"`label` “{label}” is {B.name_words(label)} words: a label is the symbol or one word; the meaning goes in the symbol's `says` or the control's `says:`")
             if not sym and not c.get("says"):
                 Lx.warn(w, "no card says what it means: give the control `says:` (or name it after a symbol, whose card it opens)")
             # what the control changes: itself and every scene derive made from it
@@ -1160,5 +1172,5 @@ def make_lint(B, data):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck)
-        lint_fields(Lx, deck); lint_ctl_labels(Lx, deck, glob, data)
+        lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data)
     return lesson_lint

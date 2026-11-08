@@ -145,8 +145,8 @@ slides:
         x: {label: reads in one sample, min: 0, max: 50}
         y: {label: chance of each count, min: 0, max: 0.1, fmt: 2}
         series:
-          - {name: counting alone (Poisson), kind: bars, fn: 'poisPmf(x, m)', color: mist}
-          - {name: our 6 replicates, kind: dots, x: reps, y: 0.006, focus: true, step: 2}
+          - {name: Poisson, kind: bars, fn: 'poisPmf(x, m)', color: mist}
+          - {name: our replicates, kind: dots, x: reps, y: 0.006, focus: true, step: 2}
         marks:
           - {kind: band, x: [lo95, hi95], label: where counting puts 95%, step: 1}
           - {kind: label, at: [44, 0.03], text: '{{nout}} of 6 outside', place: c, step: 3}
