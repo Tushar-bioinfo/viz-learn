@@ -10,7 +10,7 @@ fills columns but never moves a figure; no sideways scroll; every plane without 
 Then the look's own rules: a long formula sends its figure above its text; the plan shows no lines of text; the scene counter
 stays in the margin; a column not filled in keeps its row lines; Next stays on screen; the line by the buttons stays on
 screen after every Next; Next onto a think step takes two presses; rows fit their figures at five widths and stay on
-screen at three windows; a filled plane and a table fill their room; the first stop has no line;
+screen at three windows (a figure beside its text, pinned); a window made shorter redraws as a fresh load; a filled plane and a table fill their room; the first stop has no line;
 Next stays under the pointer through a scene; the line by the buttons never repeats words already on screen;
 text not side by side starts at the page's left edge while figures and equations centre on it; callouts and thinks have
 no lines and no indent, stand 18 px from their line, and show a bar when lit without moving their text. The pause button
@@ -271,9 +271,12 @@ VizOS.slides.forEach((sl,i)=>{const n=sl.r.node;
  const t=n.querySelector('.tcol');const ff=n.querySelector('.bpair .ffig');if(t&&ff&&vis(t)&&vis(ff)&&rc(t).right>rc(ff).left+1)out.push([i+1,'table runs under the figure',0]);
 });return {sw:document.documentElement.scrollWidth,out}})()"""
 # a figure with nothing above it but its own line is seen with the scene's head at the top of the window; one lower in the
-# scene, under worked lines or a table, is reached by scrolling to it, so its own top goes there
+# scene, under worked lines or a table, is reached by scrolling to it, so its own top goes there. A figure beside its text
+# is read pinned, 24 px from the top, the head gone: it may take the window, so its rows are checked there
 FEET = """() => { const out = [], rc = e => e.getBoundingClientRect();
   VizOS.slides.forEach((sl, i) => { const n = sl.r.node; [...n.querySelectorAll('.fg')].filter(g => g.querySelector(':scope > .controls .ctl, :scope > .stage') && g.offsetWidth).forEach(g => {
+    const pin = g.closest('.fb.beside > .ffig:not(.nostick)');
+    if (pin) { const foot = Math.max(...[...g.querySelectorAll(':scope > .controls, :scope > .stage')].map(e => rc(e).bottom)) - rc(pin).top; out.push([i + 1, Math.round(24 + foot), innerHeight]); return; }
     n.scrollIntoView({ block: 'start', behavior: 'instant' }); const say = g.closest('.fb') && !g.closest('.beside') && g.closest('.fb').querySelector('.st.intro > .say'), top = say || g, room = n.querySelector('.board');
     if (rc(top).top - rc(room).top > 4 && !(rc(g).top - rc(room).top < 90)) top.scrollIntoView({ block: 'start', behavior: 'instant' });
     out.push([i + 1, Math.round(Math.max(...[...g.querySelectorAll(':scope > .controls, :scope > .stage')].map(e => rc(e).bottom))), innerHeight]); }); });
@@ -297,14 +300,52 @@ def rows_fit(page):
     return not bad, "; ".join(bad[:4]) or "5 widths"
 
 
+# each figure beside its text with room to travel, scrolled to the middle of its pinned range: it must really sit 24 px from
+# the top, rows on screen (a class alone does not prove it pins)
+PINS = """async () => { const out = [], rc = e => e.getBoundingClientRect(), wait = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  for (const [i, sl] of VizOS.slides.entries()) for (const b of sl.r.node.querySelectorAll('.fb.beside')) { const f = b.querySelector(':scope > .ffig');
+    if (!f || f.classList.contains('nostick') || b.offsetHeight - f.offsetHeight < 60) continue;
+    scrollTo({ top: rc(b).top + scrollY - 24 + (b.offsetHeight - f.offsetHeight) / 2, behavior: 'instant' }); await wait();
+    const foot = Math.max(rc(f).bottom, ...[...f.querySelectorAll('.controls, .stage')].map(e => rc(e).bottom));
+    out.push([i + 1, Math.round(rc(f).top), Math.round(foot), innerHeight]); }
+  return out; }"""
+
+
+def pins(page, tag):
+    q = page.evaluate(PINS)
+    return [f"{tag}: scene {x[0]} pinned at {x[1]} px, foot {x[2]} of {x[3]}" for x in q if abs(x[1] - 24) > 2 or x[2] > x[3]], len(q)
+
+
 def rows_on_screen(page):
-    bad, n = [], 0
+    bad, n, m = [], 0, 0
     for w, h in ((1280, 720), (1440, 900), (1920, 1080)):
         sized(page, w, h)
         q = page.evaluate(FEET); n += len(q)
         bad += [f"{w}: scene {x[0]} row foot {x[1]} of {x[2]}" for x in q if x[1] > x[2]]
+        b2, k = pins(page, w); bad += b2; m += k
     sized(page, 1440, 900)
-    return n > 0 and not bad, "; ".join(bad[:4]) or f"{n} rows"
+    return n > 0 and m > 0 and not bad, "; ".join(bad[:4]) or f"{n} rows, {m} pinned figures"
+
+
+SIZES = """() => [...document.querySelectorAll('.fb.beside > .ffig, .tcol, .bi')].map(e => e.offsetWidth + 'x' + e.offsetHeight + (e.classList.contains('nostick') ? '!' : '')).join(' ')"""
+
+
+def shorter_window(page):
+    """A window made shorter (or taller) redraws: every figure is the size a fresh load at that size gives, and still pins."""
+    bad = []
+    for a, b in (((1280, 1000), (1280, 600)), ((1280, 720), (1280, 900))):
+        sized(page, *a); page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)   # opened at a, then resized
+        sized(page, *b); page.wait_for_timeout(300)
+        moved = page.evaluate(SIZES)
+        page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
+        fresh = page.evaluate(SIZES)
+        if moved != fresh or "!" in moved:
+            bad.append(f"{a}->{b}: " + " ".join(f"{x} (fresh {y})" for x, y in zip(moved.split(), fresh.split()) if x != y or "!" in x)[:200])
+        page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
+        sized(page, *a); sized(page, *b); page.wait_for_timeout(300)   # resized again, then scrolled: each figure must really pin
+        b2, k = pins(page, f"{a}->{b}"); bad += b2 + ([f"{a}->{b}: no figure has room to pin"] if not k else [])
+    sized(page, 1440, 900); page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
+    return not bad, "; ".join(bad) or "2 height changes"
 
 
 def plane_fills(page):
@@ -975,7 +1016,7 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("a long formula sends its figure above its text", narrow_formula), ("the plan shows no lines of text", plan_words), ("the scene counter stays in the margin", rail_margin),
          ("a column not filled in keeps its row lines", row_lines), ("Back and Next stay on screen", next_on_screen), ("the line by the buttons stays on screen", stop_line),
          ("Next onto a think step takes two presses", two_presses),
-         ("every row fits its figure at five widths", rows_fit), ("every row is on screen at three windows", rows_on_screen),
+         ("every row fits its figure at five widths", rows_fit), ("every row is on screen at three windows", rows_on_screen), ("a window made shorter sizes figures as a fresh load", shorter_window),
          ("a filled plane fills its room", plane_fills), ("a table fills its column", table_fills), ("the first stop has no line by the buttons", first_stop_quiet),
          ("Next stays under the pointer", stays_put), ("the line by the buttons never repeats words on screen", no_repeat),
          ("no piece of a formula on two rows", one_row), ("a formula shrinks to fit, never under 20 px", formula_floor), ("formulas carry no names under them", no_names),

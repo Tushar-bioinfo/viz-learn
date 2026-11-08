@@ -95,6 +95,7 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .tb:hover { border-color: var(--accent); }
 .board .ta { display: flex; flex-direction: column; gap: 4px; font-size: 18px; line-height: 1.5; }
 .board .think:not(.open) .ta { display: none; }
+.s-board.allopen .board .think .ta { display: flex; }   /* only while board.js measures a text column's full height */
 .s-board [data-wait]:not(.open):not(td, th), .s-board [data-wait]:not(.open):not(td, th) * { visibility: hidden !important; }
 .board .btag { flex: none; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 

@@ -100,8 +100,12 @@
       jump(L.i + dir);
     });
     addEventListener('scroll', onScroll, { passive: true });
-    let t, wide = innerWidth;
-    addEventListener('resize', () => { onScroll(); L.slides.forEach(sl => sl.r.stick && sl.r.stick()); if (innerWidth === wide) return; wide = innerWidth; clearTimeout(t); t = setTimeout(drawAll, 120); });
+    // a height change redraws too, as figures are sized to the window; a phone (under 760 px) redraws on width only: its bar comes and goes as it scrolls.
+    // The check opens its window to a whole scene's height to shoot it: that must not redraw the scene it measured
+    let t, wide = innerWidth, high = innerHeight;
+    const redraw = () => { onScroll(); L.slides.forEach(sl => sl.r.stick && sl.r.stick());
+      if (innerWidth === wide && (innerHeight === high || innerWidth < 760 || CHECK)) return; wide = innerWidth; high = innerHeight; clearTimeout(t); t = setTimeout(drawAll, 120); };
+    addEventListener('resize', redraw);
     addEventListener('beforeprint', () => L.slides.forEach(sl => sl.r.show && sl.r.show(sl.steps)));
     addEventListener('afterprint', () => L.slides.forEach(sl => sl.r.reset && sl.r.reset()));
   }

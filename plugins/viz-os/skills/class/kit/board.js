@@ -432,6 +432,8 @@
     const root = h('div', 'body board'); node.appendChild(root);
     // with the scene's head at the top of the window, the figure and all that goes under it stay on screen
     const figH = () => Math.min(FIGH, innerHeight - (root.getBoundingClientRect().top - node.getBoundingClientRect().top) - 12);
+    // a figure beside its text is pinned while the text scrolls past, the head long gone
+    const pinH = () => Math.min(FIGH, innerHeight - 2 * STUCK - 1);
     const zl = s.table ? h('div', 'tcol') : null, zt = s.table ? h('div', 'tcard g plate') : null;   // the pinned column: the table, then side notes
     if (zl) zl.appendChild(zt);
 
@@ -875,13 +877,17 @@
       const beside = !b.over && !inPair && !many && b.side.children.length > 0 && W - side - GAP >= FIG;
       b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many);
       const own = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - side - GAP : inPair ? W : Math.min(W, UNDER);
-      const room = { w: own, col: beside || many || inPair ? own : read0, h: figH() };
+      // beside, it may grow to its text's height with every answer open (taller would not pin; open, so an answer never resizes it),
+      // up to the window less the pin's 24 px at top and foot
+      const full = () => { node.classList.add('allopen'); const hh = b.side.offsetHeight; node.classList.remove('allopen'); return hh; };
+      const tall = beside ? () => Math.min(pinH(), Math.max(figH(), full())) : figH;
+      const room = { w: own, col: beside || many || inPair ? own : read0, h: tall() };
       const size = () => { const w = Math.max(...b.figs.map(fg => sized(fg, room))); b.fig.style.width = many ? '' : w + 'px'; b.node.style.setProperty('--fig', w + 'px'); if (!beside && !many && !inPair) read = Math.max(read, w); };
       // what the figure must share the window with: the line above it, and its slider and button rows, if it has any
       const shared = () => { const say = beside ? null : b.side.querySelector(':scope > .st.intro > .say'); let foot = 0;
         b.figs.forEach(fg => { if (fg.stage) fg.stage.fit(); foot = Math.max(foot, fg.wrap.offsetHeight - fg.node.offsetHeight); });
         return (say ? say.offsetHeight + 12 : 0) + foot; };
-      size(); for (let pass = 0; pass < 3; pass++) { read = read0; room.h = figH() - shared(); size(); } });
+      size(); for (let pass = 0; pass < 3; pass++) { read = read0; room.h = tall() - shared(); size(); } });
       root.style.setProperty('--read', read + 'px');
       blocks.forEach(b => { if (b.wide) b.figs.forEach(fg => sized(fg, { w: read, col: read, h: figH() })); });
       node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / SHAPE) + 'px'; }); };
