@@ -24,8 +24,8 @@ symbols:
   b: {tex: 'b', says: how much of u points along PC2, short: PC2 part, color: s3, fmt: 3}
   v_cd3: {tex: 's_1^2', says: how far CD3 levels scatter, short: CD3 spread, color: s1, fmt: 3}
   c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 3}
-  lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, fmt: 3}
-  lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, fmt: 3}
+  lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, color: accent, fmt: 3}
+  lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, color: s3, fmt: 3}
   s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: u spread, fmt: 3}
   p: {tex: 'a^2', says: the share of the arrow on PC1, short: PC1 share, color: accent, fmt: 2}
   sp: {tex: 's_u^2', says: the spread along the mixed arrow, short: spread now, fmt: 3}
@@ -134,7 +134,7 @@ slides:
     title: Move the mix, watch the spread
     lead: The spread slides between the two stretches.
     controls:
-      - {name: p, label: share on PC1, min: 0, max: 1, step: 0.05, value: 0.5, fmt: 2}
+      - {name: p, min: 0, max: 1, step: 0.05, value: 0.5, fmt: 2}
     derive:
       sp: p * lam1 + (1 - p) * lam2
       ex: sqrt(p) * v1 + sqrt(1 - p) * w1

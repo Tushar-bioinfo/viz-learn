@@ -268,8 +268,10 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .vring { position: absolute; z-index: 59; display: none; box-sizing: border-box; border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
 .vring.on { display: block; }   /* the keyboard-focus ring, drawn by board.js round the whole term */
 .board .math .dm { opacity: .28; transition: opacity .12s; }
-/* the card: half see-through (the user's pick), framed in the term's colour, 14 px, as wide as its widest line, a pointer in the frame's colour */
-.vpop { position: absolute; z-index: 60; display: none; box-sizing: border-box; width: max-content; max-width: 230px; padding: 5px 8px; background: rgba(11, 12, 14, .5);
+/* the card: .55 see-through over a 4 px blur (the user's pick "A"): colour shows through, text behind it does not read. Framed in
+   the term's colour, 14 px, as wide as its widest line, a pointer in the frame's colour */
+.vpop { position: absolute; z-index: 60; display: none; box-sizing: border-box; width: max-content; max-width: 230px; padding: 5px 8px; background: rgba(11, 12, 14, .55);
+  -webkit-backdrop-filter: blur(4px) saturate(1.2); backdrop-filter: blur(4px) saturate(1.2);
   border: 1px solid var(--bc, var(--mist)); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .55); font: 400 14px/1.4 var(--f-ui); color: var(--ink); pointer-events: none; text-align: left; }
 .vpop.on { display: block; }
 .vpop .ttl { display: flex; gap: 9px; align-items: baseline; margin-bottom: 4px; }
@@ -279,6 +281,22 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .vpop .chip { display: inline-block; margin-top: 5px; padding: 1px 6px; border: 1px solid rgba(255, 255, 255, .18); font: 600 .85em var(--f-mono); }
 .vpop .caret { position: absolute; top: -6px; width: 12px; height: 6px; background: var(--bc, var(--mist)); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .vpop.up .caret { top: auto; bottom: -6px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+/* a chart's marks on a board: no tag; a wide see-through hit area opens the card and lifts the mark; its legend entry too.
+   A mark not shown yet takes no pointer. The chart's data pop-up wears the card's glass look */
+.board .chart g.mk:has(> .vt:hover), .board .chart g.mk:has(> .vt.act), .board .chart g.mk:has(> .vt:focus-visible) { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.board .chart .mhit { cursor: help; outline: none; }
+.board .chart svg.ondot .mhit { pointer-events: none; }   /* a data dot wins inside its radius */
+.board .chart svg line.grid { pointer-events: none; }   /* the chart's data guide never takes the pointer from a mark */
+.board .chart g.mkm.lit { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.board .legend .mkx.lit .mkn { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.board .legend .mkx.off { visibility: hidden; }
+.board .chart g.mk.off .mhit { visibility: hidden; pointer-events: none; }
+.board .legend .mkx { display: inline-flex; align-items: center; gap: 9px; }
+.board .legend i.blk { width: 18px; height: 12px; opacity: .45; }
+.board .legend i.arw { width: auto; height: auto; background: none; font: 700 20px/1 var(--f-ui); font-style: normal; }
+.board .legend .vt { pointer-events: auto; }
+.board .chart .tip { padding: 5px 8px; font: 400 14px/1.4 var(--f-ui); background: rgba(11, 12, 14, .55); -webkit-backdrop-filter: blur(4px) saturate(1.2); backdrop-filter: blur(4px) saturate(1.2);
+  border: 1px solid var(--mist); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .55); }
 /* the marks never take the pointer, so a shape drawn in a later step cannot cover a name; only names with `says` take it */
 .board .plane svg.pl * { pointer-events: none; }
 .board .plane svg.pl .says { pointer-events: auto; }
@@ -286,17 +304,25 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .board svg circle { stroke: var(--bg); stroke-width: 2.5; }
 .board svg .pring { fill: none; stroke: var(--accent); stroke-width: 4; }
 
-/* controls, under the figure they drive: one to a line, name, line, value, with no boxes. A run and a toggle take the same line */
-html.ls-page .board .controls { display: flex; flex-flow: column nowrap; align-items: stretch; gap: 2px; margin: 0; border-top: 1px solid #2c2d2b; padding-top: 8px; min-width: 0; }
-html.ls-page .board .ctl.g { display: flex; align-items: center; gap: 12px; box-sizing: border-box; width: 100%; min-width: 0; padding: 1px 0; background: transparent; border: 0; box-shadow: none; }
-html.ls-page .board .ctl label { min-width: 2.4em; font: 400 16px var(--f-ui); color: var(--mist); }
-html.ls-page .board .ctl output { flex: none; min-width: 5ch; text-align: right; font: 700 17px var(--f-mono); color: var(--accent); }
-html.ls-page .board .ctl input[type=range] { -webkit-appearance: none; appearance: none; flex: 1 1 auto; width: auto; min-width: 50px; height: 24px; margin: 0; background: transparent; }
+/* controls, under the figure they drive, with no boxes. Every row of one box shares one grid: play | label | track | value, so
+   every track starts and ends at the same x, the label column is as wide as its widest label, and values right-align.
+   A box with no run (.np) has no play column. A toggle's buttons sit centred in the track column */
+html.ls-page .board .controls { display: grid; grid-template-columns: [play] 28px [lab] max-content [trk] minmax(50px, 1fr) [val] minmax(5ch, max-content) [end];
+  column-gap: 12px; row-gap: 2px; align-items: center; margin: 0; border-top: 1px solid #2c2d2b; padding-top: 8px; min-width: 0; }
+html.ls-page .board .controls.np { grid-template-columns: [lab] max-content [trk] minmax(50px, 1fr) [val] minmax(5ch, max-content) [end]; }
+html.ls-page .board .ctl.g { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; box-sizing: border-box; min-width: 0; padding: 1px 0; background: transparent; border: 0; box-shadow: none; }
+html.ls-page .board .ctl > .play { grid-column: play; }
+html.ls-page .board .ctl > .clab { grid-column: lab; font: 400 16px var(--f-ui); color: var(--mist); white-space: nowrap; }
+html.ls-page .board .ctl > .clab .katex { font-size: 1.2em; }
+html.ls-page .board .ctl > input { grid-column: trk; }
+html.ls-page .board .ctl > output { grid-column: val; text-align: right; font: 700 17px var(--f-mono); color: var(--accent); }
+html.ls-page .board .ctl.tog > .seg2 { grid-column: trk; justify-self: center; }
+html.ls-page .board .ctl input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; min-width: 50px; height: 24px; margin: 0; background: transparent; }
 html.ls-page .board .ctl input[type=range]::-webkit-slider-runnable-track { height: 3px; background: linear-gradient(90deg, #ff5a36 var(--fill, 50%), #2c2d2b var(--fill, 50%)); }
 html.ls-page .board .ctl input[type=range]::-moz-range-track { height: 3px; background: linear-gradient(90deg, #ff5a36 var(--fill, 50%), #2c2d2b var(--fill, 50%)); }
 html.ls-page .board .ctl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 20px; height: 20px; margin-top: -8.5px; background: var(--bg); border: 3px solid #ff5a36; border-radius: 50%; box-shadow: none; }
 html.ls-page .board .ctl input[type=range]::-moz-range-thumb { box-sizing: border-box; width: 20px; height: 20px; background: var(--bg); border: 3px solid #ff5a36; border-radius: 50%; box-shadow: none; }
-/* a run: a play button (a triangle; two bars while playing), the scrubber and the frame count; a toggle: two words, the one on in orange */
+/* a run: a play button (a triangle; two bars while playing) and the scrubber; a toggle: two words, the one on in orange */
 html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display: grid; place-items: center; background: transparent; border: 0; box-shadow: none; cursor: pointer; padding: 0; }
 .board .ctl .play::before { content: ''; width: 0; height: 0; margin-left: 4px; border-left: 14px solid var(--accent); border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
 .board .ctl .play.on::before { width: 14px; height: 16px; margin: 0; border: 0; border-left: 5px solid var(--accent); border-right: 5px solid var(--accent); box-sizing: border-box; }

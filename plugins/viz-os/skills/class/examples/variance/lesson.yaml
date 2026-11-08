@@ -21,7 +21,7 @@ symbols:
   avg_n: {tex: '\div n', says: average spread so far when we divide by n, short: n average, fmt: 3}
   avg_n1: {tex: '\div (n-1)', says: average spread so far when we divide by n − 1, short: (n−1) average, fmt: 3}
   x3: {tex: 'x_{c3}', says: CD3 level of c3 in the what-if, short: c3 CD3, fmt: 1}
-  mw: {tex: '\bar{x}', says: the mean with c3 moved, short: mean now, fmt: 2}
+  mw: {tex: '\bar{x}', says: the mean with c3 moved, short: mean now, color: s2, fmt: 2}
   s2w: {tex: 's^2', says: the variance with c3 moved, short: variance now, fmt: 3}
 slides:
   - type: title
@@ -46,7 +46,7 @@ slides:
               - {name: Donor A, kind: dots, x: 'donor_a * 0 + 0.5', y: donor_a, color: s1}
               - {name: Donor B, kind: dots, x: 'donor_b * 0 + 1.5', y: donor_b, color: s2}
             marks:
-              - {kind: hline, y: mA, label: 'mean {{mA|2}}', step: 2}
+              - {kind: hline, y: mA, name: mean, says: "both donors' mean CD3 level: the same for the two", step: 2}
           caption: Same middle, but look how far the dots reach.
       - say: 'Their means match exactly: ==s1:{{mA|2}}== and ==s2:{{mB|2}}==.'
       - think:
@@ -67,7 +67,7 @@ slides:
               - {name: even patio, kind: lollipop, x: 'seq(0, 5, 1) - 0.18', y: even, color: s1}
               - {name: patchy patio, kind: lollipop, x: 'seq(0, 5, 1) + 0.18', y: patchy, color: s2}
             marks:
-              - {kind: hline, y: drops, label: 'average {{drops}} drops', step: 2}
+              - {kind: hline, y: drops, name: average, says: 'raindrops per tile, the same on both patios', step: 2}
           caption: Blue sticks hug the line; mint sticks wander.
       - say: 'Both patios average ==accent:{{drops}}== drops a tile. Same middle, like our donors.'
       - think:
@@ -195,7 +195,7 @@ slides:
     title: Why n − 1? Test it many times
     lead: Draw small samples from a known spread and average.
     controls:
-      - {name: t, run: 12, label: samples drawn}
+      - {name: t, run: 12, show: drawn}
     derive:
       drawn: at(draws, t)
       avg_n: at(run_n, t)
@@ -211,7 +211,7 @@ slides:
                 - {name: ÷ n, kind: bars, x: '[0]', y: '[avg_n]', color: mist}
                 - {name: ÷ (n − 1), kind: bars, x: '[1]', y: '[avg_n1]', focus: true}
               marks:
-                - {kind: hline, y: sig2, label: 'the truth {{sig2|2}}'}
+                - {kind: hline, y: sig2, name: truth, says: the true variance every sample is drawn from}
             caption: Each bar is the average over every sample so far.
           - {params: {say: 'So far', names: [drawn, avg_n, avg_n1]}}
       - say: One sample is noisy. Keep drawing, and keep a running average of each.
@@ -246,8 +246,8 @@ slides:
     title: Move one cell, watch the variance
     lead: One far cell can drag the variance a long way.
     controls:
-      - {name: c3v, label: CD3 of c3, min: 3, max: 7, step: 0.1, value: 4.9}
-      - {name: doublet, toggle: [one cell, a doublet], label: c3 is}
+      - {name: c3v, label: CD3, says: "cell c3's CD3 level, as one cell", min: 3, max: 7, step: 0.1, value: 4.9, fmt: 1}
+      - {name: doublet, toggle: [one cell, a doublet], label: c3, says: 'one cell, or two stuck together (a doublet)'}
     derive:
       idx: seq(0, 5, 1)
       x3: where(doublet, dbl, c3v)
@@ -264,7 +264,7 @@ slides:
                 - {name: other cells, kind: lollipop, x: idx, y: xw, color: s1}
                 - {name: c3, kind: lollipop, x: '[far_k]', y: '[x3]', focus: true}
               marks:
-                - {kind: hline, y: mw, label: 'mean {{mw|2}}'}
+                - {kind: hline, y: mw}
             caption: The orange stick is c3; the dashed line is the mean.
           - {params: {say: 'With c3 where you put it', names: [x3, mw, s2w]}}
       - think:
@@ -309,7 +309,7 @@ slides:
               series:
                 - {name: CD3, kind: lollipop, x: 'seq(0, 5, 1)', y: cd3, color: s1}
               marks:
-                - {kind: band, y: ['xbar - sd', 'xbar + sd'], label: mean ± 1 SD}
-                - {kind: hline, y: xbar, label: 'mean {{xbar|2}}'}
+                - {kind: band, y: ['xbar - sd', 'xbar + sd'], name: '$\bar{x} \pm s$', says: from one SD below the mean to one SD above}
+                - {kind: hline, y: xbar}
             caption: Now the spread sits on the same axis as the cells.
       - say: 'Next time: c3 sits {{z_far|1}} SDs above the mean. That count is its z-score.'

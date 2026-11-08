@@ -109,15 +109,15 @@
       const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(probe).color); probe.remove(); const [r, g, b] = m ? m[1].split(',').map(Number) : [162, 159, 151]; glows[c] = `rgba(${r}, ${g}, ${b}, 0.45)`; }
     el.style.setProperty('--hc', c); el.style.setProperty('--hg', glows[c]); };
 
-  // ---------- pop-up cards: one look for every name on a board (a formula's term, a matrix, a plane mark, a legend entry) ----------
+  // ---------- pop-up cards: one look for every name on a board (a formula's term, a matrix, a plane mark, a legend entry, a control's label) ----------
   // The title line is the notation in its colour, the bold `short` name and its value now (a number); then `says`; then its
-  // shape, worked out from the data. The card is half see-through, framed in the term's colour, and as wide as its widest line.
+  // shape, worked out from the data. The card is a little see-through over a blur, framed in the term's colour, and as wide as its widest line.
   // It opens on point, tap, click or Tab; a click pins it. Pointing at a term lifts it (brighter, a glow in its colour), and the
   // rest of its formula fades. Its text fills only while open, so the page audit never reads it. Listeners sit on the document,
   // because a formula is drawn again when a slider moves
   let card = null, cur = null, pinned = null;
   const slideOf = el => (L.slides || []).find(sl => sl.r && sl.r.node && sl.r.node.contains(el));
-  const symCard = el => { const q = termOf(el), B = bookOf(), S = (B && B.S[q]) || {}, sl = slideOf(el), scope = sl ? sl.ctx.scope : {}, v = scope[q];
+  const symCard = (el, q0) => { const q = q0 ?? termOf(el), B = bookOf(), S = (B && B.S[q]) || {}, sl = slideOf(el), scope = sl ? sl.ctx.scope : {}, v = scope[q];
     let shape = null, value = null;
     if (S.kind === 'matrix' || S.kind === 'vector') { if (Array.isArray(v)) shape = Array.isArray(v[0]) ? `${v.length} × ${v[0].length}` : el.closest('.mrow') ? `1 × ${v.length}` : `${v.length} × 1`; }
     else if (S.kind !== 'index' && S.kind !== 'operator' && typeof v === 'number') { value = L.fmt(v, S.fmt ?? 's4'); shape = 'one number'; }
@@ -128,8 +128,9 @@
     k.querySelectorAll('.katex-html, svg, .chip').forEach(q => { max = Math.max(max, q.getBoundingClientRect().right); });
     const cs = getComputedStyle(k); k.style.width = Math.ceil(max - r.left + parseFloat(cs.paddingRight) + parseFloat(cs.borderRightWidth)) + 'px'; };
   // a KaTeX span is one line tall, so a term's box is the union of what it draws (a tall bracket, a fraction)
-  const termBox = el => { const r = [el, ...el.querySelectorAll('*')].map(e => e.getBoundingClientRect()).filter(q => q.width && q.height)
-    .reduce((u, q) => ({ left: Math.min(u.left, q.left), right: Math.max(u.right, q.right), top: Math.min(u.top, q.top), bottom: Math.max(u.bottom, q.bottom) }), el.getBoundingClientRect());
+  // (a plain start box: a DOMRect's edges are getters, lost when spread, as for a flat line with nothing tall inside it)
+  const termBox = el => { const b0 = el.getBoundingClientRect(), r = [el, ...el.querySelectorAll('*')].map(e => e.getBoundingClientRect()).filter(q => q.width && q.height)
+    .reduce((u, q) => ({ left: Math.min(u.left, q.left), right: Math.max(u.right, q.right), top: Math.min(u.top, q.top), bottom: Math.max(u.bottom, q.bottom) }), { left: b0.left, right: b0.right, top: b0.top, bottom: b0.bottom });
     return { ...r, width: r.right - r.left, height: r.bottom - r.top }; };
   // under the term, its pointer at the term's middle; above it when there is more room there; always inside the window
   const place = (k, el) => { k.style.left = '0px'; k.style.top = '0px'; fitCard(k);
@@ -149,7 +150,7 @@
     for (let n = el; n !== root; n = n.parentElement) [...n.parentElement.children].forEach(sib => { if (sib !== n) sib.classList.add('dm'); }); };
   // where the open term sits, so a redraw (a slider, a run, a resize, a font, a plane laid out again) finds the same one:
   // its kind of term and its place among the page's terms of that kind
-  const keyOf = el => termOf(el) ? [...el.classList].find(k => /^(lt|mt)-/.test(k)) : `mk:${el.textContent}`;
+  const keyOf = el => el.dataset && el.dataset.vk ? `vk:${el.dataset.vk}` : termOf(el) ? [...el.classList].find(k => /^(lt|mt)-/.test(k)) : `mk:${el.textContent}`;
   const sameAs = key => [...document.querySelectorAll('.vt')].filter(x => keyOf(x) === key);
   let where = null, sig = '', at = '', ticker = 0, focused = false, ring = null;
   const sigOf = d => JSON.stringify([d.tex, d.name, d.value, d.shape, d.c, L.plain(String(d.says || ''), d.scope || {})]);
@@ -168,7 +169,7 @@
     if (!ticker) ticker = setInterval(tick, 150);
     if (!card) { card = h('div', 'vpop'); card.setAttribute('role', 'tooltip'); document.body.appendChild(card); }
     cur = el; el.classList.add('act'); dim(el); card.style.setProperty('--bc', d.c);
-    card.innerHTML = `<div class="ttl">${d.swatch || '<span class="nt"></span>'}${d.name ? `<b>${md(d.name)}</b>` : ''}${d.value != null ? `<span class="vv">= ${L.esc(d.value)}</span>` : ''}</div>` +
+    card.innerHTML = `<div class="ttl">${d.swatch || (d.tex != null ? '<span class="nt"></span>' : '')}${d.name ? `<b>${md(d.name)}</b>` : ''}${d.value != null ? `<span class="vv">= ${L.esc(d.value)}</span>` : ''}</div>` +
       `${d.says ? `<div class="ds">${md(d.says)}</div>` : ''}${d.shape ? `<span class="chip">${L.esc(d.shape)}</span>` : ''}<i class="caret"></i>`;
     const nt = card.querySelector('.nt'); if (nt) { renderTex(nt, d.tex, false); nt.style.color = d.ink ? 'var(--ink)' : d.c; }
     L.fill(card, d.scope || {}); card.classList.add('on'); place(card, el); };
@@ -220,6 +221,11 @@
     return hit.length >= 2 ? hit.slice(0, 2) : null;
   }
 
+  // a legend or card swatch per kind of mark: a line, a dashed line, an arrow, a dot, a soft block
+  const SWATCH = { line: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:3"/>', dash: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:2.5;stroke-dasharray:5 3"/>',
+    arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>' };
+  const swatch = (kind, c) => `<svg width="24" height="12" viewBox="0 0 24 12">${(SWATCH[kind] || SWATCH.line).replace(/C/g, c)}</svg>`;
+
   function plane(p, ctx, clickOf, at) {
     const node = h('div', p.fill ? 'bi plane fr fill' : 'bi plane fr'); node.dataset.at = at;
     if (p.id) node.dataset.id = p.id;
@@ -229,8 +235,7 @@
     const R = { node, issues: [], kind: 'plane', w: 0, h: 0, leg: LEG, view: null };
     const num = (x, where) => L.val(x, ctx.scope, where);
     // `says`: the name or legend entry opens the board's pop-up card (see pop-up cards), with the mark's swatch for notation
-    const SW = { line: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:3"/>', dash: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:2.5;stroke-dasharray:5 3"/>',
-      arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>' };
+    const SW = SWATCH;
     const tipOn = (el, mk, c, kind) => {
       el.classList.add('says', 'vt'); el.setAttribute('tabindex', '0'); glow(el, c === 'var(--ink)' ? 'var(--mist)' : c); el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope)); pauseButton();
       el._pd = () => ({ swatch: `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg>`, c: c === 'var(--ink)' ? 'var(--mist)' : c, name: mk.name ?? mk.label, says: mk.says, shape: kind === 'dot' ? 'one point' : null, scope: ctx.scope }); };
@@ -445,7 +450,76 @@
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
       if (c.chart) { list(c.chart.series).forEach(m); list(c.chart.marks).forEach(m); } list(c.labels).forEach(m); return c; };
-    const visual = v => { const V = L.visual(clicks(v), ctx); vis.push(V); return V; };
+    const visual = v => { const c = clicks(v); ctx.chartOpts = c.chart ? markHooks(c.chart) : null; try { const V = L.visual(c, ctx); vis.push(V); return V; } finally { ctx.chartOpts = null; } };
+    // a chart's marks on a board: no tag on the plot. A named mark (its `name`, or the `short` of the symbol that is its value)
+    // takes a legend entry after the series, with a swatch drawn as the mark is; the mark (a hit area at least 14 px wide, 24 px
+    // round a point) and its entry open the board's card: the symbol's card, or the name, the value now and `says`
+    let chartNo = 0;
+    const reals = {};
+    const realColor = c => { if (!(c in reals)) { const tmp = document.createElement('span'); tmp.style.color = c; document.body.appendChild(tmp); reals[c] = getComputedStyle(tmp).color; tmp.remove(); } return reals[c]; };
+    // a data dot wins inside its own radius: there the marks' hit areas let the pointer through to the chart's data pop-up
+    const dotsWin = sv => { if (!sv || sv._dots) return; sv._dots = true;
+      sv.addEventListener('pointermove', e => { const on = [...sv.querySelectorAll('g.mk:not(.mkm):not(.off) circle')].some(c => { const b = c.getBoundingClientRect();
+          return Math.hypot(e.clientX - (b.left + b.right) / 2, e.clientY - (b.top + b.bottom) / 2) <= b.width / 2 + 1; });
+        sv.classList.toggle('ondot', on); }, true);
+      sv.addEventListener('pointerleave', () => sv.classList.remove('ondot')); };
+    const markHooks = spec => { const no = chartNo++, S = ctx.symbols || {}, xs = spec.x || {}, ys = spec.y || {};
+      const bare = v => typeof v === 'string' && /^[A-Za-z_]\w*$/.test(v) && S[v] ? v : null;
+      const symOfMk = mk => mk.kind === 'hline' ? bare(mk.y) : mk.kind === 'vline' ? bare(mk.x) : mk.kind === 'point' ? bare((mk.at || [])[1] ?? mk.y) : null;
+      const nameOf = mk => mk.name ?? (symOfMk(mk) ? S[symOfMk(mk)].short : null);
+      const kindOf = mk => ['band', 'area'].includes(mk.kind) ? 'area' : mk.kind === 'point' ? 'dot' : mk.kind === 'arrow' ? 'arrow' : mk.dash === false ? 'line' : 'dash';
+      // a mark with no `color` whose value is a symbol with a colour is drawn in that colour, as the symbol is everywhere else.
+      // Set on the board's copy of the spec before the chart draws, as a real colour (the chart knows only some names)
+      list(spec.marks).forEach(m => { const q = m && !m.color && symOfMk(m), B = q && bookOf(), sc = B && B.S[q] && B.S[q].color; if (sc && sc !== 'ink') m.color = realColor(col(sc)); });
+      const colOf = mk => col(mk.color || (['point', 'area', 'arrow'].includes(mk.kind) ? 'accent' : 'mist'));
+      const marks = list(spec.marks).map((m, i) => ({ ...m, i }));
+      // a legend swatch as the chart's own legend draws one (no svg inside a chart: its rule stretches every svg to the plot)
+      const chip = (kind, c) => kind === 'dot' ? `<i class="dot" style="background:${c}"></i>` : kind === 'area' ? `<i class="blk" style="background:${c}"></i>`
+        : kind === 'arrow' ? `<i class="arw" style="color:${c}">→</i>` : kind === 'dash' ? `<i style="background:repeating-linear-gradient(90deg,${c} 0 7px,transparent 7px 11px)"></i>` : `<i style="background:${c}"></i>`;
+      const valueOf = (mk, scope) => { const q = symOfMk(mk), f = (v, ax, own) => { const x = L.val(v, scope, `mark ${mk.kind}`); return Number.isFinite(x) ? L.fmt(x, ((own && S[own]) || {}).fmt ?? ax.fmt) : '?'; };
+        if (mk.kind === 'hline') return f(mk.y, ys, q); if (mk.kind === 'vline') return f(mk.x, xs, q);
+        if (mk.kind === 'point') { const a = mk.at || [mk.x, mk.y]; return `(${f(a[0], xs, bare(a[0]))}, ${f(a[1], ys, bare(a[1]))})`; }
+        if (mk.kind === 'band') { const r = mk.x ? [mk.x, xs] : [mk.y, ys]; return Array.isArray(r[0]) ? `${f(r[0][0], r[1])} – ${f(r[0][1], r[1])}` : null; }
+        return null; };
+      // a mark has a card when its value is a symbol with `says` (that card wins over the mark's own `says`), or when it has `says`
+      const hasCard = mk => { const q = symOfMk(mk); return q ? !!S[q].says : mk.says != null; };
+      // a target: the symbol's card (a point still shows its pair), or the mark's own (a name and `says`)
+      const target = (el, mk, gg) => { const q = symOfMk(mk), c = colOf(mk);
+        if (!hasCard(mk)) return false;
+        el.classList.add('vt', 'says'); el.setAttribute('tabindex', '0'); el.dataset.vk = `${ctx.index}-${no}-${mk.i}-${el.tagName === 'SPAN' ? 'k' : 'm'}`;
+        glow(el, c); if (gg) glow(gg, c); pauseButton();
+        if (!q) { el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope)); el._pd = () => ({ swatch: swatch(kindOf(mk), c), c, name: nameOf(mk), says: mk.says, value: valueOf(mk, ctx.scope), shape: null, scope: ctx.scope }); }
+        else { el.dataset.sym = q; el.setAttribute('aria-description', L.plain(String(S[q].says), ctx.scope));   // the symbol's card, without its class: one colour per symbol stays true
+          el._pd = () => mk.kind === 'point' ? { ...symCard(el, q), value: valueOf(mk, ctx.scope), shape: 'one point' } : symCard(el, q); }
+        return true; };
+      // pointing at a mark lights its legend entry; pointing at or focusing an entry lifts its mark
+      const pair = (host, i) => [host.querySelector(`.legend [data-mi="${i}"]`), host.querySelector(`.chart > svg g.mkm[data-mi="${i}"]`)];
+      const light = (host, i, on) => pair(host, i).forEach(e => e && e.classList.toggle('lit', on));
+      return {
+        legend: () => { const es = marks.filter(nameOf);
+          return { n: es.length, html: es.map(mk => `<span class="mk mkx" data-mi="${mk.i}">${chip(kindOf(mk), colOf(mk))}<span class="mkn">${md(String(nameOf(mk)))}</span></span>`).join('') }; },
+        // a mark the chart has just drawn
+        mark: (mk, gg) => { const host = gg.closest('.vis'), entry = host && host.querySelector(`.legend [data-mi="${mk.i}"]`), en = entry && entry.querySelector('.mkn'), c = colOf(mk);
+          gg.classList.add('mkm'); gg.dataset.mi = mk.i; void c;
+          if (en) { L.fill(en, ctx.scope); target(en, mk, null);
+            // the entry takes the mark's step: hidden, with no pointer, tap or Tab, until the mark shows
+            const sync = () => entry.classList.toggle('off', gg.classList.contains('off')); sync();
+            new MutationObserver(sync).observe(gg, { attributes: true, attributeFilter: ['class'] });
+            if (!entry.dataset.lit) { entry.dataset.lit = 1; ['pointerenter', 'focusin'].forEach(t => entry.addEventListener(t, () => light(host, mk.i, true))); ['pointerleave', 'focusout'].forEach(t => entry.addEventListener(t, () => light(host, mk.i, false))); } }
+          if (!hasCard(mk)) return;   // no card, no hit area: a plain reference never covers a mark that has one
+          const hits = [...gg.children].filter(e => /^(line|path|rect|circle)$/.test(e.tagName)).map(e => { const k = e.cloneNode(false);
+            if (e.tagName === 'circle') k.setAttribute('r', Math.max(12, +e.getAttribute('r') || 0));
+            // a band or an area answers on its outline, so the data inside it keep their own pop-up
+            k.setAttribute('fill', e.tagName === 'circle' ? 'transparent' : 'none'); k.setAttribute('stroke', 'transparent'); k.setAttribute('stroke-width', 16);
+            ['opacity', 'stroke-dasharray'].forEach(a => k.removeAttribute(a)); k.setAttribute('class', 'mhit'); gg.appendChild(k); return k; });
+          // only the first hit area takes Tab; the rest open the same card by pointer
+          hits.forEach((k, j) => { target(k, mk, gg); if (j) k.removeAttribute('tabindex');
+            // the mark's card wins over the chart's data pop-up: the chart's own hide() (on pointerleave) drops its pop-up and guide
+            k.addEventListener('pointerenter', () => { light(host, mk.i, true); const sv = gg.ownerSVGElement; if (sv && sv.onpointerleave) sv.onpointerleave(new PointerEvent('pointerleave')); });
+            k.addEventListener('pointerleave', () => light(host, mk.i, false));
+            k.addEventListener('pointermove', e => e.stopPropagation()); });
+          dotsWin(gg.ownerSVGElement); },
+      }; };
     const stepsIn = o => list(o).map(m => m && m.step).filter(x => x != null).map(clickOf);
     // a figure and what goes under it: its Back and Next, then its controls
     const holder = (fg, at, spec) => { fg.wrap = tag(h('div', 'fg'), at); fg.wrap.appendChild(fg.node); fg.at = at; fg.spec = spec; fg.zone = zone; figs.push(fg); return fg; };
@@ -454,7 +528,8 @@
       if (v.parts) delete v.parts.build; if (v.flow) delete v.flow.build;   // both are shown complete
       // a legend that only repeats the x-axis labels gives its room to the plot
       if (v.chart && v.chart.x && list(v.chart.x.cats).length) { const nm = list(v.chart.series).filter(q => q.name).map(q => q.name); if (nm.length && nm.every(q => v.chart.x.cats.includes(q))) v.chart.legend = false; }
-      if (v.chart && (v.chart.legend === false || list(v.chart.series).filter(q => q.name && q.legend !== false).length < 2)) e.classList.add('bare');   // no legend, so no legend row
+      const markKeys = v.chart ? list(v.chart.marks).filter(q => q && (q.name || ['hline', 'vline', 'point'].some(k => q.kind === k) && [q.y, q.x, (q.at || [])[1]].some(x => typeof x === 'string' && ((ctx.symbols || {})[x] || {}).short))).length : 0;
+      if (v.chart && !markKeys && (v.chart.legend === false || list(v.chart.series).filter(q => q.name && q.legend !== false).length < 2)) e.classList.add('bare');   // no legend, so no legend row
       const V = visual(v), body = V.node; e.appendChild(body); if (kind !== 'flow') body.classList.add('fr');
       const fg = { node: e, V, kind, issues: [], w: 0, h: 0, stops: [...stepsIn((v.chart || {}).series), ...stepsIn((v.chart || {}).marks), ...stepsIn(v.labels)] };
       const pick = sel => body.querySelector(sel), rr = ratioOf(ratio ?? (v.chart || v.dist || {}).ratio, SHAPE);
@@ -620,30 +695,56 @@
       r.querySelector('.pv').textContent = typeof v === 'number' ? L.fmt(v, ((ctx.symbols || {})[q] || {}).fmt ?? 's4') : '?'; }));
 
     // controls, registered in ctx.ctl so the check moves each to both ends (lesson.py writes a run or a toggle as a plain
-    // slider first): a slider; a run (frames 0..n-1: a scrubber, the frame count and a play button that is off until
-    // pressed and never runs under ?check); a toggle (two buttons, 0 and 1). Each sits under the figure it drives.
+    // slider first): a slider; a run (frames 0..n-1: a scrubber, a play button that is off until pressed and never runs
+    // under ?check); a toggle (two buttons, 0 and 1). Each sits under the figure it drives. Its label is its symbol (the run's
+    // `show:` symbol), in its colour, opening that symbol's card; else one word, whose card is its own `says:`. The value
+    // column shows the bare value: a slider's, a run's `show:` name now, else the run's frame. All rows in one box share one
+    // grid (play | label | track | value), so every track starts and ends at the same place.
     const CHECK = new URLSearchParams(location.search).has('check');
     let run = null, flowBox = null;
+    const readouts = [], ctlBad = new Set();   // ctlBad: a run's `show:` that is not a number, for the audit
+    const drawCtl = () => readouts.forEach(f => f());
     const driven = name => { const seen = new Set([name]), d = Object.entries(s.derive || {}); let more = true;
       while (more) { more = false; d.forEach(([k, x]) => { if (!seen.has(k) && L.names(String(x)).some(q => seen.has(q))) { seen.add(k); more = true; } }); } return seen; };
     const driverOf = name => { const set = driven(name); return figs.find(fg => (exprsOf(fg.spec).match(/[A-Za-z_]\w*/g) || []).some(w => set.has(w))) || figs[figs.length - 1] || null; };
-    const boxOf = fg => { if (fg) { if (!fg.box) { fg.box = h('div', 'controls'); fg.wrap.appendChild(fg.box); } return fg.box; }
-      if (!flowBox) { flowBox = h('div', 'controls'); (seg || cur && cur.side || root).appendChild(flowBox); } return flowBox; };
+    const boxOf = fg => { if (fg) { if (!fg.box) { fg.box = h('div', 'controls np'); fg.wrap.appendChild(fg.box); } return fg.box; }
+      if (!flowBox) { flowBox = h('div', 'controls np'); (seg || cur && cur.side || root).appendChild(flowBox); } return flowBox; };
+    // the label: a symbol (its TeX, its colour, its card) or one word (its card from the control's own `says`)
+    const ctlLabel = (c, now) => { const q = c.toggle ? c.name : (c.show || c.name), B = bookOf(), S = B && B.S[q];
+      const el = h('span', 'clab');
+      if (S) { el.classList.add('vt', 'says', 'lt-' + q); L.renderTex(el, S.tex || L.autoSym(q), false); el.style.color = hue(S.color) === 'var(--mist)' ? 'var(--ink)' : hue(S.color);
+        glow(el, hue(S.color)); el.tabIndex = 0; if (S.says) el.setAttribute('aria-description', L.plain(String(S.says))); pauseButton(); return [el, S.short || q]; }
+      const word = c.label ?? c.name; el.innerHTML = md(String(word));
+      if (c.says) { el.classList.add('vt', 'says'); el.tabIndex = 0; glow(el, 'var(--mist)'); el.setAttribute('aria-description', L.plain(String(c.says))); pauseButton();
+        el._pd = () => ({ tex: null, c: 'var(--mist)', ink: true, name: String(word), says: c.says, value: now(), shape: null, scope: ctx.scope }); }
+      return [el, L.plain(String(word))]; };
     (s.controls || []).forEach(c => {
-      const id = `ctl-${ctx.index}-${c.name}`, v0 = c.value ?? c.min, fg = driverOf(c.name);
+      const id = `ctl-${ctx.index}-${c.name}`, v0 = c.value ?? c.min, fg = driverOf(c.name), k = c.run || 0;
+      // the value now, as the value column shows it
+      const now = () => { const v = ctx.scope[c.name];
+        if (c.toggle) return c.toggle[+v] ?? null;
+        if (k && !c.show) return String(+v);
+        const q = k ? c.show : c.name, x = ctx.scope[q], S = ((ctx.symbols || {})[q]) || {};
+        if (typeof x === 'number') return L.fmt(x, k ? (S.fmt ?? 's4') : (c.fmt ?? S.fmt));
+        if (k) ctlBad.add(`the run's show: ${q} is ${Array.isArray(x) ? 'a list' : 'not a number'}, so its value column has no value: show a number the run moves`);
+        return '—'; };
+      const [lab, aria] = ctlLabel(c, now);
       let w, set;
       if (c.toggle) {
         w = h('div', 'ctl g pill thin tog');
-        w.innerHTML = `<label>${md(c.label || c.name)}</label><div class="seg2">${c.toggle.map((t, q) => `<button type="button" data-v="${q}">${md(t)}</button>`).join('')}</div>`;
+        w.innerHTML = `<div class="seg2" role="group">${c.toggle.map((t, q) => `<button type="button" data-v="${q}">${md(t)}</button>`).join('')}</div>`;
+        w.prepend(lab); w.querySelector('.seg2').setAttribute('aria-label', aria);
         const bs = [...w.querySelectorAll('button')];
         set = v => { ctx.scope[c.name] = +v; bs.forEach(b => b.classList.toggle('on', +b.dataset.v === +v)); };
         bs.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); ctx.refresh(); }));
       } else {
-        const k = c.run || 0;
         w = h('div', 'ctl g pill thin' + (k ? ' run' : ''));
-        w.innerHTML = `${k ? '<button type="button" class="play" aria-label="play"></button>' : ''}<label for="${id}">${md(c.label || c.name)}</label><input id="${id}" type="range" min="${c.min}" max="${c.max}" step="${c.step ?? (c.max - c.min) / 100}" value="${v0}"><output></output>`;
-        const inp = w.querySelector('input'), out = w.querySelector('output');
-        set = v => { ctx.scope[c.name] = +v; inp.value = v; out.textContent = k ? `${+v} / ${k - 1}` : L.fmt(+v, c.fmt); inp.style.setProperty('--fill', ((v - c.min) / (c.max - c.min) * 100) + '%'); };
+        w.innerHTML = `${k ? '<button type="button" class="play" aria-label="play"></button>' : ''}<input id="${id}" type="range" min="${c.min}" max="${c.max}" step="${c.step ?? (c.max - c.min) / 100}" value="${v0}"><output for="${id}"></output>`;
+        w.insertBefore(lab, w.querySelector('input'));
+        const inp = w.querySelector('input'), out = w.querySelector('output'); inp.setAttribute('aria-label', aria);
+        readouts.push(() => { out.textContent = now(); });
+        // the value column changes now for a slider or a bare frame; a run's `show:` name waits for the redraw that works it out
+        set = v => { ctx.scope[c.name] = +v; inp.value = v; if (!(k && c.show)) out.textContent = now(); inp.style.setProperty('--fill', ((v - c.min) / (c.max - c.min) * 100) + '%'); };
         inp.addEventListener('input', () => { stop(); set(inp.value); if (k) follow(); ctx.refresh(); });
         if (k) {
           const btn = w.querySelector('.play');
@@ -658,8 +759,9 @@
       }
       set(v0);
       ctx.ctl[c.name] = v => { set(v); ctx.refresh(); };
-      boxOf(fg).appendChild(w);
+      const box = boxOf(fg); if (k) box.classList.remove('np'); box.appendChild(w);
     });
+    drawCtl();
     function stop() { if (run) run.stop(); }
     // the frame each click shows: the latest step's `frame:` at or before it, else the run's stops in click order
     const framed = steps.some(st => st && st.frame != null), rstops = run ? list(run.c.stops) : [];
@@ -797,7 +899,7 @@
       node, steps: n, stages,
       stick: () => { held.forEach((_, f) => { f.style.top = ''; }); held.clear(); stick(); stages.forEach(S => S.quiet()); },
       watch: () => { letGo(); stages.forEach(S => S.quiet()); },
-      layout: () => { blocks.forEach(b => { b.over = false; }); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
+      layout: () => { blocks.forEach(b => { b.over = false; }); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
       // what the page shows now, after a redraw or a move
       repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); },
       // everything up to click k, as the check and the printer see it
@@ -819,7 +921,7 @@
         vis.forEach(V => out.push(...V.audit())); figs.forEach(fg => fg.O && out.push(...fg.O.audit()));
         root.querySelectorAll('.approx').length && out.push('a worked line does not add up by hand at the rounding shown (it reads ≈): give its inputs a finer fmt');
         root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = m.closest('.st, .asm'); if (kx && box && kx.getBoundingClientRect().right > box.getBoundingClientRect().right + 2) out.push(`a formula is wider than its box at ${FLOOR}px: shorten it or split the line`); });
-        out.push(...clash, ...pclash);
+        out.push(...clash, ...pclash, ...ctlBad);
         return out;
       },
     };

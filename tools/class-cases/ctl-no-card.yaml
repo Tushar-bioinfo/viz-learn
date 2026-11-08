@@ -1,0 +1,31 @@
+# expect: control `u`: no card says what it means
+# change 5: a board control explains itself (lesson_lint.lint_ctl_labels / lint_fields).
+title: A dial
+question: What does the dial do?
+answer: It scales the pixel.
+data: {I: [[1, 0], [0, 1]], F: [[0, 1], [1, 0]], X: [[1, 0], [0, 1]], p: [8, 4]}
+symbols:
+  X: {tex: X, says: the mixing rule at this leak, short: mixing rule, kind: matrix, fmt: 2}
+  p: {tex: '\vec{p}', says: the pixel's red and green, short: pixel, kind: vector}
+  s: {tex: s, says: the share of light the other sensor catches, short: leak, fmt: 2}
+slides:
+  - type: title
+  - type: board
+    beat: run
+    title: Turn the dial
+    lead: The dial moves the leak.
+    controls:
+      - {name: t, run: 5, show: s, stops: [0, 4]}
+      - {name: u, min: 0, max: 1, value: 0, step: 0.5, label: brightness}
+    derive: {s: t / 4, X: I + s * F}
+    steps:
+      - say: The pixel and the rule.
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 14}
+            y: {label: green level, min: 0, max: 14}
+            marks:
+              - {vector: ['8 * s', '4'], color: accent, label: after}
+      - say: 'The rule now: $X = \mat{X}$.'
+  - type: recap
+    answer: It scales the pixel.

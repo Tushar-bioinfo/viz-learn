@@ -251,7 +251,7 @@
     const R = { node: vis, steps: 0, show() {}, layout() {}, audit: () => [] };
     if (!v) return R;
     if (v.chart) {
-      const C = L.chart(vis, v.chart, () => ctx.scope, { vis });
+      const C = L.chart(vis, v.chart, () => ctx.scope, { vis, ...ctx.chartOpts });   // chartOpts: a class board's mark hooks
       R.steps = C.steps; R.layout = () => C.render(); R.show = k => C.setStep(k); R.audit = () => C.audit(); ctx.charts.push(C);
     } else if (v.stat) {
       const st = v.stat; const box = h('div', 'stat');

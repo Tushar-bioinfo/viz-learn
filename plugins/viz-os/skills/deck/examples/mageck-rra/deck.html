@@ -1206,12 +1206,13 @@ table.t td.cur.now { color: var(--on) !important; }
       const xfmt = v => xs.log ? logFmt(v) : L.fmt(v, xs.fmt);
       const yt = ys.ticks && Array.isArray(ys.ticks) ? ys.ticks : ys.log ? logTicks(ydom[0], ydom[1], Math.max(3, Math.round(H / 70))) : nice(ydom[0], ydom[1], ys.ticks || Math.max(3, Math.round(H / 110)));
       const ytw = Math.max(...yt.map(v => L.measure(yfmt(v), fT, 500)), 10);
-      const hasLegend = series.filter(s => s.name && s.legend !== false).length >= 2 && spec.legend !== false;
-      legend.innerHTML = hasLegend ? series.filter(s => s.name && s.legend !== false).map(s =>
-        `<span class="mk${s.step ? ' st' : ''}" data-mstep="${s.step || 0}"><i class="${['dots', 'lollipop'].includes(s.kind) ? 'dot' : ['bars', 'hist'].includes(s.kind) ? 'bar' : ''}" style="background:${col(s.c)}${s.dash ? ';background:repeating-linear-gradient(90deg,' + col(s.c) + ' 0 7px,transparent 7px 11px)' : ''}"></i>${L.md(s.name)}</span>`).join('') : '';
+      // opts.legend (a class board): extra entries for its marks, { html, n }; a deck passes none
+      const sLeg = series.filter(s => s.name && s.legend !== false).length >= 2 && spec.legend !== false, ext = opts.legend ? opts.legend(scope) : null, hasLegend = sLeg || !!(ext && ext.n);
+      legend.innerHTML = (sLeg ? series.filter(s => s.name && s.legend !== false).map(s =>
+        `<span class="mk${s.step ? ' st' : ''}" data-mstep="${s.step || 0}"><i class="${['dots', 'lollipop'].includes(s.kind) ? 'dot' : ['bars', 'hist'].includes(s.kind) ? 'bar' : ''}" style="background:${col(s.c)}${s.dash ? ';background:repeating-linear-gradient(90deg,' + col(s.c) + ' 0 7px,transparent 7px 11px)' : ''}"></i>${L.md(s.name)}</span>`).join('') : '') + (ext ? ext.html : '');
       const legH = hasLegend && !vhead ? legend.offsetHeight + 14 : 0;
       if (vhead) vhead.classList.toggle('empty', !hasLegend && !vhead.querySelector('.controls, .famcard') && spec.table === false);
-      const endLabels = !hasLegend || W < 760 ? [] : series.filter(s => ['line', 'area', 'step'].includes(s.kind || 'line') && s.name && s.label !== false && series.length <= 3);
+      const endLabels = !sLeg || W < 760 ? [] : series.filter(s => ['line', 'area', 'step'].includes(s.kind || 'line') && s.name && s.label !== false && series.length <= 3);
       const endW = endLabels.length ? Math.max(...endLabels.map(s => L.measure(L.plain(s.label || s.name, scope), 24, 600))) + 30 : 0;
       const lastX = cats ? '' : (xs.log ? logFmt(xdom[1]) : L.fmt(xdom[1], xs.fmt));   // the last tick label is centred on the plot edge
       const m = { l: ytw + 20, r: Math.max(18, L.measure(lastX, fT, 500) / 2 + 6, Math.min(endW, W * .3)), t: legH + (ys.label ? 46 : 18), b: 34 + fT + (xs.label ? 40 : 6) };
@@ -1245,7 +1246,8 @@ table.t td.cur.now { color: var(--on) !important; }
       const under = marks.filter(mk => ['band', 'area'].includes(mk.kind));
       const over = marks.filter(mk => !['band', 'area'].includes(mk.kind));
       const labels = []; // {text, ax, ay, pref, color, step, kind}
-      const drawMark = (mk, parent) => { const n0 = labels.length; drawMark1(mk, parent); if (mk.place) labels.slice(n0).forEach(lb => lb.pref = [mk.place]); };
+      // opts.mark (a class board): the mark draws no tag; the board gets its group to add a hit area and a card
+      const drawMark = (mk, parent) => { const n0 = labels.length, gg = drawMark1(mk, parent); if (opts.mark) { labels.length = n0; opts.mark(mk, gg, scope); } else if (mk.place) labels.slice(n0).forEach(lb => lb.pref = [mk.place]); };
       const drawMark1 = (mk, parent) => {
         const gg = markG(mk.step, parent), c = col(mk.color || (['point', 'area', 'arrow'].includes(mk.kind) ? 'accent' : 'mist'));
         const V = x => L.val(x, scope, `mark ${mk.kind}`);
@@ -1288,6 +1290,7 @@ table.t td.cur.now { color: var(--on) !important; }
             segs.push([[x0, y], [x1, y]]); if (mk.label) labels.push({ text: mk.label, ax: (x0 + x1) / 2, ay: y - 6, pref: ['t', 'b'], step: mk.step, c }); break; }
           default: L.err('chart', `unknown mark kind "${mk.kind}"`);
         }
+        return gg;
       };
       under.forEach(mk => drawMark(mk, layerM));
 
@@ -1707,7 +1710,7 @@ table.t td.cur.now { color: var(--on) !important; }
     const R = { node: vis, steps: 0, show() {}, layout() {}, audit: () => [] };
     if (!v) return R;
     if (v.chart) {
-      const C = L.chart(vis, v.chart, () => ctx.scope, { vis });
+      const C = L.chart(vis, v.chart, () => ctx.scope, { vis, ...ctx.chartOpts });   // chartOpts: a class board's mark hooks
       R.steps = C.steps; R.layout = () => C.render(); R.show = k => C.setStep(k); R.audit = () => C.audit(); ctx.charts.push(C);
     } else if (v.stat) {
       const st = v.stat; const box = h('div', 'stat');

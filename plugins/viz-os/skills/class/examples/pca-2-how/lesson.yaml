@@ -31,8 +31,8 @@ symbols:
   cy: {tex: '(Cu)_2', says: the CD19 part of C times u, short: Cu's CD19, fmt: 2}
   cang: {tex: '\theta_{Cu}', says: the angle of C times u, short: Cu's angle, fmt: 0}
   gp: {tex: '\Delta\theta', says: how many degrees apart u and Cu point, short: degrees apart, fmt: 0}
-  lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, fmt: 3}
-  lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, fmt: 3}
+  lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, color: accent, fmt: 3}
+  lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, color: s3, fmt: 3}
   ca1: {tex: '(Ca)_1', says: the CD3 part of C times the start arrow, short: Ca's CD3, fmt: 3}
   ca2: {tex: '(Ca)_2', says: the CD19 part of C times the start arrow, short: Ca's CD19, fmt: 3}
   blen: {tex: '|Ca|', says: the length of C times the start arrow, short: length, fmt: 3}
@@ -59,9 +59,9 @@ slides:
             x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}
             y: {label: spread of the shadows, min: 0, max: 7}
             series:
-              - {name: spread at each angle, kind: line, x: ths, y: sweep, color: s1}
+              - {name: spread at each angle, kind: line, x: ths, y: sweep, color: mist}
             marks:
-              - {kind: point, x: th_star, y: lam1, label: PC1, place: t, color: accent}
+              - {kind: point, x: th_star, y: lam1, name: PC1, color: accent}
           caption: The curve from part 1.
       - think:
           q: 'Last time CD3 alone had spread {{v_cd3|3}}. What did PC1 have?'
@@ -193,7 +193,7 @@ slides:
     title: Turn the arrow, watch C u
     lead: Some arrows C only stretches.
     controls:
-      - {name: th, label: angle of u, min: 0, max: 180, step: 5, value: 0, fmt: 0}
+      - {name: th, min: 0, max: 180, step: 5, value: 0, fmt: 0}
     derive:
       ex: at(ux, th / 5)
       ey: at(uy, th / 5)
@@ -247,7 +247,7 @@ slides:
     title: Repeat until it stops turning
     lead: Each repeat is the same move.
     controls:
-      - {name: t, run: 8, label: repeats}
+      - {name: t, run: 8, label: repeats, says: 'times we multiplied by $C$ and shrank back to length 1'}
     derive:
       qa: at(pu1, t)
       qb: at(pu2, t)
@@ -333,10 +333,10 @@ slides:
             x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}
             y: {label: spread of the shadows, min: 0, max: 7}
             series:
-              - {name: spread at each angle, kind: line, x: ths, y: sweep, color: s1}
+              - {name: spread at each angle, kind: line, x: ths, y: sweep, color: mist}
             marks:
-              - {kind: hline, y: lam1, label: PC1's stretch}
-              - {kind: hline, y: lam2, label: PC2's stretch}
+              - {kind: hline, y: lam1}
+              - {kind: hline, y: lam2}
           caption: The whole curve stays inside the band.
       - think:
           q: If an arrow is part PC1 and part PC2, what would its spread be?

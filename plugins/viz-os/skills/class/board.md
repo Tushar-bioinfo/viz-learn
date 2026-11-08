@@ -223,10 +223,12 @@ add:
     x: {cats: [c1, c2, c3, c4, c5, c6], label: cell}
     y: {label: CD3 level, min: 0, max: 10}
     series: [{name: CD3, kind: lollipop, x: 'seq(0, 5, 1)', y: cd3, color: s1}]
-    marks: [{kind: hline, y: xbar, label: 'mean {{xbar|1}}', step: 2}]
+    marks: [{kind: hline, y: xbar, step: 2}, {kind: band, y: [lo, hi], name: usual range, says: where most cells sit}]
   caption: The tallest stick sits farthest above the line.
 ```
 `ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 16:9; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
+
+**A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours.
 
 A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows on the scene's second step. Dots on a category axis sit at the left edge of their band: add 0.5 to `x` to centre them.
 
@@ -294,16 +296,17 @@ Labels are placed clear of dots, lines, arrows, right-angle ticks, the edges of 
 
 ## Controls
 `controls:` on a scene takes three kinds. Each `name` becomes a variable for expressions on that scene.
+**The label is the symbol or one word.** When `name` (a run's `show:`) is a symbol, its TeX in its colour is the label and opens its card; leave `label:` out. Else `label:` is one word (`$…$` counts as one), and `says:` gives it a card. The value column shows the bare value (`fmt`, else the symbol's).
 
 **A slider**, as on a deck slide:
 ```yaml
-controls: [{name: shift, label: move c5 by, min: -3, max: 3, step: 0.1, value: 0, fmt: 1}]
+controls: [{name: shift, label: shift, says: how far c5 moves, min: -3, max: 3, step: 0.1, value: 0, fmt: 1}]
 ```
 
-**A run**: frames 0 … n − 1 of an iterative process, with a scrubber, a frame count and a play button. It plays only when the viewer presses play.
+**A run**: frames 0 … n − 1 of an iterative process, with a scrubber, a play button and the frame number (or its `show:` value). It plays only when the viewer presses play.
 ```yaml
 controls:
-  - {name: t, run: 12, label: updates, stops: [0, 1, 2, 11], every: 1.3}
+  - {name: t, run: 12, show: w0, stops: [0, 1, 2, 11], every: 1.3}
 derive:
   w0: at(w0_trace, t)        # make_data.py stores every frame; the page only picks frame t
 ```
@@ -312,18 +315,18 @@ derive:
 | `run` | the number of `frames`, 2 or more. Store each frame's values as lists in `data.json` and read them with `at(list, t)` |
 | `stops` | the frame each step shows, in order (default 0, 1, 2 and the last). The run needs as many stops as the scene has steps, or a `frame:` on its steps |
 | `every` | seconds per frame when playing (0.3–10; default 1.3) |
-| `label` | the words beside the scrubber |
+| `show` | a name the run moves (data, derive): the value column shows it now, and it labels the run |
 
 Instead of `stops`, a step may set `frame: 5`; each Next stop then shows the frame of the latest step that set one. One run per scene. Choose stops on the first two frames and the last; let the learner scrub the middle.
 
 **A toggle**: two buttons, 0 and 1.
 ```yaml
 controls:
-  - {name: prev, toggle: [hide, show], label: last line}
+  - {name: prev, toggle: [hide, show], label: before, says: the line one update ago}
 ```
 `toggle` is two labels, `[off, on]`; the name is 0 for the first, 1 for the second. Use it with `when:` on a mark, or in an expression.
 
-A control sits under the figure it drives: the first figure that reads its name, otherwise the scene's last figure, otherwise the end of the lines. The check moves every slider, run and toggle to both ends.
+A control sits under the figure it drives: the first figure that reads its name, otherwise the scene's last figure, otherwise the end of the lines. The check moves every slider, run and toggle to both ends. Draw what it changes on the scene (a matrix it remakes as `X = \mat{X}`, with `fmt:`).
 
 ## Series and home
 A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same home table:

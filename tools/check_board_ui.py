@@ -16,7 +16,8 @@ text not side by side starts at the page's left edge while figures and equations
 no lines and no indent, stand 18 px from their line, and show a bar when lit without moving their text. The pause button
 shows only with a pop-up, keeps clear of the rail, quiets pointing but not a click, and survives a reload. Formulas carry
 no names under them: a term's name is on its pop-up card, which is as wide as its text, framed in the term's colour, fades
-the rest of its formula, gives a matrix its shape, and follows a slider.
+the rest of its formula, gives a matrix its shape, and follows a slider. Controls share one grid per box, read their value
+bare, and a control's label opens its card, which blurs what is behind it.
 """
 import importlib.util, json, re, subprocess, sys
 import yaml
@@ -850,6 +851,124 @@ def glow_focus(page):
     return hok and fok and ring, f"hover glow {hc}, focus glow {fc}, ring {foc[1]} {foc[2]} round the term {foc[4]} (focus-visible {foc[3]}), no ring on hover {hov[1] == 'none'}"
 
 
+# controls (change 5): every row of a box shares one grid, so tracks start and end at one x; a toggle's buttons sit centred in
+# the track column; a run's value column shows its `show:` value, else its bare frame
+CTL_GRID = """() => { const out = [], rc = e => e.getBoundingClientRect();
+  document.querySelectorAll('.board .controls').forEach((b, k) => { if (!rc(b).width) return; const ts = [...b.querySelectorAll('.ctl > input')].map(rc);
+    if (ts.length && ts.some(t => Math.abs(t.left - ts[0].left) > 1 || Math.abs(t.right - ts[0].right) > 1)) out.push(`box ${k}: tracks at ${ts.map(t => Math.round(t.left) + '-' + Math.round(t.right)).join(', ')}`);
+    b.querySelectorAll('.ctl.tog > .seg2').forEach(g => { const t = ts[0] || rc(b.querySelector('.ctl.tog')), r = rc(g);
+      if (ts.length && Math.abs((r.left + r.right) / 2 - (ts[0].left + ts[0].right) / 2) > 2) out.push(`box ${k}: toggle centre ${Math.round((r.left + r.right) / 2)} vs track ${Math.round((ts[0].left + ts[0].right) / 2)}`); }); });
+  VizOS.slides.forEach((sl, i) => (sl.s.controls || []).forEach(c => { if (!c.run || c.show) return; const e = document.getElementById(`ctl-${i}-${c.name}`), o = e && e.parentNode.querySelector('output');
+    if (o && o.textContent !== String(+e.value)) out.push(`slide ${i + 1} run ${c.name}: reads ${o.textContent}, frame ${e.value}`); }));
+  return [document.querySelectorAll('.board .controls').length, out]; }"""
+
+
+def ctl_grid(page):
+    n, bad = page.evaluate(CTL_GRID)
+    return not bad, f"{n} boxes" + (f"; {bad[:4]}" if bad else "")
+
+
+def ctl_case(ctx):
+    """The stack case: at frame 10 of 20 the run reads s = 0.50 bare; the s label opens s's card; the card blurs what is behind it."""
+    page = case_page(ctx, "ctl-good")
+    page.evaluate("document.querySelector('.controls').scrollIntoView({block: 'center'})")
+    page.evaluate("VizOS.slides[1].ctx.ctl.t(10)"); page.wait_for_timeout(300)
+    out = page.evaluate("[...document.querySelectorAll('.ctl output')].map(o => o.textContent)")
+    grid = page.evaluate(CTL_GRID)[1]
+    page.hover(".ctl.run .clab"); page.wait_for_timeout(250)
+    card = page.evaluate("() => { const k = document.querySelector('.vpop.on'); return k && [k.querySelector('.ttl b') && k.querySelector('.ttl b').textContent, (k.querySelector('.vv') || {}).textContent, getComputedStyle(k).backdropFilter || getComputedStyle(k).webkitBackdropFilter]; }")
+    page.mouse.move(5, 5); page.wait_for_timeout(150)
+    page.hover(".ctl.tog .clab"); page.wait_for_timeout(250)
+    word = page.evaluate("() => { const k = document.querySelector('.vpop.on'); return k && [k.querySelector('.ttl b').textContent, (k.querySelector('.ds') || {}).textContent]; }")
+    page.close()
+    ok = out[:2] == ["0.50", "1.0"] and not grid and card and card[:2] == ["leak", "= 0.50"] and "blur" in (card[2] or "") and word and word[0] == "before" and "scanner" in (word[1] or "")
+    return ok, f"readouts {out}, grid {grid}, s card {card}, word card {word}"
+
+
+# chart marks on a board (change 5, part 2): no tag on the plot, a legend entry per named mark, the board's card on the mark
+CHART_TAGS = """() => { const out = []; let n = 0;
+  document.querySelectorAll('.board .bvis.chart').forEach((b, k) => { const names = [...b.querySelectorAll('.legend .mkx')].map(e => e.textContent.trim()); n += names.length;
+    const texts = [...b.querySelectorAll('.chart > svg text')].map(t => t.textContent.trim());
+    names.forEach(nm => { if (texts.some(t => t && t.includes(nm))) out.push(`chart ${k}: "${nm}" is drawn on the plot`); }); });
+  return [n, out]; }"""
+
+
+def chart_tags(page):
+    n, bad = page.evaluate(CHART_TAGS)
+    return not bad, f"{n} mark entries" + (f"; {bad[:3]}" if bad else "")
+
+
+def chart_case(ctx):
+    """chart-marks-good: no tag text on the plot; legend entries; the mean line's card says the mean now and follows the
+    slider; the data pop-up has the glass look; pointing at the mark hides the data pop-up and opens the card."""
+    import statistics
+    Y = yaml.safe_load((ROOT / "tools/class-cases/chart-marks-good.yaml").read_text())
+    cd3 = Y["data"]["cd3"]; m0 = statistics.fmean(cd3); m2 = statistics.fmean([v + (2 if i == 1 else 0) for i, v in enumerate(cd3)])
+    page = case_page(ctx, "chart-marks-good")
+    page.evaluate("document.querySelector('.bvis.chart').scrollIntoView({block: 'center'})"); page.wait_for_timeout(200)
+    tags = page.evaluate(CHART_TAGS)
+    legend = page.evaluate("[...document.querySelectorAll('.bvis.chart .legend .mkx')].map(e => e.textContent.trim())")
+    # the data pop-up first: point at a cell's dot
+    dot = page.locator(".bvis.chart .chart > svg circle").nth(3).bounding_box()   # c4, clear of every mark
+    for dx in range(0, 130, 10):   # the chart's pop-up answers near a category's left edge: walk left from the dot
+        page.mouse.move(dot["x"] + dot["width"] / 2 - dx, dot["y"] + dot["height"] / 2); page.wait_for_timeout(60)
+        if page.evaluate("document.querySelector('.bvis.chart .tip').classList.contains('on')"):
+            break
+    tip = page.evaluate("() => { const t = document.querySelector('.bvis.chart .tip'); return [t.classList.contains('on'), getComputedStyle(t).backdropFilter || getComputedStyle(t).webkitBackdropFilter]; }")
+    hit = page.locator('.bvis.chart .mhit[data-sym="xbar"]').first.bounding_box()
+    page.mouse.move(hit["x"] + hit["width"] * .3, hit["y"] + hit["height"] / 2); page.wait_for_timeout(250)
+    card = lambda: page.evaluate("() => { const k = document.querySelector('.vpop.on'); return k && [k.querySelector('.ttl b').textContent, (k.querySelector('.vv') || {}).textContent]; }")
+    a = card(); tip_after = page.evaluate("document.querySelector('.bvis.chart .tip').classList.contains('on')")
+    page.evaluate("VizOS.slides[1].ctx.ctl.k(2)"); page.wait_for_timeout(500)
+    b = card()
+    page.close()
+    want = (not tags[1], legend == ["mean", "usual range", "top cell"], tip[0] and "blur" in (tip[1] or ""), not tip_after,
+            a == ["mean", f"= {m0:.2f}"], b == ["mean", f"= {m2:.2f}"])
+    return all(want), f"no tags, legend, glass tip, tip hides, card, follows: {want}; legend {legend}, tip {tip}, card {a} -> {b}"
+
+
+def chart_fixes(ctx):
+    """chart-marks-ui: a legend entry hides with its mark until the mark's step (no pointer, no Tab); an unnamed mark has no
+    hit area; a point's card shows its pair; the mean line draws in its symbol's colour; pointing at a legend entry lights
+    its mark and pointing at a mark lights its entry; the chart's guide takes no pointer; inside a data dot the dot wins."""
+    import statistics
+    Y = yaml.safe_load((ROOT / "tools/class-cases/chart-marks-ui.yaml").read_text())
+    cd3 = Y["data"]["cd3"]
+    page = case_page(ctx, "chart-marks-ui")
+    page.evaluate("document.querySelector('.bvis.chart').scrollIntoView({block: 'center'})"); page.wait_for_timeout(200)
+    S = "VizOS.slides.flatMap(sl => sl.r.stages || [])[0]"
+    page.evaluate(f"{S}.to(0)"); page.wait_for_timeout(150)
+    entry = "[...document.querySelectorAll('.bvis.chart .legend .mkx')].find(e => e.textContent.trim() === 'top cell')"
+    before = page.evaluate(f"() => {{ const e = {entry}; e.focus(); return [getComputedStyle(e).visibility, document.activeElement === e]; }}")
+    page.evaluate(f"{S}.to({S}.stops.length - 1)"); page.wait_for_timeout(150)
+    after = page.evaluate(f"() => getComputedStyle({entry}).visibility")
+    no_hit = page.evaluate("[...document.querySelectorAll('.bvis.chart g.mkm')].filter(g => g.querySelector('line') && !g.querySelector('.mhit')).length")
+    # the point's card: its pair, from the data (x 1.5, y the top cell)
+    eb = page.evaluate(f"() => {{ const b = {entry}.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }}")
+    page.mouse.move(*eb); page.wait_for_timeout(250)
+    pair = page.evaluate("() => { const k = document.querySelector('.vpop.on'); return k && (k.querySelector('.vv') || {}).textContent; }")
+    lit_mark = page.evaluate("[...document.querySelectorAll('.bvis.chart g.mkm.lit')].length")
+    page.mouse.move(5, 5); page.wait_for_timeout(200)
+    # the mean line in x-bar's colour, and pointing at it lights its legend entry
+    col = page.evaluate("""() => { const g = document.querySelector('.bvis.chart .mhit[data-sym="xbar"]').closest('g.mkm'), ln = g.querySelector('line:not(.mhit)');
+      const pr = document.createElement('span'); pr.style.color = 'var(--s2)'; document.body.appendChild(pr); const want = getComputedStyle(pr).color; pr.remove();
+      return [getComputedStyle(ln).stroke, want]; }""")
+    hit = page.locator('.bvis.chart .mhit[data-sym="xbar"]').first.bounding_box()
+    page.mouse.move(hit["x"] + hit["width"] * .9, hit["y"] + hit["height"] / 2); page.wait_for_timeout(250)
+    lit_entry = page.evaluate("[...document.querySelectorAll('.bvis.chart .legend .mkx.lit')].map(e => e.textContent.trim())")
+    guide = page.evaluate("[...document.querySelectorAll('.bvis.chart svg line.grid')].map(l => getComputedStyle(l).pointerEvents)")
+    # inside a data dot under the mean line the dot wins: no mark card, the pass-through class is on
+    m = statistics.fmean(cd3); i = min(range(len(cd3)), key=lambda j: abs(cd3[j] - m))
+    page.mouse.move(5, 5); page.wait_for_timeout(200)
+    dot = page.locator(".bvis.chart .chart > svg g.mk:not(.mkm) circle").nth(i).bounding_box()
+    page.mouse.move(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2); page.wait_for_timeout(250)
+    on_dot = page.evaluate("[document.querySelector('.bvis.chart svg').classList.contains('ondot'), !!document.querySelector('.vpop.on')]")
+    page.close()
+    want = (before == ["hidden", False], after == "visible", no_hit >= 1, pair == f"= (1.5, {max(cd3):.1f})", lit_mark == 1,
+            col[0] == col[1], lit_entry == ["mean"], all(g == "none" for g in guide), on_dot == [True, False])
+    return all(want), f"hidden before step, shown after, unnamed has no hit, pair, legend lights mark, symbol colour, mark lights legend, guide, dot wins: {want}; {before} {after} {no_hit} {pair} {col} {lit_entry} {guide} {on_dot}"
+
+
 TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a line goes to its stop", click_line), ("a think step's stop opens it", think_stop),
          ("Show answer grows its card from a fixed top", show_answer), ("a slider changes a number", slider), ("a run's scrubber moves the lit line", scrubber),
          ("scrolling lights steps and fills columns, figures stay", scrolling), ("no sideways scroll; planes equal; charts and images keep their ratio", widths),
@@ -865,7 +984,8 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("callouts and thinks have no lines and no indent", no_lines), ("a line stands 18 px from its card", card_gap), ("a lit callout shows its mark, its text stays", lit_mark), ("legends have room above them", legend_room),
          ("pause hover pop-ups: hover quiet, click opens, kept", hover_pause),
          ("a pop-up card fits its text, wears its term's colour, fades the rest", pop_cards), ("brackets open their symbol's card with its shape", mat_card),
-         ("a term glows on hover and on keyboard focus, with a focus ring", glow_focus)]
+         ("a term glows on hover and on keyboard focus, with a focus ring", glow_focus), ("controls share one grid; a run reads its value bare", ctl_grid),
+         ("chart marks draw no tag; named marks have legend entries", chart_tags)]
 
 
 def series_of(name):
@@ -927,7 +1047,10 @@ def main(names):
         res.append(ok)
         print(f"board ui pop-slider case: a card's value follows the slider | {'ok' if ok else 'FAIL: ' + str(why)}")
         for label, fn in (("pop-slider case: the card stays on the same term in a teacher line", say_refind), ("board-gallery: a card stays inside the window", clamp_card),
-                          ("product cases: lines follow the slider in their own format", prod_live), ("product cases: pairs, arrows and answer share one colour rule", prod_colours)):
+                          ("product cases: lines follow the slider in their own format", prod_live), ("product cases: pairs, arrows and answer share one colour rule", prod_colours),
+                          ("ctl-good case: bare readouts, one grid, a label opens its card, the card blurs", ctl_case),
+                          ("chart-marks-good case: no tags, legend, mark card follows the slider and wins over the glass data pop-up", chart_case),
+                          ("chart-marks-ui case: entry hides before its step, no hit on unnamed marks, pair, symbol colour, legend and mark light, dot wins", chart_fixes)):
             try:
                 ok, why = fn(ctx)
             except Exception as e:

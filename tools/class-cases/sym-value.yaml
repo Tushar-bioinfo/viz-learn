@@ -1,0 +1,19 @@
+# expect: not: a symbol has no field
+# change 5 review: `value` is a symbol field, since a deck equation slide merges `symbols` into its `terms` (deck slides.js).
+title: A term with a value
+question: Does a symbol keep its value field?
+answer: Yes.
+data: {xA: 200, libA: 2000000}
+symbols:
+  x: {tex: x, says: sequenced reads that land on this gene, short: gene reads, value: xA}
+  N: {tex: N, says: reads in the whole sample, short: all reads, value: libA}
+  cpm: {tex: '\mathrm{CPM}', says: reads per million reads, short: per million}
+slides:
+  - type: title
+  - type: equation
+    title: CPM puts every sample on one scale
+    lhs: cpm
+    expr: x / N * 1e6
+    terms: {x: {}, N: {}}
+  - type: recap
+    answer: Yes.

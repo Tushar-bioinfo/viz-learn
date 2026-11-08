@@ -6,7 +6,7 @@ question: Does the board get it right?
 answer: Yes.
 data: {T: [[0.333]], u: [3]}
 symbols:
-  T: {tex: T, says: a third, nearly, short: near third, kind: matrix}
+  T: {tex: T, says: 'a third, nearly', short: near third, kind: matrix}
   u: {tex: '\vec{u}', says: three of something, short: three, kind: vector}
   r: {tex: 'T\vec{u}', says: about one, short: about one, kind: vector}
 slides:

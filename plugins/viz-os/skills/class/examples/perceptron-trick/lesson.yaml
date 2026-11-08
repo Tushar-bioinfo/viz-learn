@@ -124,9 +124,9 @@ slides:
     title: Three weights, two kinds of move
     lead: Before any rule, feel what each weight does to the line.
     controls:
-      - {name: w0, label: w0, min: -10, max: 10, step: 0.5, value: 9}
-      - {name: w1, label: w1, min: -3, max: 3, step: 0.1, value: -2.1}
-      - {name: w2, label: w2, min: -3, max: 3, step: 0.1, value: 0.9}
+      - {name: w0, min: -10, max: 10, step: 0.5, value: 9}
+      - {name: w1, min: -3, max: 3, step: 0.1, value: -2.1}
+      - {name: w2, min: -3, max: 3, step: 0.1, value: 0.9}
     derive:
       nw: sum((w0 + w1 * cd3 + w2 * cd19 >= 0) != y)
     steps:
@@ -240,8 +240,8 @@ slides:
     title: Run it, one wrong cell at a time
     lead: Each epoch visits all eight cells in a shuffled order.
     controls:
-      - {name: t, run: 13, label: updates}
-      - {name: prev, toggle: [hide, show], label: last line}
+      - {name: t, run: 13, label: updates, says: 'updates so far, one wrong cell each'}
+      - {name: prev, toggle: [hide, show], label: before, says: 'the line one update ago, dashed'}
     derive:
       w0: at(w0_trace, t)
       w1: at(w1_trace, t)

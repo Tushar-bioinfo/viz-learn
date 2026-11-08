@@ -198,6 +198,70 @@ def lint_plane(B, Lx, w, pl, names):
     return [mk for mk in marks if mk.get("name") is not None]
 
 
+def mark_symbol(mk, symbols):
+    """The symbol a chart mark stands for: an hline's y, a vline's x or a point's y, when it is a bare symbol name."""
+    k = mk.get("kind")
+    v = mk.get("y") if k == "hline" else mk.get("x") if k == "vline" else (as_list(mk.get("at"))[1:2] or [mk.get("y")])[0] if k == "point" else None
+    return v if isinstance(v, str) and isinstance(symbols.get(v), dict) else None
+
+
+def charts_of(it):
+    """Every chart an item draws on a board: its own, and one in each side of a `compare`. Yields (where, chart)."""
+    if isinstance(it.get("chart"), dict):
+        yield "", it["chart"]
+    cp = it.get("compare")
+    for k in "ab":
+        v = cp.get(k) if isinstance(cp, dict) else None
+        if isinstance(v, dict) and isinstance(v.get("visual"), dict) and isinstance(v["visual"].get("chart"), dict):
+            yield f" compare {k}", v["visual"]["chart"]
+
+
+def mark_color(mk, symbols, q):
+    """The colour a mark draws in on a board: its own, else its symbol's, else its kind's default."""
+    sc = symbols[q].get("color") if q else None
+    return mk.get("color") or (sc if sc and sc != "ink" else None) or ("accent" if mk.get("kind") in ("point", "area", "arrow") else "mist")
+
+
+ON_PLOT = "on a board a mark's name goes in the legend and its meaning in a card: use name: and says:, or a symbol as its value"
+
+
+def lint_chart_marks(Lx, w, ch, symbols):
+    """A chart on a board draws no tag on its marks: a named mark takes a legend entry and a card. Returns the named
+    marks with no card of their own, for the "say what it is" check."""
+    out, entries, seen = [], 0, {}
+    for i, mk in enumerate(as_list(ch.get("marks"))):
+        if not isinstance(mk, dict):
+            continue
+        k, q = mk.get("kind"), mark_symbol(mk, symbols)
+        if k == "label":
+            Lx.err(w, f"chart mark {i + 1} is a `label` mark: {ON_PLOT}")
+            continue
+        for f in ("label", "text"):
+            if mk.get(f) is not None:
+                Lx.err(w, f"chart mark {i + 1} ({k}) has `{f}:`: {ON_PLOT}")
+        name = mk.get("name") or (symbols[q].get("short") if q else None)
+        if mk.get("name") is not None and words(mk["name"]) > LEGEND_WORDS:
+            Lx.err(w, f"chart mark {i + 1} ({k}): name “{mk['name']}” is {words(mk['name'])} words: a legend name is {LEGEND_WORDS} words at most; put the rest in says:")
+        if q and mk.get("says") is not None:
+            Lx.warn(w, f"chart mark {i + 1} ({k}): `says` is not shown: the symbol's card is used; delete it")
+        if name:
+            entries += 1
+            key = (k, mark_color(mk, symbols, q))
+            if key in seen and seen[key] != name:
+                Lx.warn(w, f"chart mark {i + 1} ({k}): the legend cannot tell {seen[key]} and {name} apart: give each its own color")
+            seen.setdefault(key, name)
+        elif k in ("point", "arrow"):
+            Lx.warn(w, f"chart mark {i + 1} ({k}) has no name: give it name: and says:, or a symbol as its value, so the learner can find out what it marks")
+        if mk.get("name") and not mk.get("says") and not (q and symbols[q].get("says")):
+            out.append(mk)
+    if ch.get("legend") is not False:
+        named = [x for x in as_list(ch.get("series")) if isinstance(x, dict) and x.get("name") and x.get("legend") is not False]
+        entries += len(named) if len(named) >= 2 else 0
+    if entries > LEGEND_MAX:
+        Lx.warn(w, f"{entries} legend entries on one chart: more than {LEGEND_MAX} is too many for a quick read; leave a reference line unnamed, or split the chart")
+    return out
+
+
 GREEK = {g: chr(c) for g, c in zip("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho varsigma sigma tau upsilon phi chi psi omega".split(), range(0x3B1, 0x3CA))}
 GREEK |= {g: chr(c) for g, c in zip("Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi Rho".split(), range(0x391, 0x3A2))}
 GREEK |= {g: chr(c) for g, c in zip("Sigma Tau Upsilon Phi Chi Psi Omega".split(), range(0x3A3, 0x3AA))}
@@ -332,6 +396,8 @@ def lint_scenes(B, Lx, deck, glob):
                     named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_plane(B, Lx, w, it["plane"], names)]
                 if VIS & set(it):
                     B.lint_visual(Lx, w, {x: y for x, y in it.items() if x != "id"}, names)
+                for at, ch in charts_of(it):
+                    named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_chart_marks(Lx, w + at, ch, symbols)]
                 lint_formula(B, Lx, w, it.get("eqn"), "eqn", names, symbols)
                 a = it.get("assemble")
                 if a is not None:
@@ -926,6 +992,8 @@ def card_symbols(B, deck):
             for k in ("matrix", "vec"):
                 if isinstance(it.get(k), str):
                     out.add(it[k])
+            for _, ch in charts_of(it):   # a chart mark whose value is a symbol opens that symbol's card
+                out |= {q for mk in as_list(ch.get("marks")) if isinstance(mk, dict) for q in [mark_symbol(mk, deck.get("symbols") or {})] if q}
             for k in ("eqn", "assemble", "calc"):
                 f = it.get(k)
                 if isinstance(f, dict):
@@ -953,6 +1021,126 @@ def lint_names(B, Lx, deck):
                 Lx.warn(w, f"`says` “{v['says']}” only repeats `short` “{short}”: say what it means, what it is made from, or where it sits")
 
 
+# what a board control and a symbol may carry; anything else is usually a comma inside an unquoted `{ }` value that split it
+CTL_FIELDS = {"name", "label", "says", "show", "min", "max", "step", "value", "fmt", "run", "stops", "every", "toggle"}
+# a symbol's own fields, and `value`, which a deck equation slide merges from `symbols` into its `terms` (deck slides.js)
+SYM_FIELDS = {"tex", "says", "short", "fmt", "kind", "color", "cols", "rows", "value"}
+# text the page shows as written, never works out: a name in it reads nothing (only its {{…}}, \mat{…} and \prodpart{…} do)
+LITERAL = {"name", "label", "says", "short", "tex", "say", "id", "color", "fmt", "kind", "dash", "side", "key", "by", "cats", "family", "op"}
+IDENT = re.compile(r"[A-Za-z_]\w*")
+
+
+def scene_reads(node, key=None):
+    """Names a scene's steps read live: every name in a field the page works out (mark coordinates, `when`, `expr`,
+    `rgb`, …), in a `{{…}}`, a \\mat{…} or a product's working. Text shown as written (a name, label, says, TeX) reads nothing."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from scene_reads(v, k)
+    elif isinstance(node, list):
+        for v in node:
+            yield from scene_reads(v, key)
+    elif isinstance(node, str):
+        if key in PROSE or key in LITERAL:
+            yield from (n for x in EXPRS.findall(node) for n in IDENT.findall(FMT.sub("", x)))
+            yield from MATREF.findall(node)
+            yield from (q for t in PRODREF.findall(node) for q in t)
+        else:
+            yield from IDENT.findall(node)
+
+
+def scene_drawn(s):
+    """The matrices and vectors a scene shows in brackets: a `matrix`/`vec` item, \\mat{X} in maths, or a product's working."""
+    out = set()
+    for x in strings(s.get("steps")):
+        out |= set(MATREF.findall(x)) | {q for t in PRODREF.findall(x) for q in t}
+    for _, it in items_of(s):
+        out |= {it[k] for k in ("matrix", "vec") if isinstance(it.get(k), str)}
+        for f in it.values():
+            if isinstance(f, dict):
+                out |= {n for n in as_list(f.get("_draws")) if isinstance(n, str)}
+    return out
+
+
+def plane_vectors(s):
+    """Names a plane `vector` or `point` mark reads in its coordinates: a vector drawn there is shown."""
+    out = set()
+    for _, it in items_of(s):
+        pl = it.get("plane")
+        for mk in as_list(pl.get("marks")) if isinstance(pl, dict) else []:
+            if isinstance(mk, dict):
+                for k in ("vector", "point", "from"):
+                    out |= {n for x in strings(mk.get(k)) for n in IDENT.findall(x)}
+    return out
+
+
+def lint_fields(Lx, deck):
+    """A symbol takes only the fields the kit reads."""
+    for n, v in (deck.get("symbols") or {}).items():
+        if isinstance(v, dict):
+            for k in sorted(set(v) - SYM_FIELDS, key=str):
+                Lx.err(f"symbols.{n}", f"a symbol has no field `{k}` (it takes {', '.join(sorted(SYM_FIELDS))}); "
+                                       "a comma inside an unquoted `{ }` value splits it: quote the value")
+
+
+def lint_ctl_labels(Lx, deck, glob, data=None):
+    """A board control explains itself: its label is its symbol or one word, its meaning is on a card, its value column
+    shows a value, and something on the scene shows what it changes."""
+    symbols, jumpy = deck.get("symbols") or {}, set()
+    values = {**(deck.get("data") or {}), **(data or {})}
+    for i, s in enumerate(deck.get("slides") or []):
+        if not isinstance(s, dict) or s.get("type") != "board":
+            continue
+        where = f"slide {i + 1} (board “{str(s.get('title') or '')[:38]}”)"
+        ctls = [c for c in s.get("controls") or [] if isinstance(c, dict)]
+        derive = s.get("derive") if isinstance(s.get("derive"), dict) else {}
+        names = set(glob) | set(derive) | {c.get("name") for c in ctls}
+        reads = set(scene_reads(s.get("steps"))) | set(scene_reads(s.get("table")))
+        drawn, arrows = scene_drawn(s), plane_vectors(s)
+        for c in ctls:
+            nm = c.get("name"); w = f"{where} control `{nm}`"
+            for k in sorted(set(c) - CTL_FIELDS, key=str):
+                Lx.err(w, f"a control has no field `{k}` (it takes {', '.join(sorted(CTL_FIELDS))}); "
+                          "a comma inside an unquoted `{ }` value splits it: quote the value")
+            show = c.get("show")
+            if show is not None:
+                if "run" not in c:
+                    Lx.err(w, "`show:` names what a run's value column shows; a slider shows its own value and a toggle none: delete `show`")
+                elif not isinstance(show, str) or show not in names:
+                    Lx.err(w, f"`show: {show}` is not in data, derive or controls: name the number the run moves, like `show: s` with `derive: {{s: t / 20}}`")
+                elif (isinstance(symbols.get(show), dict) and symbols[show].get("kind") in OBJ) or isinstance(values.get(show), list):
+                    Lx.err(w, f"`show: {show}` is a list of numbers (a matrix or vector), but the value column shows one number: "
+                              f"show a number the run moves, and draw `{show}` on the scene (`\\mat{{{show}}}`)")
+            q = show if "run" in c and isinstance(show, str) else nm
+            sym = isinstance(symbols.get(q), dict)
+            label = c.get("label")
+            if label is None and not sym:
+                Lx.err(w, f"no `label`, and `{q}` is not a symbol: add `{q}` under symbols (its TeX becomes the label), or give `label:` one word")
+            elif label is not None and sym:
+                Lx.warn(w, f"`label` is not shown, because the symbol `{q}` labels this control: delete it")
+            elif label is not None and words(label) > 1:
+                Lx.err(w, f"`label` “{label}” is {words(label)} words: a label is the symbol or one word; the meaning goes in the symbol's `says` or the control's `says:`")
+            if not sym and not c.get("says"):
+                Lx.warn(w, "no card says what it means: give the control `says:` (or name it after a symbol, whose card it opens)")
+            # what the control changes: itself and every scene derive made from it
+            seen, more = {nm}, True
+            while more:
+                more = False
+                for k, x in derive.items():
+                    if k not in seen and set(IDENT.findall(str(x))) & seen:
+                        seen.add(k); more = True
+            if not seen & reads:
+                Lx.warn(w, "nothing on this scene reads it, directly or through `derive`: draw what it changes (a figure, a line, a formula), or delete it")
+            for o in sorted(seen - {nm}):
+                v = symbols.get(o)
+                if not isinstance(v, dict) or v.get("kind") not in OBJ:
+                    continue
+                if o not in drawn and not (v["kind"] == "vector" and o in arrows):
+                    Lx.warn(w, f"it remakes the {v['kind']} `{o}`, which this scene never draws: write `{v.get('tex', o)} = \\mat{{{o}}}` in a line, so the learner sees its numbers change")
+                if v.get("fmt") is None and o not in jumpy:
+                    jumpy.add(o)
+                    Lx.warn(f"symbols.{o}", f"`{o}` changes with control `{nm}` but has no `fmt:`, so its decimals jump as it moves (1, then 1.00, then 1.0): give `fmt:` (decimals)")
+
+
 def L_plain(t):
     return re.sub(r"\\[A-Za-z]+|[{}$_^\\]", " ", str(t))
 
@@ -972,4 +1160,5 @@ def make_lint(B, data):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck)
+        lint_fields(Lx, deck); lint_ctl_labels(Lx, deck, glob, data)
     return lesson_lint

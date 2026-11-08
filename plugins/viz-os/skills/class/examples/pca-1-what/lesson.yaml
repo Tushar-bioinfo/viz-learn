@@ -213,7 +213,7 @@ slides:
     title: Turn the line, watch the spread
     lead: Try every angle, five degrees at a time.
     controls:
-      - {name: t, run: 37, label: angle steps}
+      - {name: t, run: 37, show: th}
     derive:
       th: at(ths, t)
       ux: at(cosl, t)
@@ -262,12 +262,12 @@ slides:
             x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}
             y: {label: spread of the shadows, min: 0, max: 7}
             series:
-              - {name: spread at each angle, kind: line, x: ths, y: spl, color: s1}
+              - {name: spread at each angle, kind: line, x: ths, y: spl, color: mist}
             marks:
-              - {kind: point, x: 0, y: v_cd3, label: CD3 alone, place: tr, step: 2}
-              - {kind: point, x: 90, y: v_cd19, label: CD19 alone, place: tr, step: 2}
-              - {kind: point, x: th_hand, y: s2u, label: our tilt, place: b, step: 3}
-              - {kind: point, x: th_best, y: sp_best, label: PC1, place: t, color: accent, step: 4}
+              - {kind: point, x: 0, y: v_cd3, name: CD3 alone, step: 2}
+              - {kind: point, x: 90, y: v_cd19, name: CD19 alone, step: 2}
+              - {kind: point, x: th_hand, y: s2u, name: our tilt, color: ink, step: 3}
+              - {kind: point, x: th_best, y: sp_best, name: PC1, says: the angle with the biggest spread, color: accent, step: 4}
           caption: One smooth hill and one valley, every half turn.
       - say: The two markers alone sit at the flat and the upright line.
       - say: Our hand tilt sits near the bottom of the valley.
@@ -281,7 +281,7 @@ slides:
     title: Why the arrow has length 1
     lead: A longer arrow cheats.
     controls:
-      - {name: alen, label: arrow length, min: 0.5, max: 2, step: 0.1, value: 1, fmt: 1}
+      - {name: alen, min: 0.5, max: 2, step: 0.1, value: 1, fmt: 1}
     derive:
       spl_now: sum((alen * v1 * d1 + alen * v2 * d2)^2) / (n - 1)
     steps:

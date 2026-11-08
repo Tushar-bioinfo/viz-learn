@@ -1,0 +1,39 @@
+# expect: the legend cannot tell first cut and second cut apart: give each its own color
+# change 5 part 2 fix 8: two named marks of one kind in one colour look the same in the legend.
+title: Six cells and their mean
+question: Where do six cells sit around their mean?
+answer: Around the mean, some far.
+data: {cd3: [4.3, 4.9, 4.6, 4.0, 4.5, 4.4], lo: 4.2, hi: 4.7}
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean CD3 level of the six cells, short: mean, fmt: 2}
+  top: {tex: 'x_{\max}', says: the highest CD3 level of the six, short: top cell, fmt: 1}
+  k: {tex: k, says: how far the second cell is moved, short: shift, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: what-if
+    title: Move one cell, watch the mean
+    lead: One cell moves; the mean follows.
+    controls:
+      - {name: k, min: 0, max: 2, step: 0.5, value: 0}
+    derive:
+      cw: cd3 + (seq(0, 5, 1) == 1) * k
+      xbar: mean(cw)
+      top: max(cw)
+    steps:
+      - say: Six cells, and their mean as a dashed line.
+        add:
+          chart:
+            x: {cats: [c1, c2, c3, c4, c5, c6], label: cell}
+            y: {label: CD3 level, min: 3, max: 7.5}
+            series:
+              - {name: cells, kind: lollipop, x: 'seq(0, 5, 1)', y: cw, color: s1}
+            marks:
+              - {kind: hline, y: lo, name: first cut, says: the low cut}
+              - {kind: hline, y: hi, name: second cut, says: the high cut}
+              - {kind: band, y: [lo, hi], name: usual range, says: where most of these cells sit}
+              - {kind: point, x: 1.5, y: top, name: top cell}
+          caption: The dashed line is the mean.
+      - say: Drag the shift and the mean climbs a little.
+  - type: recap
+    answer: Around the mean, some far.

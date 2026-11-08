@@ -26,7 +26,7 @@ symbols:
   mix: {tex: '\vec{w}', says: how much of each cell the spot holds, short: cell shares, kind: vector}
   spot: {tex: 'M\vec{w}', says: 'the spot''s CD3 and CD19, a mix of the two cells', short: spot reading, kind: vector}
   wts: {tex: 'W', says: 'two scores from the markers: CD3 minus CD19, and their average', short: score weights, kind: matrix}
-  scores: {tex: 'CW', says: each cell's two scores, one row per cell, short: cell scores, kind: matrix}
+  scores: {tex: 'CW', says: "each cell's two scores, one row per cell", short: cell scores, kind: matrix}
 slides:
   - type: title
 
@@ -50,7 +50,7 @@ slides:
               - {name: Donor A, kind: dots, x: 'donor_a * 0 + 0.5', y: donor_a, color: s1}
               - {name: Donor B, kind: dots, x: 'donor_b * 0 + 1.5', y: donor_b, color: s2}
             marks:
-              - {kind: hline, y: mA, label: 'mean {{mA|1}}', step: 2}
+              - {kind: hline, y: mA, name: mean, says: "both donors' mean CD3 level: the same for the two", step: 2}
           caption: Same middle, but look how far the dots reach.
       - say: 'Their means match: {{mA|1}} and {{mB|1}}.'
       - think:
@@ -74,7 +74,7 @@ slides:
             series:
               - {name: CD3, kind: lollipop, x: 'seq(0, 5, 1)', y: cd3, color: s1}
             marks:
-              - {kind: hline, y: xbar, label: 'mean {{xbar|1}}', step: 2}
+              - {kind: hline, y: xbar, step: 2}
           caption: The tallest stick sits farthest above the line.
       - say: The orange line is the mean, the middle of the six.
         mark: col:cd3
@@ -192,8 +192,8 @@ slides:
     title: A line that learns, one cell at a time
     lead: One wrong cell per update. Run it and watch the line settle.
     controls:
-      - {name: t, run: 12, label: updates, stops: [0, 1, 2, 11]}
-      - {name: prev, toggle: [hide, show], label: last line}
+      - {name: t, run: 12, label: updates, says: 'updates so far, one wrong cell each', stops: [0, 1, 2, 11]}
+      - {name: prev, toggle: [hide, show], label: before, says: 'the line one update ago, dashed'}
     derive:
       w0: at(w0_trace, t)
       w1: at(w1_trace, t)

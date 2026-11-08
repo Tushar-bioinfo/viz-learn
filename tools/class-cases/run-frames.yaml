@@ -13,7 +13,7 @@ slides:
     title: A point that walks
     controls:
       - {name: t, run: 6, label: steps}
-      - {name: show, toggle: ['off', 'on'], label: the path}
+      - {name: show, toggle: ['off', 'on'], label: path, says: the points walked so far}
     derive: {pos: 'at(xs, t)'}
     steps:
       - say: The point starts at the left.

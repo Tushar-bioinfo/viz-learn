@@ -1,0 +1,43 @@
+# expect: builds
+# expect: not: control `
+# expect: not: nothing on this scene reads
+# A run, a slider and a toggle under one plane (change 5): the run shows s (its symbol's TeX and card, its value 0.50 at
+# frame 10), the slider's label is its symbol k, the toggle's one word has its own card. X is remade by the derive and drawn
+# on the scene with one fmt. tools/check_board_ui.py reads this page: shared track edges, centred toggle, bare readout, a label's card.
+title: The leak dial
+question: What does the leak do to every pixel?
+answer: It pulls every pixel toward red = green.
+data: {I: [[1, 0], [0, 1]], F: [[0, 1], [1, 0]], X: [[1, 0], [0, 1]], p5: [8, 4], y5: [8, 4]}
+symbols:
+  X: {tex: X, says: the scanner's mixing rule at this leak, short: mixing rule, kind: matrix, fmt: 2, cols: [s3, s2]}
+  p5: {tex: '\vec{x}', says: the orange pixel's red and green, short: orange pixel, kind: vector, rows: [s3, s2]}
+  y5: {tex: 'X\vec{x}', says: what the sensors read for orange, short: orange read, kind: vector, fmt: 2}
+  s: {tex: s, short: leak, says: 'the share of light the other sensor catches, from none (0) to all (1)', color: s1, fmt: 2}
+  k: {tex: k, short: brightness, says: how many times brighter the pixel is, color: s4, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: run
+    title: 'The leak dial'
+    lead: Each sensor catches some of the other's light.
+    controls:
+      - {name: t, run: 21, show: s, stops: [0, 10, 20], every: 0.3}
+      - {name: k, min: 0.5, max: 1.5, step: 0.1, value: 1, fmt: 1}
+      - {name: ghost, toggle: [hide, show], label: before, says: the pixel before the scanner}
+    derive:
+      s: t / 20
+      X: I + s * F
+      y5: matmul(X, p5 * k)
+    steps:
+      - say: The orange pixel and where the scanner sends it.
+        add:
+          plane:
+            x: {label: red level, min: 0, max: 14}
+            y: {label: green level, min: 0, max: 14}
+            marks:
+              - {vector: ['8 * k', '4 * k'], color: mist, dash: true, label: before, when: ghost}
+              - {vector: ['at(y5, 0)', 'at(y5, 1)'], color: accent, label: after}
+      - say: 'The scanner at this leak: $X = \mat{X}$.'
+      - say: At the end it lies on red = green.
+  - type: recap
+    answer: It pulls every pixel toward red = green.
