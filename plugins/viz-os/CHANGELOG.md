@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.0.0 (2026-11-07)
+
+Some 3.x lessons no longer build: symbols used in pop-up cards need a short name, controls need a symbol or one-word label, and chart labels must use the new names and cards. Boxed answers are also rejected in deck, lesson and page maths.
+
+- Draw matrices and vectors directly from data, and show worked matrix products with live values and matching colours.
+- Open symbol, figure and chart names to see their meaning and shape in a pop-up card; controls can explain themselves the same way.
+- Colour plane dots from RGB channel values, with checks that colour words match the displayed colour.
+
 ## 3.0.1 (2026-11-01)
 
 - Fixed: `memory.py learner` always wrote its history line with a two-space indent, which broke a `learner.yaml` whose `history:` items start at column 0. It now copies the list's own indent and refuses to write an edit that would not load.

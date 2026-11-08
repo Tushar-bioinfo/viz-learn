@@ -19,7 +19,10 @@ Only when the user asks for a release, a commit or a push.
 | Muse Code | `muse plugins marketplace add viz-learn https://github.com/Tushar-bioinfo/viz-learn` then `muse plugins install viz-os@viz-learn` | `muse plugins remove viz-os`, `muse plugins marketplace remove viz-learn`, then add and install again (`marketplace update` keeps the old snapshot: `backlog.md` 40) |
 | Cursor | `cursor-agent plugin marketplace add https://github.com/Tushar-bioinfo/viz-learn`, then `/plugins` in Cursor Agent and install viz-os (no headless install yet) | `cursor-agent plugin marketplace update viz-learn` |
 | Antigravity CLI | from a clone: `agy plugin install <clone>/plugins/viz-os` | `git pull` in the clone, then install again |
+| T3 Code (Antigravity) | the Antigravity CLI line above, then `tools/install_t3_agy.sh`. Leave T3's Binary path on Automatic | the Antigravity update, then the script again |
 | Gemini CLI | from a clone: `gemini extensions link <clone>/plugins/viz-os` (or `install`, which copies; it asks you to trust the folder) | `git pull` in the clone (a link follows the files) |
+The T3 script copies any skills already visible through the profile link into the profile before adding viz-os. This is a snapshot: later changes to the shared skills folder do not automatically appear there. The script refuses to replace an existing skill it does not own or that was edited; resolve the collision manually without deleting user content. Re-run it after updating Antigravity.
+
 Start a new agent session after installing so the skill loads. Every harness also needs Python 3 with `pyyaml`, `playwright` + Chromium and `pillow` to build and check decks.
 
 ## Adding a harness
