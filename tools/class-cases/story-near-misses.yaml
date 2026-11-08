@@ -1,0 +1,48 @@
+# expect: builds
+# expect: not: reads as made-up shorthand
+# expect: not: only says what to do on the page
+# expect: not: all have `short`
+# change 9: lines the three story lints must leave alone.
+title: Distances by hand
+question: How far does each cell sit from the mean?
+answer: About 2 apart.
+data:
+  rows:
+    - {cell: c1, cd3: 2}
+    - {cell: c2, cd3: 6}
+  cd3: [2, 6]
+  xbar: 4
+  d1: -2
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean}
+  mx: {tex: '\bar{x}', says: the middle of the CD3 levels, short: Mean}
+  d1: {tex: 'd_1', says: how far c1 sits from the mean, short: distance}
+slides:
+  - type: board
+    beat: by-hand
+    title: Distances by hand
+    table:
+      from: rows
+      cols: [{key: cell, label: cell}, {key: cd3, label: CD3}]
+    steps:
+      - say: 'Dashed: every real pixel. Solid: where the scanner sends them. Press play.'
+        add: {calc: {say: 'c1: {{d1|1}}', expr: 'at(cd3, 0) - xbar', name: d1}}
+      - say: Square each distance.
+        add: {calc: {say: 'gap: $d_1$', expr: d1^2}}
+      - say: Add the two arrows tip to tail.
+        add: {col: {key: dd, label: 'distance: $d$', expr: cd3 - xbar}}
+      - say: Move the slider and the mean rises.
+        add: {calc: {say: 'Note: values are centered', expr: xbar - xbar}}
+      - say: Watch the mean rise as c3 moves.
+        add: {calc: {say: 'Row 1: red light', expr: 'at(cd3, 0)'}}
+      - think:
+          q: Which cell sits farther from the mean?
+          a: Neither. Both sit 2 away.
+      - say: Try squaring each distance.
+        add: {calc: {say: 'Ratio: 3 to 1', expr: 'at(cd3, 1) / at(cd3, 0)'}}
+      - say: Slide the vector along the axis.
+        add: {calc: {say: 'Label: 3 cells', expr: xbar}}
+      - say: The clock read the same both times.
+        add: {calc: {say: '10:30', expr: xbar / 2}}
+      - say: Halve each level.
+        add: {col: {key: hh, label: '==s3:red part==', expr: cd3 / 2}}

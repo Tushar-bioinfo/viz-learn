@@ -46,6 +46,7 @@ This is the rule that makes the lesson feel like a class rather than a textbook.
 2. **The formula is a summary of what was done.** The formula scene's `assemble` writes the formula once with our numbers in it, each tagged with its term (`[xbar:{{xbar|1}}]`). Under it, after the next step's line, the symbols sit in the same places and colours, each with its plain name. The learner sees that `x̄` *is* the 5.70 they worked.
 3. **A symbol never comes before its number.** The lint keeps a ledger: if `\bar{x}` appears on slide 4 but the mean's number first shows on slide 5, it is an error. A table column, a worked line, a `{{name}}` in text or a parameter card all count as showing the number. Index letters and operators (`kind: index`, `kind: operator`) are exempt, but still give them a plain meaning under `symbols:`.
 4. **One new symbol at a time.** More than 5 terms in one formula is a wall (the lint warns). Build a long formula over two scenes, or show it whole and point at the parts that matter (move 14).
+5. **One case before the rule.** Work one named case with its numbers before any sentence about every case: "orange (8, 4) lands at (10, 8)" comes before "X moves every colour".
 
 The table keeps its source's shape through all of this. A cells × markers table has a row per cell; genes × samples has a row per gene, the way a count table does. If the method is usually written the other way round (a matrix with samples as rows), say so in a note and keep the table as it is.
 
@@ -86,6 +87,8 @@ You are a teacher at a whiteboard talking to one student. Each step's `say:` is 
 - **A think question is a real question**: it has one short answer the learner can reach from what is on the board. "Which cell sits farthest from the mean?" not "What do you think?".
 - **A think answer gives the answer and its reason** in one or two sentences.
 - **No hype, no filler**: no "amazing", "simply", "just", "as you can see".
+- **No made-up shorthand.** A label is a plain phrase, never two made-up names joined by a colon ("Red steps: red part"). Two symbols written differently never share a `short`.
+- **Say what just happened, not what to do.** "The area falls to 0.75 as the angle grows", not "Press play and watch the area".
 
 ## 6. Pacing
 - **One new thing per step.** A step adds one item, or marks one part, or asks one question.

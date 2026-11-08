@@ -255,7 +255,7 @@ slides:
       mw: mean(xw)
       s2w: var(xw)
     steps:
-      - say: Drag c3's CD3 level up and down. Watch the mean and the variance.
+      - say: 'Pull c3 away from the others, and $\bar{x}$ follows it a little. Drag it.'
         add:
           - chart:
               x: {cats: [c1, c3, c6, c7, c9, c12], label: cell}

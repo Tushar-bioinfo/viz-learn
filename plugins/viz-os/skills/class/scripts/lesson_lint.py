@@ -1031,6 +1031,74 @@ def lint_names(B, Lx, deck):
             extra = set(words_of(v["says"])) - set(words_of(short)) - FILLER
             if not extra:
                 Lx.warn(w, f"`says` “{v['says']}” only repeats `short` “{short}”: say what it means, what it is made from, or where it sits")
+    groups = {}
+    for n, v in symbols.items():
+        if isinstance(v, dict) and v.get("short"):
+            groups.setdefault(str(v["short"]).strip().lower(), []).append(n)
+    for ns in groups.values():
+        texs = {str(symbols[n].get("tex") or n) for n in ns}
+        if len(texs) > 1:
+            both = ", ".join(f"{n} (${symbols[n].get('tex') or n}$)" for n in ns)
+            Lx.warn(f"symbols.{ns[0]}", f"{both} all have `short` “{symbols[ns[0]]['short']}”: a legend or a card cannot tell them apart; give each its own 2-word `short`")
+
+
+COLOUR_MARK = re.compile(r"==[\w-]+:(.*?)==")   # ==s3:red part== colours its text; keep the text
+LEAD_WORD = {"note", "tip", "hint", "example", "why", "check", "recall", "key", "step", "answer", "caution", "warning", "idea", "rule", "result"}
+PLAIN_SIDE = re.compile(r"^(?=.*[^\W\d_])[^$`{}\\\d]+$")   # words with a letter: no digit, $maths$, {{number}} or `code`
+
+
+def two_part(t):
+    """`Red steps: red part`: two short plain phrases joined by a colon, which reads as made-up shorthand."""
+    if not isinstance(t, str):
+        return False
+    parts = re.sub(r"[：∶]", ":", COLOUR_MARK.sub(r"\1", t)).strip().split(":")
+    if len(parts) != 2:
+        return False
+    left, right = (p.strip() for p in parts)
+    if left.lower() in LEAD_WORD:
+        return False
+    return all(PLAIN_SIDE.match(p) and len(p.split()) <= 4 for p in (left, right))
+
+
+FILLER_LEAD = re.compile(r"^(?:(?:please|now|then|next|first|so|just|ok)\b[\s,]*)+", re.I)
+PAGE_VERB = re.compile(r"^(?:press|click|tap|drag|scroll|hover|watch|look|(?:move|slide|try|use) the (?:slider|toggle|dial|button|play))\b", re.I)
+CLAUSE = re.compile(r"\s+(?:and|as|while|until|when|so)\s+|[;,]", re.I)
+
+
+def page_only(sentence):
+    """Every clause of 2 or more words starts with a page verb (press, drag, watch …): the sentence says nothing that happens."""
+    clauses = [FILLER_LEAD.sub("", c.strip(" .!?")).strip() for c in CLAUSE.split(sentence)]
+    if not PAGE_VERB.match(clauses[0]):
+        return False
+    return all(PAGE_VERB.match(c) or len(c.split()) < 2 for c in clauses)
+
+
+def instruction_only(say):
+    """Every sentence of the line tells the learner to work the page; none says what is shown or what happens."""
+    if not isinstance(say, str) or not say.strip() or "{{" in say:
+        return False
+    parts = [p for p in re.split(r"(?<=[.!?])\s+", HIDE.sub("N", say).strip()) if p.strip()]
+    return all(page_only(p) for p in parts)
+
+
+def lint_story(Lx, deck):
+    """A label is a plain phrase, not `A: B` shorthand; a teacher line says what happened, not only what to press."""
+    for i, s in enumerate(deck.get("slides") or []):
+        if s.get("type") != "board":
+            continue
+        for j, st in enumerate(as_list(s.get("steps"))):
+            if not isinstance(st, dict):
+                continue
+            w = f"{slide_where(i, s)} step {j + 1}"
+            if instruction_only(st.get("say")):
+                Lx.warn(w, f"`say` “{st['say']}” only says what to do on the page: say what changes, with its number (‘the area falls to {{{{area|2}}}}’)")
+            for it in as_list(st.get("add")):
+                if not isinstance(it, dict):
+                    continue
+                for k, f in (("calc", "say"), ("eqn", "say"), ("assemble", "say"), ("col", "label")):
+                    t = it[k].get(f) if isinstance(it.get(k), dict) else None
+                    if two_part(t):
+                        Lx.warn(w, f"`{k} {f}` “{t}” reads as made-up shorthand: say it as one plain phrase (‘red light that lands in red’)")
 
 
 # what a board control and a symbol may carry; anything else is usually a comma inside an unquoted `{ }` value that split it
@@ -1171,6 +1239,6 @@ def make_lint(B, data):
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
-        lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck)
+        lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_story(Lx, deck)
         lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data)
     return lesson_lint

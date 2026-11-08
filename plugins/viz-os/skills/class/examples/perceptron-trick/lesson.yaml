@@ -141,7 +141,7 @@ slides:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
                 - {shade: [w0, w1, w2], color: s1, label: called T}
                 - {line: [w0, w1, w2], color: accent, label: your line}
-      - say: Drag only $w_0$. Watch the line.
+      - say: Only $w_0$ moves now; $w_1$ and $w_2$ stay fixed. Drag it.
       - think:
           q: '$w_0$ moved the line. Did it turn?'
           a: No. It slid and stayed parallel. $w_0$ shifts the line, never tilts it.

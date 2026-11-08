@@ -23,15 +23,15 @@ symbols:
   a: {tex: 'a', says: how much of u points along PC1, short: PC1 part, color: accent, fmt: 3}
   b: {tex: 'b', says: how much of u points along PC2, short: PC2 part, color: s3, fmt: 3}
   v_cd3: {tex: 's_1^2', says: how far CD3 levels scatter, short: CD3 spread, color: s1, fmt: 3}
-  c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 3}
+  c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: CD3–CD19 covariance, color: s3, fmt: 3}
   lam1: {tex: '\lambda_1', says: how much C stretches PC1's arrow, short: PC1 stretch, color: accent, fmt: 3}
   lam2: {tex: '\lambda_2', says: how much C stretches PC2's arrow, short: PC2 stretch, color: s3, fmt: 3}
   s2u: {tex: 's_u^2', says: the spread of the shadows along u, short: u spread, fmt: 3}
   p: {tex: 'a^2', says: the share of the arrow on PC1, short: PC1 share, color: accent, fmt: 2}
   sp: {tex: 's_u^2', says: the spread along the mixed arrow, short: spread now, fmt: 3}
   prod13: {tex: 'd_1 d_3', says: a cell's CD3 and CD14 distances multiplied, short: product, fmt: 2}
-  c13: {tex: 'c_{13}', says: the covariance of CD3 and CD14, short: covariance, fmt: 3}
-  c23: {tex: 'c_{23}', says: the covariance of CD19 and CD14, short: covariance, fmt: 3}
+  c13: {tex: 'c_{13}', says: the covariance of CD3 and CD14, short: CD3–CD14 covariance, fmt: 3}
+  c23: {tex: 'c_{23}', says: the covariance of CD19 and CD14, short: CD19–CD14 covariance, fmt: 3}
   L1: {tex: '\lambda_1', says: PC1's stretch with three markers, short: PC1 stretch, fmt: 3}
   L2: {tex: '\lambda_2', says: PC2's stretch with three markers, short: PC2 stretch, fmt: 3}
   L3: {tex: '\lambda_3', says: PC3's stretch with three markers, short: PC3 stretch, fmt: 3}

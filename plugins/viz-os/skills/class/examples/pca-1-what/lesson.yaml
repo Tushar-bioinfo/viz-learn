@@ -28,7 +28,7 @@ symbols:
   th: {tex: '\theta', says: "the angle of the line, in degrees", short: angle, fmt: 0}
   sp: {tex: 's_\theta^2', says: the spread of the shadows at this angle, short: spread now, fmt: 3}
   alen: {tex: 'L', says: the arrow's length, short: arrow length, fmt: 1}
-  spl_now: {tex: 's_{L}^2', says: the spread with the stretched arrow, short: spread now, fmt: 3}
+  spl_now: {tex: 's_{L}^2', says: the spread with the stretched arrow, short: stretched spread, fmt: 3}
   v1: {tex: 'v_1', says: "PC1's arrow, its CD3 part", short: PC1's CD3, color: s1, fmt: 3}
   v2: {tex: 'v_2', says: "PC1's arrow, its CD19 part", short: PC1's CD19, color: s2, fmt: 3}
   z: {tex: 'z', says: a cell's score on PC1, short: PC1 score, fmt: 2}
