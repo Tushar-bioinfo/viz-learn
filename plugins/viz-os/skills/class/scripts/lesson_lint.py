@@ -12,7 +12,7 @@ BEATS = {"plan", "problem", "data", "by-hand", "picture", "formula", "run", "wha
 STEP = {"say", "add", "mark", "think", "frame"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS = {"calc", "plane", "space", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -194,6 +194,156 @@ def lint_plane(B, Lx, w, pl, names):
     return [mk for mk in marks if mk.get("name") is not None]
 
 
+# space marks (board.md `space`): a position is a name or expression that gives 3 numbers, or a written triple [x, y, z]
+SPACE = {"points": "{from, at}", "point": "a position", "ring": "a position", "vector": "a position (and from:)",
+         "sheet": "[U, V] with max: [a, b] (and min:)", "foot": "{from: P, onto: U} or {from: P, onto: [U, V]}",
+         "segment": "[P, Q]", "text": "a label (and at:)"}
+NUMBER = re.compile(r"[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?")   # a bare number, where a position is needed
+SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring"}
+ON_SPACE = "a space draws no names on its marks: give the mark `label:` (its legend entry) and `says:` (its card)"
+
+
+def lint_space(B, Lx, w, sp, names, symbols, values):
+    """A space has 3 axis names; each mark is one kind, its positions give 3 numbers, and its legend stays short.
+    Returns each labelled mark as {name, says}, for the "say what it is" check."""
+    if not isinstance(sp, dict):
+        Lx.err(w, "`space` is a mapping with `axes: [x, y, z]` and `marks`")
+        return []
+    for k in sorted(set(sp) - {"axes", "marks", "max", "id"}, key=str):
+        Lx.err(w, f"`space` has no field `{k}` (it takes axes, marks, max, id)")
+    ax = sp.get("axes")
+    if not isinstance(ax, list) or len(ax) != 3 or not all(isinstance(a, str) and a.strip() for a in ax):
+        Lx.err(w, f"space `axes` is 3 names, one per axis: [OD red, OD green, OD blue]; got {ax!r}")
+    if sp.get("max") is not None and (not isinstance(sp["max"], list) or len(sp["max"]) != 3):
+        Lx.err(w, f"space `max` is 3 numbers, one per axis (leave it out and the kit sizes the axes); got {sp['max']!r}")
+
+    def ex(v):
+        B.check_expr(Lx, w + " space", v, names)
+
+    def three(v, what):
+        """A position: a written triple, or a name or expression. A name in the data must hold 3 numbers."""
+        if isinstance(v, list):
+            if len(v) != 3 or any(isinstance(x, list) for x in v):
+                Lx.err(w, f"space {what} is not 3 numbers: write [x, y, z], or a name that holds 3 numbers; got {v!r}")
+            for x in v:
+                ex(x)
+            return
+        if not isinstance(v, str) or NUMBER.fullmatch(v.strip()):
+            Lx.err(w, f"space {what} is not 3 numbers: write [x, y, z], or a name that holds 3 numbers; got {v!r}")
+            return
+        ex(v)
+        d = values.get(v) if isinstance(v, str) else None
+        if d is not None and not (isinstance(d, list) and len(d) == 3 and all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in d)):
+            Lx.err(w, f"space {what} `{v}` is not 3 numbers in the data ({str(d)[:40]})")
+
+    def thin(names, what):
+        """Two data vectors that nearly point the same way (sine of their angle under 1e-6, as the kit tests) span no plane."""
+        U, V = (values.get(x) if isinstance(x, str) else None for x in names)
+        if not all(isinstance(q, list) and len(q) == 3 and all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in q) for q in (U, V)):
+            return
+        uu, vv, uv = (sum(a * b for a, b in zip(q, r)) for q, r in ((U, U), (V, V), (U, V)))
+        if uu == 0 or vv == 0 or max(0.0, 1 - uv * uv / (uu * vv)) ** 0.5 < 1e-6:
+            Lx.warn(w, f"space {what} [{names[0]}, {names[1]}]: the two vectors are zero or nearly point the same way, so they span no plane; the kit draws {'no drop' if what == 'foot onto' else 'a line'}")
+
+    marks = [mk for mk in as_list(sp.get("marks")) if isinstance(mk, dict)]
+    keys = [mk["label"] for mk in marks if mk.get("label")]
+    for t in keys:
+        if B.name_words(t) > B.LEGEND_WORDS:
+            Lx.warn(w, f"legend label “{t}”: legend labels are for a quick read: {B.LEGEND_WORDS} words at most; put the rest in says:")
+    if len(keys) > B.LEGEND_MAX:
+        Lx.warn(w, f"{len(keys)} legend entries on one space: more than {B.LEGEND_MAX} is too many for a quick read; drop a label or split the scene")
+    out = []
+    for i, mk in enumerate(as_list(sp.get("marks"))):
+        m = f"space mark {i + 1}"
+        kind = [k for k in SPACE if isinstance(mk, dict) and k in mk and not (k == "ring" and "point" in mk)]
+        if len(kind) != 1:
+            Lx.err(w, f"{m} is one of {', '.join(SPACE)}; got {mk!r}")
+            continue
+        k, v = kind[0], mk[kind[0]]
+        if "name" in mk:
+            Lx.err(w, f"{m} (`{k}`) has `name:`: {ON_SPACE}")
+        for x in sorted(set(mk) - set(SPACE) - SPACE_FIELDS - {"name"}, key=str):
+            prose = " " in str(x) or mk.get(x) is None
+            Lx.err(w, f"{m} (`{k}`) has no field `{x}` (it takes {', '.join(sorted(SPACE_FIELDS))})"
+                      + ("; it looks like the end of a sentence: a comma inside an unquoted `{ }` value splits it, so quote that value" if prose else ""))
+        if mk.get("when") is not None:
+            ex(mk["when"])
+        if "ring" in mk and "point" in mk and mk["ring"] is not True:
+            Lx.err(w, f"{m}: `ring` on a point is `true` (a ring round the dot); for a ring alone write {{ring: P}}")
+        rg = mk.get("rgb", v.get("rgb") if k == "points" and isinstance(v, dict) else None)
+        if rg is not None:
+            if k not in ("point", "points"):
+                Lx.err(w, f"{m} (`{k}`): `rgb` colours a `point` or `points` dot; give a `{k}` a `color`")
+            elif mk.get("color") is not None:
+                Lx.err(w, f"{m} (`{k}`) has both `rgb` and `color`: use one")
+            elif isinstance(rg, dict):
+                for x in sorted(set(rg) - {"r", "g", "b", "max"}, key=str):
+                    Lx.err(w, f"{m} `rgb` has no field `{x}` (it takes r, g, b, max)")
+            elif rg != "od":
+                ex(rg)
+        if k in ("point", "ring", "vector"):
+            three(v, k)
+            if mk.get("from") is not None:
+                three(mk["from"], "vector from")
+        elif k == "segment":
+            if not isinstance(v, list) or len(v) != 2:
+                Lx.err(w, f"space `segment` takes two positions, {SPACE['segment']}")
+            else:
+                for q in v:
+                    three(q, "segment end")
+        elif k == "sheet":
+            if not isinstance(v, list) or len(v) != 2:
+                Lx.err(w, f"space `sheet` takes two vectors, {SPACE['sheet']}; got {v!r}")
+            else:
+                for q in v:
+                    three(q, "sheet vector")
+                thin(v, "sheet")
+            for b in ("max", "min"):
+                bv = mk.get(b)
+                if bv is None and b == "max":
+                    Lx.err(w, f"space `sheet` needs `max: [a, b]`: how far it runs along each vector (min is 0 unless given)")
+                elif bv is not None and (not isinstance(bv, list) or len(bv) != 2):
+                    Lx.err(w, f"space `sheet` `{b}` is 2 numbers, one per vector; got {bv!r}")
+                elif bv is not None:
+                    for x in bv:
+                        ex(x)
+        elif k == "foot":
+            onto = v.get("onto") if isinstance(v, dict) else None
+            many = isinstance(onto, list) and len(onto) == 2
+            vecs = isinstance(onto, list) and any(isinstance(values.get(x), list) or (isinstance(symbols.get(x), dict) and symbols[x].get("kind") == "vector") for x in onto if isinstance(x, str))
+            if not isinstance(v, dict) or v.get("from") is None or onto is None:
+                Lx.err(w, f"space `foot` takes {SPACE['foot']}")
+            elif isinstance(onto, list) and not many and (len(onto) != 3 or vecs):
+                Lx.err(w, f"space `foot.onto` is 1 vector (a line) or 2 vectors (a plane); got {onto!r}")
+            else:
+                three(v["from"], "foot from")
+                for q in (onto if many else [onto]):
+                    three(q, "foot onto")
+                if many:
+                    thin(onto, "foot onto")
+        elif k == "text":
+            if mk.get("at") is None:
+                Lx.err(w, "space `text` needs `at:`, a position")
+            else:
+                three(mk["at"], "text at")
+        elif k == "points":
+            if not isinstance(v, dict) or not v.get("from") or not v.get("at"):
+                Lx.err(w, f"space `points` takes {SPACE['points']}: a table, and the column whose cells are 3 numbers")
+            else:
+                for x in sorted(set(v) - {"from", "at", "rgb"}, key=str):
+                    Lx.err(w, f"space `points` has no field `{x}` (it takes from, at, rgb)")
+                ex(v["from"])
+                rows = values.get(v["from"]) if isinstance(v["from"], str) else None
+                if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+                    cell = rows[0].get(v["at"])
+                    if not (isinstance(cell, list) and len(cell) == 3):
+                        Lx.err(w, f"space `points` column `{v['at']}` is not 3 numbers in the first row of `{v['from']}`")
+        if mk.get("label"):
+            sym = symbols.get(v) if isinstance(v, str) and isinstance(symbols.get(v), dict) else {}
+            out.append({"name": mk["label"], "says": mk.get("says") or sym.get("says"), "step": mk.get("step")})
+    return out
+
+
 def mark_symbol(mk, symbols):
     """The symbol a chart mark stands for: an hline's y, a vline's x or a point's y, when it is a bare symbol name."""
     k = mk.get("kind")
@@ -346,9 +496,10 @@ def lint_formula(B, Lx, w, f, kind, names, symbols):
         Lx.warn(w, "a number in `plug` has no tag: write it as [name:number] so it takes its term's colour and the lint knows which worked number it is")
 
 
-def lint_scenes(B, Lx, deck, glob):
+def lint_scenes(B, Lx, deck, glob, data=None):
     """Each board scene on its own: its fields, steps, items and controls."""
     symbols = deck.get("symbols") or {}
+    values = {**(deck.get("data") or {}), **(data or {})}
     said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
@@ -405,6 +556,8 @@ def lint_scenes(B, Lx, deck, glob):
                 if "plane" in it:
                     # a mark shows at the later of its own step and the plane's: a mark can't come before its plane
                     named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_plane(B, Lx, w, it["plane"], names)]
+                if "space" in it:   # the same "say what it is" rule, for each legend entry
+                    named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_space(B, Lx, w, it["space"], names, symbols, values)]
                 if VIS & set(it):
                     vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
                     B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
@@ -1142,13 +1295,13 @@ def scene_drawn(s):
 
 
 def plane_vectors(s):
-    """Names a plane `vector` or `point` mark reads in its coordinates: a vector drawn there is shown."""
+    """Names a plane or space `vector`, `point`, `ring` or `sheet` mark reads in its coordinates: a vector drawn there is shown."""
     out = set()
     for _, it in items_of(s):
-        pl = it.get("plane")
+        pl = it.get("plane") or it.get("space")
         for mk in as_list(pl.get("marks")) if isinstance(pl, dict) else []:
             if isinstance(mk, dict):
-                for k in ("vector", "point", "from"):
+                for k in ("vector", "point", "from", "ring", "sheet"):
                     out |= {n for x in strings(mk.get(k)) for n in IDENT.findall(x)}
     return out
 
@@ -1238,7 +1391,7 @@ def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
-        lint_scenes(B, Lx, deck, glob); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
+        lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_story(Lx, deck)
         lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data)
     return lesson_lint

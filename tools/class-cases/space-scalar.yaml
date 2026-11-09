@@ -1,0 +1,19 @@
+# expect: space vector is not 3 numbers
+# expect: space point is not 3 numbers
+# A single number where a position is needed: a number, or a number in quotes.
+title: Numbers in a space
+question: q?
+answer: a.
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Bad positions
+    steps:
+      - say: Two marks.
+        add:
+          space:
+            axes: [x, y, z]
+            marks:
+              - {vector: 123}
+              - {point: '2.5'}

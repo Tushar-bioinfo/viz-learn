@@ -59,12 +59,12 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 A lesson is one long page, a scene after a scene. You give the order; the kit places everything, never by coordinates. A scene is a head (beat label, title, lead), then its steps in order. What is written stays, and the learner scrolls back to it. Only a think answer waits.
 
 - **Lines**: steps before the first figure run down the page. All text starts at the page's left edge, like a paper; only figures and equations sit in the middle.
-- **Figure block**: a figure (`plane`, `chart`, `image`, `stat`, `units`) starts a block. It holds the figure and the steps after it, until the next figure or a wide item. The figure sits at the left of the page and stays in view while its lines scroll past beside it, 20 px away. The figure is sized first, from 70% of the page; the text takes all that is left, never under 30%. Side by side needs 520 px of figure and 300 px of text. A narrower window, or a formula too long for the text column at 20 px, puts that figure above its lines, in the middle of the page.
+- **Figure block**: a figure (`plane`, `space`, `chart`, `image`, `stat`, `units`) starts a block. It holds the figure and the steps after it, until the next figure or a wide item. The figure sits at the left of the page and stays in view while its lines scroll past beside it, 20 px away. The figure is sized first, from 70% of the page; the text takes all that is left, never under 30%. Side by side needs 520 px of figure and 300 px of text. A narrower window, or a formula too long for the text column at 20 px, puts that figure above its lines, in the middle of the page.
 - **Wide items** (`assemble`, `compare`, `ops`, `dist`, `parts`, `flow`) run the full width and end the block. A wide figure sits in the middle at 1100 px or the page, and may reach 1280 on a big window. A formula card and a `compare` run the page, with their text on its left edge and a formula's equations in the middle.
 - **Table scene**: the table stays in view in the left 30%, then any `note` or `params` with `side: true` under it. The rest of the scene sits to its right. A table too wide for 30% takes the room it needs; if that leaves under 520 px, it goes on top and does not stay in view.
 - **Reading**: as a step passes the reading line, 45% down the window, it lights up, the table's next column fills in and the row in use lights. Hovering a step does the same. Scrolling never changes a figure.
 - **Next and Back**: a figure gets them only if it changes: a mark, series or label with `step`, a run's frames (`frame:` or `stops`), an `ops` step. With one state it has no buttons. It starts at its first stop. A click on a line goes to its stop, and the ← → keys step the figure nearest the reading line.
-- **Sizes**: a figure owns its shape. A plane's comes from its axis ranges, a chart's from its `ratio`, an image's from the image. The layout gives a width and a height limit, never a box to fill. With the scene's head at the top of the window, a figure and its buttons fit on screen.
+- **Sizes**: a figure owns its shape. A plane's comes from its axis ranges, a space is 4:3, a chart's from its `ratio`, an image's from the image. The layout gives a width and a height limit, never a box to fill. With the scene's head at the top of the window, a figure and its buttons fit on screen.
 
 ### The table
 ```yaml
@@ -293,6 +293,38 @@ Every mark also takes:
 | `when` | an expression; the mark is drawn only while it is not 0 (`when: prev` with a toggle; `when: 'at(has_next, t)'` in a run) |
 
 Labels are placed clear of dots, lines, arrows, right-angle ticks, the edges of squares and shaded halves, and other labels; when no place is clear, the check warns. Keep 5 legend entries or fewer. Every `name` needs `says:`, or a teacher line that names it at or before its step; the lint warns otherwise, since a pop-up is not seen in print or a screenshot. A mark outside the box warns too: widen `min`/`max`.
+
+### `space`: a 3D space the learner turns
+A plane with a third axis, for a point and the plane of two vectors: projection, least squares, colour unmixing. The learner drags to turn it, scrolls to zoom, and presses `edge` to look along the sheet, where a drop meets it at a right angle. It never moves by itself. One unit is one length on every axis, and a slider never rescales it: the kit sizes the axes from 5 values of each control (a sample when the combinations pass 4096), and the check warns if a mark still leaves them.
+```yaml
+symbols:
+  H: {tex: 'H', says: one unit of haematoxylin, kind: vector, color: s5}   # a vector symbol's color is its arrow's
+  E: {tex: 'E', says: one unit of eosin, kind: vector, color: s3}
+derive: {px: h*H + e*E}                    # lists add entry by entry
+add:
+  space:
+    axes: [OD red, OD green, OD blue]
+    marks:
+      - points: {from: pixels, at: od, rgb: od}
+      - {vector: H, label: H}
+      - {sheet: [H, E], max: [1.4, 1.1], label: stain sheet, says: every mix of H and E}
+      - {point: px, rgb: od, ring: true, label: pixel, says: the pixel you mix}
+      - {foot: {from: px, onto: [H, E]}, label: residual, says: what no H and E mix explains}
+```
+A position is a name that gives 3 numbers (a `kind: vector` symbol, a data list, a derive) or a written `[x, y, z]` of expressions. `axes` is 3 names; `max: [x, y, z]` beside it fixes the axes instead (only to compare two spaces at one scale).
+
+| Mark | Takes | Draws |
+|---|---|---|
+| `points` | `{from, at}` | a dot per row of `from`; `at` is the column whose cells are 3 numbers |
+| `point` | a position | one dot; `ring: true` adds an accent ring |
+| `ring` | a position | a ring round a point: "this one" |
+| `vector` | a position, `from:` | an arrow from `from` (default the origin) |
+| `sheet` | `[U, V]`, `max: [a, b]`, `min:` | the flat piece a·U + b·V, a from `min` (default 0) to `max`, tinted from V's colour to U's |
+| `foot` | `{from: P, onto: [U, V]}` or `{from: P, onto: U}` | the least-squares drop from P onto the plane of U and V (or the line along U): dashed, a hollow dot at the foot, a right-angle mark |
+| `segment` | `[P, Q]` | a line between two points (`dash: true`) |
+| `text` | a label, `at:` | free text at a point |
+
+Every mark takes `step`, `color`, `label`, `says`, `when` and `dash` as on a plane. `rgb: od` on a `point` or `points` dot gives its true colour from optical density, 255·10^(−OD) per channel; `rgb: 10` reads x, y, z as red, green, blue, full at 10; `{r, g, b, max}` as on a plane. **No names on the marks**: only the axis names are drawn. A mark with `label` gets a legend entry (2 words, 5 entries at most); pointing at it or the mark lights the mark and opens its card, which shows `says` (or its vector symbol's) and its numbers now. Give each labelled mark `says:` or name it in a teacher line.
 
 ## Controls
 `controls:` on a scene takes three kinds. Each `name` becomes a variable for expressions on that scene.

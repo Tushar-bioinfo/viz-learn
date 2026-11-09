@@ -1,0 +1,21 @@
+# expect: space `sheet` takes two vectors
+# expect: space `sheet` needs `max: [a, b]`
+# expect: space `foot.onto` is 1 vector (a line) or 2 vectors (a plane)
+title: Sheets and drops
+question: q?
+answer: a.
+data: {u: [1, 0, 0], v: [0, 1, 0], w: [0, 0, 1], q: [1, 1, 1]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Bad sheets and drops
+    steps:
+      - say: Three marks.
+        add:
+          space:
+            axes: [x, y, z]
+            marks:
+              - {sheet: [u], max: [1, 1]}
+              - {sheet: [u, v]}
+              - {foot: {from: q, onto: [u, v, w]}}

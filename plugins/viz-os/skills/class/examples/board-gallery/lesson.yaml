@@ -27,6 +27,8 @@ symbols:
   spot: {tex: 'M\vec{w}', says: 'the spot''s CD3 and CD19, a mix of the two cells', short: spot reading, kind: vector}
   wts: {tex: 'W', says: 'two scores from the markers: CD3 minus CD19, and their average', short: score weights, kind: matrix}
   scores: {tex: 'CW', says: "each cell's two scores, one row per cell", short: cell scores, kind: matrix}
+  c1v: {tex: '\vec{a}', says: 'cell c1''s CD3, CD19 and CD4', short: c1 markers, kind: vector, color: s4, fmt: 1}
+  c2v: {tex: '\vec{b}', says: 'cell c2''s CD3, CD19 and CD4', short: c2 markers, kind: vector, color: s5, fmt: 1}
 slides:
   - type: title
 
@@ -170,6 +172,9 @@ slides:
     beat: run
     title: One variance per marker
     lead: The same rule, run down every column of a cell × marker table.
+    controls:
+      - {name: share, min: 0, max: 1, step: 0.05, value: 0.3, label: share, says: how much of c1 the made-up mix holds}
+    derive: {mixc: share*c1v + (1 - share)*c2v}
     steps:
       - say: Six cells, three markers. One variance for each column.
         add:
@@ -186,6 +191,26 @@ slides:
             steps:
               - {op: cols, fn: var, name: mvar, tex: 's^2', label: variance, fmt: 2, say: Find each marker's variance, why: Each column is its own set of six numbers.}
       - say: Each column gives one number. CD19 varies most here.
+      - say: Three markers make each cell a point in space. Drag to turn it.
+        add:
+          - space:
+              axes: [CD3, CD19, CD4]
+              marks:
+                - points: {from: cells, at: m3}
+                - {vector: c1v, label: c1}
+                - {vector: c2v, label: c2}
+                - {sheet: [c1v, c2v], max: [1, 1], label: mixes, says: every mix of cells c1 and c2, step: 4}
+                - {segment: [c1v, c2v], dash: true, color: mist, step: 4}
+                - {point: mixc, color: accent, label: one mix, says: 'a made-up cell: share of c1, the rest c2', step: 4}
+                - {foot: {from: c3v, onto: [c1v, c2v]}, label: c3 drop, says: the part of c3 no mix of c1 and c2 explains, step: 5}
+                - {ring: c3v, step: 5}
+                - {text: c3, at: c3v, step: 5}
+          - {vec: c1v, row: true}
+          - {vec: c2v, row: true}
+      - say: 'Every mix of $\vec{a}$ and $\vec{b}$ lies on one flat sheet.'
+      - think:
+          q: Is cell c3 a mix of c1 and c2?
+          a: 'No: it sits {{c3_off|1}} off their sheet, so it holds something they lack.'
 
   - type: board
     beat: run

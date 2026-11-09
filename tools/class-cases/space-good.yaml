@@ -1,0 +1,41 @@
+# expect: builds
+# expect: not: space mark
+# expect: not: is not 3 numbers
+# A space with every mark kind but points: a point with a ring and a true colour (rgb: 10), a lone ring, a vector from a
+# point, a segment, free text, a sheet with min, and drops onto a plane (two vectors) and onto a line (one vector).
+# The slider moves the point; the axes are sized at both its ends, so no mark leaves the box.
+title: A point and two directions
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q0: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+  t: {tex: 't', says: how high the point sits, short: height, color: s4, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    controls:
+      - {name: t, min: 0, max: 2, step: 0.1, value: 1}
+    derive: {q: 'q0 + [0, 0, t]'}
+    steps:
+      - say: Two directions, and one point above them.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {vector: v, from: u, color: mist}
+                - {sheet: [u, v], min: [0, 0], max: [1, 1], label: plane, says: every mix of u and v}
+                - {point: q, rgb: 2, ring: true, label: point, says: the point you raise}
+                - {foot: {from: q, onto: [u, v]}, label: drop, says: the shortest way to the plane}
+                - {foot: {from: q, onto: u}, color: s4, step: 2}
+                - {segment: ['[0, 0, 0]', q], dash: true, step: 2}
+                - {ring: u, step: 2}
+                - {text: tip, at: u, step: 2}
+          - {vec: u, row: true}
+          - {vec: v, row: true}
+      - say: 'Onto $\vec{u}$ alone, the drop is longer.'

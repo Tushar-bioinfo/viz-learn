@@ -1,0 +1,25 @@
+# expect: space mark 1 (`point`) has `name:`
+# expect: space mark 2 (`vector`) has no field `size`
+# expect: space mark 3 is one of points, point, ring
+# expect: space mark 4 (`vector`): `rgb` colours a `point` or `points` dot
+# expect: `space` has no field `x`
+title: Fields in a space
+question: q?
+answer: a.
+data: {u: [1, 0, 0]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Bad fields
+    steps:
+      - say: Four marks.
+        add:
+          space:
+            axes: [x, y, z]
+            x: {label: x}
+            marks:
+              - {point: u, name: tip}
+              - {vector: u, size: 3}
+              - {square: [u, u]}
+              - {vector: u, rgb: od}

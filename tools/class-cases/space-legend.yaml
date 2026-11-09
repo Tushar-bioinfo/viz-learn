@@ -1,0 +1,24 @@
+# expect: 6 legend entries on one space: more than 5
+# expect: legend label “the long arrow”
+# expect: say what bare is
+title: A space legend
+question: q?
+answer: a.
+data: {u: [1, 0, 0], v: [0, 1, 0], w: [0, 0, 1]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Too many names
+    steps:
+      - say: Six named marks.
+        add:
+          space:
+            axes: [x, y, z]
+            marks:
+              - {vector: u, label: the long arrow, says: one}
+              - {vector: v, label: bare}
+              - {vector: w, label: c, says: three}
+              - {point: u, label: d, says: four}
+              - {point: v, label: e, says: five}
+              - {point: w, label: f, says: six}

@@ -1,0 +1,19 @@
+# expect: builds
+# expect: not: not a number
+# A space whose only mark sits at the origin: every axis has zero range, so the kit gives each a length of 1.
+title: One point at the origin
+question: Where is the origin?
+answer: Where all three axes meet.
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: The origin
+    lead: One point where the three axes meet.
+    steps:
+      - say: The point sits where x, y and z are all 0.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {point: '[0, 0, 0]', label: origin, says: where all three axes meet}

@@ -315,6 +315,15 @@ def main():
     scores = [[c["cd3"] - c["cd19"], (c["cd3"] + c["cd19"]) / 2] for c in cells[:3]]
     report("scores", close(data["scores"], scores), data["scores"], scores)
 
+    # the 3D figure: each cell's three markers as one list, and c3's distance from the plane of c1 and c2 by lstsq
+    report("m3", all(close(r["m3"], [r["cd3"], r["cd19"], r["cd4"]]) for r in data["cells"]), None, None)
+    S3 = np.array([cells[0]["m3"], cells[1]["m3"]]).T
+    for k, nm in enumerate(["c1v", "c2v", "c3v"]):
+        report(nm, close(data[nm], cells[k]["m3"]), data[nm], cells[k]["m3"])
+    coef, *_ = np.linalg.lstsq(S3, np.array(cells[2]["m3"]), rcond=None)
+    off = float(np.linalg.norm(np.array(cells[2]["m3"]) - S3 @ coef))
+    report("c3_off", close(data["c3_off"], off), data["c3_off"], off)
+
     if failed:
         print("MISMATCH")
         sys.exit(1)

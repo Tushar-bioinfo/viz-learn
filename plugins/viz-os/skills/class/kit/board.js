@@ -223,7 +223,7 @@
 
   // a legend or card swatch per kind of mark: a line, a dashed line, an arrow, a dot, a soft block
   const SWATCH = { line: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:3"/>', dash: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:2.5;stroke-dasharray:5 3"/>',
-    arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>' };
+    arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', ring: '<circle cx="12" cy="6" r="4.5" style="fill:none;stroke:C;stroke-width:2"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>' };
   const swatch = (kind, c) => `<svg width="24" height="12" viewBox="0 0 24 12">${(SWATCH[kind] || SWATCH.line).replace(/C/g, c)}</svg>`;
 
   function plane(p, ctx, clickOf, at) {
@@ -397,6 +397,286 @@
     return R;
   }
 
+  // ---------- space: a 3D coordinate space the learner turns by dragging, the plane's sibling ----------
+  // An orbit about the middle of the axes box (yaw free, pitch held between −10° and 80°), mild perspective and a depth fade.
+  // Every piece is drawn far to near (the painter's rule): lines are cut into pieces and the sheet into cells, so a dot in front
+  // of the sheet and one behind it sort right. One unit is one length on every axis, so a right angle looks right. The kit sizes
+  // the axes: just past the farthest point any mark reaches at every control's ends, so a slider never rescales the space.
+  // It never turns on its own. The figure carries no names but the axes'; the legend names the marks and lights them.
+  const vadd = (u, w) => u.map((v, i) => v + w[i]), vsub = (u, w) => u.map((v, i) => v - w[i]), vmul = (u, k) => u.map(v => v * k);
+  const vdot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], vlen = a => Math.sqrt(vdot(a, a)), vlerp = (u, w, k) => u.map((v, i) => v + (w[i] - v) * k);
+  const vcross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], vunit = a => vmul(a, 1 / (vlen(a) || 1));
+  // an orthonormal basis of the line along U, or of the plane spanned by U and V (Gram–Schmidt, done twice for accuracy).
+  // null when U is zero, or when V lies so close to U's line (sine of their angle under THIN) that the plane cannot be trusted
+  const THIN = 1e-6;
+  const span = (U, V) => { const lu = vlen(U); if (!(lu > 0)) return null; const e1 = vmul(U, 1 / lu); if (!V) return [e1];
+    let w = vsub(V, vmul(e1, vdot(V, e1))); w = vsub(w, vmul(e1, vdot(w, e1))); const lv = vlen(V), lw = vlen(w);
+    return lv > 0 && lw / lv >= THIN ? [e1, vmul(w, 1 / lw)] : null; };
+  // the least-squares drop of p onto that line or plane, the same point as c = (SᵀS)⁻¹ Sᵀ p with S = [U V], without forming SᵀS
+  const footOn = (p, U, V) => { const B = span(U, V); return B && B.reduce((f, e) => vadd(f, vmul(e, vdot(p, e))), [0, 0, 0]); };
+  // a dot's true colour from its optical density: 255·10^(−OD) per channel, clipped to 0–255
+  const odHex = od => toHex(od.map(v => 10 ** -v), 1);
+  const rgbs = {}, cssRGB = c => { if (!(c in rgbs)) { const q = document.createElement('span'); q.style.color = c; document.body.appendChild(q);
+    const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(q).color); q.remove(); rgbs[c] = m ? m[1].split(',').slice(0, 3).map(Number) : [162, 159, 151]; } return rgbs[c]; };
+  const glowOf = c => { glow(document.createElement('span'), c); return glows[c]; };
+  const SPACE = ['points', 'point', 'ring', 'vector', 'sheet', 'foot', 'segment', 'text'];   // a mark's kind; `ring: true` on a point is a field
+  const SDEF = { points: 's1', point: 'ink', ring: 'ink', vector: 'ink', sheet: 'mist', foot: 'accent', segment: 'mist', text: 'mist' };
+  // the look was picked at the bench's size, a longest axis of 2.6 OD units: perspective (focal 5), the depth fade and the
+  // right-angle mark are in those units, and scale with each space
+  const OD0 = 2.6, FOCAL = 5, RAD = Math.PI / 180, PMIN = -10, PMAX = 80, HOME = [38, 20], SHAPE3 = 4 / 3;
+  const REDUCED = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tw = (() => { let cv = null; return (t, fs) => { cv = cv || document.createElement('canvas').getContext('2d'); cv.font = `500 ${fs}px Inter, system-ui, sans-serif`; return cv.measureText(t).width; }; })();
+  let spaceNo = 0;
+
+  function space(p, ctx, clickOf, at) {
+    const no = spaceNo++, node = h('div', 'bi space fr'); node.dataset.at = at; if (p.id) node.dataset.id = p.id;
+    const leg = h('div', 'plegend'); node.appendChild(leg);
+    const wrap = h('div', 'pwrap swrap'), axn = list(p.axes).map(t => L.plain(String(t ?? ''), ctx.scope)); node.appendChild(wrap);
+    wrap.tabIndex = 0; wrap.setAttribute('role', 'group');
+    wrap.setAttribute('aria-label', `a 3D space of ${axn.join(', ')}: drag or press the arrow keys to turn it, + and − to zoom, 0 to fit`);
+    const svg = sv('svg', { class: 'pl', 'aria-hidden': 'true' }, wrap);
+    const marks = list(p.marks).map((mk, i) => ({ mk: mk && typeof mk === 'object' ? mk : {}, i }));
+    const kindOf = mk => SPACE.find(k => mk[k] != null && !(k === 'ring' && mk.point != null));
+    const tools = h('div', 'stools', '<button type="button" data-z="in" aria-label="zoom in">+</button><button type="button" data-z="out" aria-label="zoom out">−</button>' +
+      '<button type="button" class="wd" data-z="fit" aria-label="fit the space to the figure">fit</button>' +
+      (marks.some(m => m.mk.sheet != null) ? '<button type="button" class="wd" data-z="edge" aria-label="look along the sheet">edge</button>' : '') + '<span class="zl"></span>');
+    wrap.appendChild(tools);
+    const R = { node, issues: [], later: [], past: new Set(), kind: 'space', w: 0, h: 0, leg: LEG, c: 1e9 };
+    const where = `slide ${ctx.index + 1} space`, scene = (ctx.deck.slides || [])[ctx.index] || {}, S = ctx.symbols || {};
+    const symOfV = v => typeof v === 'string' && /^[A-Za-z_]\w*$/.test(v) && S[v] ? S[v] : null;
+    // a position: a name or expression that gives 3 numbers, or a written triple of expressions
+    const pos = (v, sc, bad, what) => { const xv = Array.isArray(v) ? v.map(q => L.val(q, sc, where)) : L.val(v, sc, where);
+      if (Array.isArray(xv) && xv.length === 3 && xv.every(q => typeof q === 'number' && Number.isFinite(q))) return xv;
+      if (bad) bad.push(`${what} ${JSON.stringify(v)} is not 3 numbers`); return null; };
+    // what a mark draws, worked out at a scope: its kind, its points in space (`pts`, for sizing) and what drawing it needs
+    const geo = (mk, sc, bad) => { const k = kindOf(mk), q = (v, w) => pos(v, sc, bad, w), g = { k, pts: [] };
+      if (k === 'points') { const P = mk.points || {}, rows = list(L.val(P.from, sc, where));
+        g.rows = rows.map(r => ({ r, at: r && typeof r === 'object' ? pos(r[P.at], sc) : null })).filter(row => row.at); g.pts = g.rows.map(row => row.at);
+        if (bad && g.rows.length < rows.length) bad.push(`${rows.length - g.rows.length} of ${rows.length} rows of ${P.from} have no 3 numbers under \`${P.at}\``); }
+      else if (k === 'point' || k === 'ring' || k === 'text') { g.p = q(k === 'text' ? mk.at : mk[k], k === 'text' ? 'text at' : k); if (g.p) g.pts = [g.p]; }
+      else if (k === 'vector') { g.o = mk.from != null ? q(mk.from, 'from') : [0, 0, 0]; const v = q(mk.vector, 'vector'); if (g.o && v) { g.e = vadd(g.o, v); g.pts = [g.o, g.e]; } }
+      else if (k === 'segment') { [g.a, g.b] = list(mk.segment).map(x => q(x, 'segment end')); if (g.a && g.b) g.pts = [g.a, g.b]; }
+      else if (k === 'sheet') { const [U, V] = list(mk.sheet).map(x => q(x, 'sheet vector')), ab = [...list(mk.min ?? [0, 0]), ...list(mk.max)].map(x => L.val(x, sc, where));
+        if (U && V && ab.length === 4 && ab.every(Number.isFinite)) { Object.assign(g, { U, V, ab, thin: !span(U, V), at: (a, b) => vadd(vmul(U, a), vmul(V, b)) }); g.pts = [g.at(ab[0], ab[1]), g.at(ab[2], ab[1]), g.at(ab[2], ab[3]), g.at(ab[0], ab[3])];
+          if (g.thin && bad) bad.push(`its two vectors are zero or nearly point the same way (sine of their angle under ${THIN}): the sheet is a line, and \`edge\` cannot look along it`); } }
+      else if (k === 'foot') { const F = mk.foot || {}, P = q(F.from, 'foot from'), ws = (Array.isArray(F.onto) && F.onto.length === 2 ? F.onto : [F.onto]).map(x => q(x, 'foot onto'));
+        if (P && ws.every(Boolean)) { const f = footOn(P, ws[0], ws[1]); if (f && f.every(Number.isFinite)) Object.assign(g, { P, f, ws, pts: [P, f] });
+          else if (bad) bad.push(ws[1] ? `it drops onto two vectors that are zero or nearly point the same way (sine of their angle under ${THIN}), so their plane cannot be trusted: no drop is drawn` : 'it drops onto a zero vector: no drop is drawn'); } }
+      return g; };
+
+    // the axes: from 0 (lower if a mark goes below 0) to just past the farthest point any mark reaches, rounded up to the floor
+    // grid's step. Each control takes 5 evenly spaced values on its step (a toggle its 2); all combinations when they are 4096
+    // or fewer, else every corner (up to 10 controls), each control's values alone and 2000 combinations drawn with a fixed
+    // seed. A later redraw that still finds a mark outside warns (R.past). An axis no mark leaves 0 on gets the longest's length
+    const ctls = list(scene.controls).filter(c => c && c.name != null && Number.isFinite(+c.min) && Number.isFinite(+c.max)), v0 = c => +(c.value ?? c.min);
+    const valsOf = c => { const a = +c.min, b = +c.max, st = +c.step > 0 ? +c.step : 0;
+      return [...new Set([0, 1, 2, 3, 4].map(k => { const v = a + (b - a) * k / 4; return +(st ? Math.min(b, a + Math.round((v - a) / st) * st) : v).toFixed(12); }))]; };
+    const axesOf = () => { const n = ctls.length, lo = [0, 0, 0], hi = [0, 0, 0], V = ctls.map(valsOf), all = V.reduce((s, v) => s * v.length, 1);
+      let sets = [];
+      if (all <= 4096) sets = Array.from({ length: all }, (_, m) => V.map(v => { const x = v[m % v.length]; m = Math.floor(m / v.length); return x; }));
+      else { let seed = 20251109; const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+        if (n <= 10) sets = Array.from({ length: 2 ** n }, (_, m) => ctls.map((c, j) => m >> j & 1 ? +c.max : +c.min));
+        V.forEach((v, j) => v.forEach(x => sets.push(ctls.map((d, q) => q === j ? x : v0(d)))));
+        for (let r = 0; r < 2000; r++) sets.push(V.map(v => v[Math.floor(rnd() * v.length)])); }
+      [...sets, ctls.map(v0)].forEach(vs => { const sc = L.scope(ctx.scope, {}); ctls.forEach((c, j) => { sc[c.name] = vs[j]; }); L.derive(sc, scene.derive, where);
+        marks.forEach(({ mk }) => geo(mk, sc).pts.forEach(pt => pt.forEach((v, a) => { if (Number.isFinite(v)) { lo[a] = Math.min(lo[a], v); hi[a] = Math.max(hi[a], v); } }))); });
+      const most = Math.max(...hi.map((v, a) => v - lo[a])) || 1; hi.forEach((v, a) => { if (!(v - lo[a] > 1e-12 * most)) hi[a] = lo[a] + most; });
+      const big = Math.max(...hi.map((v, a) => v - lo[a])), nice = q => [1, 2, 5, 10].map(m => m * 10 ** Math.floor(Math.log10(q))).find(s => s >= q - 1e-12);
+      const grid = nice(big / 14), tick = nice(big / 6), r = v => +v.toFixed(10), own = p.max != null ? list(p.max).map(x => L.val(x, ctx.scope, where)) : null;
+      const top = own && own.length === 3 && own.every(Number.isFinite) ? own : hi.map(v => r(Math.ceil(v / grid - 1e-9) * grid)), bot = lo.map(v => r(Math.floor(v / grid + 1e-9) * grid));
+      return { lo: bot, hi: top, grid, tick, own: !!own, unit: Math.max(...top.map((v, a) => v - bot[a])) / OD0 }; };
+
+    // the view: yaw, pitch, scale (pixels per unit) and pan. Fitted, the axes box fills the figure; turning keeps the scale
+    // pp is how much perspective there is: 1 (mild) normally, 0 in the edge view, where only a camera at infinity sees a plane
+    // as a line; the first turn after it glides back to 1
+    const vw = { yaw: HOME[0], pitch: HOME[1], S: 1, ox: 0, oy: 0, vy: 0, vp: 0, pp: 1 };
+    let box = null, W = 0, HT = 0, fitS = 1, mid = [0, 0, 0], G = [], hot = null, hotBy = null, raf = 0, tween = null, drag = null, toPP = false;
+    const orbit = (q0, yw, pt) => { const y = yw * RAD, t = pt * RAD, q = vsub(q0, mid), x1 = q[0] * Math.cos(y) - q[1] * Math.sin(y), y1 = q[0] * Math.sin(y) + q[1] * Math.cos(y);
+      return { sx: x1, sy: q[2] * Math.cos(t) + y1 * Math.sin(t), d: (y1 * Math.cos(t) - q[2] * Math.sin(t)) / box.unit }; };   // d > 0 is away from the viewer
+    const proj = q => { const o = orbit(q, vw.yaw, vw.pitch), k = FOCAL / (FOCAL + o.d * vw.pp);
+      return { x: W / 2 + vw.ox + o.sx * k * vw.S, y: HT / 2 + vw.oy - o.sy * k * vw.S, d: o.d, k: k * (1 - .08 * o.d * vw.pp), fade: Math.max(.5, Math.min(1, 1 - .28 * o.d)) }; };
+    const fitFor = (yaw, pitch, pp = vw.pp) => { let u0 = 1e9, u1 = -1e9, w0 = 1e9, w1 = -1e9;
+      for (const a of [box.lo[0], box.hi[0]]) for (const b of [box.lo[1], box.hi[1]]) for (const c of [box.lo[2], box.hi[2]]) { const o = orbit([a, b, c], yaw, pitch), k = FOCAL / (FOCAL + o.d * pp);
+        u0 = Math.min(u0, o.sx * k); u1 = Math.max(u1, o.sx * k); w0 = Math.min(w0, o.sy * k); w1 = Math.max(w1, o.sy * k); }
+      const s = Math.min((W - 140) / (u1 - u0 || 1), (HT - 68) / (w1 - w0 || 1)); return { yaw, pitch, pp, S: s, ox: -s * (u0 + u1) / 2, oy: s * (w0 + w1) / 2 }; };
+    // look along the first sheet, so it shows as a line and a drop onto it meets it at a right angle: of the directions in the
+    // sheet (every half degree round it), the one whose pitch is allowed and nearest a gentle 15°, then nearest the yaw now.
+    // A view direction D = (sin yaw·cos pitch, cos yaw·cos pitch, −sin pitch)
+    const edgeView = () => { const g = G.find(q => q && q.k === 'sheet' && q.U && !q.thin), B = g && span(g.U, g.V); if (!B) return null; let best = null;
+      for (let a = 0; a < 720; a++) { const th = a / 2 * RAD, D = vadd(vmul(B[0], Math.cos(th)), vmul(B[1], Math.sin(th))), t = Math.asin(Math.max(-1, Math.min(1, -D[2]))) / RAD;
+        if (t < PMIN || t > PMAX || Math.abs(D[2]) > .99999) continue; const y = Math.atan2(D[0], D[1]) / RAD, s = Math.abs(t - 15) + .001 * Math.abs(((y - vw.yaw) % 360 + 540) % 360 - 180);
+        if (!best || s < best[2]) best = [y, t, s]; }
+      return best && best.slice(0, 2); };
+
+    // ---- drawing: every piece is [depth, svg, mark], sorted far to near; the floor first, ticks, names and hit areas on top
+    const n1 = v => v.toFixed(1), lineS = (u0, u1, sty) => `<line x1="${n1(u0.x)}" y1="${n1(u0.y)}" x2="${n1(u1.x)}" y2="${n1(u1.y)}" style="${sty}"/>`;
+    const ptsS = qs => qs.map(z => n1(z.x) + ',' + n1(z.y)).join(' ');
+    const draw = () => {
+      if (!box || W < 40) return;
+      const out = [], dots = [], segs = [], u = box.unit, put = (d, s, m) => out.push([d, s, m]);
+      const seg = (a, b, n, sty, m, w) => { for (let j = 0; j < n; j++) { const p0 = proj(vlerp(a, b, j / n)), p1 = proj(vlerp(a, b, (j + 1) / n)); put((p0.d + p1.d) / 2, lineS(p0, p1, sty), m); }
+        const p0 = proj(a), p1 = proj(b); segs.push([p0.x, p0.y, p1.x, p1.y, w]); };
+      const dot = (q, r, sty, m, dz = 0) => { const p0 = proj(q); dots.push([p0.x, p0.y, r * p0.k + 2]); put(p0.d - dz, `<circle cx="${n1(p0.x)}" cy="${n1(p0.y)}" r="${n1(r * p0.k)}" style="${sty};opacity:${p0.fade.toFixed(2)}"/>`, m); };
+      const [x0, y0] = box.lo, [xh, yh] = box.hi, F0 = (x, y) => proj([x, y, 0]);
+      let back = `<polygon points="${ptsS([F0(x0, y0), F0(xh, y0), F0(xh, yh), F0(x0, yh)])}" style="fill:rgba(255,255,255,.025);stroke:var(--line-dim);stroke-width:1"/>`;
+      for (let v = x0 + box.grid; v < xh - 1e-6; v += box.grid) back += lineS(F0(v, y0), F0(v, yh), 'stroke:var(--grid);stroke-width:.8');
+      for (let v = y0 + box.grid; v < yh - 1e-6; v += box.grid) back += lineS(F0(x0, v), F0(xh, v), 'stroke:var(--grid);stroke-width:.8');
+      [0, 1, 2].forEach(a => { const e0 = [0, 0, 0], e1 = [0, 0, 0]; e0[a] = box.lo[a]; e1[a] = box.hi[a]; seg(e0, e1, 8, 'stroke:var(--mist);stroke-width:1.5;stroke-linecap:square', null, 3); });
+      const on = G.filter(g => g && g.st <= R.c);
+      on.forEach(g => { const { mk, i: m, c } = g;
+        if (g.k === 'sheet' && g.U) { const N = 6, [a0, b0, a1, b1] = g.ab;
+          for (let p1 = 0; p1 < N; p1++) for (let q1 = 0; q1 < N; q1++) {
+            const A0 = a0 + (a1 - a0) * p1 / N, A1 = a0 + (a1 - a0) * (p1 + 1) / N, B0 = b0 + (b1 - b0) * q1 / N, B1 = b0 + (b1 - b0) * (q1 + 1) / N;
+            const qs = [g.at(A0, B0), g.at(A1, B0), g.at(A1, B1), g.at(A0, B1)].map(proj), hm = (p1 + .5) / N, em = (q1 + .5) / N, w = hm / (hm + em);
+            put(qs.reduce((sum, z) => sum + z.d, 0) / 4 + .004, `<polygon points="${ptsS(qs)}" style="fill:rgba(${g.cV.map((v, j) => Math.round(v + (g.cU[j] - v) * w)).join(',')},${(.05 + .1 * Math.max(hm, em)).toFixed(3)})"/>`, m); }
+          g.pts.forEach((z, j) => seg(z, g.pts[(j + 1) % 4], N, 'stroke:var(--mist);stroke-width:1.3;stroke-opacity:.75', m, 2)); }
+        else if (g.k === 'vector' && g.e) { const L0 = vlen(vsub(g.e, g.o)); if (L0 < 1e-12) return;
+          seg(g.o, vlerp(g.o, g.e, Math.max(0, 1 - .09 * u / L0)), 6, `stroke:${c};stroke-width:3;stroke-linecap:round`, m, 8);
+          const tip = proj(g.e), bk = proj(vlerp(g.o, g.e, Math.max(0, 1 - .1 * u / L0))), q = Math.hypot(tip.x - bk.x, tip.y - bk.y) || 1, dx = (tip.x - bk.x) / q, dy = (tip.y - bk.y) / q, hl = 16 * tip.k, hw = 7 * tip.k, bx = tip.x - dx * hl, by = tip.y - dy * hl;
+          put(tip.d - .001, `<polygon points="${n1(tip.x)},${n1(tip.y)} ${n1(bx - dy * hw)},${n1(by + dx * hw)} ${n1(bx + dy * hw)},${n1(by - dx * hw)}" style="fill:${c}"/>`, m); }
+        else if (g.k === 'points') g.rows.forEach(row => dot(row.at, 5.5, `fill:${row.hex};stroke:var(--ink);stroke-opacity:.55;stroke-width:1.1`, m));
+        else if (g.k === 'point' && g.p) { if (mk.ring === true) dot(g.p, 12.5, `fill:none;stroke:${g.rc};stroke-width:2.4`, m, .001); dot(g.p, 8, `fill:${c};stroke:var(--ink);stroke-opacity:.55;stroke-width:1.1`, m, .002); }
+        else if (g.k === 'ring' && g.p) dot(g.p, 11.5, `fill:none;stroke:${c};stroke-width:2`, m, .0005);
+        else if (g.k === 'segment' && g.a) seg(g.a, g.b, 6, `stroke:${c};stroke-width:2.2${mk.dash ? ';stroke-dasharray:6 4' : ''}`, m, 3);
+        else if (g.k === 'foot' && g.f) { const r = vsub(g.P, g.f), n = vlen(r), pa = proj(g.P), pb = proj(g.f);
+          if (n >= .015 * u) { put((pa.d + pb.d) / 2, lineS(pa, pb, `stroke:${c};stroke-width:2.2;stroke-dasharray:6 4`), m); segs.push([pa.x, pa.y, pb.x, pb.y, 3]); }
+          if (n >= .02 * u) { const ra = vmul(r, .1 * u / n), fl = vlen(g.f), rb = vmul(fl > 1e-9 ? g.f : g.ws[0], -.1 * u / (fl > 1e-9 ? fl : vlen(g.ws[0]))), qs = [vadd(g.f, ra), vadd(vadd(g.f, ra), rb), vadd(g.f, rb)].map(proj);
+            put(qs[1].d, `<polyline points="${ptsS(qs)}" style="fill:none;stroke:${g.c2};stroke-width:1.6"/>`, m); }
+          dot(g.f, 4.7, `fill:var(--bg);stroke:${c};stroke-width:2`, m, .001); } });
+      out.sort((a, b) => b[0] - a[0]);
+      const lit = (str, m) => m != null && m === hot ? str.replace(/^<(\w+) /, '<$1 class="lit" ').replace('style="', `style="--hg:${G[m].hg};`) : str;
+      // tick numbers along each axis, every `tick`, and the boxes the names must clear
+      let top = ''; const o0 = proj([0, 0, 0]), placed = [], dec = box.tick < 1 ? Math.max(1, -Math.floor(Math.log10(box.tick) + 1e-9)) : 0;
+      [0, 1, 2].forEach(a => { for (let v = Math.ceil(box.lo[a] / box.tick - 1e-9) * box.tick; v <= box.hi[a] - box.grid + 1e-9; v += box.tick) { if (Math.abs(v) < 1e-9) continue;
+        const q = [0, 0, 0]; q[a] = v; const pt = proj(q), L1 = Math.hypot(pt.x - o0.x, pt.y - o0.y) || 1, dx = (pt.x - o0.x) / L1 * Math.sign(v), dy = (pt.y - o0.y) / L1 * Math.sign(v);
+        let nx = -dy, ny = dx; if (ny < 0 || (Math.abs(ny) < .2 && nx > 0)) { nx = -nx; ny = -ny; }
+        const tx = pt.x + nx * 16, ty = pt.y + ny * 16 + 4; top += lineS(pt, { x: pt.x + nx * 5, y: pt.y + ny * 5 }, 'stroke:var(--mist);stroke-width:1') + `<text class="stk" x="${n1(tx)}" y="${n1(ty)}" text-anchor="middle">${v.toFixed(dec)}</text>`;
+        placed.push({ x: tx - 13, y: ty - 13, w: 26, h: 16 }); } });
+      // a name in a plain word with a halo in the ground colour: the first spot round its anchor that covers no mark, number or name
+      const cross = (q, r) => { let t0 = 0, t1 = 1; const dx = q[2] - q[0], dy = q[3] - q[1], ps = [-dx, dx, -dy, dy], qs = [q[0] - r.x, r.x + r.w - q[0], q[1] - r.y, r.y + r.h - q[1]];
+        for (let j = 0; j < 4; j++) { if (!ps[j]) { if (qs[j] < 0) return false; continue; } const t = qs[j] / ps[j]; if (ps[j] < 0) { if (t > t1) return false; t0 = Math.max(t0, t); } else { if (t < t0) return false; t1 = Math.min(t1, t); } } return true; };
+      const clear = r => r.x >= 6 && r.y >= 6 && r.x + r.w <= W - 60 && r.y + r.h <= HT - 6 && !placed.some(q => r.x < q.x + q.w + 5 && q.x < r.x + r.w + 5 && r.y < q.y + q.h + 3 && q.y < r.y + r.h + 3)
+        && !dots.some(([cx, cy, cr]) => Math.hypot(cx - Math.max(r.x, Math.min(cx, r.x + r.w)), cy - Math.max(r.y, Math.min(cy, r.y + r.h))) < cr + 1)
+        && !segs.some(q => cross(q, { x: r.x - q[4] / 2 - 3, y: r.y - q[4] / 2 - 3, w: r.w + q[4] + 6, h: r.h + q[4] + 6 }));
+      const crowd = [], label = (t, q, pref, cls, fs, centre) => { const pt = proj(q), w = tw(t, fs) + 2, hh = fs + 2; let best = null;
+        for (const dist of centre ? [-1, 8, 20, 34] : [6, 14, 26, 40]) { for (let j = 0; j < 16 && !best; j++) { const an = pref + (j % 2 ? 1 : -1) * Math.ceil(j / 2) * Math.PI / 8;
+            const r = dist < 0 ? { x: pt.x - w / 2, y: pt.y - hh / 2, w, h: hh } : { x: pt.x + Math.cos(an) * (dist + w / 2) - w / 2, y: pt.y + Math.sin(an) * (dist + hh / 2) - hh / 2, w, h: hh }; if (clear(r)) best = r; } if (best) break; }
+        if (!best) { crowd.push(t); best = { x: pt.x + 8, y: pt.y - hh / 2, w, h: hh }; } placed.push(best);
+        top += `<text class="${cls}" x="${n1(best.x + 1)}" y="${n1(best.y + fs * .86)}">${L.esc(t)}</text>`; };
+      [0, 1, 2].forEach(a => { if (!axn[a]) return; const e = [0, 0, 0]; e[a] = box.hi[a]; const pt = proj(e); label(axn[a], e, Math.atan2(pt.y - o0.y, pt.x - o0.x), 'sax', 15); });
+      on.forEach(g => { if (g.k === 'text' && g.p) label(L.plain(String(g.mk.text), ctx.scope), g.p, -Math.PI / 4, 'stx', 16, true); });
+      // the hit areas, see-through, over everything: the sheet, then lines, then dots, so a dot wins over the sheet it sits on
+      const hit = (m, str) => str.replace(/^<(\w+) /, `<$1 class="shit vt says" data-m="${m}" data-vk="sp${no}-${m}" `);
+      let hits = '';
+      [['sheet'], ['vector', 'segment', 'foot'], ['points', 'point', 'ring']].forEach(ks => on.forEach(g => { if (!g.card || !ks.includes(g.k)) return;
+        if (g.k === 'sheet' && g.U) hits += hit(g.i, `<polygon points="${ptsS(g.pts.map(proj))}" style="fill:transparent;stroke:none"/>`);
+        else if (g.k === 'vector' && g.e) hits += hit(g.i, lineS(proj(g.o), proj(g.e), 'stroke:transparent;stroke-width:14'));
+        else if (g.k === 'segment' && g.a) hits += hit(g.i, lineS(proj(g.a), proj(g.b), 'stroke:transparent;stroke-width:14'));
+        else if (g.k === 'foot' && g.f) hits += hit(g.i, lineS(proj(g.P), proj(g.f), 'stroke:transparent;stroke-width:14'));
+        else (g.k === 'points' ? g.pts : g.p ? [g.p] : []).forEach(q => { const pt = proj(q); hits += hit(g.i, `<circle cx="${n1(pt.x)}" cy="${n1(pt.y)}" r="${g.k === 'points' ? 8 : 13}" style="fill:transparent;stroke:none"/>`); }); }));
+      const html = back + out.map(([, s, m]) => lit(s, m)).join('') + top + hits; svg.innerHTML = html;
+      svg.querySelectorAll('.shit').forEach(e => { e._pd = G[+e.dataset.m].pd; });
+      R.issues = R.base.concat(/NaN|Infinity/.test(html) ? ['the space drew a point that is not a number'] : [], crowd.length ? [`the space's name${crowd.length > 1 ? 's' : ''} ${crowd.map(t => `"${t}"`).join(', ')} cover${crowd.length > 1 ? '' : 's'} a mark at this view`] : []);
+      tools.querySelector('.zl').textContent = Math.round(100 * vw.S / fitS) + '%'; };
+
+    // ---- motion: draw only when something changed; a short glide after a drag (none with reduced motion); a tween to a view
+    const clampP = q => Math.max(PMIN, Math.min(PMAX, q)), req = () => { if (!raf) raf = requestAnimationFrame(frame); };
+    function frame(now) { raf = 0;
+      if (tween) { const q = Math.max(0, Math.min(1, (now - tween.t0) / 480)), e = q < .5 ? 2 * q * q : 1 - (-2 * q + 2) ** 2 / 2;
+        ['yaw', 'pitch', 'S', 'ox', 'oy', 'pp'].forEach(k => { vw[k] = tween.a[k] + (tween.b[k] - tween.a[k]) * e; }); if (q < 1) req(); else tween = null; }
+      if (toPP && !tween) { vw.pp = REDUCED ? 1 : Math.min(1, vw.pp + .05); if (vw.pp < 1) req(); else toPP = false; }
+      else if (!drag && (Math.abs(vw.vy) > .02 || Math.abs(vw.vp) > .02)) { vw.yaw += vw.vy; vw.pitch = clampP(vw.pitch + vw.vp); vw.vy *= .92; vw.vp *= .92; req(); }
+      else if (!drag) vw.vy = vw.vp = 0;
+      draw(); }
+    const goTo = v => { vw.vy = vw.vp = 0; const b = { ...v, yaw: vw.yaw + (((v.yaw - vw.yaw) % 360 + 540) % 360 - 180) };   // the short way round
+      if (REDUCED) { tween = null; Object.assign(vw, b); req(); return; } tween = { a: { ...vw }, b, t0: performance.now() }; req(); };
+    const fitNow = (yaw = vw.yaw, pitch = vw.pitch, pp = vw.pp) => { if (!box) return; const v = fitFor(yaw, pitch, pp); fitS = v.S; toPP = false; goTo(v); };
+    const turned = () => { if (vw.pp < 1) { toPP = true; req(); } };   // leaving the edge view: perspective comes back
+    // zoom toward a point in the figure: up to 400%; down to the fitted size, or to 50% by pinch, ctrl / ⌘ + scroll or the buttons
+    const zoomBy = (f, cx = W / 2, cy = HT / 2, least = .5) => { const S2 = Math.max(Math.min(vw.S, fitS * least), Math.min(fitS * 4, vw.S * f)); f = S2 / vw.S;
+      vw.ox = (cx - W / 2) - (cx - W / 2 - vw.ox) * f; vw.oy = (cy - HT / 2) - (cy - HT / 2 - vw.oy) * f; vw.S = S2; tween = null; req(); };
+    const setHot = (m, by) => { if (m == null && hotBy !== by) return; if (hot === m) return; hot = m; hotBy = m == null ? null : by; req(); };
+    const local = e => { const b = wrap.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    // a drag turns it: no text selection, no focus ring and no highlight from the mouse; the hit areas let go while it turns
+    wrap.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('.stools')) return; e.preventDefault();
+      drag = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: performance.now(), moved: false, id: e.pointerId }; vw.vy = vw.vp = 0; tween = null; });
+    // the drawing is redrawn under the pointer, so the page never hears it leave a mark: close this figure's own card here
+    const figCard = () => cur && cur !== pinned && cur.classList.contains('shit') && (cur.dataset.vk || '').startsWith(`sp${no}-`);
+    wrap.addEventListener('pointermove', e => {
+      if (drag && e.buttons === 0) end();   // the button came up where this figure could not hear it
+      if (!drag) { const ht = e.target.closest('.stools') ? null : e.target.closest('.shit'); setHot(ht ? +ht.dataset.m : null, 'fig');
+        if (figCard() && (!ht || ht.dataset.vk !== cur.dataset.vk)) { popHide(); if (ht && !hoverOff) popShow(ht); } return; }
+      if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 4) return;
+      if (!drag.moved) { drag.moved = true; wrap.classList.add('drag'); try { wrap.setPointerCapture(drag.id); } catch (_) { /* a synthetic pointer */ } if (cur && node.contains(cur)) popHide(); setHot(null, hotBy); }
+      turned(); const dx = e.clientX - drag.x, dy = e.clientY - drag.y; vw.yaw += dx * .4; vw.pitch = clampP(vw.pitch + dy * .3); vw.vy = dx * .4; vw.vp = dy * .3;
+      drag.x = e.clientX; drag.y = e.clientY; drag.t = performance.now(); req(); });
+    function end() { if (!drag) return; if (!drag.moved || REDUCED || performance.now() - drag.t > 90) vw.vy = vw.vp = 0; drag = null; wrap.classList.remove('drag'); req(); }
+    // a press is only a drag while the button is down: a release anywhere, or the window losing focus, ends it
+    wrap.addEventListener('pointercancel', end); window.addEventListener('pointerup', end); window.addEventListener('blur', end);
+    wrap.addEventListener('pointerleave', () => { if (!drag) { setHot(null, 'fig'); if (figCard()) popHide(); } });
+    // a plain scroll zooms toward the pointer; at the fitted size a scroll down goes on to the page, so reading down never sticks here
+    wrap.addEventListener('wheel', e => { const mod = e.ctrlKey || e.metaKey, dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+      if (!mod && dy > 0 && vw.S <= fitS * 1.001) return; e.preventDefault(); const [x, y] = local(e); zoomBy(Math.exp(-dy * (e.ctrlKey ? .01 : .002)), x, y, mod ? .5 : 1); }, { passive: false });
+    wrap.addEventListener('dblclick', e => { if (!e.target.closest('.stools')) fitNow(); });
+    wrap.addEventListener('keydown', e => { if (e.metaKey || e.ctrlKey || e.altKey || e.target !== wrap) return; const k = { ArrowLeft: [-8, 0], ArrowRight: [8, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[e.key];
+      if (k) { vw.yaw += k[0]; vw.pitch = clampP(vw.pitch + k[1]); tween = null; turned(); req(); }
+      else if (e.key === '+' || e.key === '=') zoomBy(1.2); else if (e.key === '-' || e.key === '_') zoomBy(1 / 1.2); else if (e.key === '0') fitNow(); else return;
+      e.preventDefault(); e.stopPropagation(); });   // the page's ← → step a figure: here they turn this one
+    tools.addEventListener('pointerdown', e => e.preventDefault());   // a button pressed by mouse takes no focus ring
+    tools.addEventListener('click', e => { const b = e.target.closest('button'), z = b && b.dataset.z;
+      if (z === 'in') zoomBy(1.25); else if (z === 'out') zoomBy(1 / 1.25); else if (z === 'fit') fitNow(...HOME, 1); else if (z === 'edge') { const ev = edgeView(); if (ev) fitNow(...ev, 0); } });
+
+    // ---- sizing and the marks at the current values
+    // the figure is 4:3, sized like a plane: from the layout's width and height limit
+    R.size = room => { const ah = room.h - PAD - R.leg, aw = aim(room, ah) - PAD, ww = Math.max(40, Math.min(aw, ah * SHAPE3));
+      R.w = Math.round(ww); R.h = Math.round(ww / SHAPE3); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
+    R.show = c => { R.c = c; leg.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= c)); draw(); };
+    R.layout = () => {
+      leg.innerHTML = ''; R.later = []; const base = R.base = [];
+      if (R.w < 40 || R.h < 40) { R.issues = ['the picture has no room']; return false; }
+      if (!box) box = axesOf(); mid = box.lo.map((v, a) => (v + box.hi[a]) / 2);
+      if (R.w !== W || R.h !== HT) { const keep = W ? vw.S / fitS : 1; W = R.w; HT = R.h; svg.setAttribute('viewBox', `0 0 ${W} ${HT}`);
+        const v = fitFor(vw.yaw, vw.pitch); fitS = v.S; Object.assign(vw, { S: v.S * keep, ox: v.ox * keep, oy: v.oy * keep }); }
+      G = marks.map(({ mk, i }) => { const k = kindOf(mk), w = `space mark ${i + 1}`;
+        if (!k) { base.push(`${w} is none of ${SPACE.join(', ')}`); return null; }
+        if (mk.when != null && !L.val(mk.when, ctx.scope, where)) return null;
+        const bad = [], g = Object.assign(geo(mk, ctx.scope, bad), { mk, i, st: mk.step != null ? clickOf(mk.step) : at }); base.push(...bad.map(b => `${w} (${k}): ${b}`));
+        // a mark outside the axes at the values now: remembered, so the check warns even after the slider moves back
+        const tol = 1e-9 * Math.max(...box.hi.map((v, a) => v - box.lo[a]));
+        if (g.pts.some(q => q.some((v, a) => v > box.hi[a] + tol || v < box.lo[a] - tol))) R.past.add(box.own ? `${w} (${k}) reaches past the axes' \`max\`: widen it, or leave \`max\` out so the kit sizes the axes`
+          : `${w} (${k}) reaches past the axes at ${ctls.map(c => `${c.name} = ${L.fmt(ctx.scope[c.name], 3)}`).join(', ')}, a value the kit's sizing did not try: give the space \`max: [x, y, z]\``);
+        const sym = symOfV(k === 'text' ? null : mk[k]), spec = mk.rgb ?? (mk.points || {}).rgb, c = col(mk.color ?? (sym && sym.color && sym.color !== 'ink' ? sym.color : SDEF[k]));
+        // a dot's true colour: `rgb: od` from optical density; `rgb: 10` reads x, y, z as red, green, blue, full at 10; `{r, g, b, max}` (row keys on points)
+        const hx = (q, row) => { let lv, mx = 1; if (spec === 'od') return odHex(q);
+          if (spec && typeof spec === 'object') { lv = ['r', 'g', 'b'].map(ch => spec[ch] == null ? 0 : row ? row[spec[ch]] : L.val(spec[ch], ctx.scope, where)); mx = spec.max == null ? 1 : L.val(spec.max, ctx.scope, where); }
+          else { lv = q; mx = L.val(spec, ctx.scope, where); }
+          if (![...lv, mx].every(Number.isFinite) || !(mx > 0)) { base.push(`${w} (${k}): its rgb does not work out to numbers with a max above 0`); return '#000000'; } return toHex(lv, mx); };
+        g.c = k === 'point' && spec != null && g.p ? hx(g.p) : c; if (k === 'points') g.rows.forEach(row => { row.hex = spec != null ? hx(row.at, row.r) : c; });
+        g.rc = mk.color != null ? c : 'var(--accent)'; g.c2 = mk.color != null ? c : 'var(--accent-hi)';
+        if (k === 'sheet') { const [su, sv2] = list(mk.sheet).map(symOfV), cs = q => cssRGB(mk.color != null ? c : q && q.color && q.color !== 'ink' ? col(q.color) : 'var(--mist)'); g.cU = cs(su); g.cV = cs(sv2); }
+        g.lk = k === 'vector' ? 'arrow' : k === 'sheet' ? 'area' : k === 'foot' || (k === 'segment' && mk.dash) ? 'dash' : k === 'segment' ? 'line' : k === 'ring' || mk.ring === true ? 'ring' : 'dot';
+        g.lc = mk.ring === true ? g.rc : k === 'sheet' && mk.color == null ? 'var(--mist)' : k === 'points' && spec != null ? 'var(--mist)' : g.c;
+        const cc = g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc; g.hg = glowOf(cc);
+        // a colour word in a true-coloured mark's label must fit the colour drawn (checked once the mark shows)
+        if (spec != null && mk.label) { const wrong = (k === 'points' ? g.rows.map(row => row.hex) : [g.c]).map(hc => [hc, wrongWords(mk.label, hc)]).find(([, b]) => b.length);
+          if (wrong) R.later.push({ st: g.st, msg: `${w}: label “${mk.label}” says ${wrong[1][0]}, but its colour reads as ${readAs(hsvOf(wrong[0]))} (${wrong[0]})` }); }
+        g.says = mk.says ?? (sym && sym.says); g.card = !!(mk.label || g.says);
+        const f2 = xs => `(${xs.map(v => L.fmt(v, 2)).join(', ')})`;
+        g.pd = () => { const q = G[i] || g, val = q.k === 'point' || q.k === 'ring' ? q.p && f2(q.p) : q.k === 'vector' ? q.e && f2(vsub(q.e, q.o)) : q.k === 'foot' && q.f ? L.fmt(vlen(vsub(q.P, q.f)), 's3') : null;
+          return { swatch: swatch(g.lk, g.lc), c: cc, name: mk.label ?? null, says: g.says, value: val ?? null, shape: q.k === 'point' || q.k === 'ring' ? 'one point' : q.k === 'foot' ? 'its length' : null, scope: ctx.scope }; };
+        return g; });
+      // the legend: one entry per mark with a `label`; pointing at it (or the mark) lights the mark and opens its card
+      G.forEach(g => { if (!g || g.mk.label == null) return; const ent = h('span', 'pk ' + g.lk), lab = h('span', '', md(String(g.mk.label))); ent.style.setProperty('--c', g.lc); ent.append(h('i'), lab);
+        if (g.st > at) { ent.dataset.step = g.st; ent.classList.toggle('shown', g.st <= R.c); } leg.appendChild(ent);
+        ['pointerenter', 'focusin'].forEach(ev => ent.addEventListener(ev, () => setHot(g.i, 'leg'))); ['pointerleave', 'focusout'].forEach(ev => ent.addEventListener(ev, () => setHot(null, 'leg')));
+        if (g.card) { lab.classList.add('says', 'vt'); lab.tabIndex = 0; lab.dataset.vk = `sp${no}-${g.i}-k`; glow(lab, g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc);
+          lab.setAttribute('aria-description', L.plain(String(g.says ?? g.mk.label), ctx.scope)); lab._pd = g.pd; pauseButton(); } });
+      leg.appendChild(h('span', 'shint', 'drag to turn · scroll to zoom'));
+      L.fill(leg, ctx.scope); base.push(...R.past); R.issues = base; draw();
+      const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
+    return R;
+  }
+
   // ---------- how much room a figure gets ----------
   const FIG = 520, SIDE = 300, GAP = 20, UNDER = 1280, READ = 1100;   // beside needs 520 px of figure and 300 of side column; a wide figure's column is 1100, and a figure in it may reach 1280
   const sideOf = W => Math.max(SIDE, Math.ceil(W * .3));              // the figure is sized from the 70%; the text then takes all that is left
@@ -446,7 +726,7 @@
     const lines = [], cols = [], vis = [], asm = [], thinks = [], stepEls = [], figs = [];
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
-    const isFig = it => it && (it.plane || SIDEVIS.some(k => it[k] != null));
+    const isFig = it => it && (it.plane || it.space || SIDEVIS.some(k => it[k] != null));
     const isWide = it => it && (it.assemble || it.compare || it.ops || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
@@ -557,6 +837,7 @@
       e.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
       return holder({ node: e, kind: 'track', issues: [], stops: [], w: 0, h: 0, size: room => { e.style.width = room.w + 'px'; return room.w; }, paint: () => {} }, at, f); };
     const planeFig = (p, at) => { const fg = plane(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => shown(fg.node, c); return holder(fg, at, p); };
+    const spaceFig = (p, at) => { const fg = space(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => fg.show(c); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
@@ -584,6 +865,7 @@
           `<div class="arow syms"><span class="atag">In symbols</span><div class="math"></div></div>`;
         asm.push({ a, e }); slot.appendChild(e); pending = e.querySelector('.abridge'); }
       else if (it.plane) { const fg = planeFig(it.plane, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
+      else if (it.space) { const fg = spaceFig(it.space, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
@@ -920,7 +1202,7 @@
         const out = [];
         missing.forEach(t => out.push(`mark target not found: ${t}`));
         figs.forEach(fg => { out.push(...(fg.issues || []), ...(fg.later || []).filter(e => e.st <= read).map(e => e.msg));
-          if (['plane', 'chart', 'image', 'units'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
+          if (['plane', 'space', 'chart', 'image', 'units'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
         node.querySelectorAll('.board .vis .chart').forEach(c => { const r = c.getBoundingClientRect(), q = r.width / (r.height || 1); if (q < 1 || q > 2.2) out.push(`a chart is ${Math.round(r.width)} × ${Math.round(r.height)} px: its shape must stay between 1:1 and 2.2:1, so set its \`ratio\``); });
         root.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { if (parseFloat(getComputedStyle(m).fontSize) < FLOOR) out.push(`a formula renders under ${FLOOR}px`); });
         node.querySelectorAll('table.t td').forEach(c => { if (parseFloat(getComputedStyle(c).fontSize) < 18) out.push('a table cell renders under 18px'); });

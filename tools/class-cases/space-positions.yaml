@@ -1,0 +1,23 @@
+# expect: space point is not 3 numbers
+# expect: space vector `w2` is not 3 numbers in the data
+# expect: space `axes` is 3 names
+# expect: space `max` is 3 numbers
+title: Positions in a space
+question: q?
+answer: a.
+data: {w2: [1, 2], u: [1, 0, 0]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: Bad positions
+    steps:
+      - say: Three marks.
+        add:
+          space:
+            axes: [x, y]
+            max: [1, 1]
+            marks:
+              - {point: [1, 2]}
+              - {vector: w2}
+              - {vector: u}

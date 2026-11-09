@@ -1,0 +1,22 @@
+# expect: space foot onto [u, v]: the two vectors are zero or nearly point the same way
+# expect: space sheet [u, v]: the two vectors are zero or nearly point the same way
+# expect: so their plane cannot be trusted: no drop is drawn
+# expect: the sheet is a line
+# Two vectors 1e-7 apart in angle span no plane the kit can trust: the lint warns from the data, and the page draws no drop.
+title: Two nearly equal directions
+question: q?
+answer: a.
+data: {u: [1, 0, 0], v: [1, 0.0000001, 0], q: [1, 1, 0]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A thin sheet
+    steps:
+      - say: Two directions that nearly agree.
+        add:
+          space:
+            axes: [x, y, z]
+            marks:
+              - {sheet: [u, v], max: [1, 1]}
+              - {foot: {from: q, onto: [u, v]}}

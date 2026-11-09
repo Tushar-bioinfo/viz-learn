@@ -15,6 +15,7 @@ r1 = lambda v: round(min(9.8, max(0.2, v)), 1)
 cells = [{"id": f"c{i + 1}", "cd3": r1(rng.gauss(6.0, 1.4)), "cd19": r1(rng.gauss(3.0, 1.2)), "cd4": r1(rng.gauss(4.5, 1.8))} for i in range(6)]
 for i, c in enumerate(cells):
     c["i"] = i + 1   # the cell number, for a picture with cells along x
+    c["m3"] = [c["cd3"], c["cd19"], c["cd4"]]   # the cell as a point in marker space, for the 3D figure
 cd3 = [c["cd3"] for c in cells]
 n = len(cd3)
 mean = lambda a: sum(a) / len(a)
@@ -96,6 +97,15 @@ data.update({
     "prof": prof, "mix": mix, "spot": [r[0] for r in matmul(prof, [[x] for x in mix])],
     "wts": W, "scores": matmul(data["cellmat"], W),
 })
+
+# the 3D figure: cells c1 and c2 as vectors, and how far c3 sits off the sheet of their mixes (the least-squares drop onto
+# the plane they span, written out for two vectors: c = (S^T S)^-1 S^T q with S = [a b])
+dot3 = lambda u, v: sum(x * y for x, y in zip(u, v))
+va, vb, vq = (cells[k]["m3"] for k in range(3))
+aa, ab, bb, qa, qb = dot3(va, va), dot3(va, vb), dot3(vb, vb), dot3(vq, va), dot3(vq, vb)
+det = aa * bb - ab * ab
+ka, kb = (bb * qa - ab * qb) / det, (aa * qb - ab * qa) / det
+data.update({"c1v": va, "c2v": vb, "c3v": vq, "c3_off": dot3(*[[q - ka * x - kb * y for q, x, y in zip(vq, va, vb)]] * 2) ** 0.5})
 
 (HERE / "data.json").write_text(json.dumps(data, indent=1) + "\n")
 

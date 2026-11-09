@@ -1,0 +1,25 @@
+# expect: builds
+# expect: not: reaches past the axes
+# A point that runs furthest mid-slider (x = 1 + 10·t·(1 − t) peaks at 3.5 when t = 0.5): the axes take in the peak, not
+# only the slider's ends. The check moves t to both ends; the peak itself is tested by the bench probe.
+title: A point that peaks mid-way
+question: How far does the point go?
+answer: Furthest half-way along the slider.
+symbols:
+  t: {tex: 't', says: how far along the path, short: path share, color: s4, fmt: 2}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A peak in the middle
+    lead: The point runs out and back as t grows.
+    controls:
+      - {name: t, min: 0, max: 1, step: 0.01, value: 0}
+    derive: {pq: '[1 + 10*t*(1 - t), 0.5, 0.5]'}
+    steps:
+      - say: 'At $t$ = {{t|2}} the point sits at x = {{at(pq, 0)|2}}; as $t$ grows it runs out and back.'
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {point: pq, label: point, says: the point at this t}
