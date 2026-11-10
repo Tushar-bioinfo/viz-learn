@@ -1,0 +1,26 @@
+# expect: not: is how many scenes one idea may fill
+# expect: not: an adv scene
+# C10g fix 1: a plain lesson (no `idea`) is not checked for `learner.depth`; it lints as before C10g.
+title: A point and a line
+learner: {goal: find the nearest point, depth: 9}
+question: Where does a point land on a line?
+answer: At the foot of the drop that meets the line at a right angle.
+data: {u: [1, 0, 0.2], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the direction of the line, short: direction u, kind: vector, color: s1, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: The nearest point on a line
+    lead: A point drops onto a line.
+    steps:
+      - say: The ==point== sits above the line along ==u==.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point}
+                - {foot: {from: q, onto: u}, label: drop, says: the shortest way to the line}
+      - say: Its drop meets the line at a right angle.

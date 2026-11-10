@@ -1,0 +1,26 @@
+# expect: ERR
+# expect: `==u==`: `u` names 2 marks in this scene (space mark 1, space mark 2): give the one you mean its own `id:`
+# C10e review: a key shared by two marks (a point labelled u, and the vector of symbol u) would light the first one; a link to it is an error.
+title: A point and two directions
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    steps:
+      - say: ==u== and ==point:a point== above it.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {point: q, color: s4, label: u, says: a point named u}
+                - {vector: u}
+                - {point: q, ring: true, label: point, says: the point}
+      - say: The point sits above the arrow.

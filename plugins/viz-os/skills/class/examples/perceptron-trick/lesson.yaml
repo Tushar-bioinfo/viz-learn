@@ -66,7 +66,7 @@ slides:
     title: Start from a bad line
     lead: Any line will do as a start. Then the cells complain.
     steps:
-      - say: A bad first line. It calls the shaded side T.
+      - say: A ==bad line:bad first line==. It calls the ==called T:shaded side== T.
         add:
           plane:
             fill: true
@@ -87,12 +87,12 @@ slides:
   - type: board
     beat: by-hand
     title: Which side does the line call T?
-    lead: Plug a cell into the line to see its side.
+    lead: Plug a cell into the line to see its side, ==called T:shaded== or not.
     table:
       from: pcells
       cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}, {key: y, label: y}]
     steps:
-      - say: 'The line: where {{w0}} + ({{w1}}) × CD3 + {{w2}} × CD19 = 0.'
+      - say: '==bad line:The line==: where {{w0}} + ({{w1}}) × CD3 + {{w2}} × CD19 = 0.'
         add:
           plane:
             fill: true
@@ -122,7 +122,7 @@ slides:
   - type: board
     beat: what-if
     title: Three weights, two kinds of move
-    lead: Before any rule, feel what each weight does to the line.
+    lead: Feel what each weight does to the line and its ==side:shading==.
     controls:
       - {name: w0, min: -10, max: 10, step: 0.5, value: 9}
       - {name: w1, min: -3, max: 3, step: 0.1, value: -2.1}
@@ -132,14 +132,14 @@ slides:
     steps:
       - say: One slider per weight, set to the bad line. The card counts wrong cells.
         add:
-          - {params: {say: 'The line you set', names: [w0, w1, w2, nw]}}
+          - {params: {say: '==your line:The line you set==', names: [w0, w1, w2, nw]}}
           - plane:
               fill: true
               x: {label: CD3, min: -0.5, max: 5.5}
               y: {label: CD19, min: 0, max: 5}
               marks:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-                - {shade: [w0, w1, w2], color: s1, label: called T}
+                - {shade: [w0, w1, w2], color: s1, label: called T, id: side}
                 - {line: [w0, w1, w2], color: accent, label: your line}
       - say: Only $w_0$ moves now; $w_1$ and $w_2$ stay fixed. Drag it.
       - think:
@@ -161,7 +161,7 @@ slides:
       from: trick
       cols: [{key: part, label: weight for}, {key: wv, label: w now, fmt: 2}, {key: xv, label: c5, fmt: 1}]
     steps:
-      - say: 'Take c5, a B cell the line calls T. CD3 {{c5_cd3}}, CD19 {{c5_cd19}}.'
+      - say: 'Take c5, a B cell the ==bad line:line== calls T. CD3 {{c5_cd3}}, CD19 {{c5_cd19}}.'
         add:
           plane:
             fill: true
@@ -176,7 +176,7 @@ slides:
         mark: col:xv
       - say: 'Put a {{x0}} in front for the offset. Now both have three numbers.'
         mark: row:0
-      - say: c5 should score lower. Subtract its numbers from the weights, one by one.
+      - say: 'c5 should score lower. Subtract it: one ==full step==, and a new ==T now:T side==.'
         add: {col: {key: wnew, label: w − c5, expr: wv - xv, fmt: 2}}
         mark: col:wnew
       - think:
@@ -186,12 +186,12 @@ slides:
   - type: board
     beat: by-hand
     title: Take a smaller step
-    lead: Shrink the cell before subtracting it. The shrink factor is $\eta$.
+    lead: Shrink the cell before subtracting it from the ==bad line==. The factor is $\eta$.
     table:
       from: trick
       cols: [{key: part, label: weight for}, {key: wv, label: w now, fmt: 2}, {key: xv, label: c5, fmt: 1}]
     steps:
-      - say: 'Too far. Multiply c5''s numbers by $\eta$ = {{eta}} first, then subtract.'
+      - say: 'The ==full step== went too far. Multiply c5''s numbers by $\eta$ = {{eta}} first.'
         add:
           plane:
             fill: true
@@ -204,7 +204,7 @@ slides:
               - {ring: [c5_cd3, c5_cd19]}
               - {line: [ws0, ws1, ws2], color: s3, label: small step, step: 3}
       - say: CD19's weight first. It moves the most, because c5's CD19 is high.
-        add: {calc: {say: CD19's weight after a small step, row: 2, expr: wv - eta * xv, name: w2n, fmt: 2}}
+        add: {calc: {say: CD19's weight after a ==small step==, row: 2, expr: wv - eta * xv, name: w2n, fmt: 2}}
         mark: row:2
       - say: The same for all three weights. The new line turns a little toward c5.
         add: {col: {key: wsmall, label: w − η × c5, expr: wv - eta * xv, fmt: 2}}
@@ -238,7 +238,7 @@ slides:
   - type: board
     beat: run
     title: Run it, one wrong cell at a time
-    lead: Each epoch visits all eight cells in a shuffled order.
+    lead: Each epoch visits all eight cells, shuffled. ==side:Shaded== means called T.
     controls:
       - {name: t, run: 13, label: updates, says: 'updates so far, one wrong cell each'}
       - {name: prev, toggle: [hide, show], label: before, says: 'the line one update ago, dashed'}
@@ -252,7 +252,7 @@ slides:
       nw: at(wrong_trace, t)
       ep: at(epoch_trace, t)
     steps:
-      - say: 'The bad line, $\eta$ = {{eta}}. The ring marks the next wrong cell.'
+      - say: 'The ==line now:bad line==, $\eta$ = {{eta}}. The ring marks the next wrong cell.'
         frame: 0
         add:
           - {params: {say: 'The line, at this update', names: [w0, w1, w2, nw, ep]}}
@@ -262,8 +262,8 @@ slides:
               y: {label: CD19, min: 0, max: 5}
               marks:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-                - {shade: [w0, w1, w2], color: s1, label: called T}
-                - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev}
+                - {shade: [w0, w1, w2], color: s1, label: called T, id: side}
+                - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev, step: 5}
                 - {line: [w0, w1, w2], color: accent, label: line now}
                 - {ring: ['at(next_x, t)', 'at(next_y, t)'], when: 'at(has_next, t)'}
       - say: 'The first wrong cell is {{at(next_id, 0)}}, our hand step. The line turns a little.'
@@ -272,7 +272,7 @@ slides:
           q: 'The ring is on {{plus_id}}, a T cell called B. Add or subtract?'
           a: 'Add. A T cell on the B side pulls the line toward itself: $w + \eta x$.'
         frame: 3
-      - say: 'Wrong: {{at(wrong_trace, 0)}} at the start, {{at(wrong_trace, 3)}} before {{plus_id}}, {{at(wrong_trace, 4)}} after. Compare the last line.'
+      - say: 'Wrong: {{at(wrong_trace, 0)}} at the start, {{at(wrong_trace, 3)}} before {{plus_id}}, {{at(wrong_trace, 4)}} after. Compare the ==last line==.'
         frame: 4
       - think:
           q: The wrong count rose before it fell. Is the trick broken?
@@ -312,7 +312,7 @@ slides:
     lead: A flow person reads a gate as a slope and where it crosses.
     derive: {w0: wf0, w1: wf1, w2: wf2}
     steps:
-      - say: 'The final line, as weights. Set the score to 0 and solve for CD19.'
+      - say: 'The ==final line==, as weights. Set the score to 0 and solve for CD19.'
         add:
           - {params: {say: 'The final line', names: [w0, w1, w2]}}
           - plane:
@@ -339,9 +339,9 @@ slides:
   - type: board
     beat: limits
     title: Where the trick falls short
-    lead: It stops at the first line that works, and needs one to exist.
+    lead: It stops at the first line that works, like ==ours==, if one exists.
     steps:
-      - say: Same shuffles, all-zero start. It stops at another line, also with none wrong.
+      - say: Same shuffles, ==from zeros:all-zero start==. It stops at another line, also with none wrong.
         add:
           plane:
             fill: true
@@ -349,7 +349,7 @@ slides:
             y: {label: CD19, min: 0, max: 5}
             marks:
               - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-              - {line: [wf0, wf1, wf2], color: accent, label: bad start, says: the line learned starting from the bad line}
+              - {line: [wf0, wf1, wf2], color: accent, label: bad start, id: ours, says: the line learned starting from the bad line}
               - {line: [wg0, wg1, wg2], color: s3, label: from zeros}
               - {ring: [graze_x, graze_y], step: 2}
               - {segment: [['at(cd3, 0)', 'at(cd19, 0)'], ['at(cd3, 2)', 'at(cd19, 2)']], color: ink, dash: true, step: 4}

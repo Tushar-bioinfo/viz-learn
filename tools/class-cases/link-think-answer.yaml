@@ -1,0 +1,28 @@
+# expect: builds
+# expect: not: linked word
+# C10e review regression: a mark added on a think step, whose only linked word is in that step's answer, is fine: the mark
+# and its word both wait for the answer (the browser probe checks the mark has no drawn pieces at the question).
+title: A point and two directions
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    steps:
+      - say: ==u== and the line it spans.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point, step: 2}
+      - think:
+          q: Which mark is the point?
+          a: This is the ==point==.

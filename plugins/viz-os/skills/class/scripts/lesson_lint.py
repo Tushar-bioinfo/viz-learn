@@ -4,6 +4,7 @@ lesson.py runs it through the deck build's lint hook. Scene rules check each boa
 the beats in order, that every symbol shows after its number, and that numbers are computed. A lesson has no quiz or
 recall cards; `lint_cards` and `lint_recall` stay here for sketch, whose pages keep their review cards.
 """
+import difflib
 import re
 
 # beats a scene can carry (lesson.md); the last four are optional moves
@@ -12,7 +13,7 @@ BEATS = {"plan", "problem", "data", "by-hand", "picture", "formula", "run", "wha
 STEP = {"say", "add", "mark", "think", "frame"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "space", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS = {"calc", "plane", "space", "chance", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -97,10 +98,10 @@ def lint_controls(Lx, where, s, steps):
 # plane marks: what each takes (numbers or expressions; a point is [x, y])
 PLANE = {"points": "{from, x, y, by, label, colors}", "shade": "[w0, w1, w2]", "line": "[w0, w1, w2]", "point": "[x, y]",
          "segment": "[[x1, y1], [x2, y2]]", "vector": "[dx, dy] (and from: [x, y])", "foot": "{from: [x, y], line: [w0, w1, w2]} or {from, dir: [dx, dy]}",
-         "square": "[[x1, y1], [x2, y2]]", "text": "a label (and at: [x, y])", "ring": "[x, y]"}
+         "square": "[[x1, y1], [x2, y2]]", "text": "a label (and at: [x, y])", "ring": "[x, y]", "quarters": "[cx, cy]"}
 
 
-MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "dash", "when", "side", "from", "at"}   # what every mark may also take (board.md)
+MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "dash", "when", "side", "from", "at", "id"}   # what every mark may also take (board.md)
 # legend limits and word counts (a {{number}}, $maths$ or `code` is one word) come from the deck: B.LEGEND_WORDS,
 # B.LEGEND_MAX, B.name_words
 
@@ -186,6 +187,12 @@ def lint_plane(B, Lx, w, pl, names):
                 pts(v["line"], 3, "foot line") if "line" in v else pts(v["dir"], 2, "foot dir")
         elif k == "text":
             pts(mk.get("at"), 2, "text at")
+        elif k == "quarters":
+            if not isinstance(v, list) or len(v) != 2 or any(isinstance(x, (list, dict, bool)) or x is None for x in v):
+                Lx.err(w, f"plane `quarters` takes the point where the two zero lines cross, [cx, cy]: two numbers or expressions; got {v!r}")
+            else:
+                for x in v:
+                    ex(x)
         elif k == "points":
             if not isinstance(v, dict) or not all(v.get(q) for q in ("from", "x", "y")):
                 Lx.err(w, f"plane `points` takes {PLANE['points']}")
@@ -199,7 +206,7 @@ SPACE = {"points": "{from, at}", "point": "a position", "ring": "a position", "v
          "sheet": "[U, V] with max: [a, b] (and min:)", "foot": "{from: P, onto: U} or {from: P, onto: [U, V]}",
          "segment": "[P, Q]", "text": "a label (and at:)"}
 NUMBER = re.compile(r"[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?")   # a bare number, where a position is needed
-SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring"}
+SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring", "id"}
 ON_SPACE = "a space draws no names on its marks: give the mark `label:` (its legend entry) and `says:` (its card)"
 
 
@@ -496,10 +503,199 @@ def lint_formula(B, Lx, w, f, kind, names, symbols):
         Lx.warn(w, "a number in `plug` has no tag: write it as [name:number] so it takes its term's colour and the lint knows which worked number it is")
 
 
+# chance (adv.md): two groups as units, their shares on one line, the gap and, with `step`, a ruler of noise steps
+CHANCE = {"groups", "step", "tally", "axis", "gap_says", "step_says", "id", "ratio"}
+CHANCE_GROUP = {"name", "n", "ill", "color", "says"}
+CHANCE_MARKS = ("gap", "noise step")
+
+
+CHANCE_MOST = 12  # the ruler counts at most this many noise steps past its 0 (board.js CH.most)
+NUM = lambda q: isinstance(q, (int, float)) and not isinstance(q, bool)
+
+
+def chance_name(nm):
+    """A group name as the page shows it: case folded, runs of spaces as one (HTML collapses them)."""
+    return " ".join(str(nm).split()).lower()
+
+
+def ctl_states(c):
+    """A control's values, state by state, with a label for each; None when the lint cannot list them."""
+    if isinstance(c.get("run"), int):
+        return [(f, f"at frame {f}") for f in range(c["run"])]
+    if isinstance(c.get("toggle"), list):
+        return [(q, f"when `{c['name']}` is {t}") for q, t in enumerate(c["toggle"])]
+    lo, hi, st = c.get("min"), c.get("max"), c.get("step") or 1
+    if NUM(lo) and NUM(hi) and NUM(st) and st > 0 and hi >= lo and (hi - lo) / st <= 1000:
+        return [(v, f"when `{c['name']}` is {v:g}") for v in (lo + k * st for k in range(int((hi - lo) / st + 1e-9) + 1))]
+    return None
+
+
+def chance_read(x, values, derive, ctls, bad, seen=()):
+    """What a chance field is: ("const", None, [v]), ("ctl", name, [v per state]), or None when the lint cannot read it
+    (the page's clamp and frame sweep guard those). It reads a number (also '5'), a data number, a control, and a derive
+    that comes down to one of these or to `at(list, control)`. `bad(msg)` gets what is provably wrong: a data list where
+    a number is needed, or a list shorter than its control's states."""
+    if NUM(x):
+        return ("const", None, [x])
+    if not isinstance(x, str):
+        return None
+    x = x.strip()
+    try:
+        return ("const", None, [float(x)])
+    except ValueError:
+        pass
+    m = re.fullmatch(r"at\(\s*([A-Za-z_]\w*)\s*,\s*([A-Za-z_]\w*)\s*\)", x)
+    if m:
+        lst, c = values.get(m.group(1)), ctls.get(m.group(2))
+        if m.group(1) in derive or not isinstance(lst, list) or c is None or ctl_states(c) is None:
+            return None
+        st = ctl_states(c)
+        need = max(int(v) for v, _ in st) + 1 if all(float(v).is_integer() and v >= 0 for v, _ in st) else None
+        if need is None:
+            return None
+        if len(lst) < need:
+            what = f"the run `{c['name']}` has {need} frames" if "run" in c else f"`{c['name']}` reaches {need - 1}, so it needs {need}"
+            bad(f"reads `{x}`, but `{m.group(1)}` has {len(lst)} entries and {what}: give one entry per state")
+            return None
+        out = [lst[int(v)] for v, _ in st]
+        return ("ctl", c["name"], out) if all(NUM(q) for q in out) else None
+    if not re.fullmatch(r"[A-Za-z_]\w*", x) or x in seen:
+        return None
+    if x in derive:
+        d = derive[x]
+        return chance_read(d, values, derive, ctls, bad, (*seen, x)) if NUM(d) or isinstance(d, str) else None
+    if x in ctls:
+        st = ctl_states(ctls[x])
+        return ("ctl", x, [v for v, _ in st]) if st else None
+    if NUM(values.get(x)):
+        return ("const", None, [values[x]])
+    if isinstance(values.get(x), list):
+        bad(f"is `{x}`, a list in the data: name one number, or one entry of the list (`at({x}, draw)` in `derive`)")
+    return None
+
+
+def lint_chance(B, Lx, w, ch, names, s, values):
+    """The lint proves, the page guards. Exactly two groups with two names, neither `gap` nor `noise step`; on each
+    state a value can take, `n` whole 1–100, `ill` whole and at least 0, `step` above 0; together, only over states that
+    can happen at once (one control, or constants), `ill` at most `n` and the gap at most 12 steps; `tally` one 0/1 per
+    frame of the run. What the lint cannot read (arithmetic, say) passes: the page clamps it and the browser check warns."""
+    if not isinstance(ch, dict):
+        Lx.err(w, "`chance` is a mapping with `groups:` (two, each {name, n, ill}) and, if you like, `step:` and `tally:`")
+        return
+    def unknown(keys, known, what):
+        for k in sorted(set(keys) - known, key=str):
+            hit = next((q for q in sorted(known) if near(str(k), q)), None) or next(iter(difflib.get_close_matches(str(k), sorted(known), 1, .6)), None)
+            Lx.err(w, f"{what} has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(known))})"))
+    unknown(ch, CHANCE, "`chance`")
+    derive = s.get("derive") if isinstance(s.get("derive"), dict) else {}
+    ctls = {c["name"]: c for c in s.get("controls") or [] if isinstance(c, dict) and isinstance(c.get("name"), str)}
+    run = next((c for c in ctls.values() if isinstance(c.get("run"), int)), None)
+    MUST = {"n": "how many units the group has: a whole number from 1 to 100",
+            "ill": "how many units have the outcome: a whole number from 0 to the group's n",
+            "step": "one noise step as a share above 0"}
+    def value(v, where, k):
+        """The field read for the lint, or None (unread, or after an error that says which key and what it must be)."""
+        if isinstance(v, bool) or not isinstance(v, (int, float, str)):
+            Lx.err(w, f"{where} `{k}` is {v!r}: it must be {MUST[k]}, written as a number or a name from data, controls or derive")
+            return None
+        if isinstance(v, str):
+            probe = B.Lint()   # the build's own name check; its finding goes out under this key's message
+            B.check_expr(probe, w, v, names)
+            if probe.out:
+                Lx.err(w, f"{where} `{k}` is `{v}`: {probe.out[0][2].split(' (')[0]}; it must be {MUST[k]}")
+                return None
+        return chance_read(v, values, derive, ctls, lambda msg: Lx.err(w, f"{where} `{k}` {msg}"))
+    def label(r, i):
+        return ctl_states(ctls[r[1]])[i][1] if r[0] == "ctl" else ""
+    def one(r, k, ok, where):
+        """Each state the value can take, on its own; True when every state passes."""
+        for i, q in enumerate(r[2]):
+            if not ok(q):
+                Lx.err(w, f"{where} `{k}` is {q:g}" + (f" {label(r, i)}" if r[0] == "ctl" else "") + f": it must be {MUST[k]}")
+                return False
+        return True
+    def together(*rs):
+        """The states these values can take at once: one tuple per state of their one control, or None (skip)."""
+        if any(r is None for r in rs):
+            return None
+        cs = {r[1] for r in rs if r[0] == "ctl"}
+        if len(cs) > 1:
+            return None
+        m = max(len(r[2]) for r in rs)
+        c = next(iter(cs), None)
+        return [(tuple(r[2][i] if r[0] == "ctl" else r[2][0] for r in rs), ctl_states(ctls[c])[i][1] if c else "") for i in range(m)]
+    whole = lambda q: float(q).is_integer()
+    gs = ch.get("groups")
+    if not isinstance(gs, list) or len(gs) != 2:
+        Lx.err(w, f"`chance` compares exactly two groups: write `groups:` as a list of two {{name, n, ill}}; got {len(gs) if isinstance(gs, list) else gs!r}")
+        gs = [g for g in gs if isinstance(g, dict)][:2] if isinstance(gs, list) else []
+    pairs, seen_names = [], {}
+    for g in gs:
+        if not isinstance(g, dict):
+            Lx.err(w, f"a `chance` group is a mapping {{name, n, ill}}; got {g!r}")
+            continue
+        nm = g.get("name")
+        unknown(g, CHANCE_GROUP, f"`chance` group `{nm}`")
+        if not isinstance(nm, str) or not nm.strip():
+            Lx.err(w, "each `chance` group needs `name:`: one or two words, its legend entry and linked word")
+        elif chance_name(nm) in CHANCE_MARKS:
+            Lx.err(w, f"a `chance` group is named `{nm}`, but `gap` and `noise step` are the figure's own marks: name the group for what it holds (`well`, `piped`)")
+        elif chance_name(nm) in seen_names:
+            Lx.err(w, f"both `chance` groups are named `{nm}`: each group's name is its legend entry and linked word, so give them two names (`well`, `piped`)")
+        else:
+            seen_names[chance_name(nm)] = nm
+        where = f"`chance` group `{nm}`:"
+        got = {}
+        for k in ("n", "ill"):
+            if g.get(k) is None:
+                Lx.err(w, f"`chance` group `{nm}` needs `{k}:`: {MUST[k]}")
+            else:
+                got[k] = value(g[k], where, k)
+        ns, xs = got.get("n"), got.get("ill")
+        if ns and not one(ns, "n", lambda q: whole(q) and 1 <= q <= 100, where):
+            ns = None
+        if xs and not one(xs, "ill", lambda q: whole(q) and q >= 0, where):
+            xs = None
+        both = together(ns, xs)
+        if both:
+            hit = next(((q, top, lb) for (top, q), lb in both if q > top), None)
+            if hit:
+                q, top, lb = hit
+                Lx.err(w, f"{where} `ill` is {q:g}" + (f" {lb}" if lb else "") + f" while `n` is {top:g}: it counts the units with the outcome, a whole number from 0 to n")
+                ns = xs = None
+        pairs += [ns, xs] if ns and xs else [None, None]
+    if "step" in ch:
+        st = None
+        if ch["step"] is None:
+            Lx.err(w, f"`chance` `step` is empty: it must be {MUST['step']} (leave `step` out and no ruler is drawn)")
+        else:
+            st = value(ch["step"], "`chance`", "step")
+        if st and one(st, "step", lambda q: q > 0, "`chance`") and len(pairs) == 4:
+            for (n1, x1, n0, x0, q), lb in together(*pairs, st) or []:
+                steps = abs(x1 / n1 - x0 / n0) / q
+                if steps > CHANCE_MOST + 1e-9:
+                    Lx.err(w, f"`chance`: the gap is {f'{steps:.2f}'.rstrip('0').rstrip('.')} noise steps" + (f" {lb}" if lb else "")
+                              + f"; a ruler counts up to {CHANCE_MOST}: check `step` is a share (0.05), not a percent (5)")
+                    break
+    if "tally" in ch:
+        t = ch["tally"]
+        lst = values.get(t) if isinstance(t, str) else t if isinstance(t, list) else None
+        frames = run["run"] if run else 0
+        if run is None:
+            Lx.err(w, "`chance` `tally` marks each frame of a run, and this scene has none: add a run control (`controls: [{name: draw, run: 201}]`), or delete `tally`")
+        elif not isinstance(lst, list):
+            Lx.err(w, f"`chance` `tally` is {t!r}: name a data list with one 0 or 1 per frame of the run ({frames} frames)")
+        elif len(lst) != frames:
+            Lx.err(w, f"`chance` `tally` `{t if isinstance(t, str) else 'list'}` has {len(lst)} entries but the run has {frames} frames: give exactly one 0 or 1 per frame, frame 0 first")
+        elif any(q not in (0, 1) or isinstance(q, bool) for q in lst):
+            Lx.err(w, f"`chance` `tally` holds values other than 0 and 1: each frame is 1 when its gap is at least as far from 0 as ours, else 0")
+
+
 def lint_scenes(B, Lx, deck, glob, data=None):
     """Each board scene on its own: its fields, steps, items and controls."""
     symbols = deck.get("symbols") or {}
     values = {**(deck.get("data") or {}), **(data or {})}
+    chances = {}  # one `chance` per scene
     said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
@@ -558,6 +754,12 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                     named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_plane(B, Lx, w, it["plane"], names)]
                 if "space" in it:   # the same "say what it is" rule, for each legend entry
                     named += [(w, mk, max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1) for mk in lint_space(B, Lx, w, it["space"], names, symbols, values)]
+                if "chance" in it:
+                    lint_chance(B, Lx, w, it["chance"], names, s, values)
+                    s_ch = chances.setdefault(id(s), [])
+                    s_ch.append(j + 1)
+                    if len(s_ch) == 2:
+                        Lx.err(w, f"this scene has a second `chance` figure ({'both on step ' + str(s_ch[0]) if s_ch[0] == s_ch[1] else f'steps {s_ch[0]} and {s_ch[1]}'}): one `chance` per scene, so its marks `gap` and `noise step` name one thing; put the second comparison in its own scene")
                 if VIS & set(it):
                     vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
                     B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
@@ -664,8 +866,193 @@ def step_lines(st):
     return out
 
 
+# ---- linked words (board.md, Highlights in text): ==pixel== names a mark of the scene's plane, space or chart
+HILITE = re.compile(r"==(.+?)==")
+TOKEN = re.compile(r"^(accent|s[1-5]|good|bad|mist|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}):")   # a colour before the colon: no link (board.js `md`)
+SPACE_DEF = {"points": "s1", "point": "ink", "ring": "ink", "vector": "ink", "sheet": "mist", "foot": "s2", "segment": "mist", "text": "mist"}   # board.js SDEF
+
+
+def shown(v):
+    """The words a line shows: a linked ==key:words== shows only its words (a colour token stays, as the deck counts it)."""
+    return re.sub(r"==([^=:]+):", lambda m: m.group(0) if TOKEN.match(m.group(1) + ":") else "==", v)
+
+
+def link_key(inner, keys):
+    """The mark key a ==…== names, as board.js reads it: the whole text, else the part before a colon; None for none."""
+    if TOKEN.match(inner):
+        return None
+    whole, c = inner.strip(), inner.find(":")
+    return whole if whole in keys else inner[:c].strip() if c > 0 and inner[:c].strip() in keys else None
+
+
+def scene_marks(s, symbols):
+    """Each linkable mark of a board scene's plane, space and chart, in board.js's order: (figure no, kind, mark no, mark,
+    the step it shows on, its keys, a legend entry or not, the colour its word takes or None for one of its own)."""
+    out, f = [], 0
+    for j, st in enumerate(as_list(s.get("steps"))):
+        for it in as_list(st.get("add")) if isinstance(st, dict) else []:
+            if not isinstance(it, dict):
+                continue
+            kind = next((k for k in ("plane", "space", "chart", "chance") if isinstance(it.get(k), dict)), None)
+            if kind is None:
+                continue
+            if kind == "chance":   # its marks, in board.js's order: the two groups, the gap, and with `step` the noise step
+                ch, gs = it["chance"], [g for g in as_list(it["chance"].get("groups")) if isinstance(g, dict)][:2]
+                mks = [(g.get("name"), g.get("color") or c) for g, c in zip(gs, ("s4", "s1"))] + [("gap", "s3")] + ([("noise step", "s2")] if "step" in ch else [])
+                for i, (nm, c) in enumerate(mks):
+                    if nm is not None and str(nm).strip():
+                        out.append((f, kind, i, {"label": nm}, j + 1, [str(nm).strip()], True, c))
+                f += 1
+                continue
+            for i, mk in enumerate(as_list(it[kind].get("marks"))):
+                if not isinstance(mk, dict):
+                    continue
+                shows = max(j + 1, mk["step"]) if isinstance(mk.get("step"), int) else j + 1
+                if kind == "chart":
+                    q = mark_symbol(mk, symbols)
+                    keys, entry, c = [mk.get("label"), mk.get("name"), mk.get("id"), q], mark_entry(mk, symbols) is not None, mark_color(mk, symbols, q)
+                else:
+                    k = next((x for x in (PLANE if kind == "plane" else SPACE) if x in mk and not (x == "ring" and "point" in mk)), None)
+                    v = mk.get(k) if k else None
+                    q = v if isinstance(v, str) and isinstance(symbols.get(v), dict) else None
+                    keys = [mk.get("label"), mk.get("id"), q if k in ("vector", "point") else None]
+                    entry = bool(mk.get("label")) and k not in ("text", None) and not (kind == "plane" and k == "points")
+                    sc = (symbols[q].get("color") if q else None) if kind == "space" else None
+                    if kind == "plane":
+                        c = None if mk.get("rgb") is not None or k == "points" else "accent" if k == "ring" else mk.get("color") or ("s1" if k == "point" else "mist")
+                    else:
+                        c = (mk.get("color") or "accent") if mk.get("ring") is True else None if (mk.get("rgb") is not None and k in ("point", "points")) or (k == "sheet" and not mk.get("color")) \
+                            else mk.get("color") or (sc if sc and sc != "ink" else None) or SPACE_DEF.get(k)
+                out.append((f, kind, i, mk, shows, [str(x).strip() for x in keys if x is not None and str(x).strip()], entry, c))
+            f += 1
+    return out
+
+
+def scene_texts(s):
+    """(step, field, text) for every line of a board scene a word can link from: the lead (step 0), then each step's lines."""
+    out = [(0, "lead", s.get("lead"))]
+    for j, st in enumerate(as_list(s.get("steps"))):
+        if isinstance(st, dict):
+            out += [(j + 1, k, v) for k, v, _ in step_lines(st)]
+    return [(j, k, v) for j, k, v in out if isinstance(v, str)]
+
+
+def scene_keys(marks):
+    keys = {}
+    for m in marks:
+        for k in m[5]:
+            keys.setdefault(k, m)   # the first mark with a key wins, as on the page
+    return keys
+
+
+def near(a, b):
+    """A likely typo of a mark key: the same but for case or a plural, or a few letters off in a longer word."""
+    a, b = a.lower(), b.lower()
+    if a == b or a.rstrip("s") == b.rstrip("s") or a.removesuffix("es") == b.removesuffix("es"):
+        return True
+    if min(len(a), len(b)) < 3 or abs(len(a) - len(b)) > 2:
+        return False
+    d = list(range(len(b) + 1))
+    for x, ca in enumerate(a, 1):
+        prev, d[0] = d[0], x
+        for y, cb in enumerate(b, 1):
+            prev, d[y] = d[y], min(d[y] + 1, d[y - 1] + 1, prev + (ca != cb))
+    return d[-1] <= (2 if min(len(a), len(b)) >= 5 else 1)
+
+
+def theme():
+    """The board's colours by name, as the page draws them: the deck's theme, then the board's own values over it."""
+    from pathlib import Path
+    kit = Path(__file__).resolve().parent.parent / "kit/board.css"
+    out = {}
+    for f in (kit.parent.parent.parent / "deck/kit/vizos.css", kit):
+        if f.exists():
+            head = f.read_text().split("}")[0]   # the first rule block holds the page's theme (later blocks are light or print looks)
+            out.update({k: v for k, v in re.findall(r"--([a-z][\w-]*):\s*(#[0-9a-fA-F]{3,6})\b", head)})
+    return out
+
+
+THEME = theme()
+
+
+def rgb_of(c):
+    """A colour name or hex as (r, g, b), or None when it is not one (a true colour, a CSS expression)."""
+    h = THEME.get(str(c), str(c))
+    if not re.fullmatch(r"#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}", h):
+        return None
+    h = h[1:] if len(h) == 7 else "".join(ch * 2 for ch in h[1:])
+    return tuple(int(h[k:k + 2], 16) for k in (0, 2, 4))
+
+
+def near_rgb(a, b):
+    return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5 <= 20   # out of 441: the same colour to the eye at body size
+
+
+def lint_links(Lx, deck):
+    """A mark with a legend entry has its linked word in the scene's text by the step that draws it; a ==word== that
+    names no mark is no near-miss of one, nor a mark of another scene; two linked marks of one figure differ in colour;
+    a plane `name:` whose mark has a linked word is not drawn."""
+    symbols = deck.get("symbols") or {}
+    slides = deck.get("slides") or []
+    boards = [(i, s, scene_marks(s, symbols)) for i, s in enumerate(slides) if isinstance(s, dict) and s.get("type") == "board"]
+    elsewhere = {}
+    for i, s, marks in boards:
+        for k in scene_keys(marks):
+            elsewhere.setdefault(k, i)
+    for i, s, marks in boards:
+        where, keys = slide_where(i, s), scene_keys(marks)
+        linked, told = {}, set()   # mark -> the first step a word links it; shared keys already reported
+        for j, fld, v in scene_texts(s):
+            for inner in HILITE.findall(v):
+                k = link_key(inner, keys)
+                if k is not None:
+                    m = keys[k]
+                    many = [x for x in marks if k in x[5]]
+                    # the page would light the first; the author may mean another. A clash among `chance` marks alone is
+                    # lint_chance's (`gap`/`noise step` as a group name, two groups with one name, two `chance` in a scene)
+                    if len(many) > 1 and k not in told and not all(x[1] == "chance" for x in many):
+                        told.add(k)
+                        Lx.err(f"{where} step {j}" if j else where, f"`=={inner}==`: `{k}` names {len(many)} marks in this scene ("
+                               + ", ".join(f"{x[1]} mark {x[2] + 1}" for x in many) + ("): rename one (a `chance` group's mark takes its `name:`; `gap` and `noise step` are fixed)"
+                               if any(x[1] == "chance" for x in many) else "): give the one you mean its own `id:` and link that"))
+                    linked[(m[0], m[2])] = min(linked.get((m[0], m[2]), j), j)
+                    continue
+                if TOKEN.match(inner):
+                    continue
+                pre = inner.split(":")[0].strip() if re.match(r"^[\w-]+:", inner) else None
+                t = pre or inner.strip()
+                w = f"{where} step {j}" if j else where
+                if t in elsewhere and elsewhere[t] != i:
+                    Lx.err(w, f"`=={inner}==` names a mark on slide {elsewhere[t] + 1}, not on this scene: a word links only to its own scene's figure; name a mark here, or reword it")
+                elif len(t.split()) <= 2 and (hit := next((k for k in keys if near(t, k)), None)):
+                    Lx.warn(w, f"`=={inner}==` names no mark, but is close to `{hit}`: write =={hit}== (or =={hit}:your words==) to link it; as written it is an orange underline")
+                elif pre is not None:
+                    Lx.warn(w, f"`=={inner}==`: `{pre}` is no colour and no mark of this scene, so the page shows “{inner}” underlined: use a colour (s1 …), a mark's label, or plain ==text==")
+        for f, kind, i2, mk, shows, ks, entry, c in marks:
+            name = ks[0] if ks else None
+            if entry and name and linked.get((f, i2), 99) > shows:
+                at, odd = linked.get((f, i2)), re.search(r"[{$\\]", name)   # a label with a number or maths: link it by an id
+                fix = "give the mark a one-word `id:` and write ==id:your words==" if odd else f"write =={name}== (or =={name}:your words==)"
+                Lx.warn(where, f"{kind} mark {i2 + 1} ({name}) has a legend entry but no linked word by step {shows}, when it shows"
+                               + (f" (the first is at step {at})" if at else "") + f": {fix} in a teacher line by then, so the word takes its colour and lights it")
+            if kind == "plane" and mk.get("name") and (f, i2) in linked:
+                Lx.warn(where, f"plane mark {i2 + 1}: `name: {mk['name']}` is not drawn, since a linked word names the mark: delete `name:`"
+                               + ("" if mk.get("label") else "; give the mark `label:` (its legend entry) and write ==label== in the text"))
+        # colours compared as drawn: a theme name is its value (s1 is #8ec5ff), and two within a few steps of each other are one
+        lk = [(f, ks[0], c, rgb_of(c)) for f, kind, i2, mk, shows, ks, entry, c in marks if (f, i2) in linked and c is not None]
+        groups = []
+        for x in lk:
+            g = next((g for g in groups if g[0][0] == x[0] and (str(g[0][2]).lower() == str(x[2]).lower() or (g[0][3] and x[3] and near_rgb(g[0][3], x[3])))), None)
+            (g.append(x) if g else groups.append([x]))
+        for g in groups:
+            if len(g) > 1:
+                ns, cs = ", ".join(f"=={x[1]}==" for x in g), sorted({str(x[2]) for x in g})
+                col = f"the colour {cs[0]}" if len(cs) == 1 else f"colours that look the same ({', '.join(cs)})"
+                Lx.warn(where, f"linked words {ns} all take {col} in one figure, so the learner cannot tell which mark a word means: give each mark its own `color:`")
+
+
 def lint_bare(Lx, deck):
-    """A symbol's name in plain words stays grey: written as $w_0$ it takes its colour."""
+    """A symbol's name in plain words stays grey: written as $w_0$ it takes its colour. A linked ==H== is its TeX."""
     names = [k for k, v in (deck.get("symbols") or {}).items() if isinstance(v, dict) and (len(k) <= 2 or re.search(r"\d", k)) and k not in PLAIN]
     if not names:
         return
@@ -673,11 +1060,13 @@ def lint_bare(Lx, deck):
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
             continue
+        keys = scene_keys(scene_marks(s, deck.get("symbols") or {}))
+        unlink = lambda v: HILITE.sub(lambda m: " " if link_key(m.group(1), keys) else m.group(0), v)
         for j, st in enumerate(as_list(s.get("steps"))):
             if not isinstance(st, dict):
                 continue
             for k, v, _ in step_lines(st):
-                m = isinstance(v, str) and bare.search(re.sub(r"==\w+:", " ", HIDE.sub(" ", v)))
+                m = isinstance(v, str) and bare.search(re.sub(r"==\w+:", " ", HIDE.sub(" ", unlink(v))))
                 if m:
                     t = (deck["symbols"][m.group(1)].get("tex") or m.group(1))
                     Lx.warn(f"{slide_where(i, s)} step {j + 1}", f"`{k}` writes {m.group(1)} in plain words: write ${t}$ so it takes its colour")
@@ -736,8 +1125,8 @@ def lint_shape(B, Lx, slides):
                 Lx.warn(f"{w} step {j + 1}", f"{THINK_GAP} steps in a row with no `think` stop: ask the learner something before going on")
                 gap = 0
             for k, v, cap in step_lines(st):
-                if isinstance(v, str) and B.words(v) > cap:
-                    Lx.warn(f"{w} step {j + 1}", f"`{k}` has {B.words(v)} words (≤ {cap}): one teacher line is one breath; cut it, or move the rest to the next step")
+                if isinstance(v, str) and B.words(shown(v)) > cap:
+                    Lx.warn(f"{w} step {j + 1}", f"`{k}` has {B.words(shown(v))} words (≤ {cap}): one teacher line is one breath; cut it, or move the rest to the next step")
 
 
 def prose(node, key=None):
@@ -1254,6 +1643,171 @@ def lint_story(Lx, deck):
                         Lx.warn(w, f"`{k} {f}` “{t}” reads as made-up shorthand: say it as one plain phrase (‘red light that lands in red’)")
 
 
+# ---- adv lessons (adv.md): each scene names its idea, the one mark that carries it (`see`) and the picture (`shows`).
+# The idea table: name -> (the learner's question, the picture family, the items that can draw it today). `table` is
+# the scene's own table; `product` is a worked product (product.py opens it into lines that hold \prodpart).
+IDEAS = {
+    "made-of": ("where does this number come from?", "loupe", ["table", "calc", "product", "vec", "matrix"]),
+    "amount": ("how much, what share?", "units", ["units", "parts", "stat", "chance"]),
+    "cause": ("what happens if I change this?", "handle", ["plane", "chart", "space", "dist"]),
+    "closest": ("which choice is best?", "guess", ["plane", "space"]),
+    "shortcut": ("why not the easy way?", "ghost", ["plane", "space", "chart", "compare"]),
+    "process": ("how does it move, step by step?", "run", ["plane", "chart", "space", "ops"]),
+    "connect": ("how do the pieces feed each other?", "strip", ["flow", "ops", "product", "assemble"]),
+    "outcomes": ("what can happen?", "fork", ["compare", "parts"]),
+    "chance": ("is this difference real?", "draws", ["chance", "dist", "chart"]),
+    "angle": ("what does it look like from the right side?", "view", ["space", "plane"]),
+    "like": ("what is it like?", "pair", ["compare"]),
+}
+BOOKENDS = ("plan", "summary", "next")      # scenes that carry no idea
+FOIL = ("misconception", "limits")          # beats that draw the wrong way beside the right way, as `shortcut` does
+DEPTH = 2                                   # scenes one idea may fill, unless learner.depth says more
+FIGS = ("plane", "space", "chart", "dist", "chance")  # figures a control or a later mark can change on one frame
+SEEN = ("lead", "say", "think q")           # lines the learner reads without pressing Show answer
+
+
+ADV_FIELDS = ("idea", "see", "shows")
+
+
+def adv_boards(deck):
+    """The scenes an adv plan is made of: the board scenes, in order (the lint and storyboard.py share this rule)."""
+    return [s for s in deck.get("slides") or [] if isinstance(s, dict) and s.get("type") == "board"]
+
+
+def is_adv(deck):
+    return any(s.get("idea") is not None for s in adv_boards(deck))
+
+
+def idea_ok(v):
+    """A usable idea: a table name, or the learner's own question ending in `?`."""
+    return isinstance(v, str) and (v.strip() in IDEAS or v.strip().endswith("?"))
+
+
+def idea_key(v):
+    """One idea, however it is written: lower case, one space between words, no space before punctuation."""
+    return re.sub(r"\s+([?.,!;:])", r"\1", " ".join(str(v).lower().split()))
+
+
+def scene_kinds(s):
+    """The item kinds a board scene draws: each added item, its own `table`, and a worked product."""
+    out = {"table"} if s.get("table") else set()
+    for _, it in items_of(s):
+        out |= {k for k in it if k in ITEMS}
+        e = it.get("eqn")
+        if isinstance(e, dict) and "\\prodpart" in str(e.get("tex") or ""):
+            out.add("product")
+    return out
+
+
+def scene_shows(s, symbols):
+    """What `see` may name in a board scene: {name: mark tuple or None}. Marks by label or id (scene_marks), chart
+    series by name, table columns by key or label, and symbols the scene shows (read live, drawn, or in its maths).
+    A mark keeps its name when a series, column or symbol shares it, so its link rule still applies."""
+    out = {}
+    for m in scene_marks(s, symbols):
+        for k in m[5]:
+            out.setdefault(k, m)
+    for _, it in items_of(s):
+        for _, ch in charts_of(it):
+            for q in as_list(ch.get("series")):
+                if isinstance(q, dict) and q.get("name"):
+                    out.setdefault(str(q["name"]), None)
+        c = it.get("col")
+        for k in ("key", "label") if isinstance(c, dict) else ():
+            if c.get(k):
+                out.setdefault(str(c[k]), None)
+    tb = s.get("table")
+    for c in as_list(tb.get("cols")) if isinstance(tb, dict) else []:
+        for x in [c] if isinstance(c, str) else [c.get("key"), c.get("label")] if isinstance(c, dict) else []:
+            if x:
+                out.setdefault(str(x), None)
+    used = set(scene_reads(s.get("steps"))) | scene_drawn(s) | plane_vectors(s)
+    maths = " ".join(m for x in strings(s.get("steps")) for m in re.findall(r"\$([^$]+)\$", x)) + " " + " ".join(
+        str(it[k].get("tex") or "") for _, it in items_of(s) for k in ("eqn", "assemble") if isinstance(it.get(k), dict))
+    for n, v in symbols.items():
+        if n in used or (isinstance(v, dict) and v.get("tex") and str(v["tex"]) in maths):
+            out.setdefault(n, None)
+    return out
+
+
+def two_states(s):
+    """A foil holds the wrong way and the right way on one frame: a `compare`, a figure with a control that the figure
+    reads (directly or through `derive`), or a figure mark that shows only on a later step or under `when:`."""
+    if any("compare" in it for _, it in items_of(s)):
+        return True
+    figs = [(j, it) for j, st in enumerate(as_list(s.get("steps"))) if isinstance(st, dict)
+            for it in as_list(st.get("add")) if isinstance(it, dict) and any(k in it for k in FIGS)]
+    derive = s.get("derive") if isinstance(s.get("derive"), dict) else {}
+    reads = {n for _, it in figs for n in scene_reads(it)}
+    if any(isinstance(c, dict) and reach(c.get("name"), derive) & reads for c in s.get("controls") or []):
+        return True
+    for j, it in figs:
+        body = next(it[k] for k in FIGS if k in it)
+        for mk in as_list(body.get("marks")) if isinstance(body, dict) else []:
+            if isinstance(mk, dict) and (mk.get("when") is not None or (isinstance(mk.get("step"), int) and mk["step"] > j + 1)):
+                return True
+    return False
+
+
+def lint_adv(Lx, deck):
+    """adv.md: a scene's idea, its witness (`see`), its foil, and the depth budget. A lesson with no `idea` is not adv."""
+    boards = {id(s) for s in adv_boards(deck)}
+    for i, s in enumerate(deck.get("slides") or []):
+        if isinstance(s, dict) and id(s) not in boards and (bad := [k for k in ADV_FIELDS if k in s]):
+            Lx.err(slide_where(i, s), f"{', '.join(f'`{k}`' for k in bad)} belong on a board scene; this is a `{s.get('type') or 'idea'}` slide: "
+                                      "move the plan to a `type: board` scene, or delete it")
+    if not is_adv(deck):
+        return
+    learner = deck.get("learner") if isinstance(deck.get("learner"), dict) else {}
+    depth = learner.get("depth", DEPTH)
+    if "depth" in learner and not (isinstance(depth, int) and not isinstance(depth, bool) and 1 <= depth <= 6):
+        Lx.err("learner", f"`depth: {depth!r}` is how many scenes one idea may fill: a whole number from 1 to 6 (leave it out for {DEPTH})")
+        depth = DEPTH
+    symbols = deck.get("symbols") or {}
+    count, first = {}, {}
+    for i, s in enumerate(deck.get("slides") or []):
+        if id(s) not in boards or s.get("beat") in BOOKENDS:
+            continue
+        w = slide_where(i, s)
+        miss = [k for k in ("idea", "see", "shows") if not isinstance(s.get(k), str) or not s[k].strip()]
+        if miss:
+            Lx.err(w, f"an adv scene names its idea, the one mark that carries it and the picture: add {', '.join(f'`{k}:`' for k in miss)} (a word or a short phrase each)")
+        idea, see, has = s.get("idea"), s.get("see"), bool(as_list(s.get("steps")))
+        if isinstance(idea, str) and idea.strip():
+            idea = idea.strip()
+            own = idea.endswith("?")
+            if not idea_ok(idea):
+                hit = next((k for k in IDEAS if near(idea, k)), None) if len(idea.split()) == 1 else None
+                Lx.err(w, f"`idea: {idea}` is not in the idea table" + (f": did you mean `{hit}`?" if hit else
+                       f" ({', '.join(IDEAS)})") + " For your own, write the learner's question, ending in `?`")
+            else:
+                count[idea_key(idea)] = count.get(idea_key(idea), 0) + 1
+                first.setdefault(idea_key(idea), idea)
+                if has and not own and not scene_kinds(s) & set(IDEAS[idea][2]):
+                    Lx.err(w, f"`idea: {idea}` is drawn with {', '.join(IDEAS[idea][2])}, and this scene has none of them: draw it with one, "
+                              "or pick the idea that fits the picture, or write the learner's own question, ending in `?`")
+        if has and isinstance(see, str) and see.strip():
+            see = see.strip()
+            can = scene_shows(s, symbols)
+            if see not in can:
+                hit = next((k for k in can if near(see, k)), None)
+                Lx.err(w, f"`see: {see}` names nothing this scene draws" + (f": did you mean `{hit}`?" if hit else "")
+                          + " It is a mark's label or id, a chart series, a symbol the scene shows, or a table column")
+            elif can[see] is not None:
+                keys, m = scene_keys(scene_marks(s, symbols)), can[see]
+                if not any((x := link_key(inner, keys)) is not None and keys[x][:3] == m[:3]
+                           for _, fld, v in scene_texts(s) if fld in SEEN for inner in HILITE.findall(v)):
+                    Lx.err(w, f"`see: {see}` is the mark that carries the point, but no teacher line links its word: write =={see}== "
+                              f"(or =={see}:your words==) in a line, so the word takes its colour and lights it")
+        if has and (idea == "shortcut" or s.get("beat") in FOIL) and not two_states(s):
+            why = "a `shortcut` scene" if idea == "shortcut" else f"a `{s.get('beat')}` scene"
+            Lx.err(w, f"{why} draws the wrong way beside the right way on one frame, and this one holds one state: use a `compare`, "
+                      "give the figure a control (a toggle or slider) that switches the way, or add the other way as a mark with `step:` or `when:`")
+    for k, n in count.items():
+        if n > depth:
+            Lx.warn("lesson", f"the idea `{first[k]}` fills {n} scenes and the depth budget is {depth}: merge scenes, or ask the learner for more depth (`learner.depth`)")
+
+
 # what a board control and a symbol may carry; anything else is usually a comma inside an unquoted `{ }` value that split it
 CTL_FIELDS = {"name", "label", "says", "show", "min", "max", "step", "value", "fmt", "run", "stops", "every", "toggle"}
 # a symbol's own fields, and `value`, which a deck equation slide merges from `symbols` into its `terms` (deck slides.js)
@@ -1315,6 +1869,17 @@ def lint_fields(Lx, deck):
                                        "a comma inside an unquoted `{ }` value splits it: quote the value")
 
 
+def reach(nm, derive):
+    """What a control changes: itself and every scene derive made from it."""
+    seen, more = {nm}, True
+    while more:
+        more = False
+        for k, x in derive.items():
+            if k not in seen and set(IDENT.findall(str(x))) & seen:
+                seen.add(k); more = True
+    return seen
+
+
 def lint_ctl_labels(B, Lx, deck, glob, data=None):
     """A board control explains itself: its label is its symbol or one word, its meaning is on a card, its value column
     shows a value, and something on the scene shows what it changes."""
@@ -1354,13 +1919,7 @@ def lint_ctl_labels(B, Lx, deck, glob, data=None):
                 Lx.err(w, f"`label` “{label}” is {B.name_words(label)} words: a label is the symbol or one word; the meaning goes in the symbol's `says` or the control's `says:`")
             if not sym and not c.get("says"):
                 Lx.warn(w, "no card says what it means: give the control `says:` (or name it after a symbol, whose card it opens)")
-            # what the control changes: itself and every scene derive made from it
-            seen, more = {nm}, True
-            while more:
-                more = False
-                for k, x in derive.items():
-                    if k not in seen and set(IDENT.findall(str(x))) & seen:
-                        seen.add(k); more = True
+            seen = reach(nm, derive)
             if not seen & reads:
                 Lx.warn(w, "nothing on this scene reads it, directly or through `derive`: draw what it changes (a figure, a line, a formula), or delete it")
             for o in sorted(seen - {nm}):
@@ -1393,5 +1952,5 @@ def make_lint(B, data):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_story(Lx, deck)
-        lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data)
+        lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck); lint_adv(Lx, deck)
     return lesson_lint

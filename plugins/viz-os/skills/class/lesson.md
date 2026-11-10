@@ -80,6 +80,7 @@ You are a teacher at a whiteboard talking to one student. Each step's `say:` is 
 - **One breath per step.** The lint counts the words (`board.md`; a sketch's limit is in `page.md`). Short sentences. Active voice. Keep lines about even in length.
 - **Say only what helps.** Cut "Here is", "Now" and "as we did". Cut a line that only repeats the title or the card under it, and a note that repeats its line. If a step has nothing left to say, merge it with the next.
 - **On a board, write a symbol as math**: `$w_0$`, not w0, so it takes its colour. The lint warns on a bare name.
+- **Name each figure mark with a linked word** (`==label==`, `board.md`): the word takes the mark's colour and lights it, so the figure needs no text on it.
 - **Say what you are doing, then why**: "Square each distance. Now every one counts, and far cells count most."
 - **Use the learner's words**: "cells", "CD3 level", "counts", not "observations" or "the random variable".
 - **Define a term once**, the first time, as plain words then the term: "how far a cell sits from the mean (its deviation)".

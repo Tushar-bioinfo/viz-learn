@@ -5,7 +5,8 @@ Usage:
   tidy.py lessons/<slug> [--dry-run] [--keep NAME ...]
   tidy.py lessons/<slug> --restore [--dry-run]
 
-Moves only files it knows: snaps/, the yaml's data_file, make_data.py, verify_data.py, images the yaml names, __pycache__.
+Moves only files it knows: snaps/, the yaml's data_file, make_data.py, verify_data.py, storyboard.svg, images the yaml names,
+__pycache__.
 They go to attic/<slug>-<date>/ in the viz-os home folder ($VIZOS_HOME if it is set, else ~/.viz-os). Any other file stays
 and is listed. --restore brings the newest attic copy back and never overwrites a file. --dry-run prints the moves only.
 It refuses unless lesson.html exists, is not empty, is at least as new as the yaml, and holds this lesson's data and images.
@@ -18,7 +19,7 @@ import yaml
 
 SKILLS = Path(__file__).resolve().parent.parent.parent
 KEEP = {"lesson.html", "lesson.yaml"}
-WORKING = ["snaps", "make_data.py", "verify_data.py", "__pycache__"]
+WORKING = ["snaps", "make_data.py", "verify_data.py", "storyboard.svg", "__pycache__"]
 FROM = "tidied-from.txt"   # the attic copy's note of where it came from
 
 

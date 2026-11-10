@@ -139,7 +139,7 @@
   };
 
   // what the check reads, per scene and click: nothing runs off the page, nothing covers anything, nothing is too small
-  const MIN_TEXT = 15, MIN_TICK = 14;
+  const MIN_TEXT = 15, MIN_TICK = 14, MIN_NUM = 13;   // a figure's tick numbers may be 13 px (board.css --t-tick); its other words 14
   L.audit = function () {
     const sl = L.slides[L.i], node = sl.r.node, out = [], vw = document.documentElement.clientWidth;
     const hasText = e => (e.textContent || '').trim().length > 0;
@@ -157,7 +157,7 @@
     for (const { e, b } of items) {
       if (b.left < 8 || b.right > vw - 8) out.push(`${name(e)} runs off the page`);
       const fs = parseFloat(getComputedStyle(e).fontSize), svg = !!e.closest('svg');
-      if (fs < (svg ? MIN_TICK : MIN_TEXT)) out.push(`${name(e)} renders at ${fs.toFixed(1)}px (too small)`);
+      if (fs < (!svg ? MIN_TEXT : e.matches('.tick, .stk') ? MIN_NUM : MIN_TICK)) out.push(`${name(e)} renders at ${fs.toFixed(1)}px (too small)`);
       if (!svg) { const cs = getComputedStyle(e);
         if (['block', 'flex', 'grid', 'list-item'].includes(cs.display) && cs.overflow === 'visible' && e.clientWidth && e.scrollWidth > e.clientWidth + 3) out.push(`${name(e)} is wider than its box`);
         const card = e.parentElement && e.parentElement.closest('.g');

@@ -113,7 +113,7 @@ slides:
               - {point: [m1, m2], name: middle, color: accent}
               - {line: ['-m1', 1, 0], color: mist, dash: true, label: zero lines, says: the middle becomes zero on each axis, step: 4}
               - {line: ['-m2', 0, 1], color: mist, dash: true, step: 4}
-      - say: Measure every cell from the middle. Call these distances $d_1$ and $d_2$.
+      - say: Measure every cell from the middle, the ==zero lines:new zeros==. Call these $d_1$ and $d_2$.
         add:
           - {col: {key: d1, label: d₁, expr: cd3 - m1, fmt: 2}}
           - {col: {key: d2, label: d₂, expr: cd19 - m2, fmt: 2}}
@@ -125,7 +125,7 @@ slides:
   - type: board
     beat: by-hand
     title: A shadow on each marker's line
-    lead: Where a cell lands on a line is its shadow.
+    lead: Where a cell lands on ==a line== is its ==shadow==.
     steps:
       - say: Drop each cell straight onto the flat line through the middle, the CD3 line.
         add:
@@ -155,7 +155,7 @@ slides:
   - type: board
     beat: by-hand
     title: A tilted line and its shadows
-    lead: A tilted line mixes the two markers. Its shadow is a dot product.
+    lead: A ==tilted line== mixes the two markers. Its ==shadow== is a dot product.
     table:
       from: cells
       cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
@@ -211,7 +211,7 @@ slides:
   - type: board
     beat: run
     title: Turn the line, watch the spread
-    lead: Try every angle, five degrees at a time.
+    lead: Try every angle, five degrees at a time, and watch the ==shadow:shadows==.
     controls:
       - {name: t, run: 37, show: th}
     derive:
@@ -223,7 +223,7 @@ slides:
       - say: 'Start flat, along CD3. Each step turns the line {{at(ths, 1)}} degrees.'
         frame: 0
         add:
-          - {params: {say: The line now, names: [th, sp]}}
+          - {params: {say: The ==line now==, names: [th, sp]}}
           - plane:
               x: {label: CD3 from the middle, min: -3, max: 3.5}
               y: {label: CD19 from the middle, min: -2.5, max: 3}
@@ -269,9 +269,9 @@ slides:
               - {kind: point, x: th_hand, y: s2u, name: our tilt, color: ink, step: 3}
               - {kind: point, x: th_best, y: sp_best, name: PC1, says: the angle with the biggest spread, color: accent, step: 4}
           caption: One smooth hill and one valley, every half turn.
-      - say: The two markers alone sit at the flat and the upright line.
-      - say: Our hand tilt sits near the bottom of the valley.
-      - say: The peak is PC1, the first principal component, the line with the most spread.
+      - say: ==CD3 alone:CD3== and ==CD19 alone:CD19== alone sit at the flat and the upright line.
+      - say: ==our tilt:Our hand tilt== sits near the bottom of the valley.
+      - say: The peak is ==PC1==, the first principal component, the line with the most spread.
       - think:
           q: 'Best line at {{th_star|1}} degrees, worst at {{th_low|1}}. How far apart?'
           a: '{{th_star - th_low|0}} degrees, a right angle. The worst line is always square to the best. It is PC2.'
@@ -285,7 +285,7 @@ slides:
     derive:
       spl_now: sum((alen * v1 * d1 + alen * v2 * d2)^2) / (n - 1)
     steps:
-      - say: The best line again. Stretch its arrow and watch the spread.
+      - say: The ==best line== again. Stretch its arrow and watch the ==shadow:shadows== spread.
         add:
           - {params: {say: With the arrow you set, names: [alen, spl_now]}}
           - plane:

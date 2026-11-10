@@ -24,7 +24,7 @@ slides:
       xbar: mean(cw)
       top: max(cw)
     steps:
-      - say: Six cells, and their mean as a dashed line.
+      - say: Six cells, their ==xbar:mean==, the ==usual range== and the ==top cell==.
         add:
           chart:
             x: {cats: [c1, c2, c3, c4, c5, c6], label: cell}

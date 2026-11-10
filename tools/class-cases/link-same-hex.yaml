@@ -1,0 +1,25 @@
+# expect: linked words ==u==, ==other== all take colours that look the same (#8ec5ff, s1) in one figure
+# C10e review: s1 is drawn as #8ec5ff on a board, so a word in s1 and one in #8ec5ff cannot be told apart.
+title: A point and two directions
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    steps:
+      - say: ==u==, ==other:another direction== and ==point:a point== above them.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, color: s1, label: u}
+                - {vector: v, color: '#8ec5ff', label: other}
+                - {point: q, ring: true, label: point, says: the point}
+      - say: The point sits above the two arrows.

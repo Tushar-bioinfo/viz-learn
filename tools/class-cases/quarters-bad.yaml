@@ -1,0 +1,24 @@
+# expect: plane `quarters` takes the point where the two zero lines cross
+# A crossing written as one number, not two.
+title: A crossing with one number
+question: What if quarters gets one number?
+answer: The lint asks for two.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
+  - type: board
+    beat: picture
+    title: Quarters
+    lead: Split the plot.
+    steps:
+      - say: The quarters round zero.
+        add:
+          plane:
+            x: {min: -2, max: 2}
+            y: {min: -2, max: 2}
+            marks:
+              - {quarters: 0}

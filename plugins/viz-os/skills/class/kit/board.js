@@ -41,6 +41,10 @@
     pausePlace(); requestAnimationFrame(pausePlace); addEventListener('resize', pausePlace); addEventListener('load', pausePlace); };
   const COLOR = { accent: 1, tint: 1, s1: 1, s2: 1, s3: 1, s4: 1, s5: 1, ink: 1, mist: 1, haze: 1, line: 1, good: 1, bad: 1 };
   const col = c => COLOR[c] ? `var(--${c})` : c || 'var(--mist)';
+  // line weights (board.css --w-data, --w-wit): every mark draws at the data weight; the witness, for now the mark drawn in the
+  // accent colour, at its own heavier weight. An arrowhead grows with its line: today's size on the witness, 72% on a 2 px mark
+  const LW = {}, lw = k => LW[k] ?? (LW[k] = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(`--w-${k}`)) || (k === 'wit' ? 3.5 : 2));
+  const witOf = c => c === 'var(--accent)', wOf = c => lw(witOf(c) ? 'wit' : 'data'), headOf = w => (6.24 + 3.36 * w) / 18;
   // ---------- a dot in its true colour, and colour words that must fit it ----------
   // `rgb: 10` paints a dot the colour its place makes (x = red level, y = green, blue 0, full at 10); `rgb: {r, g, b, max}` from
   // any numbers. Each channel is a straight share of full, clipped at full: a sensor cannot read brighter than full
@@ -223,7 +227,8 @@
 
   // a legend or card swatch per kind of mark: a line, a dashed line, an arrow, a dot, a soft block
   const SWATCH = { line: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:3"/>', dash: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:2.5;stroke-dasharray:5 3"/>',
-    arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', ring: '<circle cx="12" cy="6" r="4.5" style="fill:none;stroke:C;stroke-width:2"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>' };
+    arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', ring: '<circle cx="12" cy="6" r="4.5" style="fill:none;stroke:C;stroke-width:2"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>',
+    ruler: '<polyline points="2,2 2,9 22,9 22,2" style="fill:none;stroke:C;stroke-width:2"/><line x1="12" y1="4" x2="12" y2="9" style="stroke:C;stroke-width:2"/>' };
   const swatch = (kind, c) => `<svg width="24" height="12" viewBox="0 0 24 12">${(SWATCH[kind] || SWATCH.line).replace(/C/g, c)}</svg>`;
 
   function plane(p, ctx, clickOf, at) {
@@ -232,7 +237,7 @@
     const leg = h('div', 'plegend'); node.appendChild(leg);
     const wrap = h('div', 'pwrap'); node.appendChild(wrap);
     const svg = sv('svg', { class: 'pl' }, wrap);
-    const R = { node, issues: [], kind: 'plane', w: 0, h: 0, leg: LEG, view: null };
+    const R = { node, issues: [], kind: 'plane', w: 0, h: 0, leg: LEG, view: null, linked: new Set(), cols: [], wlOn: null, hotM: null };
     const num = (x, where) => L.val(x, ctx.scope, where);
     // `says`: the name or legend entry opens the board's pop-up card (see pop-up cards), with the mark's swatch for notation
     const SW = SWATCH;
@@ -279,7 +284,7 @@
         let b = opts.find(o => !hit(o) && !filled(o)) || opts.find(o => !hit(o)); if (!b) { b = opts[0]; R.issues.push(`the plane label "${t}" overlaps another label or dot`); } placed.push(b);
         const el = sv('text', { class: cls || 'plab', x: b.tx, y: b.ty, 'text-anchor': b.end ? 'end' : 'start' }, g); el.textContent = t;
         if (mk && mk.says) tipOn(el, mk, c, kind); };
-      const seg = (a, b, g, c, dash, w) => sv('line', { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]), style: `stroke:${c};stroke-width:${w || (dash ? 3 : 4.5)}${dash ? ';stroke-dasharray:10 8' : ''}` }, g);
+      const seg = (a, b, g, c, dash) => sv('line', { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]), style: `stroke:${c};stroke-width:${wOf(c)};stroke-linecap:round${dash ? ';stroke-dasharray:10 8' : ''}` }, g);
       // a foot: the point q, its projection f on the line (or direction), the line's direction d, and the right-angle tick in pixels
       const footOf = (F, where) => { if (!F || !F.from || !(F.line || F.dir)) return null; const q = pt(F.from, where); let f, d;
         if (F.line) { const w = pt(F.line, where), nn = w[1] * w[1] + w[2] * w[2], k = (w[0] + w[1] * q[0] + w[2] * q[1]) / nn; f = [q[0] - k * w[1], q[1] - k * w[2]]; d = [-w[2], w[1]]; }
@@ -327,10 +332,12 @@
           R.later.push({ st, msg }); })); };
       list(p.marks).forEach((mk, i) => {
         const where = `slide ${ctx.index + 1} plane mark ${i + 1}`;
-        const g = sv('g', { class: 'pm' }, svg); const st = mk.step != null ? clickOf(mk.step) : at; if (st > at) g.dataset.step = st;
+        const g = sv('g', { class: 'pm', 'data-m': i }, svg); const st = mk.step != null ? clickOf(mk.step) : at; if (st > at) g.dataset.step = st;
         let c = mk.point && !mk.color ? 'var(--s1)' : col(mk.color), lv = null;   // a point with no colour is drawn in s1, and its legend swatch must match
         if (mk.when != null && !num(mk.when, where)) return;
         if (mk.point && mk.rgb != null) { const [x, y] = pt(mk.point, where); ({ hex: c, lv } = rgbOf(mk.rgb, x, y, ctx.scope, where, i)); }   // its legend dot takes the colour too
+        R.cols[i] = mk.ring ? 'var(--accent)' : c; glow(g, R.cols[i]); if (witOf(R.cols[i]) && !mk.quarters) g.classList.add('wit');
+        const nm = R.linked.has(i) ? null : mk.name;   // a word in the text names a linked mark: the figure carries no name for it
         if (!mk.points && !mk.text && !mk.ring) trueCheck(i, c, lv, [['name', mk.name], ['label', mk.label]], st);
         if (mk.shade) {
           const w = list(mk.shade).map(x => num(x, where)), poly = halfBox(w, box, mk.side === '-' ? -1 : 1);
@@ -355,34 +362,44 @@
           if (mk.rgb == null) Object.entries(colors).forEach(([k, v]) => { const hx = v && v.color || v; trueCheck(i, hx, null, [['label', (v && v.label) || k]], st); legend.push({ text: (v && v.label) || k, c: col(hx), kind: 'dot', st }); });
         } else if (mk.point) {
           const [x, y] = pt(mk.point, where); outside(i, 'point', [x, y]);
-          sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${c}` }, g); name(mk.name, sx(x), sy(y), g, null, false, null, mk, c, 'dot'); key(mk, c, 'dot', st);
+          sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${c}` }, g); name(nm, sx(x), sy(y), g, null, false, null, mk, c, 'dot'); key(mk, c, 'dot', st);
         } else if (mk.segment) {
           const [a, b] = list(mk.segment).map(q => pt(q, where)); outside(i, 'segment', a, b);
-          seg(a, b, g, c, mk.dash); if (mk.name) name(mk.name, sx((a[0] + b[0]) / 2), sy((a[1] + b[1]) / 2), g, null, false, midSpots(sx(a[0]), sy(a[1]), sx(b[0]), sy(b[1])), mk, c, mk.dash ? 'dash' : 'line'); key(mk, c, mk.dash ? 'dash' : 'line', st);
+          seg(a, b, g, c, mk.dash); if (nm) name(nm, sx((a[0] + b[0]) / 2), sy((a[1] + b[1]) / 2), g, null, false, midSpots(sx(a[0]), sy(a[1]), sx(b[0]), sy(b[1])), mk, c, mk.dash ? 'dash' : 'line'); key(mk, c, mk.dash ? 'dash' : 'line', st);
         } else if (mk.vector) {
           // an arrow from `from` (the origin by default) to from + vector, its head drawn in screen units
           const o = mk.from ? pt(mk.from, where) : [0, 0], v = pt(mk.vector, where), e = [o[0] + v[0], o[1] + v[1]]; outside(i, 'vector', o, e);
-          const X0 = sx(o[0]), Y0 = sy(o[1]), X1 = sx(e[0]), Y1 = sy(e[1]), L0 = Math.hypot(X1 - X0, Y1 - Y0) || 1, ux = (X1 - X0) / L0, uy = (Y1 - Y0) / L0, hd = Math.min(18, L0 / 2);
-          sv('line', { x1: X0, y1: Y0, x2: X1 - ux * hd * .8, y2: Y1 - uy * hd * .8, style: `stroke:${c};stroke-width:4.5` }, g);
+          const X0 = sx(o[0]), Y0 = sy(o[1]), X1 = sx(e[0]), Y1 = sy(e[1]), L0 = Math.hypot(X1 - X0, Y1 - Y0) || 1, ux = (X1 - X0) / L0, uy = (Y1 - Y0) / L0, w = wOf(c), hd = Math.min(18 * headOf(w), L0 / 2);
+          sv('line', { x1: X0, y1: Y0, x2: X1 - ux * hd * .8, y2: Y1 - uy * hd * .8, style: `stroke:${c};stroke-width:${w};stroke-linecap:round` }, g);
           sv('polygon', { points: `${X1},${Y1} ${X1 - ux * hd - uy * hd * .55},${Y1 - uy * hd + ux * hd * .55} ${X1 - ux * hd + uy * hd * .55},${Y1 - uy * hd - ux * hd * .55}`, style: `fill:${c}` }, g);
           // its name beside the middle of the arrow, off to one side, so two arrows that end at one point keep their names apart;
           // an arrow of length 0 is a dot, so its name goes round that point
-          name(mk.name, (X0 + X1) / 2, (Y0 + Y1) / 2, g, null, false, midSpots(X0, Y0, X1, Y1), mk, c, 'arrow'); key(mk, c, 'arrow', st);
+          name(nm, (X0 + X1) / 2, (Y0 + Y1) / 2, g, null, false, midSpots(X0, Y0, X1, Y1), mk, c, 'arrow'); key(mk, c, 'arrow', st);
         } else if (mk.foot) {
           // the projection of a point onto a line (w0 + w1 x + w2 y = 0) or onto a direction through the origin: a dashed drop and a right-angle tick
           const F = footOf(mk.foot, where); if (!F) return; const { q, f, tick } = F;
           outside(i, 'foot', q, f);
-          seg(q, f, g, c, true, 3); sv('circle', { cx: sx(f[0]), cy: sy(f[1]), r: 6, style: `fill:${c};stroke:none` }, g);
-          if (tick) sv('polyline', { points: `${tick[0][0]},${tick[0][1]} ${tick[0][2]},${tick[0][3]} ${tick[1][2]},${tick[1][3]}`, style: `fill:none;stroke:${c};stroke-width:2.5` }, g);
+          seg(q, f, g, c, true); sv('circle', { cx: sx(f[0]), cy: sy(f[1]), r: 6, style: `fill:${c};stroke:none` }, g);
+          if (tick) sv('polyline', { points: `${tick[0][0]},${tick[0][1]} ${tick[0][2]},${tick[0][3]} ${tick[1][2]},${tick[1][3]}`, style: `fill:none;stroke:${c};stroke-width:${wOf(c)}` }, g);
           // its name beside the middle of the drop, clear of the tick at the foot
-          name(mk.name, sx(f[0]), sy(f[1]), g, null, false, midSpots(sx(q[0]), sy(q[1]), sx(f[0]), sy(f[1])), mk, c, 'dash'); key(mk, c, 'dash', st);
+          name(nm, sx(f[0]), sy(f[1]), g, null, false, midSpots(sx(q[0]), sy(q[1]), sx(f[0]), sy(f[1])), mk, c, 'dash'); key(mk, c, 'dash', st);
         } else if (mk.square) {
           // the square built on a segment (a squared distance you can see), on its left unless side: right
           const [a, b] = list(mk.square).map(q => pt(q, where)), sgn = mk.side === 'right' ? -1 : 1, dx = b[0] - a[0], dy = b[1] - a[1];
           const cs = [a, b, [b[0] - sgn * dy, b[1] + sgn * dx], [a[0] - sgn * dy, a[1] + sgn * dx]]; outside(i, 'square', ...cs);
-          sv('polygon', { points: cs.map(([x, y]) => `${sx(x)},${sy(y)}`).join(' '), style: `fill:${c};fill-opacity:.16;stroke:${c};stroke-width:2.5` }, g); key(mk, c, 'area', st);
+          sv('polygon', { points: cs.map(([x, y]) => `${sx(x)},${sy(y)}`).join(' '), style: `fill:${c};fill-opacity:.16;stroke:${c};stroke-width:${wOf(c)}` }, g); key(mk, c, 'area', st);
         } else if (mk.text) {
-          const [x, y] = pt(mk.at, where); outside(i, 'text', [x, y]); name(mk.text, sx(x), sy(y), g, 'plab ink', true);   // a free label: centred on its point first
+          const [x, y] = pt(mk.at, where); outside(i, 'text', [x, y]); name(mk.text, sx(x), sy(y), g, 'plab free', true);   // a free label: centred on its point first, in axis grey
+        } else if (mk.quarters) {
+          // the four quarters round the crossing of the zero lines: the two where (x − cx)(y − cy) > 0 washed, and the sign of each
+          // quarter in its outer corner of the box, only when that quarter is at least 40 px each way (a crossing on or past an edge
+          // leaves no room on that side). Under the box line and every mark, shown at the mark's own step; no name, legend, card or pointer
+          const [x, y] = pt(mk.quarters, where); outside(i, 'quarters', [x, y]);
+          const X0 = ox, X1 = ox + gw, Y0 = oy, Y1 = oy + gh, qx = Math.max(X0, Math.min(X1, sx(x))), qy = Math.max(Y0, Math.min(Y1, sy(y))), qg = sv('g', { class: 'pq' }); if (st > at) qg.dataset.step = st;
+          svg.insertBefore(qg, svg.querySelector(':scope > .pbox'));
+          [[1, 1], [-1, -1], [-1, 1], [1, -1]].forEach(([rx, up], j) => { const a = rx > 0 ? qx : X0, b = rx > 0 ? X1 : qx, t = up > 0 ? Y0 : qy, u = up > 0 ? qy : Y1;
+            if (j < 2 && b > a && u > t) sv('rect', { x: a, y: t, width: b - a, height: u - t }, qg);
+            if (b - a >= 40 && u - t >= 40) sv('text', { x: rx > 0 ? X1 - 14 : X0 + 14, y: up > 0 ? Y0 + 30 : Y1 - 14, 'text-anchor': rx > 0 ? 'end' : 'start' }, qg).textContent = j < 2 ? '+' : '\u2212'; });
         } else if (mk.ring) {
           const [x, y] = pt(mk.ring, where);
           sv('circle', { class: 'pring', cx: sx(x), cy: sy(y), r: 20 }, g);
@@ -390,10 +407,184 @@
       });
       leg.style.paddingLeft = `${Math.max(0, ox - 8)}px`;   // the legend starts where the plot does
       legend.forEach(e => { const it = h('span', 'pk ' + e.kind); it.style.setProperty('--c', e.c); it.innerHTML = `<i></i><span>${md(e.text)}</span>`; if (e.st > at) it.dataset.step = e.st; leg.appendChild(it);
-        if (e.mk && e.mk.says) tipOn(it.lastChild, e.mk, e.c, e.kind); });
+        if (e.mk && e.mk.says) tipOn(it.lastChild, e.mk, e.c, e.kind);
+        const m = e.mk ? list(p.marks).indexOf(e.mk) : -1; if (m < 0) return; it.dataset.m = m; glow(it, e.c);
+        ['pointerenter', 'focusin'].forEach(ev => it.addEventListener(ev, () => R.hover(m))); ['pointerleave', 'focusout'].forEach(ev => it.addEventListener(ev, () => R.hover(null))); });
+      // a linked mark takes the pointer: a see-through copy of what it draws, a few pixels wider, under every name (so a name
+      // with a card stays reachable), areas first so a line or dot on top of one wins. It lights the mark and its words, and opens its card
+      const hl = sv('g', { class: 'phits' }); svg.insertBefore(hl, svg.querySelector(':scope > g.pm'));
+      const rank = e => e.tagName === 'polygon' ? 0 : e.tagName === 'circle' ? 2 : 1;
+      [...svg.querySelectorAll(':scope > g.pm')].filter(g => R.linked.has(+g.dataset.m)).flatMap(g => [...g.children].filter(e => e.tagName !== 'text').map(e => [g, e])).sort((a, b) => rank(a[1]) - rank(b[1])).forEach(([g, e]) => {
+        const m = +g.dataset.m, mk = list(p.marks)[m], k = e.cloneNode(false), ring = e.tagName === 'circle';
+        k.removeAttribute('class'); k.setAttribute('style', ring ? 'fill:transparent;stroke:none' : e.tagName === 'polygon' ? 'fill:transparent;stroke:transparent;stroke-width:10' : 'fill:none;stroke:transparent;stroke-width:16');
+        if (ring) k.setAttribute('r', Math.max(14, +e.getAttribute('r') + 6)); k.dataset.m = m; if (g.dataset.step) k.dataset.step = g.dataset.step; hl.appendChild(k);
+        k.addEventListener('pointerenter', () => R.hover(m)); k.addEventListener('pointerleave', () => R.hover(null));
+        if (mk.says) { tipOn(k, mk, R.cols[m], mk.vector ? 'arrow' : mk.point ? 'dot' : mk.square || mk.shade ? 'area' : mk.foot || mk.dash ? 'dash' : 'line'); k.removeAttribute('tabindex'); } });
+      R.paintWl();
       L.fill(leg, ctx.scope);
       const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was;   // a legend on two rows takes its room from the plot: the caller sizes again
     };
+    // a linked word (see the board): its mark's colour, and whether the mark is drawn at this stop
+    const gOf = i => svg.querySelector(`:scope > g.pm[data-m="${i}"]`);
+    R.wl = i => { const g = gOf(i); return { c: R.cols[i], drawn: !!g && g.childElementCount > 0 && (!g.dataset.step || +g.dataset.step <= (R.cNow ?? 1e9)) }; };   // by the stop, not a class a redraw has not set yet
+    // lit: the word's mark (the others dim) or the mark pointed at (the others stay)
+    R.paintWl = () => { const on = R.wlOn ?? R.hotM; node.classList.toggle('lnk-dim', R.wlOn != null);
+      svg.querySelectorAll(':scope > g.pm').forEach(g => g.classList.toggle('lnk-on', +g.dataset.m === on)); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', e.dataset.m != null && +e.dataset.m === on)); };
+    R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.hover = i => { if (R.hotM === i) return; R.hotM = i; R.paintWl(); if (R.onHot) R.onHot(i); };
+    return R;
+  }
+
+  // ---------- chance: two groups as units, their shares on one line, the gap between them and a ruler of noise steps ----------
+  // Each group is a grid of squares, 10 a row, its ill (`ill`) filled first in reading order, the rest outlined in its colour,
+  // dimmed. One share line 0–100% carries a dot per group, the gap (the witness, with its soft glow) between the dots and,
+  // with `step`, a ruler from the lower share: a numbered tick per noise step up to the first whole step past the gap, none
+  // past 100%. With `tally` (one 0/1 per frame of the scene's run) a strip under the line: a square per frame after frame 0,
+  // outlined until the run reaches it, then grey, or the gap's colour where the list holds 1; the frame on show is outlined.
+  // Text on it: the axis name and tick numbers only. The four marks (the two groups, `gap`, `noise step`) take the legend
+  // row, cards and linked words as a plane's marks do. It is drawn at the size it shows, and a number that changes moves
+  // its marks over --m-state on the kit's one curve (no move with reduced motion)
+  const CH = { most: 12, cols: 10, gapG: 50, cellMax: 34, top: 8, ruler: 56, plain: 22, below: 68, unitMin: 9, tallyMin: 9, l: 40, r: 30 };
+  const GEO = new Set(['x', 'y', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy', 'r', 'width', 'height']);
+  const bezier = (x1, y1, x2, y2) => t => { let u = t;
+    for (let i = 0; i < 8; i++) { const x = 3 * (1 - u) ** 2 * u * x1 + 3 * (1 - u) * u * u * x2 + u ** 3 - t, dx = 3 * (1 - u) ** 2 * x1 + 6 * (1 - u) * u * (x2 - x1) + 3 * u * u * (1 - x2); if (Math.abs(x) < 1e-5 || !dx) break; u -= x / dx; }
+    u = Math.min(1, Math.max(0, u)); return 3 * (1 - u) ** 2 * u * y1 + 3 * (1 - u) * u * u * y2 + u ** 3; };
+  const motion = () => { const cs = getComputedStyle(document.documentElement), ms = parseFloat(cs.getPropertyValue('--m-state')) || 450,
+      m = /cubic-bezier\(([^)]+)\)/.exec(cs.getPropertyValue('--ease')), b = m ? m[1].split(',').map(Number) : [.2, .7, .2, 1];
+    return { ms, ease: bezier(...b) }; };
+  function chance(p, ctx, at, env, ratio) {
+    const frameOf = env.frame;
+    const node = h('div', 'bi chance fr'); node.dataset.at = at; if (p.id) node.dataset.id = p.id;
+    const leg = h('div', 'plegend'); node.appendChild(leg);
+    const wrap = h('div', 'pwrap'); node.appendChild(wrap);
+    const svg = sv('svg', { class: 'pl ch' }, wrap);
+    const R = { node, issues: [], kind: 'chance', w: 0, h: 0, leg: LEG, linked: new Set(), cols: [], wlOn: null, hotM: null };
+    const G = list(p.groups).slice(0, 2).map((g, i) => ({ ...g, c: col(g.color || ['s4', 's1'][i]) }));
+    const gapC = col('s3'), stepC = col('s2'), rr = ratio != null ? ratioOf(ratio, null) : null;
+    const num = (x, where) => L.val(x, ctx.scope, `slide ${ctx.index + 1} chance ${where}`);
+    const pts = v => L.fmt(100 * v, 1), say = (t, d) => t != null ? String(t) : d;
+    R.cols = [...G.map(g => g.c), gapC, stepC];
+    // what each mark is: its legend name, swatch, card words and value now
+    R.keys = [...G.map(g => String(g.name ?? '')), 'gap', ...(p.step != null ? ['noise step'] : [])];
+    // the numbers at a scope, made safe to draw: `n` a whole number 1–100, `ill` 0..n, `step` above 0 or no ruler. What had
+    // to change is kept in `bad`, for the page audit
+    const read = (sc, bad) => { const v = G.map(g => { let n = L.val(g.n, sc, `slide ${ctx.index + 1} chance ${g.name} n`), x = L.val(g.ill, sc, `slide ${ctx.index + 1} chance ${g.name} ill`);
+        if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 100) { bad.push(`\`n\` of ${g.name} is ${L.fmt(n)}, not a whole number from 1 to 100`); n = Math.min(100, Math.max(1, Math.round(+n) || 1)); }
+        if (typeof x !== 'number' || !Number.isInteger(x) || x < 0 || x > n) { bad.push(`\`ill\` of ${g.name} is ${L.fmt(x)}, not a whole number from 0 to ${n}`); x = Math.min(n, Math.max(0, Math.round(+x) || 0)); }
+        return { n, x }; }), s = v.map(q => q.x / q.n);
+      let step = p.step != null ? L.val(p.step, sc, `slide ${ctx.index + 1} chance step`) : null;
+      if (step != null && !(typeof step === 'number' && step > 0 && Number.isFinite(step))) { bad.push(`\`step\` is ${L.fmt(step)}, not a share above 0, so no ruler is drawn`); step = null; }
+      return { v, s, gap: s[0] - s[1], step }; };
+    const now = () => read(ctx.scope, []);
+    // every frame the scene's run can reach, worked out with the page's own derive: the first frame each problem shows on
+    const sweep = () => { const out = new Map(), n = Math.max(1, env.frames || 0);
+      for (let f = 0; f < n; f++) { const sc = env.frames ? L.derive(L.scope(ctx.scope, { [env.name]: f }), env.derive, `slide ${ctx.index + 1}`) : ctx.scope, bad = [];
+        const S = read(sc, bad); if (S.step && Math.abs(S.gap) / S.step > CH.most) bad.push(`the gap is ${Math.round(Math.abs(S.gap) / S.step)} noise steps; the ruler counts up to ${CH.most}, so check \`step\` is a share, not a percent`);
+        bad.forEach(b => { const k = b.replace(/ is .*/, ''); if (!out.has(k)) out.set(k, `the chance figure: ${b}${env.frames ? ` (at frame ${f})` : ''}`); }); }
+      return [...out.values()]; };
+    const MK = [
+      ...G.map((g, i) => ({ kind: 'dot', says: say(g.says, `Each square is one member of the ${g.name} group, filled when it has the outcome. The dot on the line is the share filled.`),
+        value: S => `${L.fmt(S.v[i].x)} of ${L.fmt(S.v[i].n)} (${pts(S.s[i])}%)` })),
+      { kind: 'line', says: say(p.gap_says, 'The distance between the two shares: the difference the data show.'), value: S => `${pts(Math.abs(S.gap))} points` },
+      { kind: 'ruler', says: say(p.step_says, 'How far apart the two shares land by chance alone, as a rule, when both groups share one rate. Each tick is one more step.'),
+        value: S => S.step == null ? null : `${pts(S.step)} points` },
+    ];
+    const tipOn = (el, m) => { const mk = MK[m], c = R.cols[m];
+      el.classList.add('says', 'vt'); el.setAttribute('tabindex', '0'); glow(el, c); el.setAttribute('aria-description', mk.says); pauseButton();
+      el._pd = () => ({ swatch: swatch(mk.kind, c), c, name: R.keys[m], says: mk.says, value: mk.value(now()), shape: null, scope: ctx.scope }); };
+    // the drawing: every piece keyed, so a new frame moves what changed and leaves the rest
+    const els = new Map(), tweens = []; let raf = 0, drawnW = 0;
+    const tick = t => { const { ms, ease } = R.mo; for (let q = tweens.length - 1; q >= 0; q--) { const w = tweens[q], k = Math.min(1, (t - w.t0) / ms);
+        w.el.setAttribute(w.a, (w.from + (w.to - w.from) * ease(k)).toFixed(2)); if (k >= 1) tweens.splice(q, 1); }
+      raf = tweens.length ? requestAnimationFrame(tick) : 0; };
+    R.size = room => { const ah = room.h - PAD - R.leg, ww = aim(room, ah) - PAD; let w = Math.round(ww);
+      // as wide as the room allows, narrowed until its height fits the window
+      // with a `ratio`, the box keeps that shape and the drawing fits inside it
+      if (rr) { w = Math.round(Math.min(w, ah * rr)); R.box = Math.round(w / rr); }
+      else for (let q = 0; q < 40 && w > 300 && R.hOf(w) > ah; q++) w = Math.round(w * .95);
+      R.w = w; R.h = rr ? R.box : Math.round(R.hOf(w)); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
+    const geo = W => { const X0 = CH.l, X1 = W - CH.r, rows = Math.max(1, ...G.map(g => Math.ceil((num(g.n, 'n') || 0) / CH.cols)));
+      const cell = Math.min((X1 - X0 - CH.gapG) / 2 / CH.cols, CH.cellMax), uH = rows * cell;
+      const ySh = CH.top + uH + 34 + (p.step != null ? CH.ruler : CH.plain), yT = ySh + CH.below + 6;
+      const F = p.tally != null && env.frames ? env.frames - 1 : 0;   // one square per frame of the run after frame 0, whatever the list holds
+      let per = 50; const pitchOf = k => (X1 - X0) / (k - .25); for (const k of [50, 40, 25, 20, 10]) { per = k; if (pitchOf(k) * .75 >= CH.tallyMin) break; }
+      const pitch = pitchOf(per), tH = F ? Math.ceil(F / per) * pitch : 0;
+      return { X0, X1, cell, uH, ySh, yT, F, per, pitch, s: pitch * .75, H: (F ? yT + tH : ySh + CH.below) + 4 }; };
+    R.hOf = W => geo(W).H;
+    R.layout = () => {
+      R.issues = []; R.mo = R.mo || motion();
+      const W = R.w, g = geo(W); if (W < 40) { R.issues.push('the chance figure has no room'); return false; }
+      const hard = W !== drawnW || REDUCED; drawnW = W; R.h = rr ? R.box : Math.round(g.H); wrap.style.height = R.h + 'px';
+      svg.setAttribute('viewBox', `0 0 ${W} ${Math.round(g.H)}`); svg.setAttribute('width', W); svg.setAttribute('height', R.h);
+      const S = now(); R.issues.push(...sweep());
+      if (p.tally != null) { const tl = list(num(p.tally, 'tally')).length; if (!env.frames) R.issues.push('the chance figure has a tally but the scene has no run, so no tally is drawn'); else if (tl !== env.frames) R.issues.push(`the chance figure's tally holds ${tl} entries but the run has ${env.frames} frames`); }
+      const lo = Math.min(...S.s), hi = Math.max(...S.s), xs = v => g.X0 + v * (g.X1 - g.X0), stepPx = S.step != null ? S.step * (g.X1 - g.X0) : 0;
+      if (g.cell * .8 < CH.unitMin) R.issues.push(`the chance figure's units are ${(g.cell * .8).toFixed(1)} px: give it more room`);
+      if (g.F && g.s < CH.tallyMin) R.issues.push(`the chance figure's tally squares are ${g.s.toFixed(1)} px: give it more room`);
+      if (S.step != null && stepPx < 16) R.issues.push(`one noise step is only ${stepPx.toFixed(0)} px on the share line, so its ticks crowd`);
+      const t0 = performance.now(), seen = new Set(), groups = {};
+      const grp = (key, m, cls) => { let e = groups[key]; if (!e) { e = els.get(key) || sv('g', {}); e.setAttribute('class', cls || 'pm'); if (m != null) { e.dataset.m = m; glow(e, R.cols[m]); } els.set(key, e); groups[key] = e; svg.appendChild(e); seen.add(key); } return e; };
+      const put = (parent, tag, key, a, style, text) => { let e = els.get(key); seen.add(key);
+        if (!e || e.tagName !== tag) { if (e) e.remove(); e = sv(tag, {}); els.set(key, e); for (const k in a) e.setAttribute(k, a[k]); }
+        else for (const k in a) { const was = e.getAttribute(k), to = typeof a[k] === 'number' ? +a[k].toFixed(2) : a[k]; if (String(was) === String(to)) continue;
+          const live = tweens.findIndex(w => w.el === e && w.a === k); if (live >= 0) tweens.splice(live, 1);
+          if (!hard && GEO.has(k) && was != null) tweens.push({ el: e, a: k, from: +was, to: +to, t0 }); else e.setAttribute(k, to); }
+        if (style != null) e.setAttribute('style', style); if (text != null && e.textContent !== String(text)) e.textContent = text; parent.appendChild(e); return e; };
+      // the units: two grids side by side, ill first in reading order
+      const gw = CH.cols * g.cell, left = g.X0 + (g.X1 - g.X0 - 2 * gw - CH.gapG) / 2;
+      S.v.forEach((v, i) => { const gg = grp(`u${i}`, i), x0 = left + i * (gw + CH.gapG), c = G[i].c;
+        for (let k = 0; k < v.n; k++) { const x = x0 + (k % CH.cols) * g.cell, y = CH.top + Math.floor(k / CH.cols) * g.cell, on = k < v.x;
+          put(gg, 'rect', `u${i}-${k}`, { x: x + g.cell * .1, y: y + g.cell * .1, width: g.cell * .8, height: g.cell * .8 },
+            on ? `fill:${c};stroke:${c};stroke-width:var(--w-data)` : `fill:none;stroke:${c};stroke-width:var(--w-data);stroke-opacity:.42`); }
+        put(gg, 'rect', `uh${i}`, { x: x0, y: CH.top, width: gw, height: Math.ceil(v.n / CH.cols) * g.cell }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); });
+      // the share line: ticks every 10, numbers every 20, its name under them at the right
+      const ax = grp('axis', null, 'pax');
+      put(ax, 'line', 'axl', { x1: g.X0, x2: g.X1, y1: g.ySh, y2: g.ySh }, 'stroke:var(--c-axis);stroke-width:var(--w-guide)');
+      for (let q = 0; q <= 100; q += 10) { const x = xs(q / 100);
+        put(ax, 'line', `axt${q}`, { x1: x, x2: x, y1: g.ySh, y2: g.ySh + (q % 20 ? 4 : 7) }, 'stroke:var(--c-tick);stroke-width:var(--w-guide)');
+        if (q % 20 === 0) put(ax, 'text', `axn${q}`, { x, y: g.ySh + 30, 'text-anchor': 'middle', class: 'tick' }, null, q); }
+      put(ax, 'text', 'axname', { x: g.X1, y: g.ySh + 54, 'text-anchor': 'end', class: 'axt' }, null, L.plain(String(p.axis ?? 'share (%)'), ctx.scope));
+      // the gap: the witness between the two dots
+      const gp = grp('gap', 2);
+      put(gp, 'line', 'span', { x1: xs(lo), x2: xs(hi), y1: g.ySh, y2: g.ySh }, `stroke:${gapC};stroke-width:var(--w-wit);stroke-linecap:round`).setAttribute('class', 'cwit');
+      put(gp, 'line', 'spanh', { x1: xs(lo), x2: xs(hi), y1: g.ySh, y2: g.ySh }, 'stroke:transparent;stroke-width:16;fill:none').setAttribute('class', 'chit');
+      // the noise steps: a ruler from the lower share, a tick per step to the first whole step past the gap (at least 1), none past 100%
+      // the last tick, worked out first: the first whole step past the gap (at least 1), at most CH.most, and none past 100%
+      if (S.step != null) { const rg = grp('ruler', 3), x0 = xs(lo), K = Math.max(0, Math.min(CH.most, Math.max(1, Math.ceil((hi - lo) / S.step - 1e-9)), Math.floor((1 - lo) / S.step + 1e-9))), end = x0 + K * stepPx;
+        put(rg, 'line', 'rl', { x1: x0, x2: end, y1: g.ySh - 14, y2: g.ySh - 14 }, `stroke:${stepC};stroke-width:var(--w-data)`);
+        const most = Math.max(K, 4);   // ticks 0..4 always kept, so a tick slides in rather than pops; never more than CH.most + 1
+        for (let k = 0; k <= CH.most; k++) { if (k > most) { if (els.has(`rt${k}`)) { put(rg, 'line', `rt${k}`, {}, 'opacity:0'); put(rg, 'text', `rn${k}`, {}, 'opacity:0'); } continue; }
+          const x = x0 + Math.min(k, K) * stepPx, on = k <= K;
+          put(rg, 'line', `rt${k}`, { x1: x, x2: x, y1: g.ySh - 22, y2: g.ySh - 8 }, `stroke:${stepC};stroke-width:var(--w-data);opacity:${on ? 1 : 0}`);
+          put(rg, 'text', `rn${k}`, { x, y: g.ySh - 34, 'text-anchor': 'middle', class: 'tick' }, `fill:${stepC};font-weight:600;opacity:${on && stepPx >= 16 ? 1 : 0}`, k); }   // numbers only where they fit (the audit says when not)
+        put(rg, 'rect', 'rh', { x: x0, y: g.ySh - 46, width: Math.max(8, end - x0), height: 40 }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); }
+      // the dots on top of the span
+      S.s.forEach((v, i) => { const dg = grp(`d${i}`, i); put(dg, 'circle', `m${i}`, { cx: xs(v), cy: g.ySh, r: 7 }, `fill:${G[i].c};stroke:var(--bg);stroke-width:var(--w-data)`);
+        put(dg, 'circle', `mh${i}`, { cx: xs(v), cy: g.ySh, r: 14 }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); });
+      // the tally: a square per frame after frame 0
+      if (g.F) { const tg = grp('tally', null, 'ptally'), far = list(num(p.tally, 'tally')), f = frameOf();
+        for (let k = 1; k <= g.F; k++) { const x = g.X0 + ((k - 1) % g.per) * g.pitch, y = g.yT + Math.floor((k - 1) / g.per) * g.pitch, hit = +far[k] === 1;
+          put(tg, 'rect', `ty${k}`, { x: x + .5, y: y + .5, width: g.s - 1, height: g.s - 1 }, f == null || k > f ? 'fill:none;stroke:var(--mist);stroke-width:var(--w-guide);stroke-opacity:.35'
+            : `fill:${hit ? gapC : 'var(--mist)'};fill-opacity:${hit ? 1 : .55};stroke:none`); }
+        if (f > 0 && f <= g.F) { const x = g.X0 + ((f - 1) % g.per) * g.pitch, y = g.yT + Math.floor((f - 1) / g.per) * g.pitch;
+          put(tg, 'rect', 'tycur', { x: x - 1.25, y: y - 1.25, width: g.s + 2.5, height: g.s + 2.5 }, 'fill:none;stroke:var(--ink);stroke-width:1.5'); } }
+      [...els.keys()].forEach(k => { if (!seen.has(k)) { els.get(k).remove(); els.delete(k); } });
+      if (tweens.length && !raf) raf = requestAnimationFrame(tick);
+      // what points at a mark: its hit areas (and the gap's glow) light it, its words and its card
+      svg.querySelectorAll('.chit').forEach(e => { const m = +e.parentNode.dataset.m; if (e._on) return; e._on = 1;
+        e.addEventListener('pointerenter', () => R.hover(m)); e.addEventListener('pointerleave', () => R.hover(null)); tipOn(e, m); e.removeAttribute('tabindex'); });
+      const gl = svg.querySelector('.cwit'); if (gl) glow(gl, gapC);
+      // the legend row: one entry a mark, from where the line starts
+      if (!leg.childElementCount) { leg.style.paddingLeft = `${Math.max(0, CH.l - 8)}px`;
+        R.keys.forEach((t, m) => { const it = h('span', 'pk ' + MK[m].kind); it.style.setProperty('--c', R.cols[m]); it.innerHTML = `<i></i><span>${md(t)}</span>`; it.dataset.m = m; glow(it, R.cols[m]); leg.appendChild(it);
+          tipOn(it.lastChild, m); ['pointerenter', 'focusin'].forEach(ev => it.addEventListener(ev, () => R.hover(m))); ['pointerleave', 'focusout'].forEach(ev => it.addEventListener(ev, () => R.hover(null))); }); }
+      R.paintWl();
+      const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
+    R.wl = i => ({ c: R.cols[i], drawn: i < R.keys.length && env.shown() });   // its words wait until the reading reaches the figure
+    R.paintWl = () => { const on = R.wlOn ?? R.hotM; node.classList.toggle('lnk-dim', R.wlOn != null);
+      svg.querySelectorAll(':scope > g[data-m]').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); };
+    R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.hover = i => { if (R.hotM === i) return; R.hotM = i; R.paintWl(); if (R.onHot) R.onHot(i); };
     return R;
   }
 
@@ -420,7 +611,8 @@
     const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(q).color); q.remove(); rgbs[c] = m ? m[1].split(',').slice(0, 3).map(Number) : [162, 159, 151]; } return rgbs[c]; };
   const glowOf = c => { glow(document.createElement('span'), c); return glows[c]; };
   const SPACE = ['points', 'point', 'ring', 'vector', 'sheet', 'foot', 'segment', 'text'];   // a mark's kind; `ring: true` on a point is a field
-  const SDEF = { points: 's1', point: 'ink', ring: 'ink', vector: 'ink', sheet: 'mist', foot: 'accent', segment: 'mist', text: 'mist' };
+  // a foot is teal, not accent, so its linked word is told apart from a ringed point's accent ring
+  const SDEF = { points: 's1', point: 'ink', ring: 'ink', vector: 'ink', sheet: 'mist', foot: 's2', segment: 'mist', text: 'mist' };
   // the look was picked at the bench's size, a longest axis of 2.6 OD units: perspective (focal 5), the depth fade and the
   // right-angle mark are in those units, and scale with each space
   const OD0 = 2.6, FOCAL = 5, RAD = Math.PI / 180, PMIN = -10, PMAX = 80, HOME = [38, 20], SHAPE3 = 4 / 3;
@@ -440,7 +632,6 @@
     const tools = h('div', 'stools', '<button type="button" data-z="in" aria-label="zoom in">+</button><button type="button" data-z="out" aria-label="zoom out">−</button>' +
       '<button type="button" class="wd" data-z="fit" aria-label="fit the space to the figure">fit</button>' +
       (marks.some(m => m.mk.sheet != null) ? '<button type="button" class="wd" data-z="edge" aria-label="look along the sheet">edge</button>' : '') + '<span class="zl"></span>');
-    wrap.appendChild(tools);
     const R = { node, issues: [], later: [], past: new Set(), kind: 'space', w: 0, h: 0, leg: LEG, c: 1e9 };
     const where = `slide ${ctx.index + 1} space`, scene = (ctx.deck.slides || [])[ctx.index] || {}, S = ctx.symbols || {};
     const symOfV = v => typeof v === 'string' && /^[A-Za-z_]\w*$/.test(v) && S[v] ? S[v] : null;
@@ -490,7 +681,7 @@
     // pp is how much perspective there is: 1 (mild) normally, 0 in the edge view, where only a camera at infinity sees a plane
     // as a line; the first turn after it glides back to 1
     const vw = { yaw: HOME[0], pitch: HOME[1], S: 1, ox: 0, oy: 0, vy: 0, vp: 0, pp: 1 };
-    let box = null, W = 0, HT = 0, fitS = 1, mid = [0, 0, 0], G = [], hot = null, hotBy = null, raf = 0, tween = null, drag = null, toPP = false;
+    let box = null, W = 0, HT = 0, fitS = 1, mid = [0, 0, 0], G = [], hot = null, raf = 0, tween = null, drag = null, toPP = false;
     const orbit = (q0, yw, pt) => { const y = yw * RAD, t = pt * RAD, q = vsub(q0, mid), x1 = q[0] * Math.cos(y) - q[1] * Math.sin(y), y1 = q[0] * Math.sin(y) + q[1] * Math.cos(y);
       return { sx: x1, sy: q[2] * Math.cos(t) + y1 * Math.sin(t), d: (y1 * Math.cos(t) - q[2] * Math.sin(t)) / box.unit }; };   // d > 0 is away from the viewer
     const proj = q => { const o = orbit(q, vw.yaw, vw.pitch), k = FOCAL / (FOCAL + o.d * vw.pp);
@@ -516,35 +707,38 @@
       const out = [], dots = [], segs = [], u = box.unit, put = (d, s, m) => out.push([d, s, m]);
       const seg = (a, b, n, sty, m, w) => { for (let j = 0; j < n; j++) { const p0 = proj(vlerp(a, b, j / n)), p1 = proj(vlerp(a, b, (j + 1) / n)); put((p0.d + p1.d) / 2, lineS(p0, p1, sty), m); }
         const p0 = proj(a), p1 = proj(b); segs.push([p0.x, p0.y, p1.x, p1.y, w]); };
-      const dot = (q, r, sty, m, dz = 0) => { const p0 = proj(q); dots.push([p0.x, p0.y, r * p0.k + 2]); put(p0.d - dz, `<circle cx="${n1(p0.x)}" cy="${n1(p0.y)}" r="${n1(r * p0.k)}" style="${sty};opacity:${p0.fade.toFixed(2)}"/>`, m); };
+      const dot = (q, r, sty, m, dz = 0) => { const p0 = proj(q), rr = few ? Math.max(4.5, r * p0.k) : r * p0.k; dots.push([p0.x, p0.y, rr + 2]); put(p0.d - dz, `<circle cx="${n1(p0.x)}" cy="${n1(p0.y)}" r="${n1(rr)}" style="${sty};opacity:${p0.fade.toFixed(2)}"/>`, m); };
       const [x0, y0] = box.lo, [xh, yh] = box.hi, F0 = (x, y) => proj([x, y, 0]);
       let back = `<polygon points="${ptsS([F0(x0, y0), F0(xh, y0), F0(xh, yh), F0(x0, yh)])}" style="fill:rgba(255,255,255,.025);stroke:var(--line-dim);stroke-width:1"/>`;
-      for (let v = x0 + box.grid; v < xh - 1e-6; v += box.grid) back += lineS(F0(v, y0), F0(v, yh), 'stroke:var(--grid);stroke-width:.8');
-      for (let v = y0 + box.grid; v < yh - 1e-6; v += box.grid) back += lineS(F0(x0, v), F0(xh, v), 'stroke:var(--grid);stroke-width:.8');
-      [0, 1, 2].forEach(a => { const e0 = [0, 0, 0], e1 = [0, 0, 0]; e0[a] = box.lo[a]; e1[a] = box.hi[a]; seg(e0, e1, 8, 'stroke:var(--mist);stroke-width:1.5;stroke-linecap:square', null, 3); });
+      for (let v = x0 + box.grid; v < xh - 1e-6; v += box.grid) back += lineS(F0(v, y0), F0(v, yh), 'stroke:var(--grid);stroke-width:1');
+      for (let v = y0 + box.grid; v < yh - 1e-6; v += box.grid) back += lineS(F0(x0, v), F0(xh, v), 'stroke:var(--grid);stroke-width:1');
+      [0, 1, 2].forEach(a => { const e0 = [0, 0, 0], e1 = [0, 0, 0]; e0[a] = box.lo[a]; e1[a] = box.hi[a]; seg(e0, e1, 8, 'stroke:var(--mist);stroke-width:1;stroke-linecap:square', null, 3); });
       const on = G.filter(g => g && g.st <= R.c);
+      // a dot shrinks with distance, but never under --dot-min (9 px) across while the figure draws 50 dots or fewer now (rings are not dots)
+      const few = on.reduce((n, g) => n + (g.k === 'points' ? g.rows.length : (g.k === 'point' && g.p) || (g.k === 'foot' && g.f) ? 1 : 0), 0) <= 50;
       on.forEach(g => { const { mk, i: m, c } = g;
         if (g.k === 'sheet' && g.U) { const N = 6, [a0, b0, a1, b1] = g.ab;
           for (let p1 = 0; p1 < N; p1++) for (let q1 = 0; q1 < N; q1++) {
             const A0 = a0 + (a1 - a0) * p1 / N, A1 = a0 + (a1 - a0) * (p1 + 1) / N, B0 = b0 + (b1 - b0) * q1 / N, B1 = b0 + (b1 - b0) * (q1 + 1) / N;
             const qs = [g.at(A0, B0), g.at(A1, B0), g.at(A1, B1), g.at(A0, B1)].map(proj), hm = (p1 + .5) / N, em = (q1 + .5) / N, w = hm / (hm + em);
             put(qs.reduce((sum, z) => sum + z.d, 0) / 4 + .004, `<polygon points="${ptsS(qs)}" style="fill:rgba(${g.cV.map((v, j) => Math.round(v + (g.cU[j] - v) * w)).join(',')},${(.05 + .1 * Math.max(hm, em)).toFixed(3)})"/>`, m); }
-          g.pts.forEach((z, j) => seg(z, g.pts[(j + 1) % 4], N, 'stroke:var(--mist);stroke-width:1.3;stroke-opacity:.75', m, 2)); }
+          g.pts.forEach((z, j) => seg(z, g.pts[(j + 1) % 4], N, `stroke:var(--mist);stroke-width:${lw('data')};stroke-opacity:.75`, m, 2)); }
         else if (g.k === 'vector' && g.e) { const L0 = vlen(vsub(g.e, g.o)); if (L0 < 1e-12) return;
-          seg(g.o, vlerp(g.o, g.e, Math.max(0, 1 - .09 * u / L0)), 6, `stroke:${c};stroke-width:3;stroke-linecap:round`, m, 8);
-          const tip = proj(g.e), bk = proj(vlerp(g.o, g.e, Math.max(0, 1 - .1 * u / L0))), q = Math.hypot(tip.x - bk.x, tip.y - bk.y) || 1, dx = (tip.x - bk.x) / q, dy = (tip.y - bk.y) / q, hl = 16 * tip.k, hw = 7 * tip.k, bx = tip.x - dx * hl, by = tip.y - dy * hl;
+          const w = wOf(c), tip = proj(g.e), bk = proj(vlerp(g.o, g.e, Math.max(0, 1 - .1 * u / L0))), q = Math.hypot(tip.x - bk.x, tip.y - bk.y) || 1, dx = (tip.x - bk.x) / q, dy = (tip.y - bk.y) / q, hl = 16 * headOf(w) * tip.k, hw = 7 * headOf(w) * tip.k, bx = tip.x - dx * hl, by = tip.y - dy * hl;
+          seg(g.o, vlerp(g.o, g.e, Math.max(0, 1 - .1 * u / L0 * Math.min(1, .8 * hl / q))), 6, `stroke:${c};stroke-width:${w};stroke-linecap:round`, m, 8);   // the line stops under its head
           put(tip.d - .001, `<polygon points="${n1(tip.x)},${n1(tip.y)} ${n1(bx - dy * hw)},${n1(by + dx * hw)} ${n1(bx + dy * hw)},${n1(by - dx * hw)}" style="fill:${c}"/>`, m); }
         else if (g.k === 'points') g.rows.forEach(row => dot(row.at, 5.5, `fill:${row.hex};stroke:var(--ink);stroke-opacity:.55;stroke-width:1.1`, m));
-        else if (g.k === 'point' && g.p) { if (mk.ring === true) dot(g.p, 12.5, `fill:none;stroke:${g.rc};stroke-width:2.4`, m, .001); dot(g.p, 8, `fill:${c};stroke:var(--ink);stroke-opacity:.55;stroke-width:1.1`, m, .002); }
-        else if (g.k === 'ring' && g.p) dot(g.p, 11.5, `fill:none;stroke:${c};stroke-width:2`, m, .0005);
-        else if (g.k === 'segment' && g.a) seg(g.a, g.b, 6, `stroke:${c};stroke-width:2.2${mk.dash ? ';stroke-dasharray:6 4' : ''}`, m, 3);
+        else if (g.k === 'point' && g.p) { if (mk.ring === true) dot(g.p, 12.5, `fill:none;stroke:${g.rc};stroke-width:${wOf(g.rc)}`, m, .001); dot(g.p, 8, `fill:${c};stroke:var(--ink);stroke-opacity:.55;stroke-width:1.1`, m, .002); }
+        else if (g.k === 'ring' && g.p) dot(g.p, 11.5, `fill:none;stroke:${c};stroke-width:${wOf(c)}`, m, .0005);
+        else if (g.k === 'segment' && g.a) seg(g.a, g.b, 6, `stroke:${c};stroke-width:${wOf(c)};stroke-linecap:round${mk.dash ? ';stroke-dasharray:6 4' : ''}`, m, 3);
         else if (g.k === 'foot' && g.f) { const r = vsub(g.P, g.f), n = vlen(r), pa = proj(g.P), pb = proj(g.f);
-          if (n >= .015 * u) { put((pa.d + pb.d) / 2, lineS(pa, pb, `stroke:${c};stroke-width:2.2;stroke-dasharray:6 4`), m); segs.push([pa.x, pa.y, pb.x, pb.y, 3]); }
+          if (n >= .015 * u) { put((pa.d + pb.d) / 2, lineS(pa, pb, `stroke:${c};stroke-width:${wOf(c)};stroke-dasharray:6 4`), m); segs.push([pa.x, pa.y, pb.x, pb.y, 3]); }
           if (n >= .02 * u) { const ra = vmul(r, .1 * u / n), fl = vlen(g.f), rb = vmul(fl > 1e-9 ? g.f : g.ws[0], -.1 * u / (fl > 1e-9 ? fl : vlen(g.ws[0]))), qs = [vadd(g.f, ra), vadd(vadd(g.f, ra), rb), vadd(g.f, rb)].map(proj);
-            put(qs[1].d, `<polyline points="${ptsS(qs)}" style="fill:none;stroke:${g.c2};stroke-width:1.6"/>`, m); }
+            put(qs[1].d, `<polyline points="${ptsS(qs)}" style="fill:none;stroke:${g.c2};stroke-width:${lw('data')}"/>`, m); }
           dot(g.f, 4.7, `fill:var(--bg);stroke:${c};stroke-width:2`, m, .001); } });
       out.sort((a, b) => b[0] - a[0]);
-      const lit = (str, m) => m != null && m === hot ? str.replace(/^<(\w+) /, '<$1 class="lit" ').replace('style="', `style="--hg:${G[m].hg};`) : str;
+      // every piece carries its mark's number, so a linked word can dim the other marks
+      const lit = (str, m) => m == null ? str : m === hot ? str.replace(/^<(\w+) /, `<$1 class="lit" data-m="${m}" `).replace('style="', `style="--hg:${G[m].hg};`) : str.replace(/^<(\w+) /, `<$1 data-m="${m}" `);
       // tick numbers along each axis, every `tick`, and the boxes the names must clear
       let top = ''; const o0 = proj([0, 0, 0]), placed = [], dec = box.tick < 1 ? Math.max(1, -Math.floor(Math.log10(box.tick) + 1e-9)) : 0;
       [0, 1, 2].forEach(a => { for (let v = Math.ceil(box.lo[a] / box.tick - 1e-9) * box.tick; v <= box.hi[a] - box.grid + 1e-9; v += box.tick) { if (Math.abs(v) < 1e-9) continue;
@@ -555,7 +749,7 @@
       // a name in a plain word with a halo in the ground colour: the first spot round its anchor that covers no mark, number or name
       const cross = (q, r) => { let t0 = 0, t1 = 1; const dx = q[2] - q[0], dy = q[3] - q[1], ps = [-dx, dx, -dy, dy], qs = [q[0] - r.x, r.x + r.w - q[0], q[1] - r.y, r.y + r.h - q[1]];
         for (let j = 0; j < 4; j++) { if (!ps[j]) { if (qs[j] < 0) return false; continue; } const t = qs[j] / ps[j]; if (ps[j] < 0) { if (t > t1) return false; t0 = Math.max(t0, t); } else { if (t < t0) return false; t1 = Math.min(t1, t); } } return true; };
-      const clear = r => r.x >= 6 && r.y >= 6 && r.x + r.w <= W - 60 && r.y + r.h <= HT - 6 && !placed.some(q => r.x < q.x + q.w + 5 && q.x < r.x + r.w + 5 && r.y < q.y + q.h + 3 && q.y < r.y + r.h + 3)
+      const clear = r => r.x >= 6 && r.y >= 6 && r.x + r.w <= W - 6 && r.y + r.h <= HT - 6 && !placed.some(q => r.x < q.x + q.w + 5 && q.x < r.x + r.w + 5 && r.y < q.y + q.h + 3 && q.y < r.y + r.h + 3)
         && !dots.some(([cx, cy, cr]) => Math.hypot(cx - Math.max(r.x, Math.min(cx, r.x + r.w)), cy - Math.max(r.y, Math.min(cy, r.y + r.h))) < cr + 1)
         && !segs.some(q => cross(q, { x: r.x - q[4] / 2 - 3, y: r.y - q[4] / 2 - 3, w: r.w + q[4] + 6, h: r.h + q[4] + 6 }));
       const crowd = [], label = (t, q, pref, cls, fs, centre) => { const pt = proj(q), w = tw(t, fs) + 2, hh = fs + 2; let best = null;
@@ -563,8 +757,8 @@
             const r = dist < 0 ? { x: pt.x - w / 2, y: pt.y - hh / 2, w, h: hh } : { x: pt.x + Math.cos(an) * (dist + w / 2) - w / 2, y: pt.y + Math.sin(an) * (dist + hh / 2) - hh / 2, w, h: hh }; if (clear(r)) best = r; } if (best) break; }
         if (!best) { crowd.push(t); best = { x: pt.x + 8, y: pt.y - hh / 2, w, h: hh }; } placed.push(best);
         top += `<text class="${cls}" x="${n1(best.x + 1)}" y="${n1(best.y + fs * .86)}">${L.esc(t)}</text>`; };
-      [0, 1, 2].forEach(a => { if (!axn[a]) return; const e = [0, 0, 0]; e[a] = box.hi[a]; const pt = proj(e); label(axn[a], e, Math.atan2(pt.y - o0.y, pt.x - o0.x), 'sax', 15); });
-      on.forEach(g => { if (g.k === 'text' && g.p) label(L.plain(String(g.mk.text), ctx.scope), g.p, -Math.PI / 4, 'stx', 16, true); });
+      [0, 1, 2].forEach(a => { if (!axn[a]) return; const e = [0, 0, 0]; e[a] = box.hi[a]; const pt = proj(e); label(axn[a], e, Math.atan2(pt.y - o0.y, pt.x - o0.x), 'sax', 14); });
+      on.forEach(g => { if (g.k === 'text' && g.p) label(L.plain(String(g.mk.text), ctx.scope), g.p, -Math.PI / 4, 'stx', 14, true); });
       // the hit areas, see-through, over everything: the sheet, then lines, then dots, so a dot wins over the sheet it sits on
       const hit = (m, str) => str.replace(/^<(\w+) /, `<$1 class="shit vt says" data-m="${m}" data-vk="sp${no}-${m}" `);
       let hits = '';
@@ -595,7 +789,11 @@
     // zoom toward a point in the figure: up to 400%; down to the fitted size, or to 50% by pinch, ctrl / ⌘ + scroll or the buttons
     const zoomBy = (f, cx = W / 2, cy = HT / 2, least = .5) => { const S2 = Math.max(Math.min(vw.S, fitS * least), Math.min(fitS * 4, vw.S * f)); f = S2 / vw.S;
       vw.ox = (cx - W / 2) - (cx - W / 2 - vw.ox) * f; vw.oy = (cy - HT / 2) - (cy - HT / 2 - vw.oy) * f; vw.S = S2; tween = null; req(); };
-    const setHot = (m, by) => { if (m == null && hotBy !== by) return; if (hot === m) return; hot = m; hotBy = m == null ? null : by; req(); };
+    // what lights a mark: a linked word (pointed, focused or tapped), its legend entry, or the figure under the pointer. Each
+    // source holds its own mark, so one letting go leaves the others lit; the pointer wins over a word
+    const holds = { word: null, leg: null, fig: null };
+    const setHot = (m, by) => { const was = holds.fig ?? holds.leg; holds[by] = m; const now = holds.fig ?? holds.leg ?? holds.word, ptr = holds.fig ?? holds.leg;
+      if (now !== hot) { hot = now; req(); } if (by !== 'word' && R.onHot && ptr !== was) R.onHot(ptr); };
     const local = e => { const b = wrap.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
     // a drag turns it: no text selection, no focus ring and no highlight from the mouse; the hit areas let go while it turns
     wrap.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('.stools')) return; e.preventDefault();
@@ -607,7 +805,7 @@
       if (!drag) { const ht = e.target.closest('.stools') ? null : e.target.closest('.shit'); setHot(ht ? +ht.dataset.m : null, 'fig');
         if (figCard() && (!ht || ht.dataset.vk !== cur.dataset.vk)) { popHide(); if (ht && !hoverOff) popShow(ht); } return; }
       if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 4) return;
-      if (!drag.moved) { drag.moved = true; wrap.classList.add('drag'); try { wrap.setPointerCapture(drag.id); } catch (_) { /* a synthetic pointer */ } if (cur && node.contains(cur)) popHide(); setHot(null, hotBy); }
+      if (!drag.moved) { drag.moved = true; wrap.classList.add('drag'); try { wrap.setPointerCapture(drag.id); } catch (_) { /* a synthetic pointer */ } if (cur && node.contains(cur)) popHide(); setHot(null, 'fig'); setHot(null, 'leg'); }
       turned(); const dx = e.clientX - drag.x, dy = e.clientY - drag.y; vw.yaw += dx * .4; vw.pitch = clampP(vw.pitch + dy * .3); vw.vy = dx * .4; vw.vp = dy * .3;
       drag.x = e.clientX; drag.y = e.clientY; drag.t = performance.now(); req(); });
     function end() { if (!drag) return; if (!drag.moved || REDUCED || performance.now() - drag.t > 90) vw.vy = vw.vp = 0; drag = null; wrap.classList.remove('drag'); req(); }
@@ -631,6 +829,11 @@
     R.size = room => { const ah = room.h - PAD - R.leg, aw = aim(room, ah) - PAD, ww = Math.max(40, Math.min(aw, ah * SHAPE3));
       R.w = Math.round(ww); R.h = Math.round(ww / SHAPE3); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
     R.show = c => { R.c = c; leg.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= c)); draw(); };
+    // a linked word (see the board): the colour it takes, a sheet's two tints, and whether its mark is drawn at this stop
+    R.wl = i => { const g = G[i]; return !g ? { drawn: false } : { c: g.lc, grad: g.k === 'sheet' && g.mk.color == null && g.cU ? [g.cV, g.cU].map(q => `rgb(${q})`) : null, drawn: g.st <= R.c && g.pts.length > 0 }; };
+    // the word's mark lights as its legend entry lights it; the other marks and entries dim
+    // repainted on every call: a layout rebuilds the legend, and its lit entry must come back
+    R.wlLight = i => { R.wlOn = i; node.classList.toggle('lnk-dim', i != null); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === i)); setHot(i, 'word'); };
     R.layout = () => {
       leg.innerHTML = ''; R.later = []; const base = R.base = [];
       if (R.w < 40 || R.h < 40) { R.issues = ['the picture has no room']; return false; }
@@ -652,7 +855,7 @@
           else { lv = q; mx = L.val(spec, ctx.scope, where); }
           if (![...lv, mx].every(Number.isFinite) || !(mx > 0)) { base.push(`${w} (${k}): its rgb does not work out to numbers with a max above 0`); return '#000000'; } return toHex(lv, mx); };
         g.c = k === 'point' && spec != null && g.p ? hx(g.p) : c; if (k === 'points') g.rows.forEach(row => { row.hex = spec != null ? hx(row.at, row.r) : c; });
-        g.rc = mk.color != null ? c : 'var(--accent)'; g.c2 = mk.color != null ? c : 'var(--accent-hi)';
+        g.rc = mk.color != null ? c : 'var(--accent)'; g.c2 = c;
         if (k === 'sheet') { const [su, sv2] = list(mk.sheet).map(symOfV), cs = q => cssRGB(mk.color != null ? c : q && q.color && q.color !== 'ink' ? col(q.color) : 'var(--mist)'); g.cU = cs(su); g.cV = cs(sv2); }
         g.lk = k === 'vector' ? 'arrow' : k === 'sheet' ? 'area' : k === 'foot' || (k === 'segment' && mk.dash) ? 'dash' : k === 'segment' ? 'line' : k === 'ring' || mk.ring === true ? 'ring' : 'dot';
         g.lc = mk.ring === true ? g.rc : k === 'sheet' && mk.color == null ? 'var(--mist)' : k === 'points' && spec != null ? 'var(--mist)' : g.c;
@@ -666,12 +869,12 @@
           return { swatch: swatch(g.lk, g.lc), c: cc, name: mk.label ?? null, says: g.says, value: val ?? null, shape: q.k === 'point' || q.k === 'ring' ? 'one point' : q.k === 'foot' ? 'its length' : null, scope: ctx.scope }; };
         return g; });
       // the legend: one entry per mark with a `label`; pointing at it (or the mark) lights the mark and opens its card
-      G.forEach(g => { if (!g || g.mk.label == null) return; const ent = h('span', 'pk ' + g.lk), lab = h('span', '', md(String(g.mk.label))); ent.style.setProperty('--c', g.lc); ent.append(h('i'), lab);
+      G.forEach(g => { if (!g || g.mk.label == null) return; const ent = h('span', 'pk ' + g.lk), lab = h('span', '', md(String(g.mk.label))); ent.style.setProperty('--c', g.lc); ent.dataset.m = g.i; glow(ent, g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc); ent.append(h('i'), lab);
         if (g.st > at) { ent.dataset.step = g.st; ent.classList.toggle('shown', g.st <= R.c); } leg.appendChild(ent);
         ['pointerenter', 'focusin'].forEach(ev => ent.addEventListener(ev, () => setHot(g.i, 'leg'))); ['pointerleave', 'focusout'].forEach(ev => ent.addEventListener(ev, () => setHot(null, 'leg')));
         if (g.card) { lab.classList.add('says', 'vt'); lab.tabIndex = 0; lab.dataset.vk = `sp${no}-${g.i}-k`; glow(lab, g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc);
           lab.setAttribute('aria-description', L.plain(String(g.says ?? g.mk.label), ctx.scope)); lab._pd = g.pd; pauseButton(); } });
-      leg.appendChild(h('span', 'shint', 'drag to turn · scroll to zoom'));
+      leg.appendChild(tools);   // the view buttons: a row at the legend's right end, on the figure's top rule
       L.fill(leg, ctx.scope); base.push(...R.past); R.issues = base; draw();
       const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
     return R;
@@ -726,13 +929,13 @@
     const lines = [], cols = [], vis = [], asm = [], thinks = [], stepEls = [], figs = [];
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
-    const isFig = it => it && (it.plane || it.space || SIDEVIS.some(k => it[k] != null));
+    const isFig = it => it && (it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
     const isWide = it => it && (it.assemble || it.compare || it.ops || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
       if (c.chart) { list(c.chart.series).forEach(m); list(c.chart.marks).forEach(m); } list(c.labels).forEach(m); return c; };
-    const visual = v => { const c = clicks(v); ctx.chartOpts = c.chart ? markHooks(c.chart) : null; try { const V = L.visual(c, ctx); vis.push(V); return V; } finally { ctx.chartOpts = null; } };
+    const visual = v => { const c = clicks(v); ctx.chartOpts = c.chart ? markHooks(c.chart) : null; try { const V = L.visual(c, ctx); V.hooks = ctx.chartOpts; vis.push(V); return V; } finally { ctx.chartOpts = null; } };
     // a chart's marks on a board: no tag on the plot. A named mark (its `name`, or the `short` of the symbol that is its value)
     // takes a legend entry after the series, with a swatch drawn as the mark is; the mark (a hit area at least 14 px wide, 24 px
     // round a point) and its entry open the board's card: the symbol's card, or the name, the value now and `says`
@@ -776,8 +979,13 @@
         return true; };
       // pointing at a mark lights its legend entry; pointing at or focusing an entry lifts its mark
       const pair = (host, i) => [host.querySelector(`.legend [data-mi="${i}"]`), host.querySelector(`.chart > svg g.mkm[data-mi="${i}"]`)];
-      const light = (host, i, on) => pair(host, i).forEach(e => e && e.classList.toggle('lit', on));
-      return {
+      const light = (host, i, on) => { pair(host, i).forEach(e => e && e.classList.toggle('lit', on)); if (H.fg && H.fg.onHot) H.fg.onHot(on ? i : null); };
+      const H = {
+        linked: new Set(), fg: null,
+        // a linked word (see the board): its mark's colour and whether it is drawn at this stop; lighting it dims the rest
+        wl: (host, i) => { const gg = host.querySelector(`.chart > svg g.mkm[data-mi="${i}"]`); return { c: colOf(marks[i] || {}), drawn: !!gg && !gg.classList.contains('off') }; },
+        wlLight: (host, i) => { host.classList.toggle('lnk-dim', i != null);
+          host.querySelectorAll('.chart > svg g.mkm, .legend [data-mi]').forEach(e => e.classList.toggle('lnk-on', i != null && +e.dataset.mi === i)); },
         legend: () => { const es = marks.filter(nameOf);
           return { n: es.length, html: es.map(mk => `<span class="mk mkx" data-mi="${mk.i}">${chip(kindOf(mk), colOf(mk))}<span class="mkn">${md(String(nameOf(mk)))}</span></span>`).join('') }; },
         // a mark the chart has just drawn
@@ -788,20 +996,22 @@
             const sync = () => entry.classList.toggle('off', gg.classList.contains('off')); sync();
             new MutationObserver(sync).observe(gg, { attributes: true, attributeFilter: ['class'] });
             if (!entry.dataset.lit) { entry.dataset.lit = 1; ['pointerenter', 'focusin'].forEach(t => entry.addEventListener(t, () => light(host, mk.i, true))); ['pointerleave', 'focusout'].forEach(t => entry.addEventListener(t, () => light(host, mk.i, false))); } }
-          if (!hasCard(mk)) return;   // no card, no hit area: a plain reference never covers a mark that has one
+          if (H.linked.has(mk.i)) glow(gg, c);
+          if (!hasCard(mk) && !H.linked.has(mk.i)) return;   // no card and no linked word, no hit area: a plain reference never covers a mark that has one
           const hits = [...gg.children].filter(e => /^(line|path|rect|circle)$/.test(e.tagName)).map(e => { const k = e.cloneNode(false);
             if (e.tagName === 'circle') k.setAttribute('r', Math.max(12, +e.getAttribute('r') || 0));
             // a band or an area answers on its outline, so the data inside it keep their own pop-up
             k.setAttribute('fill', e.tagName === 'circle' ? 'transparent' : 'none'); k.setAttribute('stroke', 'transparent'); k.setAttribute('stroke-width', 16);
             ['opacity', 'stroke-dasharray'].forEach(a => k.removeAttribute(a)); k.setAttribute('class', 'mhit'); gg.appendChild(k); return k; });
           // only the first hit area takes Tab; the rest open the same card by pointer
-          hits.forEach((k, j) => { target(k, mk, gg); if (j) k.removeAttribute('tabindex');
+          hits.forEach((k, j) => { if (target(k, mk, gg) && j) k.removeAttribute('tabindex');
             // the mark's card wins over the chart's data pop-up: the chart's own hide() (on pointerleave) drops its pop-up and guide
             k.addEventListener('pointerenter', () => { light(host, mk.i, true); const sv = gg.ownerSVGElement; if (sv && sv.onpointerleave) sv.onpointerleave(new PointerEvent('pointerleave')); });
             k.addEventListener('pointerleave', () => light(host, mk.i, false));
             k.addEventListener('pointermove', e => e.stopPropagation()); });
           dotsWin(gg.ownerSVGElement); },
-      }; };
+      };
+      return H; };
     const stepsIn = o => list(o).map(m => m && m.step).filter(x => x != null).map(clickOf);
     // a figure and what goes under it: its Back and Next, then its controls
     const holder = (fg, at, spec) => { fg.wrap = tag(h('div', 'fg'), at); fg.wrap.appendChild(fg.node); fg.at = at; fg.spec = spec; fg.zone = zone; figs.push(fg); return fg; };
@@ -831,13 +1041,20 @@
         return fg.w; };
       const im = pick('img'); if (im && !im.complete) im.addEventListener('load', () => ctx.refresh());
       fg.paint = c => { shown(e, c); V.show(c); };
+      if (V.hooks) { V.hooks.fg = fg; fg.linked = V.hooks.linked; fg.wl = i => V.hooks.wl(e, i); fg.wlLight = i => V.hooks.wlLight(e, i); }
       return holder(fg, at, it); };
     // the plan is its picture: numbered squares on one line, a title under each and a sub-label under that
     const track = (f, at) => { const N = list(f.nodes).map(x => typeof x === 'string' ? { label: x } : x), n = N.length, e = h('div', 'bi track', `<div class="tkl" style="left:${50 / n}%;right:${50 / n}%"></div>${N.map((x, i) => `<div class="tkc"><div class="tks${i ? '' : ' on'}">${i + 1}</div><div class="tkt">${md(x.label || '')}</div>${x.sub ? `<div class="tku">${md(x.sub)}</div>` : ''}</div>`).join('')}`);
       e.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
       return holder({ node: e, kind: 'track', issues: [], stops: [], w: 0, h: 0, size: room => { e.style.width = room.w + 'px'; return room.w; }, paint: () => {} }, at, f); };
-    const planeFig = (p, at) => { const fg = plane(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => shown(fg.node, c); return holder(fg, at, p); };
+    const planeFig = (p, at) => { const fg = plane(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => { fg.cNow = c; shown(fg.node, c); }; return holder(fg, at, p); };
     const spaceFig = (p, at) => { const fg = space(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => fg.show(c); return holder(fg, at, p); };
+    // a chance figure's tally follows the scene's run: the frame on show
+    // its words wait until the reading reaches it (on the scene's first step it is there from the lead on)
+    const runC = (s.controls || []).find(c => c && c.run) || {}, runName = runC.name;
+    // and the drawing waits with them: hidden, its room kept, as a plane mark on a later step is
+    const chanceFig = (p, at, ratio) => { const env = { frame: () => runName == null ? null : ctx.scope[runName], frames: runName == null ? 0 : runC.run, name: runName, derive: s.derive, shown: () => at <= (map[0] || {}).at || read >= at };
+      const fg = chance(p, ctx, at, env, ratio); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
@@ -845,7 +1062,7 @@
       if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin', `<div class="tq"><span class="btag">Think</span><span class="tqt">${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
         e.dataset.at = c.at; e.querySelector('.tb').onclick = () => answer(e); el.appendChild(e); thinks.push(e); }
       stepEls.push(el); el.addEventListener('mouseenter', () => R.hover(c.at)); el.addEventListener('mouseleave', () => R.hover(null));
-      el.addEventListener('click', e => { if (e.target.closest('button, input, label, a, .vt') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
+      el.addEventListener('click', e => { if (e.target.closest('button, input, label, a, .vt, .lnk') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
       return el;
     };
 
@@ -866,6 +1083,7 @@
         asm.push({ a, e }); slot.appendChild(e); pending = e.querySelector('.abridge'); }
       else if (it.plane) { const fg = planeFig(it.plane, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (it.space) { const fg = spaceFig(it.space, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
+      else if (it.chance) { const fg = chanceFig({ ...it.chance, id: it.chance.id ?? it.id }, at, it.ratio ?? it.chance.ratio); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
@@ -910,6 +1128,45 @@
       el.zone = zone; if (wide) seg = cur = null; });
     if (zl && !pair) root.prepend(zl);
     const broad = steps.some(st => st && list(st.add).some(it => it && it.ops)); root.classList.toggle('broad', broad);
+
+    // ---------- linked words: ==pixel== in the scene's text names a mark of its plane, space or chart ----------
+    // by its `label`, a chart mark's `name`, its `id`, or the symbol it draws; ==pixel:Your pixel== shows other words. The word
+    // takes the mark's colour (a symbol's is its TeX). Pointing at it, or Tab, lights the mark and dims the rest; pointing at the
+    // mark or its legend entry washes its words. A word whose mark is not drawn at this stop waits at 75%, with no light and no
+    // Tab, so it never shows a think stop's answer early. A tap keeps a word lit until the next tap. It opens no card (a card
+    // would cover the lines being read). Text that names no mark keeps ==text==, the orange underline
+    const lkeys = new Map();
+    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance'].includes(fg.kind)) return;
+      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : fg.kind === 'chance' ? fg.keys.map(k => ({ label: k })) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
+        const q = fg.kind === 'chart' ? (mk.kind === 'hline' ? mk.y : mk.kind === 'vline' ? mk.x : mk.kind === 'point' ? (mk.at || [])[1] ?? mk.y : null) : mk.vector ?? mk.point;
+        const sym = typeof q === 'string' && (ctx.symbols || {})[q] ? q : null;   // first mark wins a shared key (the lint stops a link to one)
+        [mk.label, fg.kind === 'chart' ? mk.name : null, mk.id, sym].forEach(k => { if (k != null && String(k).trim() && !lkeys.has(String(k).trim())) lkeys.set(String(k).trim(), [f, i, String(k).trim() === sym]); }); }); });
+    if (lkeys.size) node.querySelectorAll('mark.hi:not(.tc)').forEach(el => { if (el.closest('.plegend, .legend, .chart, table, svg')) return;
+      const tx = el.textContent, c = tx.indexOf(':'), whole = tx.trim(), pre = tx.slice(0, Math.max(0, c)).trim(), key = lkeys.has(whole) ? whole : c > 0 && lkeys.has(pre) ? pre : null; if (key == null) return;
+      const [f, i, drawsSym] = lkeys.get(key), S = drawsSym ? (ctx.symbols || {})[key] : null;   // TeX only when the mark draws that symbol
+      if (key !== whole) el.innerHTML = el.innerHTML.replace(/^[^:<]*:\s*/, '');
+      else if (S) el.innerHTML = `<span class="tx" data-tex="${L.esc(S.tex || L.autoSym(key))}"></span>`;   // a symbol's word is its TeX
+      el.classList.add('tc', 'lnk'); el.dataset.lnk = `${f}:${i}`; if (figs[f].linked) figs[f].linked.add(i); });
+    let wOver = null, wFocus = null, wPin = null, wFig = null, wTouch = false;   // the word pointed at, focused or tapped; the mark pointed at
+    const wInfo = k => { const [f, i] = k.split(':').map(Number); return figs[f] && figs[f].wl ? figs[f].wl(i) : { drawn: false }; };
+    const wsync = () => { figs.forEach(fg => fg.wait && fg.wait()); if (!lkeys.size) return; let act = wOver ?? wFocus ?? wPin; if (act && !wInfo(act).drawn) act = null;
+      figs.forEach((fg, f) => { if (fg.wlLight) fg.wlLight(act && +act.split(':')[0] === f ? +act.split(':')[1] : null); });
+      node.querySelectorAll('.lnk').forEach(el => { const k = el.dataset.lnk, d = wInfo(k);
+        if (d.c) el.style.setProperty('--hc', d.c); el.classList.toggle('lnk-grad', !!d.grad); if (d.grad) { el.style.setProperty('--g0', d.grad[0]); el.style.setProperty('--g1', d.grad[1]); }
+        el.classList.toggle('lnk-wait', !d.drawn); if (d.drawn && !el.closest('.stopl')) el.tabIndex = 0; else el.removeAttribute('tabindex');   // the copy by the buttons is no second Tab stop
+        el.classList.toggle('lnk-on', d.drawn && (k === act || k === wFig)); }); };
+    const wordAt = e => { const w = e.target.closest && e.target.closest('.lnk'); return w && !w.classList.contains('lnk-wait') ? w.dataset.lnk : null; };
+    figs.forEach((fg, f) => { fg.onHot = i => { const k = i == null ? null : `${f}:${i}`; if (k !== wFig) { wFig = k; wsync(); } }; });
+    if (lkeys.size) {
+      node.addEventListener('mousedown', e => { if (e.target.closest('.lnk')) e.preventDefault(); });   // a click makes no selection and no focus ring
+      node.addEventListener('pointerover', e => { if (e.pointerType === 'touch') return; const k = wordAt(e); if (k !== wOver) { wOver = k; wsync(); } });
+      node.addEventListener('pointerleave', () => { if (wOver) { wOver = null; wsync(); } });
+      node.addEventListener('focusin', e => { const k = wordAt(e); if (k !== wFocus) { wFocus = k; wsync(); } });
+      node.addEventListener('focusout', () => { if (wFocus) { wFocus = null; wsync(); } });
+      node.addEventListener('click', e => { const k = wordAt(e); if (k && wTouch) { wPin = wPin === k ? null : k; wsync(); } });
+      document.addEventListener('pointerdown', e => { wTouch = e.pointerType === 'touch'; const w = wTouch && wPin && e.target.closest && e.target.closest('.lnk');
+        if (wTouch && wPin && !(w && node.contains(w) && w.dataset.lnk === wPin)) { wPin = null; wsync(); } }, true);
+    }
 
     const tcols = s.table ? list(s.table.cols).map(c => typeof c === 'string' ? { key: c } : c).concat(cols) : [];
     const tkeys = new Set(tcols.map(c => c.key));
@@ -1084,7 +1341,7 @@
         return (answered ? ta || say : say || q) || q; };
       S.show = () => { const on = S.ask != null, c = uniq[on ? S.ask : S.i], e = lineOf(c, !on && !unanswered(c));
         paint(uniq[S.i]); ui.set(S.i, on); ui.line.innerHTML = e && (on || S.i) ? e.innerHTML : '';
-        S.lines.forEach(q => q.classList.toggle('atstop', on ? +q.dataset.at === c : stopOf(+q.dataset.at) === S.i)); S.quiet(); };
+        S.lines.forEach(q => q.classList.toggle('atstop', on ? +q.dataset.at === c : stopOf(+q.dataset.at) === S.i)); S.quiet(); wsync(); };
       // the line is there for when a step's own words are out of sight: with those words on screen it steps aside, and keeps its room
       S.quiet = () => { const l = ui.line, t = same(l); l.style.visibility = t && [...node.querySelectorAll(WORDS)].some(e => same(e) === t && inWindow(e)) ? 'hidden' : ''; };
       // its room is the tallest words it will hold, so the page under it does not jump
@@ -1187,22 +1444,23 @@
       node, steps: n, stages,
       stick: () => { held.forEach((_, f) => { f.style.top = ''; }); held.clear(); stick(); stages.forEach(S => S.quiet()); },
       watch: () => { letGo(); stages.forEach(S => S.quiet()); },
-      layout: () => { blocks.forEach(b => { b.over = false; }); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); },
+      // a layout may move lines between columns, which drops the focus: the focused word or entry gets it back
+      layout: () => { const fa = node.contains(document.activeElement) ? document.activeElement : null; blocks.forEach(b => { b.over = false; }); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); if (fa && fa.isConnected && document.activeElement !== fa) fa.focus({ preventScroll: true }); wsync(); },
       // what the page shows now, after a redraw or a move
-      repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); },
+      repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); wsync(); },
       // everything up to click k, as the check and the printer see it
       show: k => { read = lit = k; thinks.forEach(e => setThink(e, +e.dataset.at <= k)); stages.forEach(S => S.to(S.stopOf(k))); R.repaint(); },
       reset: () => { stages.forEach(S => S.to(0)); thinks.forEach(e => setThink(e, false)); read = lit = 0; R.repaint(); },
       // the reading line, in window pixels: every step whose top has passed it counts as read
       spy: y => { const b = node.getBoundingClientRect(); let k = 0;
         if (y === Infinity || b.bottom < y) k = n; else if (b.top <= y) stepEls.forEach(e => { if (e.getBoundingClientRect().top <= y) k = Math.max(k, +e.dataset.at); });
-        if (k === read) return; read = k; fill(k); if (over == null) { light(k); mark(k); } },
+        if (k === read) return; read = k; fill(k); if (over == null) { light(k); mark(k); } wsync(); },
       hover: k => { over = k; const c = k ?? read; fill(Math.max(read, c)); light(c); mark(c); },
       audit: () => {
         const out = [];
         missing.forEach(t => out.push(`mark target not found: ${t}`));
         figs.forEach(fg => { out.push(...(fg.issues || []), ...(fg.later || []).filter(e => e.st <= read).map(e => e.msg));
-          if (['plane', 'space', 'chart', 'image', 'units'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
+          if (['plane', 'space', 'chart', 'image', 'units', 'chance'].includes(fg.kind) && (fg.w < 340 || fg.h < 220)) out.push(`a ${fg.kind} is only ${fg.w} × ${fg.h} px: give it more room, or split the scene`); });
         node.querySelectorAll('.board .vis .chart').forEach(c => { const r = c.getBoundingClientRect(), q = r.width / (r.height || 1); if (q < 1 || q > 2.2) out.push(`a chart is ${Math.round(r.width)} × ${Math.round(r.height)} px: its shape must stay between 1:1 and 2.2:1, so set its \`ratio\``); });
         root.querySelectorAll('.cline .math, .fline .math, .asm .math').forEach(m => { if (parseFloat(getComputedStyle(m).fontSize) < FLOOR) out.push(`a formula renders under ${FLOOR}px`); });
         node.querySelectorAll('table.t td').forEach(c => { if (parseFloat(getComputedStyle(c).fontSize) < 18) out.push('a table cell renders under 18px'); });

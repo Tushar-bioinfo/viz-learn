@@ -1,0 +1,37 @@
+# expect: `steps` is required for board
+# expect: not: Traceback
+# expect: not: an adv scene names
+# expect: not: idea table
+# expect: not: names nothing
+# expect: not: holds one state
+# C10g: a spine of stub scenes (no steps yet) lints with only the missing-steps errors; the adv checks wait for steps.
+title: Unmixing one pixel
+question: How much haematoxylin and eosin made this pixel?
+slides:
+  - type: board
+    beat: plan
+    title: The road from one pixel to two amounts
+  - type: board
+    beat: problem
+    idea: made-of
+    see: pixel
+    shows: one table row, ringed; its three numbers
+    title: A pixel is three numbers
+    lead: One pixel holds a red, a green and a blue reading.
+  - type: board
+    beat: misconception
+    idea: shortcut
+    see: over-count
+    shows: the two separate shadows as ghosts, the joint split solid, on one frame
+    title: Why not one stain at a time?
+    lead: Measuring H and E apart counts their overlap twice.
+  - type: board
+    beat: what-if
+    idea: why does a log turn shares into steps?
+    see: OD
+    shows: light through 1, 2, 3 layers; OD climbs in equal steps
+    title: Why we count in optical density
+    lead: Light shrinks by a share per layer.
+  - type: board
+    beat: summary
+    title: What to keep

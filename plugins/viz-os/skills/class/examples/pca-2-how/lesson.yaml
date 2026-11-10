@@ -51,7 +51,7 @@ slides:
   - type: board
     beat: problem
     title: Trying lines does not scale
-    lead: We found the peak by brute force.
+    lead: We found the ==PC1:peak== by brute force.
     steps:
       - say: 'Last time: turn a line through {{last(ths)}} degrees, read the spread at each angle.'
         add:
@@ -116,10 +116,7 @@ slides:
               - points: {from: cells, x: d1, y: d2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
               - {line: [0, 1, 0], color: mist}
               - {line: [0, 0, 1], color: mist}
-              - {text: product +, at: [2.2, 2.6], color: good}
-              - {text: product +, at: [-2.2, -2.2], color: good}
-              - {text: product −, at: [-2.2, 2.6], color: bad}
-              - {text: product −, at: [2.2, -2.2], color: bad}
+              - {quarters: [0, 0]}
       - say: Add the products and divide by $n - 1$, as for a variance.
         add: {calc: {say: The covariance of CD3 and CD19, expr: sum(d1 * d2) / (n - 1), name: c12, fmt: 3}}
       - think:
@@ -245,7 +242,7 @@ slides:
   - type: board
     beat: run
     title: Repeat until it stops turning
-    lead: Each repeat is the same move.
+    lead: Each repeat is the same move, with ==PC1== drawn to aim at.
     controls:
       - {name: t, run: 8, label: repeats, says: 'times we multiplied by $C$ and shrank back to length 1'}
     derive:
@@ -327,7 +324,7 @@ slides:
     title: Next, why this arrow is the best
     lead: Every arrow is a mix of PC1 and PC2.
     steps:
-      - say: '$C$ stretches PC1 by {{lam1|2}}, PC2 by {{lam2|2}}. Every line''s spread sits between.'
+      - say: '$C$ stretches PC1 by ==lam1:{{lam1|2}}==, PC2 by ==lam2:{{lam2|2}}==. Every line''s spread sits between.'
         add:
           chart:
             x: {label: angle of the line (degrees), min: 0, max: 180, ticks: [0, 45, 90, 135, 180]}

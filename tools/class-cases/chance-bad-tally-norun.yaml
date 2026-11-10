@@ -1,0 +1,23 @@
+# expect: this scene has none
+# C10k: a chance lint error.
+title: T
+question: Q?
+answer: A.
+data: {n1: 40, n0: 40, x1: 18, x0: 9, far: [0, 1]}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: amount
+    see: gap
+    shows: two groups and their gap
+    title: Two groups
+    lead: Two groups and their shares.
+    steps:
+      - say: ==well== and ==piped== and their ==gap==.
+        add:
+          - chance:
+              groups:
+                - {name: well, n: n1, ill: x1}
+                - {name: piped, n: n0, ill: x0}
+              tally: far

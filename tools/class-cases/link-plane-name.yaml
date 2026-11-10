@@ -1,0 +1,24 @@
+# expect: plane mark 2: `name: d` is not drawn, since a linked word names the mark
+# expect: not: plane mark 3
+# C10e: a plane mark's drawn name is dropped when a linked word names the mark; the lint asks to delete the name.
+title: A drop to a line
+question: How far is the point from the line?
+answer: The length of the drop.
+data: {}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop to a line
+    lead: A point, a line, and the drop between.
+    steps:
+      - say: The ==mean== line, and the ==distance== to it.
+        add:
+          plane:
+            x: {label: x, min: 0, max: 6}
+            y: {label: y, min: 0, max: 6}
+            marks:
+              - {line: [-2, 0, 1], color: accent, label: mean}
+              - {foot: {from: [3, 5], line: [-2, 0, 1]}, color: s4, name: d, label: distance, says: the drop}
+              - {point: [3, 5], name: c1, says: one cell}
+      - say: The drop is 3 long.

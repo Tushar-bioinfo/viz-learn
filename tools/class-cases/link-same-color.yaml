@@ -1,0 +1,25 @@
+# expect: linked words ==point==, ==drop== all take the colour accent in one figure
+# C10e lint 3: two linked marks of one figure in one colour; the learner cannot tell which the word means.
+title: A point and two directions
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    steps:
+      - say: ==u==, ==point:a point== above it, and its ==drop==.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point}
+                - {foot: {from: q, onto: u}, color: accent, label: drop, says: the shortest way to the line}
+      - say: The drop meets the line at a right angle.

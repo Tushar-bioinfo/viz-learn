@@ -1,0 +1,43 @@
+# expect: builds
+# expect: not: `chance`
+# expect: not: chance mark
+# expect: not: linked word
+# expect: not: names nothing
+# C10k r2: values the lint cannot fully read still build: `ill` from arithmetic, a step from a quoted-number derive, and a group whose `n` and `ill` ride one slider (never ill > n).
+title: Draws with no difference
+question: Could chance alone make a gap this big?
+answer: Sometimes, but not often.
+data:
+  n1: 10
+  n0: 10
+  step: 0.2
+  fr_well: [6, 4, 5, 3, 7]
+  fr_piped: [2, 5, 4, 3, 2]
+  fr_far: [0, 0, 0, 0, 1]
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    idea: chance
+    see: gap
+    shows: the units and shares redrawn from one shared rate, with a ruler of noise steps and a tally
+    title: Draw again
+    lead: Each frame deals the homes again from one shared rate.
+    controls:
+      - {name: draw, run: 5, label: draw, says: which deal is on show; 0 is the data}
+      - {name: k, min: 1, max: 10, step: 1, value: 5, label: homes, says: how many well homes; every one is ill}
+    derive: {xw: 'at(fr_well, draw)', xp: 'at(fr_piped, draw)', sd: '0.2'}
+    steps:
+      - say: Our ==well== and ==piped== homes, their ==gap==, and ==noise step:noise steps==.
+        frame: 0
+        add:
+          - chance:
+              groups:
+                - {name: well, n: k, ill: k, color: s4}
+                - {name: piped, n: n0, ill: n0 - xp, color: s1}
+              step: sd
+              tally: fr_far
+      - say: Each tick of the ruler is one ==noise step==.
+        frame: 1
+      - say: The last deal reaches as far as ours.
+        frame: 4

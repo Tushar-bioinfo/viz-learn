@@ -23,7 +23,7 @@ slides:
       xbar: mean(cw)
       top: max(cw)
     steps:
-      - say: Six cells, and their mean as a dashed line.
+      - say: Six cells, their ==xbar:mean== and the ==usual range==.
         add:
           chart:
             x: {cats: [c1, c2, c3, c4, c5, c6], label: cell}
@@ -36,6 +36,6 @@ slides:
               - {kind: point, x: 1.5, y: top, name: top cell, step: 2}
               - {kind: vline, x: 2.5}
           caption: The dashed line is the mean.
-      - say: Drag the shift and the mean climbs a little.
+      - say: Drag the shift; the mean and the ==top cell== climb a little.
   - type: recap
     answer: Around the mean, some far.

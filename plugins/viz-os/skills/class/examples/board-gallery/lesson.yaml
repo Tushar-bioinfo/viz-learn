@@ -54,7 +54,7 @@ slides:
             marks:
               - {kind: hline, y: mA, name: mean, says: "both donors' mean CD3 level: the same for the two", step: 2}
           caption: Same middle, but look how far the dots reach.
-      - say: 'Their means match: {{mA|1}} and {{mB|1}}.'
+      - say: 'Their ==mean:means== match: {{mA|1}} and {{mB|1}}.'
       - think:
           q: Same mean. Are the two donors' cells alike?
           a: The mean cannot say. We need a second number, for how far the cells sit from it.
@@ -78,7 +78,7 @@ slides:
             marks:
               - {kind: hline, y: xbar, step: 2}
           caption: The tallest stick sits farthest above the line.
-      - say: The orange line is the mean, the middle of the six.
+      - say: The ==xbar:line== is the mean, the middle of the six.
         mark: col:cd3
       - think:
           q: Which cell sits farthest from the mean?
@@ -116,19 +116,19 @@ slides:
     title: A squared distance is a real square
     lead: Squaring a distance gives an area you can see.
     steps:
-      - say: Each cell at its CD3 level, and the mean as a flat line.
+      - say: Each cell at its CD3 level, and the ==mean== as a flat line.
         add:
           plane:
             x: {label: cell number, min: 0, max: 7}
             y: {label: CD3 level, min: 0, max: 10}
             marks:
               - points: {from: cells, x: i, y: cd3, label: id}
-              - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|1}}'}
-              - {foot: {from: [far_i, 'at(cd3, far_i - 1)'], line: ['-xbar', 0, 1]}, color: ink, name: d, label: distance, says: the drop from the cell to the mean line, step: 2}
+              - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|1}}', id: mean}
+              - {foot: {from: [far_i, 'at(cd3, far_i - 1)'], line: ['-xbar', 0, 1]}, color: s4, label: distance, says: the drop from the cell to the mean line, step: 2}
               - {square: [[far_i, xbar], [far_i, 'at(cd3, far_i - 1)']], color: s2, label: its square, step: 3}
-              - {text: 'd² = {{far_dev^2|2}}', at: ['far_i - far_dev / 2', 'xbar + far_dev + 0.4'], step: 3}
-      - say: '==#7cc4e8:{{far_id}}== sits {{far_dev|1}} above the mean: the drop to the line.'
-      - say: 'Squared, that distance is the area of this square, {{far_dev^2|2}}.'
+              - {text: '{{far_dev^2|2}}', at: ['far_i - far_dev / 2', 'xbar + far_dev + 0.4'], step: 3}
+      - say: '==#7cc4e8:{{far_id}}== sits {{far_dev|1}} above the mean: the ==distance:drop== to the line.'
+      - say: 'Squared, that distance is the area of ==its square:this square==, {{far_dev^2|2}}.'
       - think:
           q: One cell sits twice as far out. How much bigger is its square?
           a: Four times. Squaring makes far cells count much more than near ones.
@@ -191,7 +191,7 @@ slides:
             steps:
               - {op: cols, fn: var, name: mvar, tex: 's^2', label: variance, fmt: 2, say: Find each marker's variance, why: Each column is its own set of six numbers.}
       - say: Each column gives one number. CD19 varies most here.
-      - say: Three markers make each cell a point in space. Drag to turn it.
+      - say: Three markers make each cell a point. The arrows are cells ==c1== and ==c2==.
         add:
           - space:
               axes: [CD3, CD19, CD4]
@@ -207,15 +207,15 @@ slides:
                 - {text: c3, at: c3v, step: 5}
           - {vec: c1v, row: true}
           - {vec: c2v, row: true}
-      - say: 'Every mix of $\vec{a}$ and $\vec{b}$ lies on one flat sheet.'
+      - say: 'Every mix of ==c1v== and ==c2v== lies on one flat ==mixes:sheet==, like ==one mix:this dot==.'
       - think:
           q: Is cell c3 a mix of c1 and c2?
-          a: 'No: it sits {{c3_off|1}} off their sheet, so it holds something they lack.'
+          a: 'No: its ==c3 drop:drop== to their sheet is {{c3_off|1}}, so it holds something they lack.'
 
   - type: board
     beat: run
     title: A line that learns, one cell at a time
-    lead: One wrong cell per update. Run it and watch the line settle.
+    lead: One wrong cell per update. Run it and watch the ==line now:line== settle.
     controls:
       - {name: t, run: 12, label: updates, says: 'updates so far, one wrong cell each', stops: [0, 1, 2, 11]}
       - {name: prev, toggle: [hide, show], label: before, says: 'the line one update ago, dashed'}
@@ -227,7 +227,7 @@ slides:
       pw1: at(w1_trace, t - (t > 0))
       pw2: at(w2_trace, t - (t > 0))
     steps:
-      - say: Eight cells, a first guess at the line. The ring marks a wrong cell.
+      - say: A first guess. ==called T:Shaded== cells are called T; the ring marks a wrong one.
         add:
           - {params: {say: 'The line, at this update', names: [w0, w1, w2]}}
           - plane:
@@ -237,13 +237,13 @@ slides:
               marks:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
                 - {shade: [w0, w1, w2], color: s1, label: called T}
-                - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev}
+                - {line: [pw0, pw1, pw2], color: mist, dash: true, label: last line, when: prev, step: 3}
                 - {line: [w0, w1, w2], color: accent, label: line now}
                 - {ring: ['at(next_x, t)', 'at(next_y, t)'], when: 'at(has_next, t)'}
       - say: 'One update: each weight moves by $\eta$ = {{eta}} times the ringed cell''s values.'
         add: {note: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$, with $x_0 = 1$ and $y = +1$ for a T cell, $-1$ for a B cell.'}
       - think:
-          q: Show the last line. Is the cell that moved it on its right side?
+          q: Show the ==last line==. Is the cell that moved it on its right side?
           a: 'Yes, each update fixes its own cell. But it can push another wrong: {{redo_id}} gets fixed {{redo_n}} times.'
       - say: 'After {{updates}} updates no cell is wrong and it stops. Press play or drag.'
 

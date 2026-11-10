@@ -56,7 +56,7 @@ slides:
     title: Why is PC1 the top of the curve?
     lead: Part 2 found it. It never said why.
     steps:
-      - say: Our six cells with PC1 and PC2, two arrows at a right angle.
+      - say: Our six cells with ==PC1== and ==PC2==, two arrows at a right angle.
         add:
           plane:
             x: {label: CD3 from the middle, min: -3, max: 3.5}
@@ -76,7 +76,7 @@ slides:
   - type: board
     beat: by-hand
     title: Split an arrow into its PC parts
-    lead: Two dot products give the two parts.
+    lead: Two dot products give the parts along ==PC1== and ==PC2==.
     steps:
       - say: 'Flat arrow $u$ = (1, 0), the CD3 line. Its spread is {{v_cd3|3}}.'
         add:
@@ -85,7 +85,7 @@ slides:
             y: {label: CD19 direction, min: -1, max: 1}
             marks:
               - {line: [0, '-v2', v1], color: mist, label: PC1}
-              - {line: [0, '-w2', w1], color: mist, dash: true, label: PC2}
+              - {line: [0, '-w2', w1], color: ink, dash: true, label: PC2}
               - {vector: [u1, u2], color: ink, name: u, says: 'the flat arrow, along CD3'}
               - {vector: [ax, ay], color: accent, name: a, says: how far u goes along PC1, step: 2}
               - {vector: ['u1 - ax', 'u2 - ay'], from: [ax, ay], color: s3, name: b, says: how far u goes along PC2, step: 3}
@@ -140,7 +140,7 @@ slides:
       ex: sqrt(p) * v1 + sqrt(1 - p) * w1
       ey: sqrt(p) * v2 + sqrt(1 - p) * w2
     steps:
-      - say: Drag the share on PC1. The rest, $1 - a^2$, goes on PC2.
+      - say: Drag the share on ==PC1==. The rest, $1 - a^2$, goes on ==PC2==.
         add:
           - {params: {say: The mixed arrow now, names: [p, sp]}}
           - plane:
@@ -148,7 +148,7 @@ slides:
               y: {label: CD19 direction, min: -1, max: 1}
               marks:
                 - {line: [0, '-v2', v1], color: mist, label: PC1}
-                - {line: [0, '-w2', w1], color: mist, dash: true, label: PC2}
+                - {line: [0, '-w2', w1], color: ink, dash: true, label: PC2}
                 - {vector: [ex, ey], color: accent, name: u, says: the arrow with the share on PC1 you set}
       - think:
           q: Where on the slider is the spread biggest, and where smallest?
@@ -221,7 +221,7 @@ slides:
     title: What keeping one PC loses
     lead: Rebuild each cell from PC1 alone.
     steps:
-      - say: Keep only PC1. Rebuilt from that score, c4 loses its PC2 and PC3 scores.
+      - say: Keep only ==PC1 kept:PC1==. Rebuilt from that score, c4 loses its PC2 and PC3 scores.
         add:
           plane:
             x: {label: PC1 score, min: -4, max: 3.5}
@@ -230,8 +230,8 @@ slides:
               - points: {from: cells, x: z1, y: z2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
               - {line: [0, 0, 1], color: accent, label: PC1 kept}
               - {foot: {from: ['at(z1, 3)', 'at(z2, 3)'], line: [0, 0, 1]}, color: ink, name: drop, says: how far c4 falls to PC1 when the other PCs go}
-              - {square: [['at(z1, 3)', 0], ['at(z1, 3)', 'at(z2, 3)']], color: accent, label: squared drop, says: 'the drop, squared: what c4 loses, as an area', step: 2}
-      - say: The loss is the squared drop. PC3's part is tiny but counts too.
+              - {square: [['at(z1, 3)', 0], ['at(z1, 3)', 'at(z2, 3)']], color: s3, label: squared drop, says: 'the drop, squared: what c4 loses, as an area', step: 2}
+      - say: The loss is the ==squared drop==. PC3's part is tiny but counts too.
         add: {calc: {say: What c4 loses, why: 'PC3 adds only {{at(z3, 3)^2|3}}.', expr: 'at(z2, 3)^2 + at(z3, 3)^2', name: lost4, fmt: 3}}
       - say: Add the loss over all six cells.
         add: {calc: {say: What all six cells lose, why: 'One loss per cell, added up.', expr: sum(z2^2 + z3^2), name: lostall, fmt: 3}}

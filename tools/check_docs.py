@@ -37,7 +37,7 @@ def fields():
 
 def known():
     return (lesson_lint.BEATS | lesson_lint.STEP | lesson_lint.ITEMS | set(lesson_lint.PLANE) | set(lesson_lint.SPACE)
-            | lesson.TOP_EXTRA | lesson.BOARD - {"assemble"})
+            | lesson.TOP_EXTRA | lesson.BOARD - {"assemble"} - lesson.ADV)
 
 
 def code_words(md):
@@ -145,6 +145,8 @@ def class_tests():
     yield f"board.md names every field board.js reads{' (missing: ' + ', '.join(miss) + ')' if miss else ''}", not miss
     miss = sorted(known() - have)
     yield f"board.md names every beat, step field, item, plane mark and top-level key{' (missing: ' + ', '.join(miss) + ')' if miss else ''}", not miss
+    miss = sorted((lesson.ADV | {"depth"}) - code_words((CLASS / "adv.md").read_text()))
+    yield f"adv.md names every adv field{' (missing: ' + ', '.join(miss) + ')' if miss else ''}", not miss
     bad = [f"{f.name}:{i}" for f in sorted(CLASS.rglob("*.md")) for i, ln in enumerate(f.read_text().splitlines(), 1) if "docs/" in ln]
     yield f"no class skill file points at docs/{' (' + ', '.join(bad) + ')' if bad else ''}", not bad
 

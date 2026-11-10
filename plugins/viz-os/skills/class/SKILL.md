@@ -17,6 +17,7 @@ You are the teacher. The learner should leave able to do the method by hand on a
    3. How much?  a) one lesson (~10 scenes)  b) a What / How / Why series (2–3 lessons)
    ```
    Ask question 2 once: after the first lesson the answer lives in memory and `home:`.
+   If the user says "adv", read `adv.md` first: it adds probe question 4 and, in step 2, a picture plan with a storyboard to approve.
 2. **Spine.** Open `lesson.md`. Write the top of `lesson.yaml`: `title`, `question`, `answer`, `learner` (`{goal, knows, anchors}`, from the probe; `board.md`, Top level), and the beat list as a comment, one line per scene. If the topic is big enough for a series (`lesson.md` §7), write the top of each lesson's `lesson.yaml` in its own folder, show the questions to the user, and **wait for an OK** before you write any scene.
 3. **Data.** Make the learner's home table once, seeded: `python3 C/scripts/home.py cells-x-markers --name cells --seed 7` (or `genes-x-samples`). It keeps its source's layout: a row per cell, or a row per gene. Then write `make_data.py` beside the lesson: seeded, it reads the home file, copies the rows the lesson uses into `data.json` with the file's `provenance` block under `home`, and computes every number the lesson shows, including each frame of a run. Write `verify_data.py` as a second, independent program that recomputes the numbers from the rows and compares; if you can hand that to another agent that has not seen `make_data.py`, do.
 4. **Scenes.** Open `board.md`. Write the scenes under the spine in one pass. Every number is a `{{name|fmt}}` expression or a worked line, never typed.
@@ -78,6 +79,7 @@ Read only the file the current step needs. Write `lesson.yaml` once and fix it w
 |---|---|
 | `lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, the review |
 | `board.md` | step 4: how a scene is laid out, every board field and item, plane marks, runs and toggles |
+| `adv.md` | only when the user says "adv": the probe's depth question, the picture plan, the idea table, the storyboard |
 | `lint.md` | after a build error: what each lint and check message means, and its fix |
 | `examples/board-gallery/` | every scene kind in one full lesson (variance of six cells), with `make_data.py` and `verify_data.py` |
 | `examples/home/cells.json` | what a home table looks like |

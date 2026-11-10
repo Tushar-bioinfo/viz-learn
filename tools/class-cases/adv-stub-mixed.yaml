@@ -1,0 +1,49 @@
+# expect: slide 4 (board “The nearest point on a line”): `see: residue` names nothing this scene draws
+# expect: slide 2 (board “The road to the nearest point”): `steps` is required for board
+# expect: not: `see: nowhere`
+# expect: not: `see: ghost`
+# expect: not: holds one state
+# expect: not: Traceback
+# C10g fix 10: stubs mixed with written scenes: the written scene is checked; the stubs wait for steps.
+title: A point and a line
+question: Where does a point land on a line?
+answer: At the foot of the drop that meets the line at a right angle.
+data: {u: [1, 0, 0.2], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the direction of the line, short: direction u, kind: vector, color: s1, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The road to the nearest point
+  - type: board
+    beat: problem
+    idea: closest
+    see: nowhere
+    shows: a point above a line
+    title: Where should the point land?
+    lead: The point is off the line.
+  - type: board
+    beat: picture
+    idea: closest
+    see: residue
+    shows: a point above a line, and its drop at a right angle
+    title: The nearest point on a line
+    lead: A point drops onto a line.
+    steps:
+      - say: The ==point==, the line along ==u==, and the ==drop== to it.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point}
+                - {foot: {from: q, onto: u}, label: drop, says: the shortest way to the line}
+      - say: Its ==drop== meets the line at a right angle.
+  - type: board
+    beat: misconception
+    idea: shortcut
+    see: ghost
+    shows: the straight-down drop as a ghost beside the right-angle drop
+    title: Why not straight down?
+    lead: The floor is not the line.

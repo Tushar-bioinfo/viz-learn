@@ -2,7 +2,11 @@
    Nothing is scaled: every size here is a real pixel, and every figure owns its shape (board.js). Decks and sketch pages
    do not load this file. These tokens are read at boot for the drawings, so a colour changed here reaches the SVGs too. */
 :root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #8ec5ff; --s2: #6ff0d0; --s3: #f29ac8; --s4: #f2c14e; --s5: #b79cff;
-  --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315; }
+  --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315;
+  /* the figure look (design: the C10 look). Three line weights: 1 px guides, 2 px marks, 3.5 px for the witness (for now the mark
+     drawn in the accent colour), which alone glows at rest. board.js reads --w-data and --w-wit and sizes arrowheads from them */
+  --w-guide: 1px; --w-data: 2px; --w-wit: 3.5px; --c-grid: #191a1c; --c-frame: #2c2d2b; --c-tick: #7d7a73; --c-axis: #a29f97;
+  --dot-min: 9px; --glow-r: 7px; --t-tick: 13px; --t-axis: 14px; --m-hover: 180ms; --m-state: 450ms; --ease: cubic-bezier(.2, .7, .2, 1); }
 
 /* the page: the deck's fixed stage lets go, so the window scrolls and the text can be selected */
 html.ls-page, html.ls-page body { height: auto; min-height: 100%; overflow: visible; }
@@ -150,6 +154,26 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .hl { box-shadow: 4px 4px 0 var(--accent); }
 /* ==text== keeps the deck's orange underline; ==s1:text== is bold text in a term colour, with no underline */
 .s-board mark.hi.tc { color: var(--hc); text-decoration: none; }
+/* a linked word (==label==): bold in its mark's colour. Lit, a soft wash of its colour sits behind it: blurred, no edge, no box */
+.s-board mark.lnk { position: relative; z-index: 0; cursor: default; white-space: nowrap; user-select: none; -webkit-user-select: none; outline: none; -webkit-tap-highlight-color: transparent; }
+.s-board mark.lnk::before { content: ""; position: absolute; inset: 1px -5px; border-radius: 999px; z-index: -1; filter: blur(6px); background: color-mix(in srgb, var(--hc) 34%, transparent); opacity: 0; transition: opacity var(--m-hover) var(--ease); }
+.s-board mark.lnk.lnk-on::before { opacity: 1; }
+.s-board mark.lnk.lnk-on { filter: brightness(1.15); }
+.s-board mark.lnk:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.s-board mark.lnk.lnk-wait { opacity: .75; }
+.s-board mark.lnk .tx, .s-board mark.lnk .tx * { color: inherit !important; }   /* maths inside a linked word takes the mark's colour: one word, one mark */
+.s-board mark.lnk.lnk-grad { background: linear-gradient(90deg, var(--g0), var(--g1)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }   /* `color` stays solid, for the contrast check */
+.s-board mark.lnk.lnk-grad::before { background: linear-gradient(90deg, color-mix(in srgb, var(--g0) 34%, transparent), color-mix(in srgb, var(--g1) 34%, transparent)); }
+/* its mark lights as its legend entry lights it; every other mark and entry of the figure dims (a mark not shown yet stays hidden) */
+.bi.space.lnk-dim svg [data-m]:not(.lit):not(.shit) { opacity: .3 !important; }
+.bi.plane.lnk-dim svg > g.pm:not(.lnk-on):is(:not([data-step]), .shown), .bvis.lnk-dim .chart > svg g.mk:not(.lnk-on):not(.off) { opacity: .3; }
+.bi.lnk-dim .plegend .pk:not(.lnk-on), .bvis.lnk-dim .legend > :not(.lnk-on) { opacity: .45; }
+.bi.plane svg > g.pm.lnk-on, .bvis .chart g.mkm.lnk-on, .bi .plegend .pk.lnk-on > *, .bvis .legend .lnk-on .mkn { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.board .plane svg.pl .phits > * { pointer-events: all; }
+.board .plane svg.pl .phits > [data-step]:not(.shown) { pointer-events: none; }
+/* hover: one time and one curve; a learner who asks for less motion gets none */
+.board .plegend .pk, .board mark.lnk, .board .stools button { transition: color var(--m-hover) var(--ease), opacity var(--m-hover) var(--ease), filter var(--m-hover) var(--ease), border-color var(--m-hover) var(--ease); }
+@media (prefers-reduced-motion: reduce) { .s-board mark.lnk::before, .board .vt, .board .plegend .pk, .board mark.lnk, .board .stools button { transition: none; } }
 
 /* text cards: a thin line, no shadow. A callout and a number card (.rl) take no box at all: spacing sets them apart, and they start on the line above's edge */
 html.ls-page .board .g:not(.vis, .ctl, .hl, .think, .tcard, .fr, .rl) { background: var(--card); border: 1px solid var(--line-dim); box-shadow: none; }
@@ -180,8 +204,8 @@ html.ls-page .board :is(.rl, .cline, .fline).hl { box-shadow: none; }
 .board .cap { font-size: 17px; line-height: 1.36; color: var(--ink); }
 .board .bvis .vfoot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-dim); }
 html.ls-page .board .datatoggle { background: transparent; border: 1px solid var(--thin); box-shadow: none; }
-.board .chart .grid { stroke: #1f2021; stroke-width: 1; }
-.board .chart .base { stroke: var(--line); stroke-width: 1.5; }
+.board .chart .grid { stroke: var(--c-grid); stroke-width: var(--w-guide); }
+.board .chart .base { stroke: var(--c-frame); stroke-width: var(--w-guide); }
 .board .chart .tick { font-size: 15px; }
 .board .chart .axt { font-size: 16px; }
 .board .chart .lbl { font-size: 21px; }
@@ -252,18 +276,28 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .board .pk.dot i { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--c); }
 .board .pk.arrow i { width: 18px; border-right: 0; position: relative; }
 .board .pk.arrow i::after { content: ""; position: absolute; right: -8px; top: -7px; border: 5px solid transparent; border-left: 8px solid var(--c); }
+.board .pk.ruler i { width: 20px; height: 8px; border: 2px solid var(--c); border-top: 0; }
 .board .pk.area i { width: 18px; height: 14px; border: 0; background: color-mix(in srgb, var(--c) 35%, transparent); }
 .board .pwrap { position: relative; flex: none; }
 .board svg.pl { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.board .pgrid line { stroke: #1f2021; stroke-width: 1; }
-.board .pbox { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.board .pgrid line { stroke: var(--c-grid); stroke-width: var(--w-guide); }
+.board .pbox { fill: none; stroke: var(--c-frame); stroke-width: var(--w-guide); }
 .board svg text { font-family: var(--f-ui); font-variant-numeric: tabular-nums; }
-.board svg.pl .tick { font-size: 15px; fill: var(--haze); }
-.board svg.pl .axt { font-size: 16px; fill: var(--mist); font-weight: 600; }
+.board svg.pl .tick, .board .swrap svg .stk { font-size: var(--t-tick); fill: var(--c-tick); font-weight: 400; }
+.board svg.pl .axt, .board .swrap svg .sax { font-size: var(--t-axis); fill: var(--c-axis); font-weight: 500; }
 .board svg .plab { font-size: 18px; fill: var(--mist); font-weight: 600; }
+/* a name beside its mark takes the mark's colour; a `text` mark by itself is axis grey, whatever its colour */
+.board .plane svg > g.pm > .plab { fill: var(--hc, var(--mist)); }
+.board .plane svg > g.pm > .plab.free, .board .swrap svg .stx { fill: var(--c-axis); font-size: var(--t-axis); font-weight: 500; }
+/* the witness glows in its own colour at rest; a lit or linked mark keeps the kit's own glow */
+.board .plane svg > g.pm.wit:not(.lnk-on), .board .swrap svg [data-m][style*="var(--accent)"]:not(.shit, .lit) { filter: drop-shadow(0 0 var(--glow-r) rgba(255, 90, 54, .45)); }
+/* `quarters`: the two quarters where the product is positive washed, and a sign in each outer corner */
+.board svg .pq { pointer-events: none; }
+.board svg .pq rect { fill: var(--ink); opacity: .07; stroke: none; }
+.board svg .pq text { font: 700 24px var(--f-ui); fill: var(--c-axis); }
 /* a pop-up's term (a formula's term, a matrix, a plane name or legend entry): no underline. Pointing, focus or an open card
    lifts it, brighter with a soft glow in its own colour (--hc); the rest of its formula fades (.dm) */
-.board .vt { cursor: help; outline: none; border-radius: 3px; transition: filter .12s, opacity .12s; }
+.board .vt { cursor: help; outline: none; border-radius: 3px; transition: filter var(--m-hover) var(--ease), opacity var(--m-hover) var(--ease); }
 /* --hg is a plain rgba set by board.js: a filter built from nested var()s computes to nothing */
 .board .vt:hover, .board .vt.act, .board .vt:focus-visible { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
 .vring { position: absolute; z-index: 59; display: none; box-sizing: border-box; border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
@@ -317,20 +351,18 @@ html.ls-page .board .bi.space { padding: 8px; box-sizing: content-box; max-width
 .board .swrap.drag svg.pl .shit { pointer-events: none; }
 .board .swrap svg .lit { filter: brightness(1.35) drop-shadow(0 0 5px var(--hg, rgba(162, 159, 151, .45))); }
 .board .swrap svg text { pointer-events: none; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
-.board .swrap svg .stk { font-size: 14px; fill: var(--haze); stroke-width: 3px; }
-.board .swrap svg .sax { font-size: 15px; font-weight: 500; fill: var(--haze); }
-.board .swrap svg .stx { font-size: 16px; font-weight: 500; fill: var(--mist); }
-.board .stools { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; z-index: 4; }
-.board .stools button { min-width: 34px; height: 30px; display: grid; place-items: center; padding: 0; background: rgba(11, 12, 14, .7); border: 1px solid var(--line-dim); color: var(--mist); font: 600 15px/1 var(--f-mono); cursor: pointer; }
+.board .swrap svg .stk { stroke-width: 3px; }
+/* the view buttons: a row at the right end of the legend, on the figure's top rule, never over the drawing */
+.board .stools { margin-left: auto; display: flex; flex-direction: row; align-items: center; gap: 3px; }
+.board .stools button { min-width: 28px; height: 26px; display: grid; place-items: center; padding: 0; background: transparent; border: 1px solid var(--line-dim); color: var(--mist); font: 600 15px/1 var(--f-mono); cursor: pointer; }
 .board .stools button.wd { padding: 0 5px; }
 .board .stools button:hover { color: var(--ink); border-color: var(--line); }
 .board .stools button:focus { outline: none; }
 .board .stools button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.board .stools .zl { font: 500 15px var(--f-mono); color: var(--haze); text-align: center; }
+.board .stools .zl { font: 500 15px var(--f-mono); color: var(--haze); text-align: center; margin-left: 5px; min-width: 4ch; }
 .board .space .pk.ring i { width: 14px; height: 14px; box-sizing: border-box; border: 2.5px solid var(--c); border-radius: 50%; background: none; }
-.board .space .plegend .shint { margin-left: auto; font-size: 15px; color: var(--haze); align-self: center; }
 .board .space [data-step]:not(.shown) .says, .board .space .pk[data-step]:not(.shown) > .says { visibility: hidden; }
-.board svg .pring { fill: none; stroke: var(--accent); stroke-width: 4; }
+.board svg .pring { fill: none; stroke: var(--accent); stroke-width: var(--w-wit); }
 
 /* controls, under the figure they drive, with no boxes. Every row of one box shares one grid: play | label | track | value, so
    every track starts and ends at the same x, the label column is as wide as its widest label, and values right-align.
@@ -378,4 +410,14 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   .board .think .ta { display: flex; }
   .s-board [data-wait], .s-board [data-wait] * { visibility: visible !important; }
   .s-board [data-step] { opacity: 1; transform: none; }
+  .board .bi.chance.cwait > * { visibility: visible !important; }
 }
+/* chance: two groups as units, their shares, the gap and a ruler of noise steps (board.js chance). Hit areas take the pointer;
+   a linked word lights its mark and dims the rest, the tally with them */
+html.ls-page .board .bi.chance { padding: 8px; box-sizing: content-box; max-width: none; }
+.board .chance svg.pl { display: block; overflow: visible; }
+.board .chance svg.pl .chit { pointer-events: all; cursor: help; }
+.board .chance svg.pl .cwit { filter: drop-shadow(0 0 var(--glow-r) var(--hg)); }
+.board .bi.chance.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a plane mark on a later step */
+.bi.chance.lnk-dim svg > g[data-m]:not(.lnk-on), .bi.chance.lnk-dim svg > g.ptally { opacity: .3; }
+.bi.chance svg > g[data-m].lnk-on { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }

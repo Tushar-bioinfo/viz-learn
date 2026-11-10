@@ -35,7 +35,7 @@ slides:
   - type: board
     beat: problem
     title: Two donors, the same mean
-    lead: The mean alone cannot tell these two apart.
+    lead: The ==mean== alone cannot tell these two apart.
     steps:
       - say: Two donors, six T cells each. Each dot is one cell's CD3 level.
         add:
@@ -69,7 +69,7 @@ slides:
             marks:
               - {kind: hline, y: drops, name: average, says: 'raindrops per tile, the same on both patios', step: 2}
           caption: Blue sticks hug the line; mint sticks wander.
-      - say: 'Both patios average ==accent:{{drops}}== drops a tile. Same middle, like our donors.'
+      - say: 'Both patios hold ==accent:{{drops}}== drops a tile on ==average==. Same middle, like our donors.'
       - think:
           q: Which patio is more uneven, and what would you measure to show it?
           a: 'The patchy one. Measure each tile''s distance from the average, as we will for cells.'
@@ -147,14 +147,14 @@ slides:
     title: A squared distance is a real square
     lead: Squaring a distance gives an area you can see.
     steps:
-      - say: Each T cell at its CD3 level. The orange line is the mean.
+      - say: Each T cell at its CD3 level. The orange line is the ==mean==.
         add:
           plane:
             x: {label: 'cells, spaced out (no units)', min: 0, max: slot_end}
             y: {label: CD3 level, min: 3.7, max: 5.2}
             marks:
               - points: {from: tcells, x: slot, y: cd3, label: id}
-              - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|2}}'}
+              - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|2}}', id: mean}
               - {segment: [['at(slots, 0)', xbar], ['at(slots, 0)', 'at(cd3, 0)']], color: ink, label: distance, says: the drop from the cell to the mean line, step: 2}
               - {segment: [['at(slots, 1)', xbar], ['at(slots, 1)', 'at(cd3, 1)']], color: ink, step: 2}
               - {segment: [['at(slots, 2)', xbar], ['at(slots, 2)', 'at(cd3, 2)']], color: ink, step: 2}
@@ -167,8 +167,8 @@ slides:
               - {square: [['at(slots, 3)', xbar], ['at(slots, 3)', 'at(cd3, 3)']], color: s2, step: 3}
               - {square: [['at(slots, 4)', xbar], ['at(slots, 4)', 'at(cd3, 4)']], color: s2, step: 3}
               - {square: [['at(slots, 5)', xbar], ['at(slots, 5)', 'at(cd3, 5)']], color: s2, step: 3}
-      - say: Each grey drop is one cell's distance from the mean.
-      - say: Each distance makes a real square. Its area is the squared distance.
+      - say: Each grey drop is one cell's ==distance== from the mean.
+      - say: Each distance makes a ==its square:real square==. Its area is the squared distance.
       - think:
           q: Which squares make up most of the total area?
           a: '{{at(top_ids, 0)}} and {{at(top_ids, 1)}}, the two cells farthest out: {{100 * top_share|0}}% of the sum of squares.'
@@ -201,7 +201,7 @@ slides:
       avg_n: at(run_n, t)
       avg_n1: at(run_n1, t)
     steps:
-      - say: 'Say the true variance is {{sig2|2}}. Draw 3 cells, work their spread both ways.'
+      - say: 'Say the ==truth:true variance== is {{sig2|2}}. Draw 3 cells, work their spread both ways.'
         frame: 0
         add:
           - chart:
@@ -255,7 +255,7 @@ slides:
       mw: mean(xw)
       s2w: var(xw)
     steps:
-      - say: 'Pull c3 away from the others, and $\bar{x}$ follows it a little. Drag it.'
+      - say: 'Pull c3 away from the others, and ==mw== follows it a little. Drag it.'
         add:
           - chart:
               x: {cats: [c1, c3, c6, c7, c9, c12], label: cell}
@@ -298,9 +298,9 @@ slides:
   - type: board
     beat: next
     title: Next, back to CD3 units
-    lead: The square root undoes the squaring.
+    lead: The square root undoes the squaring. The ==xbar:line== is the mean.
     steps:
-      - say: 'The variance''s square root is the standard deviation, in CD3 units: {{sd|2}}.'
+      - say: 'The variance''s square root is the ==band:standard deviation==, in CD3 units: {{sd|2}}.'
         add:
           - {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
           - chart:
@@ -309,7 +309,7 @@ slides:
               series:
                 - {name: CD3, kind: lollipop, x: 'seq(0, 5, 1)', y: cd3, color: s1}
               marks:
-                - {kind: band, y: ['xbar - sd', 'xbar + sd'], name: '$\bar{x} \pm s$', says: from one SD below the mean to one SD above}
+                - {kind: band, y: ['xbar - sd', 'xbar + sd'], name: '$\bar{x} \pm s$', id: band, says: from one SD below the mean to one SD above}
                 - {kind: hline, y: xbar}
             caption: Now the spread sits on the same axis as the cells.
       - say: 'Next time: c3 sits {{z_far|1}} SDs above the mean. That count is its z-score.'

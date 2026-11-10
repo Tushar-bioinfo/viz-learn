@@ -109,10 +109,10 @@ A think step's `say` is optional; its question is the line. A think question has
 
 ### Highlights in text
 The kit colours worked lines and their table cells for you. In your own text:
-- `==s1:CD3==`: the words in bold, in that colour (`s1` to `s5`, `good`, `bad`, `mist`). Match a term's symbol and column colour. A few words per scene, never a whole sentence.
-- `==#cc6600:orange==`: the same, in a hex colour.
+- `==pixel==`: a **linked word**. It names the mark of this scene's `plane`, `space` or `chart` whose `label` (a chart mark's `name`), `id` or symbol is `pixel`, and takes its colour (a symbol's word is its TeX). Pointing at the word lights its mark and dims the rest; pointing at the mark lights its words. `==pixel:Your pixel==` shows other words. Every legend entry gets its word, by the step that draws the mark; give a mark whose label holds `{{…}}` or `$…$` an `id:`.
+- `==s1:CD3==`: bold words in a colour, no link (`s1` to `s5`, `good`, `bad`, `mist`, `accent`, or a hex like `#cc6600`). For a term's symbol or column colour; a few words per scene.
 - `**3.1×**`: bold, for a result.
-- `==text==`: an orange underline. Rare: once or twice a lesson, for the line to remember.
+- `==text==` that names no mark: an orange underline. Rare: once or twice a lesson, for the line to remember.
 - `$…$`: maths, in KaTeX.
 
 ## Items
@@ -226,6 +226,8 @@ add:
     marks: [{kind: hline, y: xbar, step: 2}, {kind: band, y: [lo, hi], name: usual range, says: where most cells sit}]
   caption: The tallest stick sits farthest above the line.
 ```
+`chance` (two `groups` as units, their shares, the gap, a ruler of noise steps and an optional `tally`; `axis`, `gap_says`, `step_says`) is a figure for adv lessons only: write it as `adv.md` §9 shows.
+
 `ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 16:9; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
 
 **A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours.
@@ -277,8 +279,9 @@ add:
 | `vector` | `[dx, dy]`, `from: [x, y]` | an arrow from `from` (default the origin) |
 | `foot` | `{from: [x, y], line: [w0, w1, w2]}` or `{from, dir: [dx, dy]}` | the drop from a point to a line, or onto a direction through the origin (a projection), with a right-angle tick |
 | `square` | `[[x1, y1], [x2, y2]]` | the square built on that segment, on its left (`side: right` for the other side): a squared distance as an area |
-| `text` | a label, with `at: [x, y]` | free text on the plane |
+| `text` | a label, with `at: [x, y]` | free text on the plane, always in the axis names' grey (`color` is ignored) |
 | `ring` | `[x, y]` | a ring around a point: "this one" |
+| `quarters` | `[cx, cy]`, where the zero lines cross | the two quarters where (x − cx)(y − cy) > 0 washed, and `+` or `−` in each outer corner: the sign of a product. Keep the two zero `line`s |
 
 Every mark also takes:
 | Field | What it does |
@@ -287,7 +290,7 @@ Every mark also takes:
 | `color` | `accent`, `s1` to `s5`, `ink`, `mist`, `good`, `bad`, …, or a hex like `#cc6600` |
 | `rgb` | a `point` or `points` dot in its true colour, worked out on every redraw: `rgb: 10` reads x as red and y as green (blue 0), full at 10, so (8, 4) is `#cc6600`; `rgb: {r, g, b, max}` takes any numbers (left out = 0, `max` 1; on `points` they are row keys). Past `max` clips. Not with `color`. A colour word in a true-coloured mark's `name`, `label` or dot label must fit the colour drawn, under every control (the check warns; `red level` names a channel and is fine) |
 | `label` | its short legend entry above the plane, 2 words at most (`PC1`, `bad line`), even when it also has `name` |
-| `name` | a label beside the mark itself (point, segment, vector, foot), 2 words at most like a legend entry (`1 unit`, not `1 unit of CD3`; `$a \cdot b$` counts as one): the rest goes in `says:`. A vector's, a segment's and a foot's sit beside the middle of the line, off to one side |
+| `name` | a label beside the mark itself (point, segment, vector, foot), drawn only when no linked word names the mark (prefer `label:` and its word), 2 words at most like a legend entry (`1 unit`, not `1 unit of CD3`; `$a \cdot b$` counts as one): the rest goes in `says:`. A vector's, a segment's and a foot's sit beside the middle of the line, off to one side |
 | `says` | the longer meaning (`how far u goes along PC1`); it opens on the board's pop-up card when the learner points at, taps or tabs to the name or legend entry, which brightens instead of an underline. `{{…}}` and markdown work |
 | `dash` | `true` for a dashed line or segment |
 | `when` | an expression; the mark is drawn only while it is not 0 (`when: prev` with a toggle; `when: 'at(has_next, t)'` in a run) |
@@ -320,11 +323,11 @@ A position is a name that gives 3 numbers (a `kind: vector` symbol, a data list,
 | `ring` | a position | a ring round a point: "this one" |
 | `vector` | a position, `from:` | an arrow from `from` (default the origin) |
 | `sheet` | `[U, V]`, `max: [a, b]`, `min:` | the flat piece a·U + b·V, a from `min` (default 0) to `max`, tinted from V's colour to U's |
-| `foot` | `{from: P, onto: [U, V]}` or `{from: P, onto: U}` | the least-squares drop from P onto the plane of U and V (or the line along U): dashed, a hollow dot at the foot, a right-angle mark |
+| `foot` | `{from: P, onto: [U, V]}` or `{from: P, onto: U}` | the least-squares drop from P onto the plane of U and V (or the line along U): dashed (teal, `s2`, by default), a hollow dot at the foot, a right-angle mark |
 | `segment` | `[P, Q]` | a line between two points (`dash: true`) |
 | `text` | a label, `at:` | free text at a point |
 
-Every mark takes `step`, `color`, `label`, `says`, `when` and `dash` as on a plane. `rgb: od` on a `point` or `points` dot gives its true colour from optical density, 255·10^(−OD) per channel; `rgb: 10` reads x, y, z as red, green, blue, full at 10; `{r, g, b, max}` as on a plane. **No names on the marks**: only the axis names are drawn. A mark with `label` gets a legend entry (2 words, 5 entries at most); pointing at it or the mark lights the mark and opens its card, which shows `says` (or its vector symbol's) and its numbers now. Give each labelled mark `says:` or name it in a teacher line.
+Every mark takes `step`, `color`, `label`, `id`, `says`, `when` and `dash` as on a plane. `rgb: od` on a `point` or `points` dot gives its true colour from optical density, 255·10^(−OD) per channel; `rgb: 10` reads x, y, z as red, green, blue, full at 10; `{r, g, b, max}` as on a plane. **No names on the marks**: only the axis names are drawn. A mark with `label` gets a legend entry (2 words, 5 entries at most); pointing at it or the mark lights the mark and opens its card, which shows `says` (or its vector symbol's) and its numbers now. Give each labelled mark `says:` and its linked word.
 
 ## Controls
 `controls:` on a scene takes three kinds. Each `name` becomes a variable for expressions on that scene.

@@ -1,0 +1,29 @@
+# expect: builds
+# expect: not: holds one state
+# C10g check 3: the same scene passes once a mark shows on a later step (the other way, on the same frame).
+title: A point and a line
+question: Where does a point land on a line?
+answer: At the foot of the drop that meets the line at a right angle.
+data: {u: [1, 0, 0.2], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the direction of the line, short: direction u, kind: vector, color: s1, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: misconception
+    idea: closest
+    see: drop
+    shows: a point above a line, and its drop at a right angle
+    title: Why not the straight-down drop?
+    lead: A point drops onto a line.
+    steps:
+      - say: The ==point==, the line along ==u==, and the ==drop== to it.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point}
+                - {foot: {from: q, onto: u}, label: drop, says: the shortest way to the line}
+                - {segment: [q, [0.5, 0.6, 0]], label: straight down, says: 'the drop to the floor, not to the line', step: 2}
+      - say: Its ==drop== meets the line at a right angle, unlike ==straight down==.

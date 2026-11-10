@@ -1,0 +1,26 @@
+# expect: space mark 3 (drop) has a legend entry but no linked word by step 1
+# expect: not: space mark 2 (point)
+# C10e lint 1: a mark with a legend entry needs its linked word (==drop==) in a teacher line by the step that draws it.
+title: A point and two directions
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    steps:
+      - say: ==u== and ==point:a point== above it.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point}
+                - {foot: {from: q, onto: u}, label: drop, says: the shortest way to the line}
+      - say: The drop meets the line at a right angle.

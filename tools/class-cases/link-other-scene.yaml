@@ -1,0 +1,33 @@
+# expect: ERR
+# expect: `==drop==` names a mark on slide 2, not on this scene
+# C10e lint 4: a word links only to a mark of its own scene; a later step is fine (it waits), another scene is not.
+title: A point and two directions
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    steps:
+      - say: ==u==, ==point:a point== above it.
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point}
+                - {foot: {from: q, onto: u}, label: drop, says: the shortest way to the line, step: 2}
+      - say: Its ==drop== waits for this step.
+  - type: board
+    beat: picture
+    title: The drop, again
+    lead: The same drop, from the scene before.
+    steps:
+      - say: The ==drop== meets the line at a right angle.
+        add: {note: A right angle makes it the shortest way.}
