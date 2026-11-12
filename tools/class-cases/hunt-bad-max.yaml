@@ -1,0 +1,22 @@
+# expect: needs `max: [a, b]`
+# B7: a one-number sheet max does not crash the build
+title: hunt-bad-max
+question: q?
+answer: a.
+data: {u: [1, 0, 0], v: [0, 1, 0], p: [0.3, 0.4, 0.5], f: [0.3, 0.4, 0], s0: [0.8, 0.8]}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: A hunt or a split
+    steps:
+      - say: The point and the sheet.
+        add:
+          space:
+            axes: [x, y, z]
+            marks:
+              - {sheet: [u, v], max: [1]}
+              - {point: p, label: point, says: the point}
+      - hunt: {from: p, on: [u, v], start: s0}
+        q: Where is the nearest point?
+        a: 'Right under it.'

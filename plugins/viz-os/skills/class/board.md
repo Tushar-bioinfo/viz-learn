@@ -329,6 +329,37 @@ A position is a name that gives 3 numbers (a `kind: vector` symbol, a data list,
 
 Every mark takes `step`, `color`, `label`, `id`, `says`, `when` and `dash` as on a plane. `rgb: od` on a `point` or `points` dot gives its true colour from optical density, 255·10^(−OD) per channel; `rgb: 10` reads x, y, z as red, green, blue, full at 10; `{r, g, b, max}` as on a plane. **No names on the marks**: only the axis names are drawn. A mark with `label` gets a legend entry (2 words, 5 entries at most); pointing at it or the mark lights the mark and opens its card, which shows `says` (or its vector symbol's) and its numbers now. Give each labelled mark `says:` and its linked word.
 
+### `strip`: a drawing, a window on it, and what the window holds
+One thing at three scales, joined by one pointer: the drawing (pinned at the left), a window the learner drags over it, and the window's contents as a grid of spots with a table of the shapes they fall on. The strip draws no maths of its own: it makes data names, and the other items of its step read them. A `space` on the same step stands under the window on the right; a `calc` or any line reads the names too.
+```yaml
+- say: Drag the window. Each ==spot== takes the colour drawn there.
+  add:
+    - strip: {art: tissue, window: {size: 96, start: DAB}, take: {spots: 12}, table: [h, e, drop], pick: drop}
+    - space:
+        axes: [OD red, OD green, OD blue]
+        marks:
+          - points: {from: window, at: od, rgb: od}
+          - {sheet: [H, E], max: [hw, ew], label: plane, says: every mix of H and E}   # derive: {hw: max(window_h) * 1.2, ew: max(window_e) * 1.2}
+          - {foot: {from: picked_od, onto: [H, E]}, label: drop, says: what no H and E mix explains}
+```
+| Field | What it does |
+|---|---|
+| `art` | the drawing's name: `art/<name>.svg` and `art/<name>.json` beside the lesson (the art, below) |
+| `window` | `size`: the window's side in the drawing's units; `start`: a shape id, or the start of a part name, where the window first sits |
+| `take` | `{spots: n}` (2–16 a side): a grid of n × n spots, each reading the shape drawn on top at its centre; or `shapes`: one row per shape in the window, with its `share` of the window |
+| `table` | up to 4 fields of the rows, as columns beside a swatch and the count; the picked spot's shape is always a row |
+| `pick` | a number field: the window starts on the spot with the most of it (else the middle spot) |
+| `slots` | `{name: data}`: a value for each spot, row by row (`n × n` numbers), such as a blur's weights; spots only, and not in `table` |
+
+The names it makes, kept current as the learner drags or presses: `window` (the rows: each shape's record with `row` and `col`, or `share`), `window_<f>` (field f of every row, as a list: `sum(window_weight * window_grey)`), and `picked_<f>` (field f of the picked row: `picked_od` is a position). A lesson holds one strip, and these names must not be in its data. A `space` whose `points` read `window` sizes its axes over every shape of the drawing, so no window runs off them, and frames what the window holds.
+
+**The art.** Write `make_art.py` beside the lesson: seeded, it writes `art/<name>.svg` and `art/<name>.json` (`{"about", "paint": "rgb", "unit": {"per", "name"}, "shapes": [{"id", "part", ...numbers}]}`). Every shape has a unique `id`, a `part` (what it is, in plain words) and the numbers the lesson reads; fills are flat `#rrggbb`, with no gradient, opacity, filter or image, so with `paint` the colour drawn is the colour recorded. Draw a background shape under everything, so no spot reads nothing. Then:
+```bash
+python3 C/scripts/art.py lessons/<slug>/art/<name>.svg   # checks the contract, writes <name>.hits.json (which shape is on top where)
+```
+`make_data.py` may add numbers to the records (as the H&E lesson adds each shape's `od`, `h`, `e` and `drop`); run `art.py` again after either file changes, or the build stops. Keep the drawing under 2 MB.
+The build adds `image` and `_kit` (the hit map, the records and where the window starts) to the strip; never write them.
+
 ## Controls
 `controls:` on a scene takes three kinds. Each `name` becomes a variable for expressions on that scene.
 **The label is the symbol or one word.** When `name` (a run's `show:`) is a symbol, its TeX in its colour is the label and opens its card; leave `label:` out. Else `label:` is one word (`$…$` counts as one), and `says:` gives it a card. The value column shows the bare value (`fmt`, else the symbol's).

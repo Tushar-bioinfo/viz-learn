@@ -28,7 +28,7 @@ Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `b
 ## 3. The idea table
 | `idea` | The learner asks | The picture | Draw it today with |
 |---|---|---|---|
-| `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix` |
+| `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix`; `strip` when the whole is a picture (board.md) |
 | `amount` | how much, what share? | countable units, a level that fills | `units`, `parts`, `stat`, `chance` |
 | `cause` | what happens if I change this? | one handle moves one mark | `plane`, `chart`, `space`, `dist` |
 | `closest` | which choice is best? | your guess, its error, then the answer | `plane`, `space` |
@@ -86,3 +86,26 @@ A spine of stubs fails the lint for its missing `steps`, and other lints warn ab
 It draws each group as squares, 10 a row, the `ill` ones filled; one share line with a dot per group; the **gap** between the dots (the witness); with `step`, a ruler from the lower share with a tick per **noise step**; with `tally`, a square per frame, grey once the run reaches it and in the gap's colour where the list holds 1. `n`, `ill` and `step` are numbers or names, so a run's `derive` (`xw: at(fr_well, draw)`) redraws it, each change eased.
 - Its marks are the two group names, `gap` and `noise step`: legend entries and linked words (`==gap==`, `==noise step:noise steps==`), so no group may take the names `gap` or `noise step`, and a scene holds one `chance`. Optional `says:` on a group, `gap_says:` and `step_says:` fill their cards.
 - The lint, on each state of a run or slider: exactly two groups with two names; `n` a whole number 1–100; `ill` 0 to that state's `n`; `step` above 0, the gap at most 12 steps; a list read with `at(list, draw)` covers every state; `tally` needs a run and one entry per frame. Arithmetic it cannot read passes; the browser check warns if the page clamps it.
+
+## 10. Space figures the learner moves: views, a hunt, a split
+The camera glides only when the learner presses something; a step never moves it.
+```yaml
+space:
+  axes: [OD red, OD green, OD blue]
+  views: {2: face, 5: edge}   # step: fit, edge (along the sheet), face (square on to it), or {yaw, pitch}
+```
+- **A view (`views`)** becomes a pressable word at the end of its step's line (*face-on*, *edge-on*, *across*, *from the start*). A view on step 1 is where the figure starts. A view on a `think` step turns the figure when its answer opens; once the learner has turned the figure by hand, the answer offers its word instead.
+- **A hunt** is one step. The learner drags a dot on a sheet to find the point nearest `from`:
+  ```yaml
+  - hunt: {from: px, on: [H, E], start: hunt_start}   # start: a data name holding 2 amounts
+    q: Where is the nearest mix?
+    a: 'The ==residual== meets the sheet square. You were ==gap:{{gap|3}} off==.'
+  ```
+  The kit adds the guess's line from `from` (`==your line==`, its length `{{line|3}}`) to the question. Show answer and Next wait until the learner drags. The answer glides the guess to the foot, leaves a dashed ghost where it was, draws the `residual` drop and the dashed `gap` from the ghost, and turns the figure `edge` (unless `views` names another view for that step). It needs a `sheet` on the same two vectors, added at or before the hunt.
+- **A split** is one mark. The learner drags two arrow tips to reach a point by one vector, then the other:
+  ```yaml
+  - {split: ft, along: [H, E], start: split_start, foil: true, label: your split, step: 2}
+  ```
+  Each part is drawn in its vector's colour, from the origin and tip to tail. The names `part_a`, `part_b` (the two amounts) and `miss` (how far the tip is from the point) go in lines. The first `think` at or after `step` moves the tips onto the point when its answer opens. `foil: true` adds the `shortcut` on the step after that think: square drops onto each vector alone, a common wrong answer whose amounts are `short_a` and `short_b`. The figure needs a `sheet` on the same two vectors.
+- Under the hood a hunt and a split make controls with `drag` (`guess`, `was`, `split`): their handles replace slider rows. The kit-made `guess` mark takes `on` and `was`; the `split` mark takes `by` and `to`. Do not write these by hand.
+- The lint stops on: a hunt with no `from`, no `on`, or no matching sheet; a split whose two vectors are parallel or have no sheet; a split with no `think` after it; a `start` that is not a data name with 2 numbers; a view word that names no view; a `views` key that is not a step; and a name of yours (in the scene, the data or the lesson's `derive`) that clashes with the kit's: `hunt_a`, `hunt_b`, `hunt_wa`, `hunt_wb`, `hunt_fa`, `hunt_fb`, `line` and `gap` for a hunt; `part_a`, `part_b`, `split_fa`, `split_fb`, `miss`, `short_a` and `short_b` for a split. It also stops on a sheet whose `max`/`min` is not 2 numbers or whose `min` is not below its `max`, a hunt field it does not know, a split point off the sheet, and a start or an answer the learner cannot drag to inside the sheet as drawn. What the lint cannot read (a point made by a formula) the page checks, and the browser check warns. A think's own `set` is kept beside the split's.

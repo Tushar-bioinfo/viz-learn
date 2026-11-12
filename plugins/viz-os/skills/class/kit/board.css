@@ -402,6 +402,26 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
 }
 
 /* print: the last stop of every figure and every answer open */
+/* hands-on figures: a handle (the one grabbable thing, in the colour of what it moves) and its once-only pulse, a step's view
+   word (the toggle words' look), controls a handle replaces, a hunt's dimmed Show answer */
+.board .hdl { position: absolute; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; padding: 0; border: 0; background: transparent; box-shadow: none; cursor: grab; touch-action: none; z-index: 2; display: grid; place-items: center; border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+.board .hdl svg { display: block; overflow: visible; transition: transform var(--m-hover) var(--ease), filter var(--m-hover) var(--ease); }
+.board .hdl:hover svg, .board .hdl.lit svg, .board .hdl.on svg { transform: scale(1.15); filter: drop-shadow(0 0 6px var(--hc)); }
+.board .hdl.on { cursor: grabbing; }
+.board .hdl:focus { outline: none; }
+.board .hdl:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.board .hdl.pulse::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; border: 2px solid var(--hc); animation: hdlpulse 1.1s var(--ease) 1 both; pointer-events: none; }
+@keyframes hdlpulse { from { transform: scale(.7); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
+.board .vword { display: inline; font: 650 1em var(--f-ui); color: var(--mist); background: transparent; border: 0; box-shadow: none; padding: 0 2px; cursor: pointer; transition: color var(--m-hover) var(--ease); }
+.board .ta .vword { display: none; }
+.board .ta .vword.offer { display: inline; }
+.board .vword:hover { color: var(--ink); }
+.board .vword.on { color: var(--accent); }
+.board .stopl .vword { display: none !important; }
+.board .ctl.hid { display: none; }
+.board .controls:not(:has(> .ctl:not(.hid))) { display: none; }
+.board .think .tb:disabled { opacity: .4; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .board .hdl.pulse::after { animation: none; } .board .hdl svg, .board .vword { transition: none; } }
 @media print {
   html.ls-page, html.ls-page body { background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   #lsbar, #lsrail, #lspause, .board .stage, .board .stopl, .board .tb, .board .controls { display: none; }
@@ -421,3 +441,31 @@ html.ls-page .board .bi.chance { padding: 8px; box-sizing: content-box; max-widt
 .board .bi.chance.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a plane mark on a later step */
 .bi.chance.lnk-dim svg > g[data-m]:not(.lnk-on), .bi.chance.lnk-dim svg > g.ptally { opacity: .3; }
 .bi.chance svg > g[data-m].lnk-on { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+
+/* a strip (board.md): the drawing pins at the left with its window; the window as spots and a table of shapes heads the
+   lines on the right. The window is the accent; outside it the drawing dims, so the eye goes to what the rows hold */
+.board .strip { position: relative; }
+.board .strip .sart { position: relative; cursor: crosshair; touch-action: none; user-select: none; line-height: 0; }
+.board .strip .sart.drag { cursor: grabbing; }
+.board .strip .sart img { width: 100%; height: 100%; display: block; }
+.board .strip .sart:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.board .strip .sov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.board .strip .sdim { fill: rgba(11, 12, 14, .5); }
+.board .strip .swin { fill: none; stroke: var(--accent); stroke-width: 2.5px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px rgba(255, 90, 54, .55)); }
+.board .strip .spk { fill: none; stroke: var(--ink); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.board .ssamp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 10px 18px; align-items: start; }
+.board .ssamp .shead2 { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; font-size: 20px; }
+.board .ssamp .shead2 b { font-weight: 650; }
+.board .ssamp .shead2 .mute { font-size: 17px; color: var(--mist); }
+.board .ssamp .stag { margin-left: auto; font: 500 15px var(--f-mono); color: var(--mist); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+.board .ssamp .sgrid svg { width: 100%; height: auto; display: block; cursor: pointer; outline: none; touch-action: none; }
+.board .ssamp .sgrid svg:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.board .ssamp .sgrid rect.hot { stroke: var(--ink); stroke-width: .8; }
+.board .ssamp .sgrid rect.on { stroke: var(--accent); stroke-width: 1.4; filter: drop-shadow(0 0 1.5px rgba(255, 90, 54, .7)); }
+.board .ssamp .stab table.stt { width: 100%; border-collapse: collapse; font-size: 17px; font-variant-numeric: tabular-nums; }
+.board .ssamp .stt th { font: 500 15px var(--f-mono); color: var(--mist); text-align: left; padding: 2px 6px 6px; border-bottom: 1px solid var(--thin); }
+.board .ssamp .stt td { padding: 5px 6px; border-bottom: 1px solid var(--line-dim); cursor: pointer; }
+.board .ssamp .stt tr.hot td { background: var(--card); }
+.board .ssamp .stt tr.on td { box-shadow: inset 0 -1px 0 var(--accent), inset 0 1px 0 var(--accent); }
+.board .ssamp .ssw { display: inline-block; width: 16px; height: 16px; border: 1px solid var(--thin); vertical-align: -2px; }
+.board .stripb.beside .ffig { align-self: start; }

@@ -1,0 +1,24 @@
+# expect: the two directions are zero or nearly parallel
+# round 2 B1: the scene derives v as another name for u, so the data v is not what it hunts on
+title: hunt-shadow-parallel
+question: q?
+answer: a.
+data: {u: [1, 0, 0], v: [0, 1, 0], p: [0.3, 0.4, 0.5], f: [0.3, 0.4, 0], s0: [0.8, 0.8]}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: A hunt or a split
+    derive:
+      v: u
+    steps:
+      - say: The point and the sheet.
+        add:
+          space:
+            axes: [x, y, z]
+            marks:
+              - {sheet: [u, v], max: [1, 1]}
+              - {point: p, label: point, says: the point}
+      - hunt: {from: p, on: [u, v], start: s0}
+        q: Where is the nearest point?
+        a: 'Right under it.'

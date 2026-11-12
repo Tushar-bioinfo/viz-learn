@@ -19,6 +19,31 @@
   addEventListener('scroll', () => { if (watching) return; watching = true; requestAnimationFrame(() => { watching = false; (L.slides || []).forEach(sl => sl.r.watch && sl.r.watch()); }); }, { passive: true });
   const sv = (tag, attrs, parent) => { const e = document.createElementNS(SVG, tag); for (const k in attrs || {}) if (attrs[k] != null) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
   const list = x => Array.isArray(x) ? x : x == null ? [] : [x];
+  // hands-on figures (adv.md): motion that is not a hover. With reduced motion, or for the check, every move is at once
+  const STILL = () => (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) || /[?&]check\b/.test(location.search);
+  let EZ = null; const easeK = () => EZ || (EZ = (() => { const m = /cubic-bezier\(([^)]+)\)/.exec(getComputedStyle(document.documentElement).getPropertyValue('--ease')), b = m ? m[1].split(',').map(Number) : [.2, .7, .2, 1]; return bezier(...b); })());
+  // a camera glide takes GLIDE ms, eased in and out evenly so the move uses its whole time, and pulls back PULL at its middle
+  const GLIDE = 700, PULL = .08, EVEN = q => q < .5 ? 4 * q * q * q : 1 - (-2 * q + 2) ** 3 / 2;
+  const MSTATE = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--m-state')) || 450;
+  // a handle is an HTML button over the drawing (a dot in the colour of what it moves), so it keeps the focus and the pointer while the drawing is redrawn
+  const handle = (host, c, aria) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'hdl'; b.setAttribute('aria-label', aria); b.style.setProperty('--hc', c);
+    b.innerHTML = '<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="7.5" style="fill:var(--hc);stroke:var(--bg);stroke-width:2"/></svg>'; host.appendChild(b); return b; };
+  const pulse = b => { if (!b || STILL()) return; b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 1300); };
+  // drag a handle: onMove(clientX, clientY) while the button is down; the arrow keys call onKey(dx, dy), Shift for 5 times as far
+  const dragHandle = (b, onMove, onKey, onStart) => {
+    b.addEventListener('pointerdown', e => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); b.focus({ preventScroll: true, focusVisible: false }); try { b.setPointerCapture(e.pointerId); } catch (_) { /* a synthetic event */ } b.classList.add('on'); onStart(); });
+    b.addEventListener('pointermove', e => { if (b.classList.contains('on') && e.buttons) onMove(e.clientX, e.clientY); });
+    const up = () => b.classList.remove('on'); ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => b.addEventListener(t, up));
+    b.addEventListener('keydown', e => { const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; if (!k) return; e.preventDefault(); e.stopPropagation();
+      onStart(); onKey(k[0] * (e.shiftKey ? 5 : 1), k[1] * (e.shiftKey ? 5 : 1)); }); };
+  // move named controls to new values over --m-state on the kit's one curve
+  // each control has at most one tween: a new tween, or the learner's own drag (untween), takes the control from the old one
+  const tweenCtl = (ctx, to) => { const tw = ctx.tw || (ctx.tw = {}), id = { to }, from = {}; Object.keys(to).forEach(k => { from[k] = ctx.scope[k]; tw[k] = id; }); const ms = STILL() ? 0 : MSTATE(), ez = easeK(), t0 = performance.now();
+    const step = now => { const q = ms ? Math.min(1, (now - t0) / ms) : 1, e = ez(q), mine = Object.keys(to).filter(k => tw[k] === id); mine.forEach(k => { ctx.ctl[k] && ctx.ctl[k](from[k] + (to[k] - from[k]) * e); if (q >= 1) delete tw[k]; }); if (q < 1 && mine.length) requestAnimationFrame(step); };
+    if (ms) requestAnimationFrame(step); else step(t0); };
+  const untween = (ctx, k) => { if (ctx.tw) delete ctx.tw[k]; };
+  const rangeOf = (ctx, name) => { const c = (((ctx.deck.slides || [])[ctx.index] || {}).controls || []).find(x => x && x.name === name) || {}; return [+c.min, +c.max]; };
+  const clampTo = (ctx, name, v) => { const [a, b] = rangeOf(ctx, name); return Math.max(a, Math.min(b, v)); };
   // pause hover pop-ups: while paused, pointing at a name no longer opens its `says`; a tap, a click or a focus still does.
   // The button sits in the right margin just above the scene rail, made the first time a name or legend entry has `says`.
   // The choice is kept per viewer; storage may be blocked (a file page, a strict browser), so the page works without it
@@ -610,9 +635,9 @@
   const rgbs = {}, cssRGB = c => { if (!(c in rgbs)) { const q = document.createElement('span'); q.style.color = c; document.body.appendChild(q);
     const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(q).color); q.remove(); rgbs[c] = m ? m[1].split(',').slice(0, 3).map(Number) : [162, 159, 151]; } return rgbs[c]; };
   const glowOf = c => { glow(document.createElement('span'), c); return glows[c]; };
-  const SPACE = ['points', 'point', 'ring', 'vector', 'sheet', 'foot', 'segment', 'text'];   // a mark's kind; `ring: true` on a point is a field
+  const SPACE = ['points', 'point', 'ring', 'vector', 'sheet', 'foot', 'segment', 'text', 'guess', 'split'];   // a mark's kind; `ring: true` on a point is a field
   // a foot is teal, not accent, so its linked word is told apart from a ringed point's accent ring
-  const SDEF = { points: 's1', point: 'ink', ring: 'ink', vector: 'ink', sheet: 'mist', foot: 's2', segment: 'mist', text: 'mist' };
+  const SDEF = { points: 's1', point: 'ink', ring: 'ink', vector: 'ink', sheet: 'mist', foot: 's2', segment: 'mist', text: 'mist', guess: 's4', split: 'mist' };
   // the look was picked at the bench's size, a longest axis of 2.6 OD units: perspective (focal 5), the depth fade and the
   // right-angle mark are in those units, and scale with each space
   const OD0 = 2.6, FOCAL = 5, RAD = Math.PI / 180, PMIN = -10, PMAX = 80, HOME = [38, 20], SHAPE3 = 4 / 3;
@@ -640,19 +665,31 @@
       if (Array.isArray(xv) && xv.length === 3 && xv.every(q => typeof q === 'number' && Number.isFinite(q))) return xv;
       if (bad) bad.push(`${what} ${JSON.stringify(v)} is not 3 numbers`); return null; };
     // what a mark draws, worked out at a scope: its kind, its points in space (`pts`, for sizing) and what drawing it needs
+    const outRange = (f, U, V, names, what, bad) => { if (!f) return; const uu = vdot(U, U), uv = vdot(U, V), vv = vdot(V, V), pu = vdot(f, U), pv = vdot(f, V), det = uu * vv - uv * uv;
+      const am = [(vv * pu - uv * pv) / det, (uu * pv - uv * pu) / det];
+      names.forEach((n, j) => { const [lo, hi] = rangeOf(ctx, n); if (Number.isFinite(lo) && Number.isFinite(hi) && !(am[j] >= lo - 1e-9 && am[j] <= hi + 1e-9)) bad.push(`${what} needs ${L.fmt(am[j], 3)} of ${j ? 'the second' : 'the first'} direction, outside the drag range ${L.fmt(lo, 3)} to ${L.fmt(hi, 3)}: the learner cannot reach it`); }); };
     const geo = (mk, sc, bad) => { const k = kindOf(mk), q = (v, w) => pos(v, sc, bad, w), g = { k, pts: [] };
       if (k === 'points') { const P = mk.points || {}, rows = list(L.val(P.from, sc, where));
         g.rows = rows.map(r => ({ r, at: r && typeof r === 'object' ? pos(r[P.at], sc) : null })).filter(row => row.at); g.pts = g.rows.map(row => row.at);
         if (bad && g.rows.length < rows.length) bad.push(`${rows.length - g.rows.length} of ${rows.length} rows of ${P.from} have no 3 numbers under \`${P.at}\``); }
       else if (k === 'point' || k === 'ring' || k === 'text') { g.p = q(k === 'text' ? mk.at : mk[k], k === 'text' ? 'text at' : k); if (g.p) g.pts = [g.p]; }
       else if (k === 'vector') { g.o = mk.from != null ? q(mk.from, 'from') : [0, 0, 0]; const v = q(mk.vector, 'vector'); if (g.o && v) { g.e = vadd(g.o, v); g.pts = [g.o, g.e]; } }
-      else if (k === 'segment') { [g.a, g.b] = list(mk.segment).map(x => q(x, 'segment end')); if (g.a && g.b) g.pts = [g.a, g.b]; }
+      else if (k === 'segment') { const [a, b] = list(mk.segment).map(x => q(x, 'segment end')); if (a && b) Object.assign(g, { a, b, pts: [a, b] }); }
       else if (k === 'sheet') { const [U, V] = list(mk.sheet).map(x => q(x, 'sheet vector')), ab = [...list(mk.min ?? [0, 0]), ...list(mk.max)].map(x => L.val(x, sc, where));
         if (U && V && ab.length === 4 && ab.every(Number.isFinite)) { Object.assign(g, { U, V, ab, thin: !span(U, V), at: (a, b) => vadd(vmul(U, a), vmul(V, b)) }); g.pts = [g.at(ab[0], ab[1]), g.at(ab[2], ab[1]), g.at(ab[2], ab[3]), g.at(ab[0], ab[3])];
           if (g.thin && bad) bad.push(`its two vectors are zero or nearly point the same way (sine of their angle under ${THIN}): the sheet is a line, and \`edge\` cannot look along it`); } }
       else if (k === 'foot') { const F = mk.foot || {}, P = q(F.from, 'foot from'), ws = (Array.isArray(F.onto) && F.onto.length === 2 ? F.onto : [F.onto]).map(x => q(x, 'foot onto'));
         if (P && ws.every(Boolean)) { const f = footOn(P, ws[0], ws[1]); if (f && f.every(Number.isFinite)) Object.assign(g, { P, f, ws, pts: [P, f] });
           else if (bad) bad.push(ws[1] ? `it drops onto two vectors that are zero or nearly point the same way (sine of their angle under ${THIN}), so their plane cannot be trusted: no drop is drawn` : 'it drops onto a zero vector: no drop is drawn'); } }
+      // a guess a·U + b·V on the sheet (a, b are controls) with its line from P; a split of a·U + b·V into its two parts
+      else if (k === 'guess') { const [U, V] = list(mk.on).map(x => q(x, 'guess on')), ab = list(mk.guess).map(x => L.val(x, sc, where)), P = q(mk.from, 'guess from'), wv = mk.was != null ? list(mk.was).map(x => L.val(x, sc, where)) : null;
+        if (U && V && !span(U, V)) { if (bad) bad.push('its two directions are zero or nearly parallel, so they make no sheet: no guess and no nearest point are drawn'); }
+        else if (U && V && P && ab.length === 2 && ab.every(Number.isFinite)) { if (bad) outRange(footOn(P, U, V), U, V, list(mk.guess), 'the nearest point', bad); Object.assign(g, { U, V, P, ab, p: vadd(vmul(U, ab[0]), vmul(V, ab[1])), f: footOn(P, U, V), w: wv && wv.every(Number.isFinite) ? vadd(vmul(U, wv[0]), vmul(V, wv[1])) : null }); g.pts = [g.p, P]; } }
+      else if (k === 'split') { const [U, V] = list(mk.split).map(x => q(x, 'split vector')), ab = list(mk.by).map(x => L.val(x, sc, where));
+        if (U && V && !span(U, V)) { if (bad) bad.push('its two directions are zero or nearly parallel: no parts are drawn'); }
+        else if (U && V && ab.length === 2 && ab.every(Number.isFinite)) { const T0 = mk.to != null ? q(mk.to, 'split to') : null, f0 = T0 && footOn(T0, U, V);
+          if (bad && f0) { const off = vlen(vsub(T0, f0)); if (off > 1e-9 * Math.max(1, vlen(T0))) bad.push(`its point ${mk.to} sits ${L.fmt(off, 3)} off the sheet, so no two parts reach it: split its foot instead`); else outRange(f0, U, V, list(mk.by), `${mk.to}`, bad); }
+          Object.assign(g, { U, V, ab, A: vmul(U, ab[0]), B: vmul(V, ab[1]) }); g.T = vadd(g.A, g.B); g.pts = [[0, 0, 0], g.A, g.B, g.T]; } }
       return g; };
 
     // the axes: from 0 (lower if a mark goes below 0) to just past the farthest point any mark reaches, rounded up to the floor
@@ -671,6 +708,8 @@
         for (let r = 0; r < 2000; r++) sets.push(V.map(v => v[Math.floor(rnd() * v.length)])); }
       [...sets, ctls.map(v0)].forEach(vs => { const sc = L.scope(ctx.scope, {}); ctls.forEach((c, j) => { sc[c.name] = vs[j]; }); L.derive(sc, scene.derive, where);
         marks.forEach(({ mk }) => geo(mk, sc).pts.forEach(pt => pt.forEach((v, a) => { if (Number.isFinite(v)) { lo[a] = Math.min(lo[a], v); hi[a] = Math.max(hi[a], v); } }))); });
+      if (ctx.stripAll && marks.some(({ mk }) => mk.points && mk.points.from === 'window')) { const sc = L.scope(ctx.scope, ctx.stripAll()); L.derive(sc, scene.derive, where);   // a strip's window can go anywhere on the drawing
+        marks.forEach(({ mk }) => geo(mk, sc).pts.forEach(pt => pt.forEach((v, a) => { if (Number.isFinite(v)) { lo[a] = Math.min(lo[a], v); hi[a] = Math.max(hi[a], v); } }))); }
       const most = Math.max(...hi.map((v, a) => v - lo[a])) || 1; hi.forEach((v, a) => { if (!(v - lo[a] > 1e-12 * most)) hi[a] = lo[a] + most; });
       const big = Math.max(...hi.map((v, a) => v - lo[a])), nice = q => [1, 2, 5, 10].map(m => m * 10 ** Math.floor(Math.log10(q))).find(s => s >= q - 1e-12);
       const grid = nice(big / 14), tick = nice(big / 6), r = v => +v.toFixed(10), own = p.max != null ? list(p.max).map(x => L.val(x, ctx.scope, where)) : null;
@@ -687,7 +726,8 @@
     const proj = q => { const o = orbit(q, vw.yaw, vw.pitch), k = FOCAL / (FOCAL + o.d * vw.pp);
       return { x: W / 2 + vw.ox + o.sx * k * vw.S, y: HT / 2 + vw.oy - o.sy * k * vw.S, d: o.d, k: k * (1 - .08 * o.d * vw.pp), fade: Math.max(.5, Math.min(1, 1 - .28 * o.d)) }; };
     const fitFor = (yaw, pitch, pp = vw.pp) => { let u0 = 1e9, u1 = -1e9, w0 = 1e9, w1 = -1e9;
-      for (const a of [box.lo[0], box.hi[0]]) for (const b of [box.lo[1], box.hi[1]]) for (const c of [box.lo[2], box.hi[2]]) { const o = orbit([a, b, c], yaw, pitch), k = FOCAL / (FOCAL + o.d * pp);
+      const cs = (R.focus && R.focus()) || [box.lo[0], box.hi[0]].flatMap(a => [box.lo[1], box.hi[1]].flatMap(b => [box.lo[2], box.hi[2]].map(c => [a, b, c])));
+      for (const P0 of cs) { const o = orbit(P0, yaw, pitch), k = FOCAL / (FOCAL + o.d * pp);
         u0 = Math.min(u0, o.sx * k); u1 = Math.max(u1, o.sx * k); w0 = Math.min(w0, o.sy * k); w1 = Math.max(w1, o.sy * k); }
       const s = Math.min((W - 140) / (u1 - u0 || 1), (HT - 68) / (w1 - w0 || 1)); return { yaw, pitch, pp, S: s, ox: -s * (u0 + u1) / 2, oy: s * (w0 + w1) / 2 }; };
     // look along the first sheet, so it shows as a line and a drop onto it meets it at a right angle: of the directions in the
@@ -699,6 +739,30 @@
         if (!best || s < best[2]) best = [y, t, s]; }
       return best && best.slice(0, 2); };
 
+    // `face` looks square on to the first sheet (lengths on it read true); the view direction; how far off edge-on
+    const vunit = a => vmul(a, 1 / (vlen(a) || 1));
+    const sheetG = () => G.find(q => q && q.k === 'sheet' && q.U && !q.thin);
+    const faceView = () => { const g = sheetG(); if (!g) return null; const n = vunit(vcross(g.U, g.V)); let best = null;
+      [n, vmul(n, -1)].forEach(D => { const t0 = Math.asin(Math.max(-1, Math.min(1, -D[2]))) / RAD, t = Math.max(-90, Math.min(90, t0)), y = Math.hypot(D[0], D[1]) < 1e-6 ? vw.yaw : Math.atan2(D[0], D[1]) / RAD;
+        const off = Math.abs(t - t0); if (!best || off < best[2] - 1e-9 || (Math.abs(off - best[2]) < 1e-9 && Math.abs(t - 45) < Math.abs(best[1] - 45))) best = [y, t, off]; });
+      return best && best.slice(0, 2); };   // a named view reaches the exact pitch (a level sheet needs 90°)
+    R.dir = () => { const y = vw.yaw * RAD, t = vw.pitch * RAD; return [Math.sin(y) * Math.cos(t), Math.cos(y) * Math.cos(t), -Math.sin(t)]; };
+    R.offEdge = () => { const g = sheetG(); return g ? Math.asin(Math.min(1, Math.abs(vdot(R.dir(), vunit(vcross(g.U, g.V)))))) / RAD : 90; };
+    // a pointer to the sheet: the a, b whose point a·U + b·V draws nearest it (damped Gauss–Newton from where it is, so seen
+    // edge-on it moves only along the line the sheet makes); and to a line: the s whose base + s·D draws nearest
+    const solveAB = (U, V, ab0, X, Y) => { let [a, b] = ab0; const at = (p, q) => proj(vadd(vmul(U, p), vmul(V, q)));
+      for (let it = 0; it < 10; it++) { const p0 = at(a, b), ex = X - p0.x, ey = Y - p0.y, d = 1e-4, pa = at(a + d, b), pb = at(a, b + d), j11 = (pa.x - p0.x) / d, j21 = (pa.y - p0.y) / d, j12 = (pb.x - p0.x) / d, j22 = (pb.y - p0.y) / d;
+        const A11 = j11 * j11 + j21 * j21, A12 = j11 * j12 + j21 * j22, A22 = j12 * j12 + j22 * j22, lam = 1e-4 * (A11 + A22) + 1e-9, g1 = j11 * ex + j21 * ey, g2 = j12 * ex + j22 * ey, det = (A11 + lam) * (A22 + lam) - A12 * A12;
+        if (!(Math.abs(det) > 0)) break; const da = ((A22 + lam) * g1 - A12 * g2) / det, db = ((A11 + lam) * g2 - A12 * g1) / det; a += da; b += db; if (Math.hypot(da, db) < 1e-8) break; }
+      return [a, b]; };
+    const solveS = (base, D, s0, X, Y) => { let s = s0; for (let it = 0; it < 10; it++) { const at = q => proj(vadd(base, vmul(D, q))), p0 = at(s), d = 1e-4, p1 = at(s + d), jx = (p1.x - p0.x) / d, jy = (p1.y - p0.y) / d, jj = jx * jx + jy * jy;
+      if (!(jj > 1e-12)) break; const ds = (jx * (X - p0.x) + jy * (Y - p0.y)) / jj; s += ds; if (Math.abs(ds) < 1e-8) break; } return s; };
+    const amountsOf = (U, V, f) => { const uu = vdot(U, U), uv = vdot(U, V), vv = vdot(V, V), fu = vdot(f, U), fv = vdot(f, V), det = uu * vv - uv * uv; return Math.abs(det) > 1e-15 ? [(vv * fu - uv * fv) / det, (uu * fv - uv * fu) / det] : null; };
+    // a mark that arrives fades in over --m-state (450 ms) on the kit's curve; an axis's tick numbers fade over --m-hover
+    const appear = {}; let tkT = 0; R.tk = [1, 1, 1];
+    R.alpha = m => { const t0 = appear[m]; if (t0 == null) return 1; if (STILL()) { delete appear[m]; return 1; } const q = (performance.now() - t0) / MSTATE(); if (q >= 1) { delete appear[m]; return 1; } req(); return Math.max(0, easeK()(q)); };
+    const fadeS = (str, m) => { const a = m == null ? 1 : R.alpha(m); if (a >= 1) return str;
+      return str.replace(/style="([^"]*)"/, (_, css) => { const o = /(^|;)\s*opacity:([\d.]+)/.exec(css); return `style="${o ? css.replace(o[0], `${o[1]}opacity:${(+o[2] * a).toFixed(3)}`) : `${css};opacity:${a.toFixed(3)}`}"`; }); };
     // ---- drawing: every piece is [depth, svg, mark], sorted far to near; the floor first, ticks, names and hit areas on top
     const n1 = v => v.toFixed(1), lineS = (u0, u1, sty) => `<line x1="${n1(u0.x)}" y1="${n1(u0.y)}" x2="${n1(u1.x)}" y2="${n1(u1.y)}" style="${sty}"/>`;
     const ptsS = qs => qs.map(z => n1(z.x) + ',' + n1(z.y)).join(' ');
@@ -706,7 +770,7 @@
       if (!box || W < 40) return;
       const out = [], dots = [], segs = [], u = box.unit, put = (d, s, m) => out.push([d, s, m]);
       const seg = (a, b, n, sty, m, w) => { for (let j = 0; j < n; j++) { const p0 = proj(vlerp(a, b, j / n)), p1 = proj(vlerp(a, b, (j + 1) / n)); put((p0.d + p1.d) / 2, lineS(p0, p1, sty), m); }
-        const p0 = proj(a), p1 = proj(b); segs.push([p0.x, p0.y, p1.x, p1.y, w]); };
+        const p0 = proj(a), p1 = proj(b); segs.push([p0.x, p0.y, p1.x, p1.y, w, m]); };   // m: an axis (null) is told from a mark
       const dot = (q, r, sty, m, dz = 0) => { const p0 = proj(q), rr = few ? Math.max(4.5, r * p0.k) : r * p0.k; dots.push([p0.x, p0.y, rr + 2]); put(p0.d - dz, `<circle cx="${n1(p0.x)}" cy="${n1(p0.y)}" r="${n1(rr)}" style="${sty};opacity:${p0.fade.toFixed(2)}"/>`, m); };
       const [x0, y0] = box.lo, [xh, yh] = box.hi, F0 = (x, y) => proj([x, y, 0]);
       let back = `<polygon points="${ptsS([F0(x0, y0), F0(xh, y0), F0(xh, yh), F0(x0, yh)])}" style="fill:rgba(255,255,255,.025);stroke:var(--line-dim);stroke-width:1"/>`;
@@ -714,6 +778,10 @@
       for (let v = y0 + box.grid; v < yh - 1e-6; v += box.grid) back += lineS(F0(x0, v), F0(xh, v), 'stroke:var(--grid);stroke-width:1');
       [0, 1, 2].forEach(a => { const e0 = [0, 0, 0], e1 = [0, 0, 0]; e0[a] = box.lo[a]; e1[a] = box.hi[a]; seg(e0, e1, 8, 'stroke:var(--mist);stroke-width:1;stroke-linecap:square', null, 3); });
       const on = G.filter(g => g && g.st <= R.c);
+      // an arrow from o to e, as the vector mark draws one
+      const arrow3 = (o, e, cc, w, m, extra = '') => { const L0 = vlen(vsub(e, o)); if (L0 < 1e-12) return; const tip = proj(e), bk = proj(vlerp(o, e, Math.max(0, 1 - .1 * u / L0))), qd = Math.hypot(tip.x - bk.x, tip.y - bk.y) || 1, dx = (tip.x - bk.x) / qd, dy = (tip.y - bk.y) / qd, hl = 16 * headOf(w) * tip.k, hw = 7 * headOf(w) * tip.k, bx = tip.x - dx * hl, by = tip.y - dy * hl;
+        seg(o, vlerp(o, e, Math.max(0, 1 - .1 * u / L0 * Math.min(1, .8 * hl / qd))), 6, `stroke:${cc};stroke-width:${w};stroke-linecap:round${extra}`, m, w + 2);
+        put(tip.d - .001, `<polygon points="${n1(tip.x)},${n1(tip.y)} ${n1(bx - dy * hw)},${n1(by + dx * hw)} ${n1(bx + dy * hw)},${n1(by - dx * hw)}" style="fill:${cc}${extra}"/>`, m); };
       // a dot shrinks with distance, but never under --dot-min (9 px) across while the figure draws 50 dots or fewer now (rings are not dots)
       const few = on.reduce((n, g) => n + (g.k === 'points' ? g.rows.length : (g.k === 'point' && g.p) || (g.k === 'foot' && g.f) ? 1 : 0), 0) <= 50;
       on.forEach(g => { const { mk, i: m, c } = g;
@@ -735,17 +803,30 @@
           if (n >= .015 * u) { put((pa.d + pb.d) / 2, lineS(pa, pb, `stroke:${c};stroke-width:${wOf(c)};stroke-dasharray:6 4`), m); segs.push([pa.x, pa.y, pb.x, pb.y, 3]); }
           if (n >= .02 * u) { const ra = vmul(r, .1 * u / n), fl = vlen(g.f), rb = vmul(fl > 1e-9 ? g.f : g.ws[0], -.1 * u / (fl > 1e-9 ? fl : vlen(g.ws[0]))), qs = [vadd(g.f, ra), vadd(vadd(g.f, ra), rb), vadd(g.f, rb)].map(proj);
             put(qs[1].d, `<polyline points="${ptsS(qs)}" style="fill:none;stroke:${g.c2};stroke-width:${lw('data')}"/>`, m); }
-          dot(g.f, 4.7, `fill:var(--bg);stroke:${c};stroke-width:2`, m, .001); } });
+          dot(g.f, 4.7, `fill:var(--bg);stroke:${c};stroke-width:2`, m, .001); }
+        // the guess: its line from P (the witness: 3.5 px, a soft glow) and, once revealed, a dashed ghost where it was.
+        // The split: h·U from the origin and e·V tip to tail, in their own colours, over the faint parallelogram with e·V from the origin
+        else if (g.k === 'guess' && g.p) { const ww = lw('wit');
+          seg(g.P, g.p, 6, `stroke:${c};stroke-width:${ww};stroke-linecap:round;filter:drop-shadow(0 0 5px ${glowOf(c)})`, m, ww);
+          if (R.revealed && g.w) dot(g.w, 8, `fill:none;stroke:${c};stroke-width:2.5;stroke-dasharray:3 3;stroke-opacity:.6`, m, .001);
+          // the gap from the ghost to the foot at the witness's weight, drawn over the sheet: edge-on it lies along the sheet's line
+          if (R.revealed && g.w && g.f && vlen(vsub(g.w, g.f)) > 1e-9) { const q0 = proj(g.w), q1 = proj(g.f); put(Math.min(q0.d, q1.d) - .02, lineS(q0, q1, `stroke:var(--mist);stroke-width:${ww};stroke-linecap:round;stroke-dasharray:7 6`), m); } }
+        else if (g.k === 'split' && g.A) { const W2 = lw('wit'), O = [0, 0, 0], faint = 'stroke:var(--mist);stroke-width:1.2;stroke-dasharray:4 4;stroke-opacity:.8';
+          arrow3(O, g.A, g.cU2, W2, m); arrow3(O, g.B, g.cV2, lw('data'), m, ';opacity:.4'); seg(g.A, g.T, 4, faint, m, 1); seg(g.B, g.T, 4, faint, m, 1);
+          arrow3(g.A, g.T, g.cV2, W2, m); dot(g.T, 4.2, 'fill:var(--ink);stroke:none', m, .003); } });
       out.sort((a, b) => b[0] - a[0]);
       // every piece carries its mark's number, so a linked word can dim the other marks
       const lit = (str, m) => m == null ? str : m === hot ? str.replace(/^<(\w+) /, `<$1 class="lit" data-m="${m}" `).replace('style="', `style="--hg:${G[m].hg};`) : str.replace(/^<(\w+) /, `<$1 data-m="${m}" `);
       // tick numbers along each axis, every `tick`, and the boxes the names must clear
       let top = ''; const o0 = proj([0, 0, 0]), placed = [], dec = box.tick < 1 ? Math.max(1, -Math.floor(Math.log10(box.tick) + 1e-9)) : 0;
+      const TK = [[], [], []];   // each axis's tick numbers, shown or faded below
       [0, 1, 2].forEach(a => { for (let v = Math.ceil(box.lo[a] / box.tick - 1e-9) * box.tick; v <= box.hi[a] - box.grid + 1e-9; v += box.tick) { if (Math.abs(v) < 1e-9) continue;
         const q = [0, 0, 0]; q[a] = v; const pt = proj(q), L1 = Math.hypot(pt.x - o0.x, pt.y - o0.y) || 1, dx = (pt.x - o0.x) / L1 * Math.sign(v), dy = (pt.y - o0.y) / L1 * Math.sign(v);
         let nx = -dy, ny = dx; if (ny < 0 || (Math.abs(ny) < .2 && nx > 0)) { nx = -nx; ny = -ny; }
-        const tx = pt.x + nx * 16, ty = pt.y + ny * 16 + 4; top += lineS(pt, { x: pt.x + nx * 5, y: pt.y + ny * 5 }, 'stroke:var(--mist);stroke-width:1') + `<text class="stk" x="${n1(tx)}" y="${n1(ty)}" text-anchor="middle">${v.toFixed(dec)}</text>`;
-        placed.push({ x: tx - 13, y: ty - 13, w: 26, h: 16 }); } });
+        const tx = pt.x + nx * 16, ty = pt.y + ny * 16 + 4; top += lineS(pt, { x: pt.x + nx * 5, y: pt.y + ny * 5 }, 'stroke:var(--mist);stroke-width:1');
+        // a number the frame would cut (a zoomed view puts the far ticks outside it) is not drawn
+        if (tx - 13 < 4 || tx + 13 > W - 4 || ty - 13 < 4 || ty + 3 > HT - 4) continue;
+        TK[a].push({ v: v.toFixed(dec), tx, ty, b: { x: tx - 13, y: ty - 13, w: 26, h: 16 } }); } });
       // a name in a plain word with a halo in the ground colour: the first spot round its anchor that covers no mark, number or name
       const cross = (q, r) => { let t0 = 0, t1 = 1; const dx = q[2] - q[0], dy = q[3] - q[1], ps = [-dx, dx, -dy, dy], qs = [q[0] - r.x, r.x + r.w - q[0], q[1] - r.y, r.y + r.h - q[1]];
         for (let j = 0; j < 4; j++) { if (!ps[j]) { if (qs[j] < 0) return false; continue; } const t = qs[j] / ps[j]; if (ps[j] < 0) { if (t > t1) return false; t0 = Math.max(t0, t); } else { if (t < t0) return false; t1 = Math.min(t1, t); } } return true; };
@@ -757,34 +838,86 @@
             const r = dist < 0 ? { x: pt.x - w / 2, y: pt.y - hh / 2, w, h: hh } : { x: pt.x + Math.cos(an) * (dist + w / 2) - w / 2, y: pt.y + Math.sin(an) * (dist + hh / 2) - hh / 2, w, h: hh }; if (clear(r)) best = r; } if (best) break; }
         if (!best) { crowd.push(t); best = { x: pt.x + 8, y: pt.y - hh / 2, w, h: hh }; } placed.push(best);
         top += `<text class="${cls}" x="${n1(best.x + 1)}" y="${n1(best.y + fs * .86)}">${L.esc(t)}</text>`; };
-      [0, 1, 2].forEach(a => { if (!axn[a]) return; const e = [0, 0, 0]; e[a] = box.hi[a]; const pt = proj(e); label(axn[a], e, Math.atan2(pt.y - o0.y, pt.x - o0.x), 'sax', 14); });
+      // an axis's numbers fade out while any two of them overlap, one overlaps a number of an axis already kept, or one comes
+      // within 8 px of a mark; and back in when the clash ends. Each change takes --m-hover (180 ms); at once with reduced motion
+      { const over = (r, o, pad) => r.x < o.x + o.w + pad && o.x < r.x + r.w + pad && r.y < o.y + o.h + pad && o.y < r.y + r.h + pad;
+        const nearMark = r => dots.some(([cx, cy, cr]) => Math.hypot(cx - Math.max(r.x, Math.min(cx, r.x + r.w)), cy - Math.max(r.y, Math.min(cy, r.y + r.h))) < cr - 2 + 8)
+          || segs.some(sq => sq[5] !== null && cross(sq, { x: r.x - sq[4] / 2 - 8, y: r.y - sq[4] / 2 - 8, w: r.w + sq[4] + 16, h: r.h + sq[4] + 16 }));
+        const kept = [], now = performance.now(), dt = Math.min(100, tkT ? now - tkT : 0), still = STILL(); tkT = now;
+        [0, 1, 2].forEach(a => { const bs = TK[a].map(t => t.b);
+          const tgt = bs.some((r, i) => bs.some((s2, j) => j > i && over(r, s2, 2))) || bs.some(r => kept.some(s2 => over(r, s2, 2))) || bs.some(nearMark) ? 0 : 1;
+          if (tgt) kept.push(...bs);
+          if (still) R.tk[a] = tgt; else if (dt) { const st = dt / 180; R.tk[a] = tgt > R.tk[a] ? Math.min(tgt, R.tk[a] + st) : Math.max(tgt, R.tk[a] - st); }
+          if (R.tk[a] !== tgt) req();
+          const al = R.tk[a]; if (al > .01) TK[a].forEach(tk => { top += `<text class="stk" data-ax="${a}" x="${n1(tk.tx)}" y="${n1(tk.ty)}" text-anchor="middle"${al < 1 ? ` style="opacity:${al.toFixed(3)}"` : ''}>${tk.v}</text>`; if (al > .5) placed.push(tk.b); }); }); }
+      const framed = !!R.focus(), nearM = r => dots.some(([cx, cy, cr]) => Math.hypot(cx - Math.max(r.x, Math.min(cx, r.x + r.w)), cy - Math.max(r.y, Math.min(cy, r.y + r.h))) < cr - 2 + 8)
+        || segs.some(sq => sq[5] !== null && cross(sq, { x: r.x - sq[4] / 2 - 8, y: r.y - sq[4] / 2 - 8, w: r.w + sq[4] + 16, h: r.h + sq[4] + 16 }));
+      [0, 1, 2].forEach(a => { if (!axn[a]) return; const e = [0, 0, 0]; e[a] = box.hi[a]; const pt = proj(e), c0 = crowd.length, t0 = top.length; label(axn[a], e, Math.atan2(pt.y - o0.y, pt.x - o0.x), 'sax', 14);
+        if (!framed) return; const r = placed[placed.length - 1], bad = crowd.length > c0 || r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > HT || nearM(r); crowd.length = c0;
+        const ax = R.ax || (R.ax = [1, 1, 1]), tgt = bad ? 0 : 1, dt = Math.min(100, R.axT ? performance.now() - R.axT : 0);
+        ax[a] = STILL() ? tgt : tgt > ax[a] ? Math.min(tgt, ax[a] + dt / 180) : Math.max(tgt, ax[a] - dt / 180); if (ax[a] !== tgt) req();
+        if (ax[a] <= .01) { top = top.slice(0, t0); placed.pop(); } else if (ax[a] < 1) top = top.slice(0, t0) + top.slice(t0).replace('<text ', `<text style="opacity:${ax[a].toFixed(3)}" `); });
+      R.axT = performance.now();
       on.forEach(g => { if (g.k === 'text' && g.p) label(L.plain(String(g.mk.text), ctx.scope), g.p, -Math.PI / 4, 'stx', 14, true); });
       // the hit areas, see-through, over everything: the sheet, then lines, then dots, so a dot wins over the sheet it sits on
       const hit = (m, str) => str.replace(/^<(\w+) /, `<$1 class="shit vt says" data-m="${m}" data-vk="sp${no}-${m}" `);
       let hits = '';
-      [['sheet'], ['vector', 'segment', 'foot'], ['points', 'point', 'ring']].forEach(ks => on.forEach(g => { if (!g.card || !ks.includes(g.k)) return;
+      [['sheet'], ['vector', 'segment', 'foot', 'guess', 'split'], ['points', 'point', 'ring']].forEach(ks => on.forEach(g => { if (!g.card || !ks.includes(g.k)) return;
         if (g.k === 'sheet' && g.U) hits += hit(g.i, `<polygon points="${ptsS(g.pts.map(proj))}" style="fill:transparent;stroke:none"/>`);
         else if (g.k === 'vector' && g.e) hits += hit(g.i, lineS(proj(g.o), proj(g.e), 'stroke:transparent;stroke-width:14'));
         else if (g.k === 'segment' && g.a) hits += hit(g.i, lineS(proj(g.a), proj(g.b), 'stroke:transparent;stroke-width:14'));
         else if (g.k === 'foot' && g.f) hits += hit(g.i, lineS(proj(g.P), proj(g.f), 'stroke:transparent;stroke-width:14'));
+        else if (g.k === 'guess' && g.p) hits += hit(g.i, lineS(proj(g.P), proj(g.p), 'stroke:transparent;stroke-width:14'));
+        else if (g.k === 'split' && g.A) hits += hit(g.i, lineS(proj([0, 0, 0]), proj(g.T), 'stroke:transparent;stroke-width:14'));
         else (g.k === 'points' ? g.pts : g.p ? [g.p] : []).forEach(q => { const pt = proj(q); hits += hit(g.i, `<circle cx="${n1(pt.x)}" cy="${n1(pt.y)}" r="${g.k === 'points' ? 8 : 13}" style="fill:transparent;stroke:none"/>`); }); }));
-      const html = back + out.map(([, s, m]) => lit(s, m)).join('') + top + hits; svg.innerHTML = html;
+      const html = back + out.map(([, s, m]) => fadeS(lit(s, m), m)).join('') + top + hits; svg.innerHTML = html;
+      // the handles sit on their points: the guess's on the guess, the split's on its two arrow tips
+      if (R.hg) { const g = G[R.hgi], shown = !!(g && g.p && g.st <= R.c); R.hg.style.display = shown ? '' : 'none';
+        if (shown) { const pt = proj(g.p); R.hg.style.left = n1(pt.x) + 'px'; R.hg.style.top = n1(pt.y) + 'px'; R.hg.classList.toggle('lit', hot === g.i); } }
+      if (R.hs) { const g = G.find(q => q && q.k === 'split'), shown = !!(g && g.A && g.st <= R.c);
+        R.hs.forEach((b, j) => { b.style.display = shown ? '' : 'none'; if (!shown) return; const pt = proj(j === 0 ? g.A : g.T); b.style.left = n1(pt.x) + 'px'; b.style.top = n1(pt.y) + 'px'; }); }
       svg.querySelectorAll('.shit').forEach(e => { e._pd = G[+e.dataset.m].pd; });
       R.issues = R.base.concat(/NaN|Infinity/.test(html) ? ['the space drew a point that is not a number'] : [], crowd.length ? [`the space's name${crowd.length > 1 ? 's' : ''} ${crowd.map(t => `"${t}"`).join(', ')} cover${crowd.length > 1 ? '' : 's'} a mark at this view`] : []);
       tools.querySelector('.zl').textContent = Math.round(100 * vw.S / fitS) + '%'; };
 
     // ---- motion: draw only when something changed; a short glide after a drag (none with reduced motion); a tween to a view
-    const clampP = q => Math.max(PMIN, Math.min(PMAX, q)), req = () => { if (!raf) raf = requestAnimationFrame(frame); };
+    const clampP = q => Math.max(PMIN, Math.min(PMAX, q)), clampH = (cur, nx) => nx > PMAX ? Math.max(PMAX, Math.min(cur, nx)) : nx < PMIN ? Math.min(PMIN, Math.max(cur, nx)) : nx, req = () => { if (!raf) raf = requestAnimationFrame(frame); };
     function frame(now) { raf = 0;
-      if (tween) { const q = Math.max(0, Math.min(1, (now - tween.t0) / 480)), e = q < .5 ? 2 * q * q : 1 - (-2 * q + 2) ** 2 / 2;
-        ['yaw', 'pitch', 'S', 'ox', 'oy', 'pp'].forEach(k => { vw[k] = tween.a[k] + (tween.b[k] - tween.a[k]) * e; }); if (q < 1) req(); else tween = null; }
+      // the glide: GLIDE ms on the even curve, pulled back PULL at the middle of the move so the figure stays in the plate
+      if (tween) { const q = Math.max(0, Math.min(1, (now - tween.t0) / GLIDE)), e = EVEN(q), pull = 1 - PULL * Math.sin(Math.PI * e);
+        ['yaw', 'pitch', 'S', 'ox', 'oy', 'pp'].forEach(k => { vw[k] = tween.a[k] + (tween.b[k] - tween.a[k]) * e; }); vw.S *= pull; vw.ox *= pull; vw.oy *= pull; if (q < 1) req(); else { tween = null; if (R.endH) { const e2 = R.endH; R.endH = null; setH(e2); } } }
       if (toPP && !tween) { vw.pp = REDUCED ? 1 : Math.min(1, vw.pp + .05); if (vw.pp < 1) req(); else toPP = false; }
-      else if (!drag && (Math.abs(vw.vy) > .02 || Math.abs(vw.vp) > .02)) { vw.yaw += vw.vy; vw.pitch = clampP(vw.pitch + vw.vp); vw.vy *= .92; vw.vp *= .92; req(); }
+      else if (!drag && (Math.abs(vw.vy) > .02 || Math.abs(vw.vp) > .02)) { vw.yaw += vw.vy; vw.pitch = clampH(vw.pitch, vw.pitch + vw.vp); vw.vy *= .92; vw.vp *= .92; req(); }
       else if (!drag) vw.vy = vw.vp = 0;
       draw(); }
     const goTo = v => { vw.vy = vw.vp = 0; const b = { ...v, yaw: vw.yaw + (((v.yaw - vw.yaw) % 360 + 540) % 360 - 180) };   // the short way round
-      if (REDUCED) { tween = null; Object.assign(vw, b); req(); return; } tween = { a: { ...vw }, b, t0: performance.now() }; req(); };
-    const fitNow = (yaw = vw.yaw, pitch = vw.pitch, pp = vw.pp) => { if (!box) return; const v = fitFor(yaw, pitch, pp); fitS = v.S; toPP = false; goTo(v); };
+      if (STILL() || R.instant) { tween = null; Object.assign(vw, b); req(); return; } tween = { a: { ...vw }, b, t0: performance.now() }; req(); };
+    // a named view: fit (the start), edge (along the sheet), face (square on to it), or {yaw, pitch}. `instant` jumps (the start view)
+    R.goView = (v, instant) => { const nm = v == null ? 'fit' : v; if (!box || !W) { R.pendingView = nm; return; } let yp = null;
+      if (nm === 'fit') yp = [...HOME, 1]; else if (nm === 'edge') { const ev = edgeView(); yp = ev && [...ev, 0]; } else if (nm === 'face') { const fv = faceView(); yp = fv && [...fv, 0]; }
+      else if (typeof nm === 'object') yp = [+nm.yaw, Math.max(-90, Math.min(90, +nm.pitch)), 1];
+      if (!yp) return; R.instant = !!instant; fitNow(...yp); R.instant = false; R.atView = JSON.stringify(nm); R.markWords();
+      if (!instant && R.turned) { R.turned = false; R.offer(false); } };   // a chosen view ends the hand-turn hold
+    // the camera moves on a press, never because a step arrived. A think's answer that names a view turns the figure, unless the
+    // learner has turned it by hand since: then the answer offers its view as a word, as a say step always does
+    const sceneOf = () => node.closest('.s-board');
+    R.markWords = () => { const sc = sceneOf(); if (sc) sc.querySelectorAll('.vword').forEach(b => { if (!b.spec || b.spec === R.spec) b.classList.toggle('on', b.dataset.view === R.atView); }); };
+    R.offer = on => { const sc = sceneOf(); if (sc) sc.querySelectorAll('.ta .vword').forEach(b => { if (b.spec === R.spec) b.classList.toggle('offer', on); }); };
+    R.byHand = () => { if (!R.turned) { R.turned = true; R.offer(true); } R.atView = null; R.markWords(); };
+    R.answerView = at => { const x = (R.views || []).find(q => q.at === at && q.think); if (x && !R.turned) R.goView(x.v); };
+    // in a strip the space is only as tall as the chosen view needs at its width (200 px up to 4:3; the C10j look): a wide, shallow
+    // cloud edge-on in a 4:3 box left an empty band. A named view sets it; the box grows before the glide and shrinks when it lands,
+    // so nothing is cut on the way. Turning by hand, zooming and dragging the window keep it, so the page below never moves under the learner
+    const stripFit = () => !!ctx.stripAll && G.some(g => g && g.k === 'points' && g.mk.points.from === 'window');
+    const hFor = (yaw, pitch, pp) => { const ps = R.focus(); if (!ps) return null; let u0 = 1e9, u1 = -1e9, w0 = 1e9, w1 = -1e9;
+      for (const P0 of ps) { const o = orbit(P0, yaw, pitch), k = FOCAL / (FOCAL + o.d * pp); u0 = Math.min(u0, o.sx * k); u1 = Math.max(u1, o.sx * k); w0 = Math.min(w0, o.sy * k); w1 = Math.max(w1, o.sy * k); }
+      return Math.round(Math.max(200, Math.min(W / SHAPE3, (W - 140) / (u1 - u0 || 1) * (w1 - w0) + 68))); };
+    const setH = hh => { if (Math.abs(hh - HT) <= 2) return; vw.oy += (HT - hh) / 2; R.fitH = R.h = HT = hh; wrap.style.height = hh + 'px'; svg.setAttribute('viewBox', `0 0 ${W} ${HT}`); req(); };
+    const fitNow = (yaw = vw.yaw, pitch = vw.pitch, pp = vw.pp, keepH) => { if (!box) return; R.endH = null;
+      const hh = !keepH && stripFit() ? hFor(yaw, pitch, pp) : null; if (hh) { R.hView = [yaw, pitch, pp]; if (hh > HT) setH(hh); }
+      let v; if (hh && hh < HT) { const was = HT; HT = hh; v = fitFor(yaw, pitch, pp); HT = was; v.oy += (hh - was) / 2; } else v = fitFor(yaw, pitch, pp);
+      fitS = v.S; toPP = false; goTo(v); if (hh && hh < HT) { if (tween) R.endH = hh; else setH(hh); } };
+    R.refit = () => fitNow(vw.yaw, vw.pitch, vw.pp, true);
     const turned = () => { if (vw.pp < 1) { toPP = true; req(); } };   // leaving the edge view: perspective comes back
     // zoom toward a point in the figure: up to 400%; down to the fitted size, or to 50% by pinch, ctrl / ⌘ + scroll or the buttons
     const zoomBy = (f, cx = W / 2, cy = HT / 2, least = .5) => { const S2 = Math.max(Math.min(vw.S, fitS * least), Math.min(fitS * 4, vw.S * f)); f = S2 / vw.S;
@@ -805,8 +938,8 @@
       if (!drag) { const ht = e.target.closest('.stools') ? null : e.target.closest('.shit'); setHot(ht ? +ht.dataset.m : null, 'fig');
         if (figCard() && (!ht || ht.dataset.vk !== cur.dataset.vk)) { popHide(); if (ht && !hoverOff) popShow(ht); } return; }
       if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 4) return;
-      if (!drag.moved) { drag.moved = true; wrap.classList.add('drag'); try { wrap.setPointerCapture(drag.id); } catch (_) { /* a synthetic pointer */ } if (cur && node.contains(cur)) popHide(); setHot(null, 'fig'); setHot(null, 'leg'); }
-      turned(); const dx = e.clientX - drag.x, dy = e.clientY - drag.y; vw.yaw += dx * .4; vw.pitch = clampP(vw.pitch + dy * .3); vw.vy = dx * .4; vw.vp = dy * .3;
+      if (!drag.moved) { R.byHand(); drag.moved = true; wrap.classList.add('drag'); try { wrap.setPointerCapture(drag.id); } catch (_) { /* a synthetic pointer */ } if (cur && node.contains(cur)) popHide(); setHot(null, 'fig'); setHot(null, 'leg'); }
+      turned(); const dx = e.clientX - drag.x, dy = e.clientY - drag.y; vw.yaw += dx * .4; vw.pitch = clampH(vw.pitch, vw.pitch + dy * .3); vw.vy = dx * .4; vw.vp = dy * .3;
       drag.x = e.clientX; drag.y = e.clientY; drag.t = performance.now(); req(); });
     function end() { if (!drag) return; if (!drag.moved || REDUCED || performance.now() - drag.t > 90) vw.vy = vw.vp = 0; drag = null; wrap.classList.remove('drag'); req(); }
     // a press is only a drag while the button is down: a release anywhere, or the window losing focus, ends it
@@ -817,7 +950,7 @@
       if (!mod && dy > 0 && vw.S <= fitS * 1.001) return; e.preventDefault(); const [x, y] = local(e); zoomBy(Math.exp(-dy * (e.ctrlKey ? .01 : .002)), x, y, mod ? .5 : 1); }, { passive: false });
     wrap.addEventListener('dblclick', e => { if (!e.target.closest('.stools')) fitNow(); });
     wrap.addEventListener('keydown', e => { if (e.metaKey || e.ctrlKey || e.altKey || e.target !== wrap) return; const k = { ArrowLeft: [-8, 0], ArrowRight: [8, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[e.key];
-      if (k) { vw.yaw += k[0]; vw.pitch = clampP(vw.pitch + k[1]); tween = null; turned(); req(); }
+      if (k) { R.byHand(); vw.yaw += k[0]; vw.pitch = clampH(vw.pitch, vw.pitch + k[1]); tween = null; turned(); req(); }
       else if (e.key === '+' || e.key === '=') zoomBy(1.2); else if (e.key === '-' || e.key === '_') zoomBy(1 / 1.2); else if (e.key === '0') fitNow(); else return;
       e.preventDefault(); e.stopPropagation(); });   // the page's ← → step a figure: here they turn this one
     tools.addEventListener('pointerdown', e => e.preventDefault());   // a button pressed by mouse takes no focus ring
@@ -827,8 +960,36 @@
     // ---- sizing and the marks at the current values
     // the figure is 4:3, sized like a plane: from the layout's width and height limit
     R.size = room => { const ah = room.h - PAD - R.leg, aw = aim(room, ah) - PAD, ww = Math.max(40, Math.min(aw, ah * SHAPE3));
-      R.w = Math.round(ww); R.h = Math.round(ww / SHAPE3); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
-    R.show = c => { R.c = c; leg.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= c)); draw(); };
+      if (Math.round(ww) !== R.w) R.fitH = null; R.w = Math.round(ww); R.h = R.fitH || Math.round(ww / SHAPE3); node.style.width = R.w + 'px'; wrap.style.width = R.w + 'px'; wrap.style.height = R.h + 'px'; return R.w + PAD; };
+    // a mark that arrives fades in, and the guess's handle pulses once; the first show takes the start view (a view on step 1)
+    R.show = c => { const was = R.c;
+      if (was !== 1e9 && c > was) G.forEach(g => { if (g && g.st <= c && g.st > was) { appear[g.i] = performance.now(); if (g.k === 'guess') setTimeout(() => pulse(R.hg), 30); } });
+      R.c = c; leg.querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= c));
+      if (!R.started) { R.started = true; if (R.startView != null) R.goView(R.startView, true); }
+      draw(); };
+    // drag the guess on the sheet, nudge it with the keys; drag a split's tips along their own arrows
+    // the learner's own move: it takes the control from any tween, and counts as an attempt only if the value changes
+    const ctlSet = (nm, v) => { if (!ctx.ctl[nm]) return; untween(ctx, nm); const was = ctx.scope[nm], to = clampTo(ctx, nm, v); ctx.ctl[nm](to); if (Math.abs(to - was) > 1e-9) R.touched(); };
+    R.touched = () => { R.dragged = true; node.dispatchEvent(new CustomEvent('hands-dragged', { bubbles: true })); };
+    R.dragTo = (i, cx, cy) => { const g = G[i], [x, y] = local({ clientX: cx, clientY: cy }), [a, b] = solveAB(g.U, g.V, g.ab, x, y), [na, nb] = list(g.mk.guess); ctlSet(na, a); ctlSet(nb, b); };
+    R.nudge = (i, dx, dy) => { const g = G[i], [na, nb] = list(g.mk.guess); ctlSet(na, g.ab[0] + dx * .02); ctlSet(nb, g.ab[1] + dy * .02); };
+    R.dragTip = (i, j, cx, cy) => { const g = G[i], [x, y] = local({ clientX: cx, clientY: cy }); ctlSet(list(g.mk.by)[j], solveS(j === 0 ? [0, 0, 0] : g.A, j ? g.V : g.U, g.ab[j], x, y)); };
+    R.nudgeTip = (i, j, d) => { const g = G[i]; ctlSet(list(g.mk.by)[j], g.ab[j] + d * .02); };
+    // the hunt's answer: the guess's place is kept (was), the guess glides to the foot and leaves its ghost; Hide answer glides it back
+    R.reveal = on => { const g = G.find(q => q && q.k === 'guess'); if (!g) return; const [na, nb] = list(g.mk.guess), wn = g.mk.was != null ? list(g.mk.was) : null;
+      if (on && !R.revealed) { R.revealed = true; if (wn) { ctx.ctl[wn[0]](ctx.scope[na]); ctx.ctl[wn[1]](ctx.scope[nb]); } const ft = g.f && amountsOf(g.U, g.V, g.f); if (ft) tweenCtl(ctx, { [na]: ft[0], [nb]: ft[1] }); }
+      else if (!on && R.revealed) { R.revealed = false; if (wn) tweenCtl(ctx, { [na]: ctx.scope[wn[0]], [nb]: ctx.scope[wn[1]] }); } };
+    // for the checks: what each mark draws now, and the camera
+    R.probe = () => G.filter(Boolean).map(g => ({ k: g.k, i: g.i, p: g.p, P: g.P, f: g.f, U: g.U, V: g.V, A: g.A, B: g.B, T: g.T, ab: g.ab, scr: g.p ? (({ x, y }) => [x, y])(proj(g.p)) : null }));
+    R.view = () => ({ ...vw, off: R.offEdge(), tk: [...R.tk] });
+    // a figure with a guess or a split is framed on what it is about, the sheet's corners and the guess's point; the axes may run off
+    R.badAt = sc => marks.reduce((n, { mk }) => { const b = []; try { geo(mk, sc, b); } catch (_) { return n + 1; } return n + b.length; }, 0);
+    // in a strip, the camera frames what the window holds: its points, the sheet and the drop
+    R.focus = () => { if (ctx.stripAll && G.some(g => g && g.k === 'points' && g.mk.points.from === 'window')) { const ps = G.filter(g => g && g.st <= R.c).flatMap(g => g.pts || []); return ps.length > 1 ? ps : null; }
+      if (!G.some(g => g && (g.k === 'guess' || g.k === 'split'))) return null; const sh = sheetG(); if (!sh || !sh.pts) return null;
+      return [...sh.pts, ...G.filter(g => g && g.k === 'guess' && g.P).map(g => g.P)]; };
+    R.focusFill = () => { const ps = R.focus(); if (!ps) return null; const q = ps.map(proj), xs = q.map(z => z.x), ys = q.map(z => z.y);
+      return [(Math.min(W, Math.max(...xs)) - Math.max(0, Math.min(...xs))) / W, (Math.min(HT, Math.max(...ys)) - Math.max(0, Math.min(...ys))) / HT]; };
     // a linked word (see the board): the colour it takes, a sheet's two tints, and whether its mark is drawn at this stop
     R.wl = i => { const g = G[i]; return !g ? { drawn: false } : { c: g.lc, grad: g.k === 'sheet' && g.mk.color == null && g.cU ? [g.cV, g.cU].map(q => `rgb(${q})`) : null, drawn: g.st <= R.c && g.pts.length > 0 }; };
     // the word's mark lights as its legend entry lights it; the other marks and entries dim
@@ -838,12 +999,14 @@
       leg.innerHTML = ''; R.later = []; const base = R.base = [];
       if (R.w < 40 || R.h < 40) { R.issues = ['the picture has no room']; return false; }
       if (!box) box = axesOf(); mid = box.lo.map((v, a) => (v + box.hi[a]) / 2);
+      const pendV = R.pendingView;
+      if (tween && (R.w !== W || R.h !== HT)) { const b = tween.b; tween = null; W = R.w; HT = R.h; svg.setAttribute('viewBox', `0 0 ${W} ${HT}`); const v = fitFor(b.yaw, b.pitch, b.pp); fitS = v.S; Object.assign(vw, v); }   // a resize mid-glide lands on the glide's end, fitted anew
       if (R.w !== W || R.h !== HT) { const keep = W ? vw.S / fitS : 1; W = R.w; HT = R.h; svg.setAttribute('viewBox', `0 0 ${W} ${HT}`);
         const v = fitFor(vw.yaw, vw.pitch); fitS = v.S; Object.assign(vw, { S: v.S * keep, ox: v.ox * keep, oy: v.oy * keep }); }
       G = marks.map(({ mk, i }) => { const k = kindOf(mk), w = `space mark ${i + 1}`;
         if (!k) { base.push(`${w} is none of ${SPACE.join(', ')}`); return null; }
         if (mk.when != null && !L.val(mk.when, ctx.scope, where)) return null;
-        const bad = [], g = Object.assign(geo(mk, ctx.scope, bad), { mk, i, st: mk.step != null ? clickOf(mk.step) : at }); base.push(...bad.map(b => `${w} (${k}): ${b}`));
+        const bad = [], g = Object.assign(geo(mk, ctx.scope, bad), { mk, i, st: mk.step != null ? clickOf(mk.step) - (mk.guess != null ? 1 : 0) : at }); base.push(...bad.map(b => `${w} (${k}): ${b}`));
         // a mark outside the axes at the values now: remembered, so the check warns even after the slider moves back
         const tol = 1e-9 * Math.max(...box.hi.map((v, a) => v - box.lo[a]));
         if (g.pts.some(q => q.some((v, a) => v > box.hi[a] + tol || v < box.lo[a] - tol))) R.past.add(box.own ? `${w} (${k}) reaches past the axes' \`max\`: widen it, or leave \`max\` out so the kit sizes the axes`
@@ -857,7 +1020,8 @@
         g.c = k === 'point' && spec != null && g.p ? hx(g.p) : c; if (k === 'points') g.rows.forEach(row => { row.hex = spec != null ? hx(row.at, row.r) : c; });
         g.rc = mk.color != null ? c : 'var(--accent)'; g.c2 = c;
         if (k === 'sheet') { const [su, sv2] = list(mk.sheet).map(symOfV), cs = q => cssRGB(mk.color != null ? c : q && q.color && q.color !== 'ink' ? col(q.color) : 'var(--mist)'); g.cU = cs(su); g.cV = cs(sv2); }
-        g.lk = k === 'vector' ? 'arrow' : k === 'sheet' ? 'area' : k === 'foot' || (k === 'segment' && mk.dash) ? 'dash' : k === 'segment' ? 'line' : k === 'ring' || mk.ring === true ? 'ring' : 'dot';
+        g.lk = k === 'vector' ? 'arrow' : k === 'sheet' ? 'area' : k === 'foot' || (k === 'segment' && mk.dash) ? 'dash' : k === 'segment' || k === 'guess' ? 'line' : k === 'ring' || mk.ring === true ? 'ring' : 'dot';
+        if (k === 'split') { g.lk = 'arrow'; const [a1, b1] = list(mk.split).map(symOfV); g.cU2 = col(a1 && a1.color || 's5'); g.cV2 = col(b1 && b1.color || 's3'); }   // each part in its vector's colour
         g.lc = mk.ring === true ? g.rc : k === 'sheet' && mk.color == null ? 'var(--mist)' : k === 'points' && spec != null ? 'var(--mist)' : g.c;
         const cc = g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc; g.hg = glowOf(cc);
         // a colour word in a true-coloured mark's label must fit the colour drawn (checked once the mark shows)
@@ -865,7 +1029,7 @@
           if (wrong) R.later.push({ st: g.st, msg: `${w}: label “${mk.label}” says ${wrong[1][0]}, but its colour reads as ${readAs(hsvOf(wrong[0]))} (${wrong[0]})` }); }
         g.says = mk.says ?? (sym && sym.says); g.card = !!(mk.label || g.says);
         const f2 = xs => `(${xs.map(v => L.fmt(v, 2)).join(', ')})`;
-        g.pd = () => { const q = G[i] || g, val = q.k === 'point' || q.k === 'ring' ? q.p && f2(q.p) : q.k === 'vector' ? q.e && f2(vsub(q.e, q.o)) : q.k === 'foot' && q.f ? L.fmt(vlen(vsub(q.P, q.f)), 's3') : null;
+        g.pd = () => { const q = G[i] || g, val = q.k === 'point' || q.k === 'ring' ? q.p && f2(q.p) : q.k === 'vector' ? q.e && f2(vsub(q.e, q.o)) : q.k === 'foot' && q.f ? L.fmt(vlen(vsub(q.P, q.f)), 's3') : q.k === 'guess' && q.p ? L.fmt(vlen(vsub(q.P, q.p)), 's3') : null;
           return { swatch: swatch(g.lk, g.lc), c: cc, name: mk.label ?? null, says: g.says, value: val ?? null, shape: q.k === 'point' || q.k === 'ring' ? 'one point' : q.k === 'foot' ? 'its length' : null, scope: ctx.scope }; };
         return g; });
       // the legend: one entry per mark with a `label`; pointing at it (or the mark) lights the mark and opens its card
@@ -875,12 +1039,115 @@
         if (g.card) { lab.classList.add('says', 'vt'); lab.tabIndex = 0; lab.dataset.vk = `sp${no}-${g.i}-k`; glow(lab, g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc);
           lab.setAttribute('aria-description', L.plain(String(g.says ?? g.mk.label), ctx.scope)); lab._pd = g.pd; pauseButton(); } });
       leg.appendChild(tools);   // the view buttons: a row at the legend's right end, on the figure's top rule
+      // the guess's handle and the split's two tip handles (made once; they outlive every redraw)
+      G.forEach(g => { if (!g) return;
+        if (g.k === 'guess' && !R.hg) { R.hgi = g.i; R.hg = handle(wrap, g.c, 'your guess: drag it on the sheet, or press the arrow keys');
+          dragHandle(R.hg, (x, y) => R.dragTo(g.i, x, y), (dx, dy) => R.nudge(g.i, dx, dy), () => {}); }
+        if (g.k === 'split' && !R.hs) { R.hs = [[g.cU2, 'the first part: drag along its arrow'], [g.cV2, 'the second part: drag along its arrow']].map(([c2, t]) => handle(wrap, c2, t));
+          R.hs.forEach((b, j) => dragHandle(b, (x, y) => R.dragTip(g.i, j, x, y), (dx, dy) => R.nudgeTip(g.i, j, dx + dy), () => {})); } });
+      // in a strip the space is only as tall as its parts need at the start and edge-on views, at its width (the C10j look):
+      // a wide, shallow cloud in a 4:3 box left an empty band. Set once per layout, so dragging the window never moves the page
+      if (ctx.stripAll && G.some(g => g && g.k === 'points' && g.mk.points.from === 'window')) {
+        const all = G.filter(Boolean).flatMap(g => g.pts || []), ev = edgeView();
+        const need = (yaw, pitch, pp) => { let u0 = 1e9, u1 = -1e9, w0 = 1e9, w1 = -1e9;
+          for (const P0 of all) { const o = orbit(P0, yaw, pitch), k = FOCAL / (FOCAL + o.d * pp); u0 = Math.min(u0, o.sx * k); u1 = Math.max(u1, o.sx * k); w0 = Math.min(w0, o.sy * k); w1 = Math.max(w1, o.sy * k); }
+          return (W - 140) / (u1 - u0 || 1) * (w1 - w0) + 68; };
+        const hh = Math.round(Math.max(200, W * .45, Math.min(W / SHAPE3, Math.max(need(...HOME, 1), ev ? need(...ev, 0) : 0))));
+        if (all.length > 1 && Math.abs(hh - HT) > 2) { R.h = HT = hh; wrap.style.height = hh + 'px'; svg.setAttribute('viewBox', `0 0 ${W} ${HT}`);
+          const v = fitFor(vw.yaw, vw.pitch, vw.pp); fitS = v.S; Object.assign(vw, v); } }
+      if (!R.fitH && R.hView && W && stripFit()) { const hh = hFor(...R.hView); if (hh) { setH(hh); const v = fitFor(vw.yaw, vw.pitch, vw.pp); fitS = v.S; Object.assign(vw, v); } }
+      if (pendV !== undefined && W) { R.pendingView = undefined; R.goView(pendV, true); }
+      if (!R.framed && W && R.focus()) { R.framed = true; R.goView(R.startView, true); }   // G is in now: frame on the sheet
       L.fill(leg, ctx.scope); base.push(...R.past); R.issues = base; draw();
       const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
     return R;
   }
 
   // ---------- how much room a figure gets ----------
+  // ---------- strip: a drawing, a window the learner drags over it, and the window's contents as rows (board.md) ----------
+  // strip.py samples the start window at build time and checks the art; here the same hit map gives the same rows. Every move
+  // writes `window`, `window_<f>` and `picked_<f>` into the scene's scope and redraws, so the other items read them by name.
+  // The art (left, pinned) carries the window; the sampler (the window as a grid of spots and its table of shapes) heads
+  // the step's lines on the right. One pointer: a spot, its table row and its shape light together; a press picks
+  function strip(p, ctx) {
+    const K = p._kit, [x0, y0, vw, vh] = K.vb, G = K.grid, size = K.size, take = K.take, cols = K.cols, recs = K.recs, ids = K.ids, slots = K.slots || {};
+    const cells = new Int32Array(G * G); let q = 0; K.hits.forEach(row => { for (let k = 0; k < row.length; k += 2) { cells.fill(row[k], q, q + row[k + 1]); q += row[k + 1]; } });
+    const rec = k => { if (k < 0) return { id: null, part: 'nothing' }; const o = { id: ids[k] }; cols.forEach((c, j) => { o[c] = recs[k][j]; }); return o; };
+    const cellAt = (x, y) => { const i = Math.floor((x - x0) / vw * G), j = Math.floor((y - y0) / vh * G); return i >= 0 && i < G && j >= 0 && j < G ? cells[j * G + i] : -1; };
+    const n = take === 'shapes' ? 0 : take, R = { kind: 'strip', issues: [], stops: [], w: 0, h: 0, c: 1e9 };
+    let cx = K.at[0], cy = K.at[1], pick = K.pick, hot = null, rows = [];
+    const sample = () => {
+      if (n) { rows = []; for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) { const o = { ...rec(cellAt(cx - size / 2 + (c + .5) * size / n, cy - size / 2 + (r + .5) * size / n)), row: r, col: c };
+          Object.entries(slots).forEach(([nm, v]) => { o[nm] = v[r * n + c]; }); rows.push(o); } return; }
+      const cnt = new Map(); let tot = 0;
+      for (let j = 0; j < G; j++) { const y = y0 + (j + .5) / G * vh; if (Math.abs(y - cy) > size / 2) continue;
+        for (let i = 0; i < G; i++) { const x = x0 + (i + .5) / G * vw, k = cells[j * G + i]; if (Math.abs(x - cx) > size / 2 || k < 0) continue; cnt.set(k, (cnt.get(k) || 0) + 1); tot++; } }
+      rows = [...cnt.keys()].sort((a, b) => cnt.get(b) - cnt.get(a) || a - b).map(k => ({ ...rec(k), share: +(cnt.get(k) / (tot || 1)).toFixed(4) })); };
+    // what the other items read: the rows, each field as a list, and the picked row's fields
+    const publish = () => { const sc = ctx.scope, r0 = rows[0] || {}, fs = Object.keys(r0).filter(f => f !== 'rgb').concat('rgb'); sc.window = rows;
+      fs.forEach(f => { sc[`window_${f}`] = rows.map(r => r[f]); sc[`picked_${f}`] = (rows[pick] || {})[f]; }); };
+    // for sizing a space: every shape at once, so its axes hold any window the learner can drag to
+    ctx.stripAll = () => { const all = recs.map((_, k) => rec(k)), o = { window: all };
+      Object.keys(all[0] || {}).forEach(f => { o[`window_${f}`] = all.map(r => r[f]); }); return o; };
+    const hexOf = r => r && Array.isArray(r.rgb) ? '#' + r.rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('') : 'var(--bg)';
+
+    // the art: the drawing, a dimmed outside, the window and the picked spot
+    const node = h('div', 'bi strip fr'), art = h('div', 'sart'); node.appendChild(art);
+    const img = h('img'); img.alt = ''; img.src = (window.VIZOS_ASSETS || {})[p.image] || p.image; img.draggable = false; art.appendChild(img);
+    const ov = sv('svg', { class: 'sov', viewBox: `${x0} ${y0} ${vw} ${vh}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' }, art);
+    art.tabIndex = 0; art.setAttribute('role', 'group');
+    art.setAttribute('aria-label', `the drawing with a window on it: drag the window, or press the arrow keys to move it`);
+    // the sampler: its head, the grid of spots (spots only) and the table of shapes
+    const side = h('div', 'bi ssamp'), head = h('div', 'shead2'), grid = h('div', 'sgrid'), tbl = h('div', 'stab');
+    side.append(head, ...(n ? [grid] : []), tbl);
+    const unit = K.unit && K.unit.per ? ` · ${+(size * K.unit.per).toPrecision(3)} ${K.unit.name || ''}` : '';
+    const fields = list(p.table), fmt3 = (v, f) => { const own = f && ((ctx.symbols || {})[f] || {}).fmt; return typeof v === 'number' ? L.fmt(v, own ?? (Math.abs(v) < 1 ? 3 : Math.abs(v) < 100 ? 2 : 0)) : Array.isArray(v) ? v.map(x => fmt3(x)).join(', ') : String(v ?? ''); };
+    const sid = () => (rows[pick] || {}).id;
+    const draw = () => {
+      const r0 = rows[pick] || {}, sq = size / (n || 1), hr = hot != null ? rows[hot] : null;
+      let o = `<path class="sdim" fill-rule="evenodd" d="M${x0} ${y0}h${vw}v${vh}h${-vw}Z M${cx - size / 2} ${cy - size / 2}v${size}h${size}v${-size}Z"/>`;
+      o += `<rect class="swin" x="${cx - size / 2}" y="${cy - size / 2}" width="${size}" height="${size}"/>`;
+      if (n && rows[pick]) o += `<rect class="spk" x="${cx - size / 2 + r0.col * sq}" y="${cy - size / 2 + r0.row * sq}" width="${sq}" height="${sq}"/>`;
+      ov.innerHTML = o;
+      head.innerHTML = `<b>Window</b> <span class="mute">${n ? `${n} × ${n} spots` : `${rows.length} shapes`}${unit}</span><span class="stag">${L.esc((hr || r0).part || '')}</span>`;
+      if (n) { const W = 100, c = W / n, g = 0.06 * c;
+        grid.innerHTML = `<svg viewBox="0 0 ${W} ${W}" role="grid" tabindex="0" aria-label="the window, ${n} by ${n} spots: press one, or use the arrow keys">${rows.map((r, i) =>
+          `<rect data-i="${i}" x="${r.col * c + g / 2}" y="${r.row * c + g / 2}" width="${c - g}" height="${c - g}" fill="${hexOf(r)}" class="${i === pick ? 'on' : ''}${hr && r.id === hr.id && r.id != null ? ' hot' : ''}"/>`).join('')}</svg>`; }
+      // one row per shape in the window: the most spots first, and the picked spot's shape always shown
+      const by = new Map(); rows.forEach((r, i) => { const k = r.id ?? '—'; if (!by.has(k)) by.set(k, { r, i, m: 0 }); by.get(k).m += n ? 1 : r.share; });
+      let list6 = [...by.values()].sort((a, b) => b.m - a.m).slice(0, 6); const pk = by.get(sid() ?? '—'); if (pk && !list6.includes(pk)) list6 = [...list6.slice(0, 5), pk];
+      tbl.innerHTML = `<table class="t stt"><thead><tr><th></th><th>${n ? 'spots' : 'share'}</th>${fields.map(f => `<th>${md(shortOf(ctx, f))}</th>`).join('')}</tr></thead><tbody>${list6.map(x =>
+        `<tr data-i="${x.i}" class="${x.r.id === sid() ? 'on' : ''}${hr && hr.id === x.r.id ? ' hot' : ''}"><td><i class="ssw" style="background:${hexOf(x.r)}"></i></td><td>${n ? x.m : L.fmt(x.m * 100, 0) + '%'}</td>${fields.map(f => `<td>${fmt3(x.r[f], f)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      L.fill(tbl, ctx.scope); };
+    const go = (redraw = true) => { sample(); if (pick >= rows.length) pick = 0; publish(); draw(); if (redraw) ctx.refresh(); };
+    // moving the window: drag it (or press anywhere on the drawing to bring it there), or the arrow keys
+    const clamp = () => { cx = Math.min(Math.max(cx, x0 + size / 2), x0 + vw - size / 2); cy = Math.min(Math.max(cy, y0 + size / 2), y0 + vh - size / 2); };
+    const toArt = e => { const b = art.getBoundingClientRect(); return [x0 + (e.clientX - b.left) / b.width * vw, y0 + (e.clientY - b.top) / b.height * vh]; };
+    let drag = null;
+    art.addEventListener('pointerdown', e => { const [x, y] = toArt(e); if (Math.abs(x - cx) > size / 2 || Math.abs(y - cy) > size / 2) { cx = x; cy = y; clamp(); go(); }
+      drag = { dx: x - cx, dy: y - cy }; art.setPointerCapture(e.pointerId); art.classList.add('drag'); e.preventDefault(); });
+    art.addEventListener('pointermove', e => { if (!drag) return; const [x, y] = toArt(e); cx = x - drag.dx; cy = y - drag.dy; clamp(); go(); });
+    const end = () => { if (!drag) return; drag = null; art.classList.remove('drag'); if (R.moved) R.moved(); };
+    art.addEventListener('pointerup', end); art.addEventListener('pointercancel', end);
+    art.addEventListener('keydown', e => { const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]; if (!d) return;
+      e.preventDefault(); cx += d[0] * size / 4; cy += d[1] * size / 4; clamp(); go(); if (R.moved) R.moved(); });
+    // pointing at a spot or a row lights its shape in both; a press picks it
+    const idx = e => { const t = e.target.closest('[data-i]'); return t ? +t.dataset.i : null; };
+    [grid, tbl].forEach(el => { el.addEventListener('pointerover', e => { const i = idx(e); if (i !== hot) { hot = i; draw(); } });
+      el.addEventListener('pointerleave', () => { hot = null; draw(); });
+      el.addEventListener('click', e => { const i = idx(e); if (i != null) { pick = i; go(); } }); });
+    grid.addEventListener('keydown', e => { const d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -n, ArrowDown: n }[e.key]; if (!d || !n) return;
+      e.preventDefault(); const t = pick + d; if (t >= 0 && t < rows.length && (Math.abs(d) === n || Math.floor(t / n) === Math.floor(pick / n))) { pick = t; go(); grid.querySelector('svg').focus(); } });
+    R.node = node; R.side = side; R.rows = () => rows; R.pick = () => pick; R.setPick = i => { pick = i; go(); }; R.at = () => [cx, cy];
+    R.moveTo = (x, y) => { cx = x; cy = y; clamp(); go(); if (R.moved) R.moved(); };
+    // the art is square to the drawing: as wide as the room allows, and no taller than the room
+    R.size = room => { const w = Math.max(200, Math.min(room.w - PAD, (room.h - PAD) * vw / vh)); R.w = Math.round(w); R.h = Math.round(w * vh / vw);
+      art.style.width = R.w + 'px'; art.style.height = R.h + 'px'; return R.w + PAD; };
+    R.show = c => { R.c = c; }; R.paint = () => {};
+    sample(); publish(); draw();
+    return R;
+  }
+
   const FIG = 520, SIDE = 300, GAP = 20, UNDER = 1280, READ = 1100;   // beside needs 520 px of figure and 300 of side column; a wide figure's column is 1100, and a figure in it may reach 1280
   const sideOf = W => Math.max(SIDE, Math.ceil(W * .3));              // the figure is sized from the 70%; the text then takes all that is left
   const SHAPE = 16 / 9, WIDEST = 2, FIGH = 820;                       // a chart's shape unless it has a ratio; how wide it may go in a short window; the tallest figure
@@ -911,6 +1178,8 @@
     // each step's clicks: a think step counts as two (its question, its answer), so the check sees both
     let n = 0; const map = steps.map(st => st && st.think ? { q: ++n, at: ++n } : { at: ++n });
     const clickOf = j => (map[Math.max(1, Math.min(steps.length, j)) - 1] || { at: 1 }).at;
+    // a space figure's `views` by step (adv.md): each becomes a word in its step's line, and on a think its answer's
+    const VW = {}; steps.forEach(st => list(st && st.add).forEach(it => { const vs = it && it.space && it.space.views; if (vs) Object.entries(vs).forEach(([k, v]) => { (VW[+k - 1] = VW[+k - 1] || []).push({ v, spec: it.space }); }); }));
     const waits = new Set(steps.flatMap((st, j) => st && st.think ? [map[j].at] : []));   // what a think step adds waits for its answer
     const root = h('div', 'body board'); node.appendChild(root);
     // with the scene's head at the top of the window, the figure and all that goes under it stay on screen
@@ -929,7 +1198,7 @@
     const lines = [], cols = [], vis = [], asm = [], thinks = [], stepEls = [], figs = [];
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
-    const isFig = it => it && (it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
+    const isFig = it => it && (it.strip || it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
     const isWide = it => it && (it.assemble || it.compare || it.ops || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
@@ -1048,11 +1317,19 @@
       e.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
       return holder({ node: e, kind: 'track', issues: [], stops: [], w: 0, h: 0, size: room => { e.style.width = room.w + 'px'; return room.w; }, paint: () => {} }, at, f); };
     const planeFig = (p, at) => { const fg = plane(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => { fg.cNow = c; shown(fg.node, c); }; return holder(fg, at, p); };
-    const spaceFig = (p, at) => { const fg = space(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => fg.show(c); return holder(fg, at, p); };
+    const spaceFig = (p, at) => { const fg = space(p, ctx, clickOf, at); fg.stops = stepsIn(p.marks); fg.paint = c => fg.show(c);
+      // its views (a think's at its answer, which is a stop), its start view (step 1's), and a think that moves the controls
+      const pv = p.views || {}; fg.views = Object.entries(pv).map(([k, v]) => ({ at: clickOf(+k), v, think: !!(steps[+k - 1] || {}).think })); fg.startView = pv[1];
+      fg.stops = [...fg.stops, ...fg.views.filter(x => x.think).map(x => x.at)];
+      steps.forEach((st, j) => { if (st && st.think && st.think.set) fg.stops = [...fg.stops, map[j].at]; });
+      // a hunt's guess comes with its think's question; the think waits for a drag
+      const gm = list(p.marks).find(m => m && m.guess != null); if (gm) fg.huntAt = clickOf(gm.step);
+      return holder(fg, at, p); };
     // a chance figure's tally follows the scene's run: the frame on show
     // its words wait until the reading reaches it (on the scene's first step it is there from the lead on)
     const runC = (s.controls || []).find(c => c && c.run) || {}, runName = runC.name;
     // and the drawing waits with them: hidden, its room kept, as a plane mark on a later step is
+    const stripFig = (p, at) => { const fg = strip(p, ctx); fg.stops = []; return holder(fg, at, p); };
     const chanceFig = (p, at, ratio) => { const env = { frame: () => runName == null ? null : ctx.scope[runName], frames: runName == null ? 0 : runC.run, name: runName, derive: s.derive, shown: () => at <= (map[0] || {}).at || read >= at };
       const fg = chance(p, ctx, at, env, ratio); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
 
@@ -1061,6 +1338,10 @@
       if (st.say) el.appendChild(h('p', 'say', md(st.say)));
       if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin', `<div class="tq"><span class="btag">Think</span><span class="tqt">${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
         e.dataset.at = c.at; e.querySelector('.tb').onclick = () => answer(e); el.appendChild(e); thinks.push(e); }
+      // the step's view as a word at the end of its line (its answer's, on a think), in the toggle words' look; pressing it turns the figure
+      (VW[j] || []).forEach(({ v, spec }) => { const nm = typeof v === 'object' ? 'across' : v === 'fit' ? 'from the start' : `${v}-on`, b = h('button', 'vword', md(nm)); b.type = 'button'; b.dataset.view = JSON.stringify(v); b.spec = spec;
+        b.title = 'turn the figure to this view'; b.onclick = () => { const fg = figs.find(f => f.spec === spec); if (fg && fg.goView) fg.goView(v); };
+        const host = st.think ? el.querySelector('.ta > span:last-child') : el.querySelector(':scope > .say'); if (host) host.append(' ', b); });
       stepEls.push(el); el.addEventListener('mouseenter', () => R.hover(c.at)); el.addEventListener('mouseleave', () => R.hover(null));
       el.addEventListener('click', e => { if (e.target.closest('button, input, label, a, .vt, .lnk') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
       return el;
@@ -1082,6 +1363,9 @@
           `<div class="arow syms"><span class="atag">In symbols</span><div class="math"></div></div>`;
         asm.push({ a, e }); slot.appendChild(e); pending = e.querySelector('.abridge'); }
       else if (it.plane) { const fg = planeFig(it.plane, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
+      // a strip: the drawing pins at the left; its sampler, then its space, head the step's lines on the right
+      else if (it.strip) { const fg = stripFig(it.strip, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); b.strip = fg; slot.prepend(tag(fg.side, at)); }
+      else if (it.space && b && b.strip) { const fg = spaceFig(it.space, at); b.strip.side.after(fg.wrap); (b.sfigs = b.sfigs || []).push(fg); b.strip.moved = () => fg.refit && fg.refit(); }
       else if (it.space) { const fg = spaceFig(it.space, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (it.chance) { const fg = chanceFig({ ...it.chance, id: it.chance.id ?? it.id }, at, it.ratio ?? it.chance.ratio); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
@@ -1114,7 +1398,7 @@
     };
 
     steps.forEach((st, j) => { if (!st) return;
-      const items = list(st.add).filter(it => it && typeof it === 'object'), fig = items.find(isFig), wide = items.find(isWide), bridge = pending; pending = null;
+      const items = list(st.add).filter(it => it && typeof it === 'object').sort((a, b) => (b.strip ? 1 : 0) - (a.strip ? 1 : 0)), fig = items.find(isFig), wide = items.find(isWide), bridge = pending; pending = null;
       if (fig) { cur = block(); zone = cur; }
       const el = makeStep(st, j); let slot = el;
       // the line that leads from the numbers to the symbols stands between the two rows; what it adds comes after the plate
@@ -1149,7 +1433,7 @@
       el.classList.add('tc', 'lnk'); el.dataset.lnk = `${f}:${i}`; if (figs[f].linked) figs[f].linked.add(i); });
     let wOver = null, wFocus = null, wPin = null, wFig = null, wTouch = false;   // the word pointed at, focused or tapped; the mark pointed at
     const wInfo = k => { const [f, i] = k.split(':').map(Number); return figs[f] && figs[f].wl ? figs[f].wl(i) : { drawn: false }; };
-    const wsync = () => { figs.forEach(fg => fg.wait && fg.wait()); if (!lkeys.size) return; let act = wOver ?? wFocus ?? wPin; if (act && !wInfo(act).drawn) act = null;
+    const wsync = () => { waitSync(); figs.forEach(fg => fg.wait && fg.wait()); if (!lkeys.size) return; let act = wOver ?? wFocus ?? wPin; if (act && !wInfo(act).drawn) act = null;
       figs.forEach((fg, f) => { if (fg.wlLight) fg.wlLight(act && +act.split(':')[0] === f ? +act.split(':')[1] : null); });
       node.querySelectorAll('.lnk').forEach(el => { const k = el.dataset.lnk, d = wInfo(k);
         if (d.c) el.style.setProperty('--hc', d.c); el.classList.toggle('lnk-grad', !!d.grad); if (d.grad) { el.style.setProperty('--g0', d.grad[0]); el.style.setProperty('--g1', d.grad[1]); }
@@ -1264,7 +1548,7 @@
       // the value now, as the value column shows it
       const now = () => { const v = ctx.scope[c.name];
         if (c.toggle) return c.toggle[+v] ?? null;
-        if (k && !c.show) return String(+v);
+        if (k && !c.show) return Math.abs(+v - Math.round(+v)) < 1e-9 ? String(Math.round(+v)) : (+v).toFixed(1);   // a run moving smoothly is between frames
         const q = k ? c.show : c.name, x = ctx.scope[q], S = ((ctx.symbols || {})[q]) || {};
         if (typeof x === 'number') return L.fmt(x, k ? (S.fmt ?? 's4') : (c.fmt ?? S.fmt));
         if (k) ctlBad.add(`the run's show: ${q} is ${Array.isArray(x) ? 'a list' : 'not a number'}, so its value column has no value: show a number the run moves`);
@@ -1277,7 +1561,7 @@
         w.prepend(lab); w.querySelector('.seg2').setAttribute('aria-label', aria);
         const bs = [...w.querySelectorAll('button')];
         set = v => { ctx.scope[c.name] = +v; bs.forEach(b => b.classList.toggle('on', +b.dataset.v === +v)); };
-        bs.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); ctx.refresh(); }));
+        bs.forEach(b => b.addEventListener('click', () => { untween(ctx, c.name); set(b.dataset.v); ctx.refresh(); }));
       } else {
         w = h('div', 'ctl g pill thin' + (k ? ' run' : ''));
         w.innerHTML = `${k ? '<button type="button" class="play" aria-label="play"></button>' : ''}<input id="${id}" type="range" min="${c.min}" max="${c.max}" step="${c.step ?? (c.max - c.min) / 100}" value="${v0}"><output for="${id}"></output>`;
@@ -1286,19 +1570,30 @@
         readouts.push(() => { out.textContent = now(); });
         // the value column changes now for a slider or a bare frame; a run's `show:` name waits for the redraw that works it out
         set = v => { ctx.scope[c.name] = +v; inp.value = v; if (!(k && c.show)) out.textContent = now(); inp.style.setProperty('--fill', ((v - c.min) / (c.max - c.min) * 100) + '%'); };
-        inp.addEventListener('input', () => { stop(); set(inp.value); if (k) follow(); ctx.refresh(); });
+        inp.addEventListener('input', () => { stop(); untween(ctx, c.name); set(inp.value); if (k) follow(); ctx.refresh(); });
         if (k) {
           const btn = w.querySelector('.play');
-          const halt = () => { if (run.timer) { clearInterval(run.timer); run.timer = null; btn.classList.remove('on'); btn.setAttribute('aria-label', 'play'); } };
+          const halt = () => { if (run.raf) { cancelAnimationFrame(run.raf); run.raf = null; inp.step = c.step ?? 1; } if (run.timer) { clearInterval(run.timer); run.timer = null; btn.classList.remove('on'); btn.setAttribute('aria-label', 'play'); } };
           run = { c, n: k, set, fg, stop: halt, timer: null };
+          const fin = v => typeof v === 'number' ? Number.isFinite(v) : Array.isArray(v) ? v.every(fin) : typeof v !== 'undefined';
+          const okAt = f => { try { const sc = L.scope(ctx.scope, { [c.name]: f }); L.derive(sc, (((ctx.deck.slides || [])[ctx.index] || {}).derive), `slide ${ctx.index + 1} run`); return Object.keys(sc).every(q => fin(sc[q])) && figs.every(fg => !fg.badAt || fg.badAt(sc) <= fg.badAt(ctx.scope)); } catch (_) { return false; } };
+          const between = () => { for (let f = 0; f < k - 1; f++) if (!okAt(f + .5)) return false; return true; };
+          const whole = () => { if (L.slides[L.i] && L.slides[L.i].ctx !== ctx) return halt(); const f = ctx.scope[c.name] + 1; set(f); follow(); ctx.refresh(); if (f >= k - 1) halt(); };
           btn.addEventListener('click', () => { if (run.timer) return halt(); if (CHECK) return;
             if (ctx.scope[c.name] >= k - 1) { set(0); follow(); ctx.refresh(); }
             btn.classList.add('on'); btn.setAttribute('aria-label', 'pause');
-            run.timer = setInterval(() => { if (L.slides[L.i] && L.slides[L.i].ctx !== ctx) return halt();
-              const f = ctx.scope[c.name] + 1; set(f); follow(); ctx.refresh(); if (f >= k - 1) halt(); }, 1000 * (c.every || 1.3)); });
+            // the frame number moves on every animation frame at the run's own pace (`every` seconds a frame), so each mark passes
+            // through the worked-out states between frames. It steps a whole frame at a time with reduced motion, or when the
+            // scene's formulas do not work between frames (one picks a frame's row of the data: `at(list, t)`)
+            if (!STILL() && between()) { const per = 1000 * (c.every || 1.3), f0 = +ctx.scope[c.name], t0 = performance.now(); inp.step = 'any'; run.timer = -1;
+              const tickR = now => { if (!run.raf) return; if (L.slides[L.i] && L.slides[L.i].ctx !== ctx) return halt(); const f = Math.min(k - 1, f0 + (now - t0) / per);
+                if (!okAt(f)) { cancelAnimationFrame(run.raf); run.raf = null; inp.step = c.step ?? 1; set(Math.floor(f)); follow(); ctx.refresh(); run.timer = setInterval(whole, per); return; }   // not a number here: whole frames from now on
+                set(f); follow(); ctx.refresh(); if (f >= k - 1) { set(k - 1); halt(); } else run.raf = requestAnimationFrame(tickR); };
+              run.raf = requestAnimationFrame(tickR); return; }
+            run.timer = setInterval(whole, 1000 * (c.every || 1.3)); });
         }
       }
-      set(v0);
+      set(v0); if (c.drag) w.classList.add('hid');   // a hunt's or a split's controls are its handles: no row
       ctx.ctl[c.name] = v => { set(v); ctx.refresh(); };
       const box = boxOf(fg); if (k) box.classList.remove('np'); box.appendChild(w);
     });
@@ -1329,18 +1624,20 @@
       const unanswered = c => thinks.some(e => +e.dataset.at === c && !e.classList.contains('open'));
       const stepAt = c => stepEls.find(e => +e.dataset.at === c);
       // a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it
+      const qOf = c => +(stepAt(c) || { dataset: {} }).dataset.q || c;   // a think's question click: asking shows what comes with it (a hunt's guess)
       const asked = j => { S.ask = j; S.show(); const c = j == null ? uniq[S.i] : +stepAt(uniq[j]).dataset.q; light(c); mark(c); };
       const go = (v, rel) => hold(() => {
         if (rel && v < 0 && S.ask != null) { asked(null); return true; }
         const j = rel ? S.i + v : v; if (j < 0 || j >= uniq.length || j === S.i) return false;
         if (j > S.i && S.ask !== j && unanswered(uniq[j])) { if (j > S.i + 1) S.to(j - 1); asked(j); return true; }
+        if (j > S.i && unanswered(uniq[j]) && gated(uniq[j])) return true;   // a hunt's answer waits for a drag
         S.to(j); return true; });
       const ui = stageBar(uniq, go);
       // the line by the buttons, from the second stop on (the first is the line just read): the step's own words, or for a think step its question and then its answer
       const lineOf = (c, answered) => { const e = stepAt(c), ta = e && e.querySelector('.ta > span:last-child'), q = e && e.querySelector('.tqt'), say = e && e.querySelector(':scope > .say');
         return (answered ? ta || say : say || q) || q; };
       S.show = () => { const on = S.ask != null, c = uniq[on ? S.ask : S.i], e = lineOf(c, !on && !unanswered(c));
-        paint(uniq[S.i]); ui.set(S.i, on); ui.line.innerHTML = e && (on || S.i) ? e.innerHTML : '';
+        paint(on ? Math.max(uniq[S.i], qOf(c)) : uniq[S.i]); ui.set(S.i, on); ui.line.innerHTML = e && (on || S.i) ? e.innerHTML : '';
         S.lines.forEach(q => q.classList.toggle('atstop', on ? +q.dataset.at === c : stopOf(+q.dataset.at) === S.i)); S.quiet(); wsync(); };
       // the line is there for when a step's own words are out of sight: with those words on screen it steps aside, and keeps its room
       S.quiet = () => { const l = ui.line, t = same(l); l.style.visibility = t && [...node.querySelectorAll(WORDS)].some(e => same(e) === t && inWindow(e)) ? 'hidden' : ''; };
@@ -1349,7 +1646,8 @@
         uniq.slice(1).forEach(c => [true, false].forEach(a => { const e = lineOf(c, a); if (e) { l.innerHTML = e.innerHTML; most = Math.max(most, l.offsetHeight); } }));
         l.innerHTML = now; l.style.minHeight = most + 'px'; };
       // go to a stop: the run takes its frame, the think stop there opens, the table lights up for that step
-      S.to = j => { S.i = j; S.ask = null; const c = uniq[j];
+      S.to = j => { if (j < S.i) thinks.forEach(e => { const a = +e.dataset.at; if (a > uniq[j] && uniq.includes(a) && e.classList.contains('open')) setThink(e, false); });
+        S.i = j; S.ask = null; const c = uniq[j];
         if (frames) { stop(); const f = frameAt(c); if (f != null && f !== ctx.scope[run.c.name]) ctx.ctl[run.c.name](f); }
         thinks.forEach(e => { if (+e.dataset.at === c) setThink(e, true); });
         S.show(); light(c); mark(c); };
@@ -1360,9 +1658,23 @@
       S.lines.forEach(e => { e.stages.push(S); e.classList.add('line'); });
       host.append(ui.bar, ui.line); stages.push(S); return S;
     };
-    const setThink = (e, on) => { e.classList.toggle('open', on); e.querySelector('.tb').textContent = on ? 'Hide answer' : 'Show answer'; node.querySelectorAll(`[data-wait="${e.dataset.at}"]`).forEach(x => x.classList.toggle('open', on)); };
+    const setThink = (e, on) => { e.classList.toggle('open', on); e.querySelector('.tb').textContent = on ? 'Hide answer' : 'Show answer'; node.querySelectorAll(`[data-wait="${e.dataset.at}"]`).forEach(x => x.classList.toggle('open', on)); onAnswer(+e.dataset.at, on); };
+    // a think's answer reveals a hunt's guess, turns a figure to the view it names, and moves the controls its `set:` names
+    // (a split's tips); Hide answer undoes the reveal and the set. A hunt's Show answer stays dim until the learner has dragged
+    const opened = new Set(), setWas = new Map();   // per think, in the order opened: the values its set replaced
+    function gated(c) { return figs.some(f => f.huntAt === c) && !node.classList.contains('dragged'); }
+    function onAnswer(at, on) { if (on === opened.has(at)) return; if (on) opened.add(at); else opened.delete(at);
+      const st = steps[map.findIndex(q => q.at === at)]; if (!st) return;
+      figs.forEach(f => { if (f.huntAt === at && f.reveal) f.reveal(on); if (on && f.answerView) f.answerView(at); });
+      const t = typeof st.think === 'object' ? st.think : {}; if (!t.set) return;
+      if (on) { const was = {}, to = {}; setWas.delete(at); setWas.set(at, was); Object.entries(t.set).forEach(([k, x]) => { const mv = ctx.tw && ctx.tw[k]; was[k] = mv ? mv.to[k] : ctx.scope[k]; to[k] = L.val(x, ctx.scope, `slide ${ctx.index + 1} think set`); }); tweenCtl(ctx, to); }
+      else if (setWas.has(at)) { const was = setWas.get(at), back = {}, rest = [...setWas.keys()], later = rest.slice(rest.indexOf(at) + 1).map(a => setWas.get(a)); setWas.delete(at);
+        Object.keys(was).forEach(k => { const w = later.find(q => k in q); if (w) w[k] = was[k]; else back[k] = was[k]; });   // an answer opened after this one still holds k: it inherits the value to go back to
+        tweenCtl(ctx, back); } }
+    function waitSync() { thinks.forEach(e => { e.querySelector('.tb').disabled = gated(+e.dataset.at) && !e.classList.contains('open'); }); }
+    node.addEventListener('hands-dragged', () => { if (!node.classList.contains('dragged')) { node.classList.add('dragged'); waitSync(); } });
     // Show answer brings in all the step adds, a stage stop too; Hide answer takes it away again
-    function answer(e) { hold(() => { const on = !e.classList.contains('open'), at = +e.dataset.at; setThink(e, on);
+    function answer(e) { hold(() => { const on = !e.classList.contains('open'), at = +e.dataset.at; if (on && gated(at)) return false; setThink(e, on);
       stages.forEach(S => { const j = S.stops.indexOf(at); if (j < 0) return; if (on && S.i < j) S.to(j); else if (!on && S.i >= j && j > 0) { S.to(j - 1); setThink(e, false); } });
       fill(Math.max(read, on ? at : 0)); }); }
     // the run's stage follows the scrubber: the line and the dot of the frame on show
@@ -1406,12 +1718,20 @@
     const fill = k => { if (zt) shown(zt, k); };
     const mark = k => { stepEls.forEach(e => e.classList.toggle('now', +e.dataset.at === k || +e.dataset.q === k)); root.querySelectorAll('.rl').forEach(e => e.classList.toggle('now', +e.dataset.at === k)); };   // a callout left outside its step lights with it
 
+    // a strip: the drawing takes what the side column leaves (the side is 46% of the page, at least 300 px), no taller than the
+    // window less the pin; its space takes the side column's width. Too narrow for both: the drawing stands above, full width
+    const stripPlace = b => { const W = b.node.parentElement.clientWidth, sw0 = Math.max(SIDE, Math.round(W * .46)), beside = W - sw0 - GAP >= 360;
+      b.node.classList.toggle('beside', beside); b.node.classList.add('stripb'); b.node.classList.remove('many');
+      const w = sized(b.strip, { w: beside ? W - sw0 - GAP : W, col: W, h: beside ? pinH() : Math.min(figH(), W) });
+      b.fig.style.width = w + 'px'; b.node.style.setProperty('--fig', w + 'px');
+      const sw = beside ? W - w - GAP : W; (b.sfigs || []).forEach(fg => sized(fg, { w: sw, col: sw, h: Math.round((sw - PAD) * .75) + PAD + 60 })); };
     // a figure's rows take its width
     const sized = (fg, room) => { const w = fg.size(room); fg.wrap.style.width = w + 'px'; return w; };
     // the figures: how each sizes itself. Two figures on one step stand in a row above their lines
     // A wide figure's column is 1100 px, or a matrix panel's page; a figure wider than that widens it for the whole scene. Text takes the page
     const place = () => { const page = root.clientWidth, read0 = broad ? page : Math.min(READ, page); let read = read0; root.style.setProperty('--read', read0 + 'px'); root.style.setProperty('--col', page + 'px');
       blocks.forEach(b => { if (b.wide) return;
+      if (b.strip) { stripPlace(b); return; }
       const W = b.node.parentElement.clientWidth, side = sideOf(W), many = b.figs.length > 1, inPair = b.node.closest('.bpair:not(.stacked)');
       const beside = !b.over && !inPair && !many && b.side.children.length > 0 && W - side - GAP >= FIG;
       b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many);
@@ -1451,6 +1771,7 @@
       // everything up to click k, as the check and the printer see it
       show: k => { read = lit = k; thinks.forEach(e => setThink(e, +e.dataset.at <= k)); stages.forEach(S => S.to(S.stopOf(k))); R.repaint(); },
       reset: () => { stages.forEach(S => S.to(0)); thinks.forEach(e => setThink(e, false)); read = lit = 0; R.repaint(); },
+      figs,   // for the checks: a space figure's probe() and view()
       // the reading line, in window pixels: every step whose top has passed it counts as read
       spy: y => { const b = node.getBoundingClientRect(); let k = 0;
         if (y === Infinity || b.bottom < y) k = n; else if (b.top <= y) stepEls.forEach(e => { if (e.getBoundingClientRect().top <= y) k = Math.max(k, +e.dataset.at); });

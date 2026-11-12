@@ -13,7 +13,7 @@ BEATS = {"plan", "problem", "data", "by-hand", "picture", "formula", "run", "wha
 STEP = {"say", "add", "mark", "think", "frame"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "space", "chance", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS = {"calc", "plane", "space", "chance", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -204,9 +204,10 @@ def lint_plane(B, Lx, w, pl, names):
 # space marks (board.md `space`): a position is a name or expression that gives 3 numbers, or a written triple [x, y, z]
 SPACE = {"points": "{from, at}", "point": "a position", "ring": "a position", "vector": "a position (and from:)",
          "sheet": "[U, V] with max: [a, b] (and min:)", "foot": "{from: P, onto: U} or {from: P, onto: [U, V]}",
-         "segment": "[P, Q]", "text": "a label (and at:)"}
+         "segment": "[P, Q]", "text": "a label (and at:)",
+         "guess": "[a, b] on: [U, V] from: P (a hunt makes it)", "split": "[U, V] by: [a, b] (or the short {split: P, along: [U, V]})"}
 NUMBER = re.compile(r"[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?")   # a bare number, where a position is needed
-SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring", "id"}
+SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring", "id", "on", "was", "by", "to"}
 ON_SPACE = "a space draws no names on its marks: give the mark `label:` (its legend entry) and `says:` (its card)"
 
 
@@ -216,8 +217,8 @@ def lint_space(B, Lx, w, sp, names, symbols, values):
     if not isinstance(sp, dict):
         Lx.err(w, "`space` is a mapping with `axes: [x, y, z]` and `marks`")
         return []
-    for k in sorted(set(sp) - {"axes", "marks", "max", "id"}, key=str):
-        Lx.err(w, f"`space` has no field `{k}` (it takes axes, marks, max, id)")
+    for k in sorted(set(sp) - {"axes", "marks", "max", "id", "views"}, key=str):
+        Lx.err(w, f"`space` has no field `{k}` (it takes axes, marks, max, id, views)")
     ax = sp.get("axes")
     if not isinstance(ax, list) or len(ax) != 3 or not all(isinstance(a, str) and a.strip() for a in ax):
         Lx.err(w, f"space `axes` is 3 names, one per axis: [OD red, OD green, OD blue]; got {ax!r}")
@@ -1647,7 +1648,7 @@ def lint_story(Lx, deck):
 # The idea table: name -> (the learner's question, the picture family, the items that can draw it today). `table` is
 # the scene's own table; `product` is a worked product (product.py opens it into lines that hold \prodpart).
 IDEAS = {
-    "made-of": ("where does this number come from?", "loupe", ["table", "calc", "product", "vec", "matrix"]),
+    "made-of": ("where does this number come from?", "loupe", ["table", "calc", "product", "vec", "matrix", "strip"]),
     "amount": ("how much, what share?", "units", ["units", "parts", "stat", "chance"]),
     "cause": ("what happens if I change this?", "handle", ["plane", "chart", "space", "dist"]),
     "closest": ("which choice is best?", "guess", ["plane", "space"]),
@@ -1809,7 +1810,7 @@ def lint_adv(Lx, deck):
 
 
 # what a board control and a symbol may carry; anything else is usually a comma inside an unquoted `{ }` value that split it
-CTL_FIELDS = {"name", "label", "says", "show", "min", "max", "step", "value", "fmt", "run", "stops", "every", "toggle"}
+CTL_FIELDS = {"name", "label", "says", "show", "min", "max", "step", "value", "fmt", "run", "stops", "every", "toggle", "drag"}
 # a symbol's own fields, and `value`, which a deck equation slide merges from `symbols` into its `terms` (deck slides.js)
 SYM_FIELDS = {"tex", "says", "short", "fmt", "kind", "color", "cols", "rows", "value"}
 # text the page shows as written, never works out: a name in it reads nothing (only its {{…}}, \mat{…} and \prodpart{…} do)

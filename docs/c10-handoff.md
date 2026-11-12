@@ -7,14 +7,16 @@ The user starts a new chat per block with the strong model (Fable, high) and say
 |---|---|
 | C10a 3D look, C10b build `space` | done, committed (3a568a8) |
 | C10d word-link mock-ups | done and approved: look A, twin glow, `==pixel==` syntax |
-| C10e build word links | done and approved 9 Nov; **not committed** (commit when the user says) |
-| C10i look and playground shell | half 1 done 9 Nov (the user picked the look); half 2 done and approved 10 Nov (the look is the kit's default; `quarters` mark); **not committed** (commit when the user says) |
-| C10g chooser (adv) | done and approved 9 Nov; **not committed** (commit when the user says) |
-| C10k proportions bench and the `chance` figure | done and approved 10 Nov (public-health toy: 80 homes, well against piped water; bench `out/c10/bench-prop/`); **not committed** (commit when the user says) |
-| C10c motion and hands-on (**next**), C10j linked strip, C10f drawn parts | todo, in that order |
+| C10e build word links | done and approved 9 Nov; committed (adbeb22) |
+| C10i look and playground shell | half 1 done 9 Nov (the user picked the look); half 2 done and approved 10 Nov (the look is the kit's default; `quarters` mark); committed (adbeb22) |
+| C10g chooser (adv) | done and approved 9 Nov; committed (adbeb22) |
+| C10k proportions bench and the `chance` figure | done and approved 10 Nov (public-health toy: 80 homes, well against piped water; bench `out/c10/bench-prop/`); committed (adbeb22) |
+| C10c motion and hands-on | done and approved 10 Nov (camera glide on a pressed view word, tick fade, smooth run for every lesson; adv-only `views`, `hunt`, `split`; tried on the H&E bench); committed with C10j (12 Nov) |
+| C10j linked strip | done 12 Nov: look approved, built in `plugins/` as shape C (`strip`, `art.py`), tried on the H&E and blur test lessons; committed with C10c (12 Nov) |
+| C10f drawn parts (**next**) | todo |
 | C10h cold-start exam on two lessons | last |
 
-Uncommitted work in the tree: C10e (`plugins/viz-os/skills/class/…`, `tools/class-cases/link-*.yaml`), C10g (`class/adv.md`, `scripts/storyboard.py`, the lint, `tools/class-cases/adv-*.yaml`, `tools/check_docs.py`), C10i half 2 (`class/kit/`, `board.md`, `lint.md`, the lint, `examples/pca-2-how/lesson.yaml`, `tools/class-cases/quarters-*.yaml`, `plugins/viz-os/docs/design.md`), C10k (`class/kit/`, the lint, `adv.md`, `board.md`, `lint.md`, `tools/class-cases/chance-*.yaml`, `adv-wrong-figure.yaml`, `plugins/viz-os/docs/design.md`), the docs clean-up and plan v2 (`docs/`, `AGENTS.md`), and the user's own `docs/release.md`, `docs/update.md`, `tools/update*.py`. Leave the user's files alone. Commit only when the user says.
+C10e, C10g, C10i and C10k were committed together in adbeb22 (10 Nov); C10c and C10j together on 12 Nov; neither is pushed. Still uncommitted in the tree: the user's own `docs/release.md`, `docs/update.md`, `tools/update*.py` and `tools/test_update.py`. Leave the user's files alone. Commit only when the user says.
 
 ## What the user wants (their words, 8–9 Nov, condensed)
 - **Agents that choose the visual that builds the right intuition:** geometric, plain logic, an analogy, or a small worked example. The picture is chosen for the idea, not decoration. Lessons should not all show the same kinds of figure.

@@ -16,6 +16,8 @@ KIT = CLASS / "kit"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lesson_lint import EXPRS, FMT, as_list, items_of, make_lint  # noqa: E402
 import product  # noqa: E402
+import hands  # noqa: E402
+import strip  # noqa: E402
 
 # a board scene: one stretch of the page, its steps written beside a pinned table or a figure (board.md)
 ADV = {"idea", "see", "shows"}   # an adv scene's picture plan (adv.md, not board.md)
@@ -139,11 +141,14 @@ def recall(B, deck, data, path, state):
 
 def ext(B):
     data = {}   # data.json, kept for the lint (typed numbers)
-    errs = []   # what a `product` item could not open (product.py), reported by the lint
+    errs = []   # what a `product` item could not open (product.py), a hunt, split or view could not be built (hands.py), or a strip's art (strip.py), reported by the lint
 
     def prep(deck, d, path):
         data.update(d or {})
         product.expand(deck, d, errs)
+        hands.expand(deck, d, errs)
+        d = strip.expand(deck, d, errs, Path(path).parent)   # the window's rows become data names (board.md, `strip`)
+        data.update(d or {})
         return prepare(deck, d, path)
     inner = make_lint(B, data)
 
