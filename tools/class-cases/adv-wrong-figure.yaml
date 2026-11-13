@@ -1,4 +1,4 @@
-# expect: `idea: amount` is drawn with units, parts, stat, chance, beads, and this scene has none of them
+# expect: `idea: amount` is drawn with units, parts, stat, chance, beads, pileup, and this scene has none of them
 # C10g check 1: a table idea whose scene draws none of the idea's items.
 title: A point and a line
 question: Where does a point land on a line?

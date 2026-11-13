@@ -1,0 +1,28 @@
+# expect: builds
+# expect: not: `pileup`
+# expect: not: the pileup
+# expect: not: mark target
+# expect: feeder B · garden · evening: 22 birds
+# N5: the smallest `pileup`: 2 rows in 1 group, 1 column a run, counts small enough for one dot each; another topic (birds at feeders).
+title: Birds at two feeders
+question: When do the birds come to the feeders?
+answer: Feeder A in the morning, feeder B in the evening.
+data:
+  feeders:
+    - {name: feeder A, place: garden, am: 14, pm: 3}
+    - {name: feeder B, place: garden, am: 9, pm: 22}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: amount
+    see: garden
+    shows: the birds counted at two feeders, morning above the line and evening below
+    title: Two feeders, two counts
+    lead: Each dot is one bird seen at a feeder.
+    steps:
+      - say: Both feeders stand in the ==garden==.
+        add:
+          - pileup: {from: feeders, name: name, group: place, runs: {morning: [am], evening: [pm]}, unit: birds, colors: [s2]}
+      - say: Feeder B fills up in the evening.
+        mark: cell:1:pm

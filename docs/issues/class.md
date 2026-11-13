@@ -232,3 +232,15 @@ Fixed from the user's marked screenshots of `board-gallery` (the picture scene's
 - **Recorder 7, open: board.md does not list `recorder`.** It had 1 line of budget, so it was not touched; the lint gate, adv.md §9e and lint.md name it.
 - **Recorder 8, open: only the case and one test lesson use it.** `tools/class-cases/recorder-good` and `out/c10/n5/recorder/growth` (two board scenes). No shipped example was changed.
 - **Recorder 9, fixed (review round, 13 Nov): ticks, decimals, `fmt`, the readout's place.** A tiny range drew thousands of ticks; 2.5 and 0.25 steps were labelled 3 and 0.3; readings below 0.0001 all printed 0.0000; `fmt: '101'` built and drew no dots; a long time name ran under the readout. Cases `recorder-tinier-good`, `recorder-ticks-good`, `recorder-tiny-good`, `recorder-bad-fmt`, `recorder-bad-longname`. With no `fmt`, each reading now prints with its own decimals (0.05, 0.685), so a column's values no longer share one width.
+
+## Read pileup (N5, 2026-11-13)
+- **Pileup 1, open: the art is genomic.** The chromosome line, base ticks, cut marks and culture dishes suit a CRISPR screen; on another topic (the case `pileup-small-good`, birds at feeders) they mean nothing. The mock-up had the same open point (`out/c10/c10p/blocks/s6.md`). A field to turn them off is not built.
+- **Pileup 2, open: a count under half a dot draws no dot.** One dot is `per` counts, rounded, so with `per` 50 a count of 20 shows only the stack's foot. The readout still says the count.
+- **Pileup 3, open: `per` is not in the data.** The kit picks it from the largest count, so a teacher line cannot write `{{per}}`; the key says it. If a lesson needs the number in words, make_data.py would have to compute the same rule.
+- **Pileup 4, open: with a pinned table the pileup sits above it.** In a table scene the wide figure runs the full width before the table pins (case `pileup-table-good`); `row:`, `col:` and `cell:` light both.
+- **Pileup 5, open: the dish glyph reads as a ring.** At 18 px the culture dish (rim, wall, three cells) is small; the mock-up's is the same size.
+- **Pileup 6, open: only the cases and one test lesson use it.** `tools/class-cases/pileup-*` and `out/c10/n5/crispr/screen`. No shipped example was changed; the S6 steps figure (ice tray, dish, chip, read slabs) stays reference.
+- **Pileup 7, open: board.md does not list `pileup`.** It has 1 line of budget; adv.md §9f and lint.md name it.
+- **Pileup 8, fixed in review (Terra 6.1 high, 2 readers).** A focused stack lost its readout when the pointer left it; it had no focus ring. The width check measured hidden readouts as 0 px, and skipped the key. Run names `"1"`, `"2"` passed the lint but the page sorts them (`pileup-bad-numrun`). A list inside `colors` crashed the lint (`pileup-bad-colorlist`). The kit did not trim group names; the lint did.
+- **Pileup 9, open: the `recorder` has the same pointer-leave bug** (`board.js` recorder hits: pointer leave clears the lit cell while it keeps focus). Not fixed here: one figure per change.
+

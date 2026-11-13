@@ -31,6 +31,7 @@ ADV_ONLY |= {"groups", "axis", "gap_says", "step_says", "tally", "ends", "_kit"}
 ADV_ONLY |= {"beads", "part", "whole", "colors"}   # beads (§9c), adv-only since N5
 ADV_ONLY |= {"group", "glyphs"}   # a slope table (§9d), adv-only since N5
 ADV_ONLY |= {"recorder", "wash"}   # recorder (§9e), adv-only since N5
+ADV_ONLY |= {"pileup", "runs", "unit"}   # pileup (§9f), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 
@@ -161,6 +162,9 @@ def class_tests():
     yield f"lint.md states the recorder limits RECORDER_ROWS and RECORDER_WORDS hold ({rl}, {lesson_lint.RECORDER_WORDS} words)", ok
     ok = f"decimals 0 to {lesson_lint.FMT_MOST} (`fmt: 2`)" in lt
     yield f"lint.md states the recorder fmt limit FMT_MOST holds ({lesson_lint.FMT_MOST})", ok
+    (r0, r1), (g0, g1), (c0, c1), pw = lesson_lint.PILEUP_ROWS, lesson_lint.PILEUP_GROUPS, lesson_lint.PILEUP_REPS, lesson_lint.PILEUP_WORDS   # lint.md states the pileup limits
+    ok = f"{r0} to {r1} rows in {g0} to {g1} groups" in lt and f"{c0} to {c1} count columns" in lt and f"{pw} words at most, as text" in lt
+    yield f"lint.md states the pileup limits PILEUP_ROWS, PILEUP_GROUPS, PILEUP_REPS and PILEUP_WORDS hold", ok
     js = (CLASS / "kit/parts.js").read_text()   # the slope glyphs: the lint's copy, parts.js and adv.md name the same set
     drawn = set(re.findall(r"^    '?([a-z-]+)'?: \{ r: ", js, re.M))
     named = set(re.findall(r"`([a-z-]+)`", (CLASS / "adv.md").read_text().split("## 9d.")[1].split("## 10.")[0])) & (drawn | set(lesson_lint.GLYPHS))
