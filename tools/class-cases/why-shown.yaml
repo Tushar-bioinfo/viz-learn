@@ -1,0 +1,24 @@
+# expect: builds
+# expect: not: `why`
+# C10l why: the reason is drawn in the page, at the end of its line.
+title: A reason on the board
+question: Is the reason drawn?
+answer: Yes, in grey after the line.
+data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}, {cell: c3, cd3: 5}], cd3: [4, 6, 5]}
+abbr: {CD3: a T-cell surface marker}
+symbols:
+  xbar: {tex: '\bar{x}', says: mean CD3, short: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i, short: CD3 cell}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: One distance from the mean
+    table: {from: rows, cols: [cell, cd3]}
+    steps:
+      - say: The mean first.
+        why: Distances need a centre to measure from.
+        add: {calc: {say: Mean, expr: mean(cd3), name: xbar}}
+      - say: How far does the first cell sit from the mean?
+        why: Spread is about how far cells sit from their centre.
+        add: {calc: {say: How far it sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}

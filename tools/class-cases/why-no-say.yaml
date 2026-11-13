@@ -1,0 +1,18 @@
+# expect: `why` is the reason at the end of the step's `say`
+# expect: `why` has 14 words (≤ 12)
+# C10l why: a reason needs a line to end, and stays short.
+title: A reason with no line
+question: Where does a reason go?
+answer: At the end of the step's say.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Reasons need lines
+    steps:
+      - think:
+          q: Which cell sits farthest from the mean?
+          a: The third one.
+        why: It shows the spread.
+      - say: Square each distance.
+        why: Now every one counts and the far cells count the most of all six.

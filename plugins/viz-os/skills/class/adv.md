@@ -2,10 +2,10 @@
 
 Read this only when the user says "adv". It adds one probe question, a picture plan in the spine, and a storyboard the user approves before you write data or scenes. A plain lesson does none of this.
 
-## 1. The probe gains question 4
+## 1. The probe gains question 5
 Add it to the probe in `SKILL.md` step 1:
 ```
-4. How deep on each idea?  a) 1–2 pictures or examples per idea (default)  b) 3–4, more worked cases  c) a number
+5. How deep on each idea?  a) 1–2 pictures or examples per idea (default)  b) 3–4, more worked cases  c) a number
 ```
 Store the answer in the top of `lesson.yaml` as `learner: {goal: …, knows: […], anchors: […], depth: 2}` (a whole number from 1 to 6; a = 2, b = 4).
 

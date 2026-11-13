@@ -13,7 +13,7 @@ python3 tools/check_class.py <case names the change added or touched>
 ```
 `board-gallery` holds every board item; `pca-2-how` is a real taught lesson with a plane and sliders. Passing: both builds `0 errors  0 warnings`, both checks `check: 0 warnings`, every named case `ok`. It does not cover decks, sketch pages or the other lessons, so name that as not checked.
 
-## 1b. The full regression run (once, before a commit the user asked for, and before a release)
+## 1b. The full regression run (once before the commit of a change that edits `skills/deck/` or `skills/sketch/`, and before a release)
 ```bash
 tools/check-all.sh
 ```

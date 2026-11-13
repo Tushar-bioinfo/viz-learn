@@ -106,12 +106,15 @@ slides:
           q: Off the line, the sum is above or below 0. Which side is T?
           a: You cannot tell by looking. Plug in a cell and read the sign.
       - say: Plug in c1, a T cell. Each weight times its marker, then add.
+        why: Its sign tells which side of the line c1 sits.
         add: {calc: {say: c1's score, row: 0, expr: w0 + w1 * cd3 + w2 * cd19, name: sc1, fmt: 2}}
         mark: row:0
       - say: The same sum for every cell. That number is the cell's score.
+        why: Each cell's sign then gives the line's call.
         add: {col: {key: score, label: score, expr: w0 + w1 * cd3 + w2 * cd19, fmt: 1}}
         mark: col:score
       - say: Score 0 or more is called T, written 1. Below 0 is B.
+        why: Then the calls can be checked against the true types.
         add: {col: {key: call, label: ŷ, expr: w0 + w1 * cd3 + w2 * cd19 >= 0}}
         mark: col:call
       - think:
@@ -141,7 +144,7 @@ slides:
                 - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
                 - {shade: [w0, w1, w2], color: s1, label: called T, id: side}
                 - {line: [w0, w1, w2], color: accent, label: your line}
-      - say: Only $w_0$ moves now; $w_1$ and $w_2$ stay fixed. Drag it.
+      - say: Only $w_0$ moves now. $w_1$ and $w_2$ stay fixed. Drag it.
       - think:
           q: '$w_0$ moved the line. Did it turn?'
           a: No. It slid and stayed parallel. $w_0$ shifts the line, never tilts it.
@@ -177,6 +180,7 @@ slides:
       - say: 'Put a {{x0}} in front for the offset. Now both have three numbers.'
         mark: row:0
       - say: 'c5 should score lower. Subtract it: one ==full step==, and a new ==T now:T side==.'
+        why: Subtracting c5 lowers its score, pushing the line past it.
         add: {col: {key: wnew, label: w − c5, expr: wv - xv, fmt: 2}}
         mark: col:wnew
       - think:
@@ -204,9 +208,11 @@ slides:
               - {ring: [c5_cd3, c5_cd19]}
               - {line: [ws0, ws1, ws2], color: s3, label: small step, step: 3}
       - say: CD19's weight first. It moves the most, because c5's CD19 is high.
+        why: One weight first shows how the smaller step works.
         add: {calc: {say: CD19's weight after a ==small step==, row: 2, expr: wv - eta * xv, name: w2n, fmt: 2}}
         mark: row:2
       - say: The same for all three weights. The new line turns a little toward c5.
+        why: The new line needs all three weights.
         add: {col: {key: wsmall, label: w − η × c5, expr: wv - eta * xv, fmt: 2}}
         mark: col:wsmall
       - think:
@@ -220,6 +226,7 @@ slides:
     lead: Every symbol is a number we already plugged in.
     steps:
       - say: Our numbers, in the shape of the formula.
+        why: The same sum then scores any cell on any line.
         add:
           assemble:
             say: c1's score on the bad line
@@ -289,6 +296,7 @@ slides:
       cols: [{key: y, label: 'y (true)'}, {key: call, label: 'ŷ (called)'}]
     steps:
       - say: 'c5''s small step, written to work for any cell.'
+        why: One rule then covers both kinds of wrong cell.
         add:
           assemble:
             say: c5's step, for CD19's weight
@@ -297,6 +305,7 @@ slides:
             plug: '[w2n:{{ws2|2}}] = [w2:{{w2}}] + [eta:{{eta}}] ([y:{{c5_y}}] - [call:{{c5_call}}]) \cdot [cd19:{{c5_cd19}}]'
       - say: In symbols. The bracket, true type minus the call, picks the direction.
       - say: Work that bracket for all four cases.
+        why: The bracket's sign says add, subtract or stay.
         add: {col: {key: diff, label: y − ŷ, expr: y - call}}
         mark: col:diff
       - think:
@@ -326,8 +335,10 @@ slides:
                 - {segment: [[2, 'icept + slope'], [2, 'icept + 2 * slope']], color: s2, name: 'm', says: 'the slope: how far CD19 rises per unit of CD3', step: 2}
                 - {point: [0, icept], color: accent, name: b, says: 'the crossing: where the line meets the CD19 axis', step: 3}
       - say: Slope first. One unit more CD3 moves the line this much in CD19.
+        why: A flow person reads a gate by its slope.
         add: {calc: {say: The slope, expr: -w1 / w2, name: slope, fmt: 2}}
       - say: Then where it crosses the CD19 axis, at CD3 = 0.
+        why: Slope and crossing together pin the line down.
         add: {calc: {say: The crossing, expr: -w0 / w2, name: icept, fmt: 2}}
       - think:
           q: Why the minus signs? What goes wrong without them?
@@ -357,13 +368,17 @@ slides:
       - say: 'Ours passes {{gap1|2}} from {{graze_id}}. The other keeps {{gap2|1}} from every cell.'
       - think:
           q: Both lines make no mistakes. Which would you trust on a new cell?
-          a: The one down the middle. The perceptron cannot tell; it stops at the first line that works.
+          a: The one down the middle. The perceptron cannot tell. It stops at the first line that works.
       - say: Say c9, a T cell between c1 and c3, was typed B by mistake.
         add: {note: '**{{epochs9}} epochs** with c9 typed B: **{{updates9}} updates**, and never 0 wrong. The fewest was {{min_err9}}.'}
       - think:
           q: Why can no line get c9 right?
           a: c9 sits on the segment c1 to c3. Any line keeping both on one side keeps c9.
       - say: It needs cells a line can split. One bad label, and it never stops.
+      - think:
+          transfer: email spam filters
+          q: Emails as word counts, labelled spam or not. What does the trick do?
+          a: Each misread email nudges the word weights. If no line splits spam, it never stops.
 
   - type: recap
     answer: Each wrong cell nudges the weights by η (y − ŷ) times its values, until none is wrong.

@@ -97,9 +97,11 @@ slides:
       cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}]
     steps:
       - say: Average the six CD3 levels.
+        why: Spread is measured from the middle, so we need it.
         add: {calc: {say: The mean CD3, expr: mean(cd3), name: m1, fmt: 2}}
         mark: col:cd3
       - say: Then the six CD19 levels.
+        why: The two means together give the middle point.
         add: {calc: {say: The mean CD19, expr: mean(cd19), name: m2, fmt: 2}}
         mark: col:cd19
       - say: 'Together they mark the middle of the cells, at ({{m1|2}}, {{m2|2}}).'
@@ -114,6 +116,7 @@ slides:
               - {line: ['-m1', 1, 0], color: mist, dash: true, label: zero lines, says: the middle becomes zero on each axis, step: 4}
               - {line: ['-m2', 0, 1], color: mist, dash: true, step: 4}
       - say: Measure every cell from the middle, the ==zero lines:new zeros==. Call these $d_1$ and $d_2$.
+        why: Then every number is already a distance from the middle.
         add:
           - {col: {key: d1, label: d₁, expr: cd3 - m1, fmt: 2}}
           - {col: {key: d2, label: d₂, expr: cd19 - m2, fmt: 2}}
@@ -143,10 +146,13 @@ slides:
               - {foot: {from: ['at(d1, 5)', 'at(d2, 5)'], dir: [1, 0]}, color: ink}
               - {line: [0, 1, 0], color: s2, step: 3}
       - say: 'Here a cell''s shadow is its CD3 distance. Their spread is CD3''s variance.'
+        why: Keeping only CD3 keeps exactly this much spread.
         add: {calc: {say: Spread of the shadows on the CD3 line, expr: var(d1), name: v_cd3, fmt: 3}}
       - say: The upright line does the same for CD19.
+        why: CD19 alone is a second choice to compare.
         add: {calc: {say: Spread on the CD19 line, expr: var(d2), name: v_cd19, fmt: 3}}
       - say: Together they are all the spread the two markers hold.
+        why: No single line can keep more than this.
         add: {calc: {say: The total spread, expr: v_cd3 + v_cd19, name: tot, fmt: 3}}
       - think:
           q: Keep only CD3. What share of the total spread do we keep?
@@ -177,12 +183,15 @@ slides:
               - {foot: {from: ['at(d1, 4)', 'at(d2, 4)'], dir: [u1, u2]}, color: ink, step: 3}
               - {foot: {from: ['at(d1, 5)', 'at(d2, 5)'], dir: [u1, u2]}, color: ink, step: 3}
       - say: 'c1''s shadow: multiply each distance by the arrow''s part for that marker, then add.'
+        why: One cell first, so the recipe is clear.
         add: {calc: {say: c1's shadow on the tilted line, row: 0, expr: u1 * d1 + u2 * d2, name: p1, fmt: 2}}
         mark: row:0
       - say: Every cell the same way.
+        why: The spread needs every cell's shadow.
         add: {col: {key: p, label: shadow, expr: u1 * d1 + u2 * d2, fmt: 2}}
         mark: col:p
       - say: Shadows sit around 0, so their spread is the sum of squares over $n - 1$.
+        why: Then this tilt can be compared with CD3 alone.
         add: {calc: {say: Spread along the tilted line, expr: sum(p^2) / (n - 1), name: s2u, fmt: 3}}
       - think:
           q: '{{s2u|3}} is less than CD3 alone. Why does this tilt keep so little?'
@@ -195,6 +204,7 @@ slides:
     lead: Every symbol is a number we worked by hand.
     steps:
       - say: Our numbers, in the shape of the formula.
+        why: The same recipe then works for any arrow.
         add:
           assemble:
             say: The spread of the shadows on the tilted line
@@ -318,6 +328,7 @@ slides:
     derive: {z: v1 * d1 + v2 * d2}
     steps:
       - say: 'PC1''s arrow is (==s1:{{v1|3}}==, ==s2:{{v2|3}}==). Each cell''s shadow on it is its PC1 score.'
+        why: This one number per cell replaces both markers.
         add: {col: {key: z, label: PC1 score, expr: v1 * d1 + v2 * d2, fmt: 2}}
         mark: col:z
       - think:
@@ -325,8 +336,10 @@ slides:
           a: T cells at the low end, B cells at the high end, monocytes near 0 in the middle.
         mark: col:z
       - say: The spread of the scores is the height of the peak.
+        why: Then PC1 can be compared with CD3 alone.
         add: {calc: {say: Spread of the PC1 scores, expr: sum(z^2) / (n - 1), name: lam1, fmt: 3}}
       - say: And its share of the total spread.
+        why: A share says how much the one number loses.
         add: {calc: {say: Share of the spread PC1 keeps, expr: lam1 / tot, name: share1, fmt: '%'}}
       - think:
           q: 'One number per cell keeps {{100 * share1|0}}%. What is in the {{100 * lost|0}}% we lost?'
@@ -351,6 +364,10 @@ slides:
       - think:
           q: So does PC1 always mean T versus B?
           a: No. It is the biggest spread in this sample. Change which cells go in, and PC1 changes.
+      - think:
+          transfer: stock market returns
+          q: Daily returns of many stocks, one column each. What would PC1 find?
+          a: The direction most stocks move together, the market. As here, one wild day can turn it.
 
   - type: recap
     answer: PC1 is the line through the middle along which the cells' shadows spread out most.
@@ -365,6 +382,7 @@ slides:
     lead: Three numbers hold the whole curve.
     steps:
       - say: 'Our hand tilt''s spread, {{s2u|3}}, comes back from three numbers.'
+        why: Three numbers then replace trying every angle.
         add: {calc: {say: The hand tilt's spread from three numbers, expr: u1^2 * v_cd3 + 2 * u1 * u2 * c12 + u2^2 * v_cd19, name: chk, fmt: 3}}
       - say: 'Two are marker spreads. The third, {{c12|3}}, is new: CD3 and CD19''s covariance.'
       - think:

@@ -10,7 +10,8 @@ import re
 # beats a scene can carry (lesson.md); the last four are optional moves
 BEATS = {"plan", "problem", "data", "by-hand", "picture", "formula", "run", "what-if", "limits", "summary", "next",
          "analogy", "compare", "misconception", "aside"}
-STEP = {"say", "add", "mark", "think", "frame"}
+LESSON_BEATS = BEATS | {"refresher"}   # a refresher is a class lesson's end scene; a sketch page has none
+STEP = {"say", "why", "add", "mark", "think", "frame", "more", "refresh"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
 ITEMS = {"calc", "plane", "space", "chance", "fork", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
@@ -802,6 +803,37 @@ def lint_chance(B, Lx, w, ch, names, s, values):
             Lx.err(w, f"`chance` `tally` holds values other than 0 and 1: each frame is 1 when its gap is at least as far from 0 as ours, else 0")
 
 
+def lint_refresher(B, Lx, deck, i, s, where):
+    """A refresher is an end scene: after `next`, with an `ask` line, and linked from a step that needs it."""
+    ref = s.get("beat") == "refresher"
+    if s.get("ask") is not None and not ref:
+        Lx.err(where, "`ask` is the link line of a `refresher` scene: give this scene `beat: refresher`, or delete `ask`")
+    if not ref:
+        return
+    a = s.get("ask")
+    if not isinstance(a, str) or not a.strip().endswith("?"):
+        Lx.err(where, "a refresher needs `ask:`, the link line the step shows, as a question (\"Rusty on angles and cosine?\")")
+    elif B.words(a) > SAY_WORDS:
+        Lx.warn(where, f"the refresher's `ask` is {B.words(a)} words (≤ {SAY_WORDS}): name only what it refreshes")
+    if not s.get("id"):
+        Lx.err(where, "a refresher needs an `id`, so a step can link to it with `refresh: <id>`")
+    elif not any(isinstance(st, dict) and st.get("refresh") == s["id"]
+                 for t in deck.get("slides") or [] for st in as_list(t.get("steps"))):
+        Lx.warn(where, f"no step links here: add `refresh: {s['id']}` to the step that first needs it")
+
+
+def lint_refresh(Lx, deck, i, w, rid):
+    """A step's `refresh` names a refresher scene at the end, after the step's own scene."""
+    slides = deck.get("slides") or []
+    k = next((k for k, t in enumerate(slides) if t.get("id") == rid), None)
+    if k is None:
+        Lx.err(w, f"`refresh: {rid}` names no scene: give the refresher scene `id: {rid}`")
+    elif slides[k].get("beat") != "refresher":
+        Lx.err(w, f"`refresh: {rid}` links to a `{slides[k].get('beat')}` scene: it links only to a scene with `beat: refresher`")
+    elif k <= i:
+        Lx.err(w, f"`refresh: {rid}` links back to an earlier scene: a refresher sits at the end, after `next`")
+
+
 def lint_scenes(B, Lx, deck, glob, data=None):
     """Each board scene on its own: its fields, steps, items and controls."""
     symbols = deck.get("symbols") or {}
@@ -814,8 +846,8 @@ def lint_scenes(B, Lx, deck, glob, data=None):
             continue
         named = []   # (where, mark, the step that draws it, from 1)
         where = f"slide {i + 1} (board “{str(s.get('title') or '')[:38]}”)"
-        if s.get("beat") not in BEATS:
-            Lx.err(where, f"`beat` is {s.get('beat')!r}; use one of {', '.join(sorted(BEATS))}")
+        if s.get("beat") not in LESSON_BEATS:
+            Lx.err(where, f"`beat` is {s.get('beat')!r}; use one of {', '.join(sorted(LESSON_BEATS))}")
         names = set(glob) | {c.get("name") for c in s.get("controls") or [] if isinstance(c, dict)}
         names |= set(s.get("derive") or {}) if isinstance(s.get("derive"), dict) else set()
         tb = s.get("table")
@@ -832,17 +864,42 @@ def lint_scenes(B, Lx, deck, glob, data=None):
         lint_controls(Lx, where, s, steps)
         if s.get("beat") == "what-if" and not any(k in it for _, it in items_of(s) if isinstance(it, dict) for k in ("chart", "plane", "compare", "image", "fork")):
             Lx.warn(where, "a what-if scene with no picture: add a `chart` or `plane` that the change moves, so the learner sees what moves")
+        lint_sources(Lx, where, s.get("sources"), "scene `sources`")
+        lint_refresher(B, Lx, deck, i, s, where)
+        folds = [j + 1 for j, st in enumerate(steps) if isinstance(st, dict) and st.get("more") is not None]
+        if len(folds) > 1:
+            Lx.warn(where, f"steps {', '.join(map(str, folds))} each open extra reading: keep one `more` a scene, on the step that most needs it; put the rest in the scene's `more` (Context and limits)")
         for j, st in enumerate(steps):
             w = f"{where} step {j + 1}"
             if not isinstance(st, dict):
                 Lx.err(w, "each step is a mapping with `say` (and `add`, `mark` or `think`)")
                 continue
+            if st.get("more") is not None:
+                lint_more(B, Lx, w, st["more"])
+            if st.get("refresh") is not None:
+                lint_refresh(Lx, deck, i, w, st["refresh"])
+            th = st.get("think")
+            if isinstance(th, dict):
+                for k in sorted(set(th) - {"q", "a", "set", "transfer"}, key=str):
+                    Lx.err(w, f"`think` has no field `{k}` (it takes q, a, set and transfer)")
+                tr = th.get("transfer")
+                if tr is not None and not (isinstance(tr, str) and tr.strip()):
+                    Lx.err(w, "`transfer` names the other field in a few words (\"spectral flow cytometry\")")
+                elif tr is not None and B.words(tr) > TRANSFER_WORDS:
+                    Lx.warn(w, f"`transfer` is {B.words(tr)} words (≤ {TRANSFER_WORDS}): name the field, and put the case in the question")
             for k in set(st) - STEP:
                 Lx.err(w, f"unknown step field `{k}` (use {', '.join(sorted(STEP))})")
             if s.get("beat") == "plan" and st.get("say"):
                 Lx.err(w, "the plan is its picture, so it has no lines of text: delete this `say` and keep the `flow`")
             elif not st.get("say") and not st.get("think") and not (s.get("beat") == "plan" and st.get("add")):
                 Lx.err(w, "a step needs `say`: the teacher's one line for this step")
+            if st.get("why") is not None and not (isinstance(st.get("why"), str) and st.get("say")):
+                Lx.err(w, "`why` is the reason at the end of the step's `say`: give the step a `say`, and write `why` as one line of text")
+            adds = [it for it in as_list(st.get("add")) if isinstance(it, dict)]
+            if not st.get("why") and any(k in it for it in adds for k in OPS) \
+                    and not any(isinstance(it.get("calc"), dict) and it["calc"].get("why") for it in adds):
+                op = next(k for it in adds for k in OPS if k in it)
+                Lx.warn(w, f"this step works a `{op}` but never says why: add `why:` (≤ {WHY_WORDS} words), the reason we do it or what it lets us do next")
             for it in as_list(st.get("add")):
                 kind = [k for k in it if k in ITEMS] if isinstance(it, dict) else []
                 if len(kind) != 1:
@@ -936,14 +993,22 @@ def lint_scenes(B, Lx, deck, glob, data=None):
 
 EXEMPT = ("operator", "index")   # a symbol of this `kind` has no number to show first
 LINE_WORDS = 24                  # one teacher line, one breath (sketch's limit)
+TRANSFER_WORDS = 6   # a transfer stop's field name: "spectral flow cytometry"
 SAY_WORDS, NOTE_WORDS, ANSWER_WORDS = 14, 16, 18   # a lesson's limits: a say or a think question, a note, a think answer
+WHY_WORDS = 12                   # a step's reason, in grey at the end of its line
+OPS = ("calc", "col", "assemble")
+FOLD_WORDS = 160                 # a step's extra reading, all paragraphs together   # items that compute: their step says why (a step `why`, or a calc's own `why`)
+# learner.voice: `short` (the default) keeps the limits above; `full` lets a line run to 2 or 3 sentences, each one breath
+VOICES = ("short", "full")
+FULL = {"say": 50, "why": 24, "think q": 24, "think a": 40, "note": 30}   # by field; an item's `say` is a card label and keeps SAY_WORDS
+SENTENCE = re.compile(r"(?<=[.?!])\s+(?=[A-Z0-9${(\"“'‘])")
 PLAIN = {"a", "A", "I", "an", "as", "at", "be", "by", "do", "go", "if", "in", "is", "it", "no", "of", "on", "or", "so", "to", "up", "us", "we"}   # short symbol names that are also words
 STEP_CAP, THINK_GAP = 10, 6      # steps in one scene; steps in a row with no think stop
 SCENES = (8, 14)
 CARDS = (5, 8)
 # keys whose text the learner reads; a number typed here goes stale when the data changes
 PROSE = {"say", "q", "a", "text", "note", "title", "lead", "subtitle", "question", "answer", "caption", "label", "sub", "says",
-         "value", "alt", "points", "breaks", "why", "read", "more", "verdict", "next"}
+         "value", "alt", "points", "breaks", "why", "read", "more", "verdict", "next", "ask"}
 TYPED = re.compile(r"(?<![\w.])([-−]?)(\d+\.\d+|\d{2,})(?![\w]|\.\d)")
 HIDE = re.compile(r"\{\{[\s\S]*?\}\}|\$[^$]*\$|`[^`]*`")
 EXPRS = re.compile(r"\{\{([\s\S]+?)\}\}")
@@ -967,7 +1032,7 @@ def slide_where(i, s):
 
 def step_lines(st):
     """(field, text, word limit) for every line a learner reads in a step."""
-    out = [("say", st.get("say"), SAY_WORDS)]
+    out = [("say", st.get("say"), SAY_WORDS), ("why", st.get("why"), WHY_WORDS)]
     t = st.get("think")
     if isinstance(t, dict):
         out += [("think q", t.get("q"), SAY_WORDS), ("think a", t.get("a"), ANSWER_WORDS)]
@@ -1196,12 +1261,81 @@ def lint_bare(Lx, deck):
                     Lx.warn(f"{slide_where(i, s)} step {j + 1}", f"`{k}` writes {m.group(1)} in plain words: write ${t}$ so it takes its colour")
 
 
-def lint_shape(B, Lx, slides):
+def voice_of(Lx, deck):
+    """The lesson's voice from `learner.voice`: short (the default) or full."""
+    learner = deck.get("learner") if isinstance(deck.get("learner"), dict) else {}
+    v = learner.get("voice", "short")
+    if v not in VOICES:
+        Lx.err("learner", f"`voice: {v!r}` is `short` (lines inside the word limits, the default) or `full` (2 or 3 short sentences a line)")
+        return "short"
+    return v
+
+
+def lint_words(B, Lx, where, k, v, cap, voice):
+    """One line against its voice: short counts the line; full counts the line and each sentence in it."""
+    if voice == "full" and k in FULL:
+        n = B.words(shown(v))
+        if n > FULL[k]:
+            Lx.warn(where, f"`{k}` has {n} words (≤ {FULL[k]} in the full voice): split it over two steps")
+        for t in SENTENCE.split(v.strip()):
+            if B.words(shown(t)) > LINE_WORDS:
+                Lx.warn(where, f"`{k}` has a sentence of {B.words(shown(t))} words (≤ {LINE_WORDS}): the full voice writes more sentences, "
+                               f"not longer ones. Split it: “{t[:50]}…”")
+    elif B.words(shown(v)) > cap:
+        Lx.warn(where, f"`{k}` has {B.words(shown(v))} words (≤ {cap}): one teacher line is one breath; cut it, or move the rest to the next step"
+                       + (" (or ask the learner for the full voice, `learner.voice: full`)" if k in FULL else ""))
+    if ";" in re.sub(r"\$[^$]*\$|\{\{[^}]*\}\}", "", v):
+        Lx.warn(where, f"`{k}` joins two thoughts with “;”: write two sentences, linked by a word such as So, But or Because")
+
+
+def lint_sources(Lx, w, src, what):
+    """Each source a reader may open: a title, a real link, and why it is worth reading."""
+    if src is None:
+        return
+    if not isinstance(src, list):
+        Lx.err(w, f"{what} is a list of `{{title, url, why}}`")
+        return
+    for k, x in enumerate(src, 1):
+        if not (isinstance(x, dict) and isinstance(x.get("title"), str) and isinstance(x.get("url"), str) and isinstance(x.get("why"), str)):
+            Lx.err(w, f"{what} {k} needs `title`, `url` and `why` (what the reader gets from it), each as text")
+        elif not re.match(r"https://\S+$", x["url"]):
+            Lx.err(w, f"{what} {k}: `url` is a full https:// link to the page you read, not “{x['url'][:40]}”")
+
+
+def lint_more(B, Lx, w, m):
+    """A step's extra reading: a real question, paragraphs in short sentences, and the sources used."""
+    if not isinstance(m, dict) or not isinstance(m.get("ask"), str) or not m.get("answer"):
+        Lx.err(w, "`more` is `{ask, answer, sources}`: the question it answers, its paragraphs, and any pages read for it")
+        return
+    for k in set(m) - {"ask", "answer", "sources"}:
+        Lx.err(w, f"`more` has no field `{k}` (use ask, answer, sources)")
+    ask = m["ask"].strip()
+    if not ask.endswith("?"):
+        Lx.warn(w, f"`more` ask “{ask[:40]}” is the learner's question, ending in `?`")
+    if B.words(shown(ask)) > SAY_WORDS:
+        Lx.warn(w, f"`more` ask has {B.words(shown(ask))} words (≤ {SAY_WORDS}): it is the fold's one-line label")
+    paras = m["answer"] if isinstance(m["answer"], list) else [m["answer"]]
+    if not all(isinstance(p, str) for p in paras):
+        Lx.err(w, "`more` answer is a paragraph of text, or a list of them")
+        return
+    n = sum(B.words(shown(p)) for p in paras)
+    if n > FOLD_WORDS:
+        Lx.warn(w, f"`more` holds {n} words (≤ {FOLD_WORDS}): keep the reason that matters most, and point to a source for the rest")
+    for p in paras:
+        for t in SENTENCE.split(p.strip()):
+            if B.words(shown(t)) > LINE_WORDS:
+                Lx.warn(w, f"`more` has a sentence of {B.words(shown(t))} words (≤ {LINE_WORDS}): split it: “{t[:50]}…”")
+        if ";" in re.sub(r"\$[^$]*\$|\{\{[^}]*\}\}", "", p):
+            Lx.warn(w, "`more` joins two thoughts with “;”: write two sentences, linked by a word such as So, But or Because")
+    lint_sources(Lx, w, m.get("sources"), "`more` source")
+
+
+def lint_shape(B, Lx, slides, voice="short"):
     """R1, R2, R6 and the lead rule: the beats in order, the size of the lesson, and a think stop every few steps."""
     for i, s in enumerate(slides):
         if s.get("type") == "quiz":
             Lx.err(slide_where(i, s), "a class lesson has no quiz cards: delete this slide, and keep any question worth asking as a `think` stop on a step")
-    scenes = [(i, s, beat_of(s)) for i, s in enumerate(slides) if (s.get("type") or "idea") not in ("title", "quiz")]
+    scenes = [(i, s, beat_of(s)) for i, s in enumerate(slides) if (s.get("type") or "idea") not in ("title", "quiz") and s.get("beat") != "refresher"]
     if not scenes:
         return
     lo, hi = SCENES
@@ -1228,8 +1362,21 @@ def lint_shape(B, Lx, slides):
     else:
         i = scenes[nx][0]
         for k, s in enumerate(slides[i + 1:], i + 1):
-            if (s.get("type") or "idea") != "quiz":
+            if (s.get("type") or "idea") != "quiz" and s.get("beat") != "refresher":
                 Lx.warn(slide_where(k, s), "the `next` tease is the last scene: move this slide before it")
+    # the transfer stop: the same move in another field, once a lesson, in its last third (the learner has the method by then)
+    tstops = [(k, i, s) for k, (i, s, _) in enumerate(scenes) for st in as_list(s.get("steps"))
+              if isinstance(st, dict) and isinstance(st.get("think"), dict) and isinstance(st["think"].get("transfer"), str)]
+    third = len(scenes) - -(-len(scenes) // 3)
+    if not tstops:
+        Lx.warn("lesson", "no transfer stop: near the end, ask where the same move works in another field, as a `think` with `transfer: <field>`")
+    for k, i, s in tstops:
+        if k < third:
+            Lx.warn(slide_where(i, s), f"a transfer stop in scene {k + 1} of {len(scenes)}: put it in the last third (scene {third + 1} or later), once the method is known")
+    last = scenes[-1][0]   # the story's last scene; refreshers come after it
+    for k, s in enumerate(slides[:last]):
+        if s.get("beat") == "refresher":
+            Lx.warn(slide_where(k, s), "a refresher sits at the end, after the `next` tease, so the story runs on: move this scene there")
     gap, planned = 0, False
     for i, s in enumerate(slides):
         if (s.get("type") or "idea") != "board":
@@ -1249,8 +1396,8 @@ def lint_shape(B, Lx, slides):
                 Lx.warn(f"{w} step {j + 1}", f"{THINK_GAP} steps in a row with no `think` stop: ask the learner something before going on")
                 gap = 0
             for k, v, cap in step_lines(st):
-                if isinstance(v, str) and B.words(shown(v)) > cap:
-                    Lx.warn(f"{w} step {j + 1}", f"`{k}` has {B.words(shown(v))} words (≤ {cap}): one teacher line is one breath; cut it, or move the rest to the next step")
+                if isinstance(v, str):
+                    lint_words(B, Lx, f"{w} step {j + 1}", k, v, cap, voice)
 
 
 def prose(node, key=None):
@@ -1278,10 +1425,16 @@ class Ledger:
         tex = [(n, str(v.get("tex"))) for n, v in symbols.items() if isinstance(v, dict) and v.get("tex") and v.get("kind") not in EXEMPT]
         self.tex = sorted(tex, key=lambda x: -len(x[1]))   # longest first, so s^2 is read before s
 
+    @staticmethod
+    def first(d, n, pos, val=None):
+        """Keep the earliest click, not the first one scanned: a mark with `step:` is scanned before later steps."""
+        if n not in d or pos < (d[n][0] if val is not None else d[n]):
+            d[n] = pos if val is None else (pos, val)
+
     def number(self, names, pos, by_hand=False):
         for n in names:
             if n:
-                self.num.setdefault(n, pos)
+                self.first(self.num, n, pos)
                 if by_hand:
                     self.hand.add(n)
 
@@ -1289,7 +1442,7 @@ class Ledger:
         """A matrix or vector drawn as `name = [numbers]`: its number shows, and it may be used by name after."""
         self.number(names, pos, by_hand)
         for n in names:
-            self.drawn.setdefault(n, pos)
+            self.first(self.drawn, n, pos)
 
     def maths(self, tex, pos, by_hand=False, lhs=None):
         """\\mat{id} in a formula shows id's numbers; it draws id only when the formula also writes `id =` (its TeX or
@@ -1301,13 +1454,13 @@ class Ledger:
             v = self.symbols.get(n) if isinstance(self.symbols.get(n), dict) else {}
             names = [re.escape(f"[{n}]")] + ([r"(?<![A-Za-z\\])" + re.escape(str(v["tex"]))] if v.get("tex") else [])
             if re.search(r"(?:" + "|".join(names) + r")\s*=", full):
-                self.drawn.setdefault(n, pos)
+                self.first(self.drawn, n, pos)
 
     def symbol(self, names, pos, what):
         for n in names:
             v = self.symbols.get(n)
             if isinstance(v, dict) and v.get("kind") not in EXEMPT:
-                self.sym.setdefault(n, (pos, what))
+                self.first(self.sym, n, pos, what)
 
     def text(self, s, pos, by_hand=False):
         """`{{x}}` shows x's number; a symbol's TeX inside $...$ shows its symbol."""
@@ -2075,7 +2228,7 @@ def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
-        lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or []); lint_bare(Lx, deck); lint_order(B, Lx, deck)
+        lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_story(Lx, deck)
         lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck); lint_adv(Lx, deck)
     return lesson_lint

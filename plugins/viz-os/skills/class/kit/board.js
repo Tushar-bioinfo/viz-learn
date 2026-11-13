@@ -1410,15 +1410,21 @@
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
-      if (st.say) el.appendChild(h('p', 'say', md(st.say)));
-      if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin', `<div class="tq"><span class="btag">Think</span><span class="tqt">${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
+      if (st.say) { const line = h('p', 'say', md(st.say)); if (st.why) line.append(' ', h('span', 'swhy', md(st.why))); el.appendChild(line); }   // the step's reason, in grey at the end of its line
+      // a refresher at the end of the lesson: a quiet line under the say, and a back button once it is read (lesson.js L.refresh)
+      if (st.refresh) { const k = (ctx.deck.slides || []).findIndex(x => x.id === st.refresh), rs = ctx.deck.slides[k] || {};
+        const r = h('p', 'lref', `<span class="lra">${md(rs.ask || '')}</span> <a href="#scene-${k + 1}">Refresher ▸</a>`);
+        r.querySelector('a').onclick = e => { e.preventDefault(); L.refresh && L.refresh(k); }; el.appendChild(r); }
+      if (st.think) { const t = typeof st.think === 'string' ? { q: st.think } : st.think, e = h('div', 'think g thin' + (t.transfer ? ' ttr' : ''), `<div class="tq"><span class="btag">${t.transfer ? 'Elsewhere' : 'Think'}</span><span class="tqt">${t.transfer ? `<span class="tfield">${md(String(t.transfer).replace(/^./, c => c.toUpperCase()))}.</span> ` : ''}${md(t.q || '')}</span><button type="button" class="tb">Show answer</button></div><div class="ta"><span class="btag so">So</span><span>${md(t.a || '')}</span></div>`);
         e.dataset.at = c.at; e.querySelector('.tb').onclick = () => answer(e); el.appendChild(e); thinks.push(e); }
+      // extra reading for this step: a closed fold with its question, paragraphs and sources (lesson.js L.fold)
+      if (st.more) { const m = st.more; el.fold = L.fold(md(m.ask || ''), [].concat(m.answer || []).map(t => `<p>${md(t)}</p>`).join('') + L.sources(m.sources)); el.fold.dataset.at = c.at; }
       // the step's view as a word at the end of its line (its answer's, on a think), in the toggle words' look; pressing it turns the figure
       (VW[j] || []).forEach(({ v, spec }) => { const nm = typeof v === 'object' ? 'across' : v === 'fit' ? 'from the start' : `${v}-on`, b = h('button', 'vword', md(nm)); b.type = 'button'; b.dataset.view = JSON.stringify(v); b.spec = spec;
         b.title = 'turn the figure to this view'; b.onclick = () => { const fg = figs.find(f => f.spec === spec); if (fg && fg.goView) fg.goView(v); };
         const host = st.think ? el.querySelector('.ta > span:last-child') : el.querySelector(':scope > .say'); if (host) host.append(' ', b); });
       stepEls.push(el); el.addEventListener('mouseenter', () => R.hover(c.at)); el.addEventListener('mouseleave', () => R.hover(null));
-      el.addEventListener('click', e => { if (e.target.closest('button, input, label, a, .vt, .lnk') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
+      el.addEventListener('click', e => { if (e.target.closest('button, input, label, a, .vt, .lnk, details') || String(getSelection())) return; el.stages.forEach(S => S.jump(c.at)); });
       return el;
     };
 
@@ -1485,6 +1491,7 @@
       else (cur ? cur.side : column()).appendChild(el);
       if (wide && !fig) zone = null;
       items.forEach(it => addItem(it, j, wide && fig && isWide(it) ? root : slot, cur));
+      if (el.fold) slot.appendChild(el.fold);   // the step's extra reading comes after what the step writes
       el.zone = zone; if (wide) seg = cur = null; });
     if (zl && !pair) root.prepend(zl);
     const broad = steps.some(st => st && list(st.add).some(it => it && it.ops)); root.classList.toggle('broad', broad);

@@ -5,6 +5,7 @@ Start with [AGENTS.md](../AGENTS.md) for the goal and rules and [learner.md](lea
 ## Live work
 | Need | Read |
 |---|---|
+| Where we stand | [map.yaml](map.yaml): each block's status; `python3 tools/block_map.py --check` draws `out/map/index.html` |
 | "Work on our to-do list" | [todo-draw-math.md](todo-draw-math.md): How we work, Changes, then the relevant Decisions |
 | "Work on C10…" | [c10-visuals.md](c10-visuals.md): block, dependencies and State now; use draw-math's How we work |
 | New C10 planner | [c10-handoff.md](c10-handoff.md): the user's wishes, sources, who to delegate cheap work to; then the block's rows in [c10-plan-v2.md](c10-plan-v2.md), the design |

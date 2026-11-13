@@ -6,11 +6,11 @@ Usage:
   memory.py episode <series> --part N --path lesson.yaml --gates "5/5" [--title T] [--date YYYY-MM-DD]
   memory.py home <series> --name cells --template cells-x-markers --seed 7
   memory.py loop <series> "a question the lesson left open" [--close]
-  memory.py learner --topic T --note N [--date YYYY-MM-DD] [--home PATH]
+  memory.py learner --topic T --note N [--date YYYY-MM-DD] [--home PATH] [--voice short|full]
 
 Files live in the viz-os home folder: $VIZOS_HOME if it is set, else ~/.viz-os.
   series/<series>.yaml   three lists: episodes (part, title, path, date, gates), home data (name, template, seed), open loops
-  learner.yaml           the deck's profile. `learner` only adds one line to `history:` and sets `home:`; it never
+  learner.yaml           the deck's profile. `learner` only adds one line to `history:` and sets `home:` and `voice:`; it never
                          rewrites the deck's fields, and it keeps the file's comments.
 Every write is idempotent: the same call twice changes nothing the second time, and says "unchanged".
 """
@@ -136,6 +136,11 @@ def cmd_learner(a):
             new = re.sub(r"^home:.*$", f"home: {a.home}", new, count=1, flags=re.M)
         else:
             new = new.rstrip("\n") + f"\nhome: {a.home}\n"
+    if a.voice:   # the learner's reading voice for every lesson; a lesson's own `learner.voice` overrides it
+        if re.search(r"^voice:.*$", new, re.M):
+            new = re.sub(r"^voice:.*$", f"voice: {a.voice}", new, count=1, flags=re.M)
+        else:
+            new = new.rstrip("\n") + f"\nvoice: {a.voice}\n"
     if new == text:
         print(f"memory: unchanged {f}")
         return
@@ -143,9 +148,10 @@ def cmd_learner(a):
         after = yaml.safe_load(new) or {}
     except yaml.YAMLError as e:
         sys.exit(f"memory: refusing to write {f}: the edit would not load as YAML ({str(e).splitlines()[0]})")
-    keep = {k: v for k, v in doc.items() if k not in ("history", "home")}
-    if {k: v for k, v in after.items() if k not in ("history", "home")} != keep:
-        sys.exit(f"memory: refusing to write {f}: the edit would change fields other than history and home")
+    own = ("history", "home", "voice")
+    keep = {k: v for k, v in doc.items() if k not in own}
+    if {k: v for k, v in after.items() if k not in own} != keep:
+        sys.exit(f"memory: refusing to write {f}: the edit would change fields other than history, home and voice")
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(new)
     print(f"memory: wrote {f}")
@@ -163,7 +169,8 @@ def main(argv=None):
     p = sub.add_parser("loop"); p.add_argument("series"); p.add_argument("text"); p.add_argument("--close", action="store_true")
     p.set_defaults(fn=cmd_loop)
     p = sub.add_parser("learner"); p.add_argument("--topic"); p.add_argument("--note"); p.add_argument("--date")
-    p.add_argument("--home"); p.set_defaults(fn=cmd_learner)
+    p.add_argument("--home"); p.add_argument("--voice", choices=("short", "full"))
+    p.set_defaults(fn=cmd_learner)
     a = ap.parse_args(argv)
     a.fn(a)
 

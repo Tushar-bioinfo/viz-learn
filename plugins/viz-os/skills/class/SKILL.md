@@ -9,16 +9,17 @@ You are the teacher. The learner should leave able to do the method by hand on a
 
 ## The loop
 0. **Profile and memory.** Read `~/.viz-os/learner.yaml` if it exists (in this file, `~/.viz-os` means `$VIZOS_HOME` when that is set), and follow its `prefers:`. Its `home:` line points at the learner's toy data. If the request continues a series ("next lesson", "part 2"), run `python3 C/scripts/memory.py show <series>`: it lists the episodes so far, their data and the questions left open.
-1. **Probe.** Send one message with 3 lettered questions, then **stop and wait**. Drop a question the profile or memory already answers; skip the probe if the user says "just build", and state your assumptions in one line. "Just build" skips only the probe: a series still waits for its OK in step 2.
+1. **Probe.** Send one message with 4 lettered questions, then **stop and wait**. Drop a question the profile or memory already answers; skip the probe if the user says "just build", and state your assumptions in one line. "Just build" skips only the probe: a series still waits for its OK in step 2.
    ```
-   Before I teach: 3 quick ones. Answer like "1b 2a 3a", or say "just build".
+   Before I teach: 4 quick ones. Answer like "1b 2a 3a 4a", or say "just build".
    1. Which do you already know? (pick all)  a) [lowest rung]  b) [next rung]  c) [a formula it grows from]  d) none yet
    2. Whose data should we work on?  a) [toy table from their world, e.g. 6 cells × 3 markers]  b) [another, e.g. 6 genes × 6 samples]  c) something else (say what)
    3. How much?  a) one lesson (~10 scenes)  b) a What / How / Why series (2–3 lessons)
+   4. How much reading?  a) short lines, one breath each (default)  b) full: 2–3 sentences a line, more context and reasons
    ```
-   Ask question 2 once: after the first lesson the answer lives in memory and `home:`.
-   If the user says "adv", read `adv.md` first: it adds probe question 4 and, in step 2, a picture plan with a storyboard to approve.
-2. **Spine.** Open `lesson.md`. Write the top of `lesson.yaml`: `title`, `question`, `answer`, `learner` (`{goal, knows, anchors}`, from the probe; `board.md`, Top level), and the beat list as a comment, one line per scene. If the topic is big enough for a series (`lesson.md` §7), write the top of each lesson's `lesson.yaml` in its own folder, show the questions to the user, and **wait for an OK** before you write any scene.
+   Ask question 2 once: after the first lesson the answer lives in memory and `home:`. Ask question 4 only when the profile has no `voice:`. Store the answer with `memory.py learner --voice short|full` (step 8). Write the voice into `learner.voice`. When the user asks for the other voice for one lesson, set it in that lesson only.
+   If the user says "adv", read `adv.md` first: it adds probe question 5 and, in step 2, a picture plan with a storyboard to approve.
+2. **Spine.** Open `lesson.md`. Write the top of `lesson.yaml`: `title`, `question`, `answer`, `learner` (`{goal, knows, anchors, voice}`, from the probe and the profile; `board.md`, Top level), and the beat list as a comment, one line per scene. If the topic is big enough for a series (`lesson.md` §7), write the top of each lesson's `lesson.yaml` in its own folder, show the questions to the user, and **wait for an OK** before you write any scene.
 3. **Data.** Make the learner's home table once, seeded: `python3 C/scripts/home.py cells-x-markers --name cells --seed 7` (or `genes-x-samples`). It keeps its source's layout: a row per cell, or a row per gene. Then write `make_data.py` beside the lesson: seeded, it reads the home file, copies the rows the lesson uses into `data.json` with the file's `provenance` block under `home`, and computes every number the lesson shows, including each frame of a run. Write `verify_data.py` as a second, independent program that recomputes the numbers from the rows and compares; if you can hand that to another agent that has not seen `make_data.py`, do.
 4. **Scenes.** Open `board.md`. Write the scenes under the spine in one pass. Every number is a `{{name|fmt}}` expression or a worked line, never typed.
 5. **Build and check.**

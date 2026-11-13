@@ -93,7 +93,7 @@ A stretch for C10j, to try as a mock-up before promising it: a 40 × 40 patch sp
 | **Playground, not a GIF,** for every choice with more than one setting | the user's wish; the C10a settings line worked |
 | **Two benches:** H&E (geometry) and the counts topic (chance) | one geometry topic cannot show variety |
 | **Review in proportion:** mock-up blocks get no code review; a kit change under about 150 lines gets one Terra reviewer, one round, plus the orchestrator's probe; larger changes keep two reviewers and two rounds | saves runs where risk is low. The user said yes (9 Nov); for C10 blocks this replaces "How we work" rule 2 |
-| **Trial:** in C10i, Argon high also critiques the same screenshots. If it catches what the orchestrator catches, it can hold the design gate in chats run by a cheaper orchestrator | untested; decided by the trial |
+| **Trial:** in C10i, Argon high also critiques the same screenshots. If it catches what the orchestrator catches, it can hold the design gate in chats run by a cheaper orchestrator | untried: the user skipped the trial (9 Nov) |
 
 **Who does what.** The strong model plans the design, writes the look numbers and holds the gate. Opus 5.5 medium builds mock-ups and kit changes. Terra reads, hunts and reviews code. Argon is the second eye on design. The strong model builds by hand in two cases only: the look page of C10i (a look described in words is where a builder loses it), and any mock-up that fails the gate twice. The routing table is in the handoff.
 
@@ -123,4 +123,4 @@ A stretch for C10j, to try as a mock-up before promising it: a 40 × 40 patch sp
 - No block here is built. Feasibility of drag on a 3D sheet, the live 40 × 40 unmixing and parts on a dark board is a mock-up question, not a fact.
 - The look numbers are design judgment drawn from the references. They are not evidence of learning gains.
 - Helper reports are static readings of files and screenshots. `refs.md` did not operate any control; `inventory.md` counts authored items in 6 examples and one bench, not what cold agents usually build.
-- Argon's skill at critiquing screenshots is unknown until the C10i trial.
+- Argon's skill at critiquing screenshots is still unknown: the user skipped the C10i trial (9 Nov).

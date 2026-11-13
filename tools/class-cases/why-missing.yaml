@@ -1,0 +1,25 @@
+# expect: this step works a `col` but never says why
+# expect: not: this step works a `calc`
+# C10l why: a step that computes says why; a calc's own `why` counts.
+title: Reasons for steps
+question: Does each working step say why?
+answer: Yes, in grey at the end of its line.
+data: {rows: [{cell: c1, cd3: 4}, {cell: c2, cd3: 6}, {cell: c3, cd3: 5}], cd3: [4, 6, 5]}
+abbr: {CD3: a T-cell surface marker}
+symbols:
+  xbar: {tex: '\bar{x}', says: mean CD3, short: mean CD3}
+  cd3: {tex: 'x_i', says: CD3 of cell i, short: CD3 cell}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Distances from the mean
+    table: {from: rows, cols: [cell, cd3]}
+    steps:
+      - say: The mean first.
+        why: Distances need a centre to measure from.
+        add: {calc: {say: Mean, expr: mean(cd3), name: xbar}}
+      - say: How far does the first cell sit from the mean?
+        add: {calc: {say: How far it sits, why: below the mean, so negative, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
+      - say: Do the same for every cell.
+        add: {col: {key: d, label: distance, expr: cd3 - xbar, fmt: 2}}

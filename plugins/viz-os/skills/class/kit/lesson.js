@@ -10,6 +10,27 @@
   const READ = .45;   // the reading line, as a share of the window's height
   L.slides = []; L.i = 0; L.busy = 0; L.scale = 1;
 
+  // extra reading: a closed fold with a question, paragraphs of HTML and the sources read for it ("Read: title. why")
+  L.sources = list => (list || []).map(s => `<p class="lsrc"><span class="lread">Read:</span> <a href="${L.esc(s.url || '')}" target="_blank" rel="noopener">${L.esc(s.title || s.url || '')}</a>${s.why ? '. ' + L.md(s.why) : ''}</p>`).join('');
+  L.fold = (ask, html, cls) => { const d = h('details', 'lfold' + (cls ? ' ' + cls : ''), `<summary><span class="lbox" aria-hidden="true"></span><span class="lask">${ask}</span></summary><div class="lfb">${html}</div>`);
+    d.addEventListener('toggle', () => { paintStudy(); requestAnimationFrame(onScroll); }); return d; };
+  // Study: one switch opens or closes every fold on the page
+  let study = null;
+  function paintStudy() {
+    if (!study) return;
+    const f = [...document.querySelectorAll('details.lfold')], n = f.filter(d => d.open).length, all = n === f.length;
+    study.querySelector('button').textContent = all ? 'close all' : 'open all';
+    study.querySelector('.sst').textContent = n === 0 ? 'all closed' : all ? 'all open' : `${n} of ${f.length} open`;
+  }
+  function studyBuild() {
+    const f = [...document.querySelectorAll('details.lfold')]; if (!f.length) return;
+    study = h('div', '', '<span class="sl">Study</span><button type="button"></button><span class="sst"></span>'); study.id = 'lsstudy';
+    study.querySelector('button').onclick = () => { const open = study.querySelector('button').textContent === 'open all'; document.querySelectorAll('details.lfold').forEach(d => { d.open = open; }); paintStudy(); };
+    document.body.appendChild(study);
+    if (CHECK) f.forEach(d => { d.open = true; });   // the check reads every fold's text
+    paintStudy();
+  }
+
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
     L.colors = { accent: v('accent'), tint: v('tint'), s1: v('s1'), s2: v('s2'), s3: v('s3'), s4: v('s4'), s5: v('s5'), good: v('good'), bad: v('bad'), ink: v('ink'), mist: v('mist'), haze: v('haze'), plate: v('plate-solid'), pill: v('pill'), line: v('line'), surf: v('surf'), surf2: v('surf2') };
@@ -49,7 +70,7 @@
       else { try { r = type(s, ctx); } catch (e) { L.err(`slide ${i + 1}`, e.message); console.error(e); r = { node: h('section', 'slide', `<div class="h1">Scene ${i + 1} failed: ${L.esc(e.message)}</div>`), steps: 0 }; } }
       r.node.dataset.i = i; r.node.id = `scene-${i + 1}`;
       // what the deck keeps in its Details sheet stays on the page
-      if (r.more || s.more) r.node.appendChild(h('div', 'lsmore g thin', (r.more || '') + (s.more ? `<div>${L.md(s.more)}</div>` : '')));
+      if (r.more || s.more || s.sources) r.node.appendChild(L.fold('Context and limits', (r.more || '') + (s.more ? `<p>${L.md(s.more)}</p>` : '') + L.sources(s.sources), 'lsmore'));
       const sl = { s, r, ctx, k: 0, steps: r.steps || 0 };
       // a slider moves many times a frame: redraw once a frame, and leave the slider itself alone so it keeps the pointer
       let queued = false;
@@ -75,6 +96,17 @@
   }
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(spy); } };
   const jump = i => { i = Math.max(0, Math.min(L.slides.length - 1, i)); scrollTo({ top: L.slides[i].r.node.getBoundingClientRect().top + scrollY - 8, behavior: 'smooth' }); };
+
+  // a refresher: jump to the end scene, and keep a button that brings the reader back to the line they left
+  let back = null, backY = 0;
+  L.refresh = k => {
+    if (!back) { back = h('button', '', '↩ back to where you were'); back.type = 'button'; back.id = 'lsback'; back.hidden = true; document.body.appendChild(back);
+      back.onclick = () => { back.hidden = true; scrollTo({ top: backY, behavior: 'smooth' }); };
+      // a reader who scrolls back by hand is home: the button goes once the refresher is out of view, above them
+      addEventListener('scroll', () => { if (back.hidden) return; const top = L.slides[back.k].r.node.getBoundingClientRect().top;
+        if (top < innerHeight * .5) back.seen = true; else if (back.seen && top > innerHeight) back.hidden = true; }, { passive: true }); }
+    backY = scrollY; back.k = k; back.seen = false; back.hidden = false; jump(k);
+  };
 
   function chromeBuild() {
     bar = h('div'); bar.id = 'lsbar'; document.body.appendChild(bar);
@@ -169,6 +201,16 @@
       const ov = Math.max(0, Math.min(a.b.right, b.b.right) - Math.max(a.b.left, b.b.left) - 2) * Math.max(0, Math.min(a.b.bottom, b.b.bottom) - Math.max(a.b.top, b.b.top) - 2);
       if (ov > 40) out.push(`text overlaps: ${name(a.e)} × ${name(b.e)}`);
     }
+    // no boxed tags on a board: a short label with a border round it or a hard shadow is the deck's chip, retired on boards
+    // (the user, 13 Nov). Buttons, controls, the scene chip in the head (outside .board), the numbered squares of the plan and of worked lines, and
+    // a matrix's own cells are not tags
+    const side = (cs, k) => parseFloat(cs[`border${k}Width`]) > 0 && cs[`border${k}Style`] !== 'none' && !/rgba\([^)]*,\s*0\)|transparent/.test(cs[`border${k}Color`]);
+    const boxed = e => { const cs = getComputedStyle(e); return ['Top', 'Right', 'Bottom', 'Left'].filter(k => side(cs, k)).length >= 3 || /\d+px \d+px 0px/.test(cs.boxShadow) && !/0px 0px 0px/.test(cs.boxShadow); };
+    const board = node.querySelector('.board');
+    if (board) items.forEach(({ e }) => { if (!board.contains(e) || e.closest('svg') || e.closest('button, input, select, .controls, .ctl, .tip, .pop, .track, .mxbox, .cline .num')) return;
+      for (let t = e, k = 0; t && t !== board && k < 3; t = t.parentElement, k++) { const r = t.getBoundingClientRect();
+        if (r.height > 64 || r.width > 420) break;
+        if (boxed(t)) { out.push(`${name(e)} is a boxed tag: on a board a label is plain text (no border, ground or hard shadow)`); break; } } });
     node.querySelectorAll('.katex-error').forEach(e => out.push(`formula error: ${e.title || e.textContent.slice(0, 40)}`));
     node.querySelectorAll('.iv.bad').forEach(e => out.push(`could not compute {{${e.dataset.x}}}`));
     node.querySelectorAll('.approx').forEach(e => { if (!shownBy(e, node)) return;
@@ -188,7 +230,7 @@
     readColors();
     page = h('main'); page.id = 'lesson'; document.body.appendChild(page);
     document.title = deck.title || 'viz-os lesson';
-    build(deck); chromeBuild(); bindInput();
+    build(deck); chromeBuild(); studyBuild(); bindInput();
     L.slides.forEach(draw);
     L.slides[0] && L.slides[0].r.node.classList.add('on');
     L.ready = true;

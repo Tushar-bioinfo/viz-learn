@@ -1,0 +1,12 @@
+# expect: no transfer stop: near the end
+# C10l transfer: a lesson with no transfer stop is warned.
+title: No transfer
+question: Is a transfer stop required?
+answer: Yes.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: Spread is one number.

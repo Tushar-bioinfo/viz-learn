@@ -1,0 +1,371 @@
+# The block map: the one place for each block's status.
+# Update it when a block starts, needs the user, or ends. Then run
+#   python3 tools/block_map.py --check
+# which writes out/map/index.html, and republish that page to `artifact` below
+# (Artifact tool, publish with `url`; read it first in a new chat).
+# `col` and `edges: false` place a proposed block without drawing its arrows.
+# Keep `line` to one short sentence. Put the rest in `more`; reports stay in out/.
+# status: done (approved, and committed or settled) | approved (not committed) |
+#         review (built, waits for the user) | active | next (proposed) | todo | parked | dropped
+# ships:  plugin (in plugins/viz-os) | mockup (only in out/) | none
+
+artifact: https://claude.ai/artifact/2r7angg1HBwSeyk2UQMDpV
+updated: 2026-11-13
+title: C10, advanced visuals for class lessons
+
+now: >-
+  13 Nov: C10l (story and context) is reviewed and committed, with boxed tags retired
+  everywhere on a board and a browser check that warns if one comes back. A cold
+  Gemini 4 Hydrogen run built a k-means lesson that passes lint, browser and numbers;
+  its smaller problems are next (N2).
+
+budget:            # lines a lesson agent reads on every run, against the branch's start
+  base: ab9918b
+  files:
+    plugins/viz-os/skills/class/board.md: 60
+    plugins/viz-os/skills/class/lesson.md: 10
+    plugins/viz-os/skills/class/SKILL.md: 3
+
+waiting:
+  - title: Look at the cold Gemini lesson
+    more: |
+      `out/cold-hydrogen/k-means-clustering/lesson.html`: k-means on your six cells, 13 slides,
+      built cold by Gemini 4 Hydrogen high in 546 s. Rebuilt here: lint 0/0, browser 0 warnings,
+      numbers match a separate recompute (13 of 13). What the gates miss: centres drawn like
+      cells and named c1 / C1, B cells in the "T cluster" colour in the 3D tease, and a doubled
+      index in the J₀ line. Findings: `docs/issues/class.md`, Cold 1–7.
+  - title: Pick the next-phase order
+    more: |
+      The proposed order is under "Next up". Each line is one chat.
+  - title: Two old open questions
+    more: |
+      - 9 Nov: a block for illustrated objects the learner can move (art from kit parts,
+        agent-written SVG or an image model), with a gallery of ready interactive scenes.
+        Proposed to sit after C10c; not agreed.
+      - 9 Nov (C10i): three look rulings were never made: a plane that looks empty at one
+        moment, the cap of 4 mark hues, and which mark counts as the witness.
+
+next:
+  - id: N2
+    title: Fix what the cold run found, and the old-look bell curve
+    more: |
+      One block, so the full `check-all.sh` runs once for all deck-kit edits:
+      - Cold 2: worked lines double an index (`d_i^2_i`, `x_{i,2_2}`), deck kit.
+      - Cold 8: the table scrolls out of view while you read the work beside it (stacked
+        at about 980 px wide, and in the app's side pane), class kit.
+      - The board's `dist` (bell curve) still wears the deck look: boxed tags, a grey card
+        (Chance 101, Scroll 81), deck kit.
+      - Cold 5–6: a point style for a centre, a lint for names equal up to case, and a
+        neutral colour for plain `points`, class kit.
+      - Cold 3, 4, 7: three doc lines ("just build" and the storyboard, which list a `calc`
+        reads, `short` in the deck spec).
+      Lean loop: one picture of the centre style for you, then build.
+  - id: N3
+    title: Ship or shelve the starter look (C10n–p)
+    more: |
+      Four blocks of approved mock-ups live only in `out/c10/`: the frame, ink figures, the
+      mint palette, the stipple, bead rings, colour wheel, houses, slope lines, the guided
+      first look. None of it is in the plugin, and its palette and rules differ from the kit's.
+      A 15-minute choice: which pieces become kit items (and at what YAML cost), and which
+      stay as reference. Then one build block per piece.
+  - id: N4
+    title: Token diet for board.md
+    more: |
+      `board.md` is read on every lesson run and is 141 lines over its start, against a budget
+      of 60. Move the adv-only figures (`chance`, `fork`, `strip`) into `adv.md`, keep each word
+      limit in one place (`lint.md`), and lint "adv only" instead of saying it in prose.
+      Measure a cold run's tokens before and after.
+  - id: C10h
+    title: Cold-start exam on two adv lessons
+    more: |
+      As planned, after N4 so the exam measures the leaner skill. Today's Gemini lesson is the
+      first cold data point since 7 Nov: it passed lint, browser and numbers on its own, so the
+      exam can focus on what the gates miss (figure clarity, names, colours).
+  - id: "11"
+    title: Prove it is general
+    more: |
+      Change 11 of the to-do list: rebuild `mx-1-what` and `variance` with the new items and
+      report before/after.
+
+changes:   # docs/todo-draw-math.md, the outer list
+  - {id: "1", name: Kit bug fixes, status: done}
+  - {id: 1b, name: Figure key and pop-ups, status: done}
+  - {id: "2", name: Matrices and vectors from data, status: done}
+  - {id: "3", name: Worked products, status: done}
+  - {id: "4", name: True-colour dots, status: done}
+  - {id: "5", name: Controls explain themselves, status: done}
+  - {id: "6", name: Short legends, status: done}
+  - {id: "7", name: Figure defaults, status: dropped}
+  - {id: "8", name: Layout while scrolling, status: done}
+  - {id: "9", name: Story lints, status: done}
+  - {id: "10", name: Advanced visuals (C10 blocks), status: active}
+  - {id: "11", name: Prove it is general, status: todo}
+
+lanes:
+  - 3D and motion
+  - Words on figures
+  - Look and parts
+  - Chooser and chance
+  - Story and starter look
+  - Exam and after
+  - Next phase
+
+blocks:
+  - id: C10a
+    name: 3D look
+    lane: 3D and motion
+    status: done
+    ships: mockup
+    line: You picked B, SVG with depth cues; it became C10b.
+    more: |
+      Three mock-ups of the stain-plane scene (flat SVG, SVG with depth cues, lit WebGL). Your
+      settings line is in the ledger's Decisions (8 Nov).
+    where: [out/c10/h3d/b2-play.html, out/c10/h3d/compare-3d-looks.png]
+
+  - id: C10b
+    name: 3D figure
+    lane: 3D and motion
+    after: [C10a]
+    status: done
+    ships: plugin
+    commit: 3a568a8
+    line: The `space` figure learners turn, with sheets and drops.
+    more: |
+      Shape B (named vectors). Two review rounds, 8 findings fixed. Made the H&E bench lesson.
+    where: [out/c10/c10b/report.md, out/c10/bench/lesson.html]
+
+  - id: C10c
+    name: Motion, drag
+    lane: 3D and motion
+    after: [C10b, C10i]
+    status: done
+    ships: plugin
+    commit: a25cac3
+    line: Camera glides on a pressed view word; the dragged guess and the split (adv).
+    more: |
+      Every lesson gets the glide, tick fade and smooth run at no YAML cost; `views`, `hunt` and
+      `split` are adv-only. Open: no shipped run moves smoothly yet (it needs a change in the
+      deck kit's `core.js`), C10c 1–4.
+    where: [out/c10/c10c/build/report.md, out/c10/c10c/build/contact-before-after.png]
+
+  - id: C10d
+    name: Word mock-ups
+    lane: Words on figures
+    status: done
+    ships: mockup
+    line: You picked A, twin glow; it became C10e.
+    where: [out/c10/c10d/report.md]
+
+  - id: C10e
+    name: Word links
+    lane: Words on figures
+    after: [C10b, C10d]
+    status: done
+    ships: plugin
+    commit: adbeb22
+    line: "`==pixel==` lights its mark; names on figures become rare."
+    where: [out/c10/c10e/report.md]
+
+  - id: C10i
+    name: The look
+    lane: Look and parts
+    status: done
+    ships: plugin
+    commit: adbeb22
+    line: The approved look is the kit's default for every lesson, plus `quarters`.
+    more: |
+      Half 1 made the look page and the playground shell; half 2 put the look into the kit.
+      Three rulings were never made (see "Waiting on you").
+    where: [out/c10/c10i/index.html, out/c10/c10i/half2/report.md]
+
+  - id: C10f
+    name: Drawn parts
+    lane: Look and parts
+    after: [C10i]
+    status: done
+    ships: plugin
+    commit: 835a9ee
+    line: "`fork` and 9 ink parts on the board; `image.py` refuses maths."
+    more: |
+      Ink on black, your pick. Tried on `fork-good` and `out/c10/c10f/lesson-drops/`.
+      Open items: `docs/issues/class.md`, "The fork and drawn parts".
+    where: [out/c10/c10f/play.html, out/c10/c10f/lesson-drops/lesson.html]
+
+  - id: C10j
+    name: Linked strip
+    lane: Look and parts
+    after: [C10e, C10i]
+    status: done
+    ships: plugin
+    commit: a25cac3
+    line: One shared pointer across tissue, window, table and OD space.
+    more: |
+      Shape C: `strip`, hand-made art checked by `art.py`. Look approved after four rounds; you
+      picked the drawn vector tissue over a pixel grid. Open: C10j 3–7.
+    where: [out/c10/c10j/play.html, out/c10/c10j/lesson-he/lesson.html]
+
+  - id: C10g
+    name: Picture chooser
+    lane: Chooser and chance
+    status: done
+    ships: plugin
+    commit: adbeb22
+    line: "`adv.md`: the idea menu, depth budget and storyboard."
+    where: [out/c10/c10g/play.html, out/c10/c10g/report-build.md]
+
+  - id: C10k
+    name: Chance bench
+    lane: Chooser and chance
+    after: [C10g]
+    status: done
+    ships: plugin
+    commit: adbeb22
+    line: "The `chance` figure: two groups as units, the gap, a ruler of noise steps."
+    more: |
+      Bench: 80 homes, well against piped water (`out/c10/bench-prop/`). Open: Chance 101–107;
+      101 is the old-look bell curve (N2).
+    where: [out/c10/c10k/play.html, out/c10/bench-prop/lesson.html]
+
+  - id: C10l
+    name: Story, context
+    lane: Story and starter look
+    status: done
+    ships: plugin
+    line: Six pieces built and reviewed 13 Nov, with boxed tags retired on boards; committed.
+    more: |
+      Your words picks (12 Nov): short voice by default, the reason inside the line, folds
+      closed, a refresher end scene, transfer as a think stop. Built as six pieces with lints
+      and cases (239/239 class cases pass). The round-3 playground's look is older than C10j
+      and C10n–p and was never judged.
+    parts:
+      - {id: "1", name: voice, status: done}
+      - {id: "2", name: step reason, status: done}
+      - {id: "3", name: folds, status: done}
+      - {id: "4", name: refresher, status: done}
+      - {id: "5", name: transfer stop, status: done}
+      - {id: "6", name: column space, status: done}
+    where: [out/c10/c10l/synthesis.md, out/c10/c10l/r4/]
+
+  - id: C10n
+    name: Starter look
+    lane: Story and starter look
+    after: [C10l]
+    status: done
+    ships: mockup
+    line: The CRISPR starter figure, tuned live; your settings line sent 11 Nov.
+    where: [out/c10/c10n/play.html]
+
+  - id: C10o
+    name: One frame
+    lane: Story and starter look
+    after: [C10n]
+    status: done
+    ships: mockup
+    line: One frame for many figures; you kept the frame and sent three figures back.
+    where: [out/c10/c10o/gallery.html]
+
+  - id: C10p
+    name: Figure fixes
+    lane: Story and starter look
+    after: [C10o]
+    status: done
+    ships: mockup
+    line: Colour at rest, new H&E and PCA, topic-drawn tables; done 12 Nov, mock-up only.
+    more: |
+      Built step by step with you. Kept: the mint set, the stipple, bead rings, colour wheel,
+      slope lines, recorder strip, houses, the guided first look; S6 revamped CRISPR. Dropped:
+      the five first table styles, all of round 2, the skyline. Gate after E1: 0 failures,
+      20 of 20 mutations caught. None of it is in the plugin (N3).
+    parts:
+      - {id: B0, name: groundwork, status: done}
+      - {id: S1, name: slope lines, status: done}
+      - {id: S2, name: recorder strip, status: done}
+      - {id: S3, name: first look, status: done}
+      - {id: B1, name: repairs, status: done}
+      - {id: S4, name: houses, status: done}
+      - {id: S5a, name: leaf, birds, status: done}
+      - {id: S5b, name: bread, seeds, status: done}
+      - {id: E1, name: report, review, status: done}
+      - {id: S6, name: CRISPR revamp, status: done}
+    where: [out/c10/c10p/gallery.html, out/c10/c10p/report.md, out/c10/c10p/decisions.md]
+
+  - id: C10h
+    name: Cold-start exam
+    lane: Exam and after
+    after: [C10k, C10c, C10j]
+    optional_after: [C10f]
+    status: todo
+    ships: none
+    you: study, judge
+    line: A cold agent builds two adv lessons from the plugin alone.
+    more: |
+      First data point, 13 Nov: Gemini 4 Hydrogen high built k-means cold in 546 s and passed
+      lint, browser and numbers (`out/cold-hydrogen/`). Findings: `docs/issues/class.md`, Cold 1–7.
+
+  - id: "11"
+    name: Prove it general
+    lane: Exam and after
+    after: [C10h]
+    status: todo
+    ships: none
+    line: Rebuild `mx-1-what` and `variance` with the new items.
+
+  - id: later
+    name: Films, art, widget
+    lane: Exam and after
+    after: [C10h]
+    status: parked
+    ships: none
+    line: Ask before proposing these blocks.
+
+  - id: N2
+    name: Cold-run fixes
+    lane: Next phase
+    after: [C10i]
+    col: 1
+    edges: false
+    status: next
+    ships: none
+    line: The table that scrolls away, the doubled index, centre style, plain-point colour, three doc lines, and the old-look bell curve.
+
+  - id: N3
+    name: Ship or shelve
+    lane: Next phase
+    after: [C10p]
+    col: 2
+    edges: false
+    status: next
+    ships: none
+    you: decide
+    line: Which C10n–p mock-ups go into the kit.
+
+  - id: N4
+    name: Token diet
+    lane: Next phase
+    after: [C10l]
+    col: 3
+    edges: false
+    status: next
+    ships: none
+    line: board.md is 141 lines over its start; the budget is 60.
+
+pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
+  - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}
+  - {path: plugins/viz-os/skills/class/examples/pca-2-how/lesson.html, yaml: plugins/viz-os/skills/class/examples/pca-2-how/lesson.yaml, kit: true, role: taught lesson, quick check}
+  - {path: plugins/viz-os/skills/class/examples/pca-1-what/lesson.html, yaml: plugins/viz-os/skills/class/examples/pca-1-what/lesson.yaml, kit: true, role: example}
+  - {path: plugins/viz-os/skills/class/examples/pca-3-why/lesson.html, yaml: plugins/viz-os/skills/class/examples/pca-3-why/lesson.yaml, kit: true, role: example}
+  - {path: plugins/viz-os/skills/class/examples/perceptron-trick/lesson.html, yaml: plugins/viz-os/skills/class/examples/perceptron-trick/lesson.yaml, kit: true, role: example}
+  - {path: plugins/viz-os/skills/class/examples/variance/lesson.html, yaml: plugins/viz-os/skills/class/examples/variance/lesson.yaml, kit: true, role: example}
+  - {path: out/cold-hydrogen/k-means-clustering/lesson.html, yaml: out/cold-hydrogen/k-means-clustering/lesson.yaml, kit: true, role: cold Gemini lesson, 13 Nov (k-means)}
+  - {path: out/c10/bench/lesson.html, yaml: out/c10/bench/lesson.yaml, kit: true, role: H&E bench (3D, C10b–c)}
+  - {path: out/c10/bench-prop/lesson.html, yaml: out/c10/bench-prop/lesson.yaml, kit: true, role: proportions bench (chance)}
+  - {path: out/c10/c10f/lesson-drops/lesson.html, yaml: out/c10/c10f/lesson-drops/lesson.yaml, kit: true, role: fork and parts trial}
+  - {path: out/c10/c10j/lesson-he/lesson.html, yaml: out/c10/c10j/lesson-he/lesson.yaml, kit: true, role: strip trial, H&E}
+  - {path: out/c10/c10j/lesson-blur/lesson.html, yaml: out/c10/c10j/lesson-blur/lesson.yaml, kit: true, role: strip trial, blur}
+  - {path: out/c10/c10p/gallery.html, role: current starter-look reference (own frame; mock-up)}
+  - {path: out/c10/c10j/play.html, role: current strip playground}
+  - {path: out/c10/c10n/play.html, role: superseded by the C10p gallery}
+  - {path: out/c10/c10o/gallery.html, role: superseded by the C10p gallery}
+  - {path: out/c10/c10l/r3/play/index.html, role: old look; only its words settings were decided}
+  - {path: out/c10/proto/lesson.html, role: pre-C10 mock-up; old kit, do not copy}
+  - {path: out/c10/leak/lesson.html, role: pre-C10 mock-up; old kit, do not copy}

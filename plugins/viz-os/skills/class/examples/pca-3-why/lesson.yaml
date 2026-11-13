@@ -90,8 +90,10 @@ slides:
               - {vector: [ax, ay], color: accent, name: a, says: how far u goes along PC1, step: 2}
               - {vector: ['u1 - ax', 'u2 - ay'], from: [ax, ay], color: s3, name: b, says: how far u goes along PC2, step: 3}
       - say: How much of u points along PC1? Its dot product with PC1's arrow.
+        why: C stretches each PC part by its own amount.
         add: {calc: {say: u's PC1 part, expr: u1 * v1 + u2 * v2, name: a, fmt: 3}}
       - say: And along PC2, its dot product with PC2's arrow.
+        why: The PC2 part is the rest of u.
         add: {calc: {say: u's PC2 part, expr: u1 * w1 + u2 * w2, name: b, fmt: 3}}
       - think:
           q: 'Square the two parts and add them. What do you get, and why?'
@@ -105,6 +107,7 @@ slides:
       - say: '$C$ times PC1''s arrow is PC1''s arrow, stretched. Divide CD3 parts to read it.'
         add: {calc: {say: PC1's stretch, why: 'This is also the spread along PC1.', expr: (v_cd3 * v1 + c12 * v2) / v1, name: lam1, fmt: 3}}
       - say: PC2's the same way, with PC2's arrow.
+        why: Then both stretches are ready to mix.
         add: {calc: {say: PC2's stretch, expr: (v_cd3 * w1 + c12 * w2) / w1, name: lam2, fmt: 3}}
       - say: '$u$''s two parts stretch by $\lambda_1$ and $\lambda_2$, each weighed by its square.'
         add: {calc: {say: The spread along u from its two parts, why: 'The same as CD3''s spread, {{v_cd3|3}}.', expr: a^2 * lam1 + b^2 * lam2, name: s2u, fmt: 3}}
@@ -118,6 +121,7 @@ slides:
     lead: Our numbers, in the shape of the formula.
     steps:
       - say: The numbers for the flat arrow $u$.
+        why: The same mix then holds for any arrow.
         add:
           assemble:
             say: The spread along any arrow u, split into PC parts
@@ -168,9 +172,11 @@ slides:
       - say: Monocytes c4 and c10 sit far above the middle. The other four sit below.
         mark: [row:3, row:5]
       - say: Multiply each cell's CD3 and CD14 distances, as in part 2.
+        why: Their average is the covariance.
         add: {col: {key: prod13, label: d₁ × d₃, expr: d1 * d3, fmt: 2}}
         mark: col:prod13
       - say: 'Add, divide by $n - 1$. CD19 with CD14 the same way gives {{c23|3}}.'
+        why: C needs the covariance of every pair of markers.
         add: {calc: {say: The covariance of CD3 and CD14, expr: sum(d1 * d3) / (n - 1), name: c13, fmt: 3}}
       - think:
           q: Why are both new covariances negative?
@@ -201,6 +207,7 @@ slides:
     lead: Two scores per cell instead of three markers.
     steps:
       - say: 'A cell''s score on a PC is a dot product with its arrow.'
+        why: Each cell then gets a place on the new axes.
         add: {calc: {say: c4's score on PC2, expr: 'at(d1, 3) * at(e2, 0) + at(d2, 3) * at(e2, 1) + at(d3, 3) * at(e2, 2)', name: z2c4, fmt: 2}}
       - say: Plot every cell by its PC1 and PC2 scores.
         add:
@@ -214,7 +221,7 @@ slides:
               - {ring: ['at(z1, 3)', z2c4], color: accent}
       - think:
           q: Three markers in, two axes out. Did we lose the cell types?
-          a: No. Three clumps remain. PC1 splits T from B; PC2 lifts the monocytes.
+          a: No. Three clumps remain. PC1 splits T from B. PC2 lifts the monocytes.
 
   - type: board
     beat: by-hand
@@ -275,6 +282,10 @@ slides:
       - think:
           q: A paper's PC1 has the opposite signs to yours. Is one of you wrong?
           a: No. Flip the arrow and the scores flip with it. Only the line carries meaning.
+      - think:
+          transfer: face image compression
+          q: Face photos, one column per pixel. What does keeping a few PCs do?
+          a: A few PCs rebuild each face, losing the dropped stretches. One odd photo can drag PC1.
 
   - type: recap
     answer: Any arrow splits into PC parts whose squares add to 1, and its spread mixes their stretches. All on PC1 wins.

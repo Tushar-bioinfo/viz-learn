@@ -1,0 +1,30 @@
+# expect: builds
+# expect: not: refresher needs
+# expect: not: no step links here
+# expect: not: a refresher sits at the end
+# expect: not: the `next` tease is the last scene
+# C10l refresher: a step links to an end scene after `next`. The page draws it (checked in the browser).
+title: A good refresher
+question: Where does a refresher go?
+answer: At the end, linked from the step that needs it.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: We compare each cell with the middle of the column.
+        refresh: mean-refresher
+  - type: board
+    beat: next
+    title: Next
+    steps:
+      - say: Next time, the spread around that middle.
+  - type: board
+    id: mean-refresher
+    beat: refresher
+    title: 'The mean: one middle for a column'
+    ask: Rusty on the mean?
+    lead: A side note. One number stands for the whole column.
+    steps:
+      - say: Add every number in the column, then divide by how many there are.

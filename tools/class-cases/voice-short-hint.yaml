@@ -1,0 +1,13 @@
+# expect: `say` has 15 words (≤ 14): one teacher line is one breath
+# expect: ask the learner for the full voice
+# C10l voice: with no voice the short limits hold, and the message names the full voice as the learner's choice.
+title: A long short-voice line
+question: What if a short-voice line runs long?
+answer: The lint names the full voice.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Too many words
+    steps:
+      - say: The mean of these cells is the sum of every level divided by the cells

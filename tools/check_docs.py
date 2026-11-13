@@ -38,7 +38,7 @@ def fields():
 
 
 def known():
-    return (lesson_lint.BEATS | lesson_lint.STEP | lesson_lint.ITEMS | set(lesson_lint.PLANE) | set(lesson_lint.SPACE)
+    return (lesson_lint.LESSON_BEATS | lesson_lint.STEP | lesson_lint.ITEMS | set(lesson_lint.PLANE) | set(lesson_lint.SPACE)
             | lesson.TOP_EXTRA | lesson.BOARD - {"assemble"} - lesson.ADV)
 
 

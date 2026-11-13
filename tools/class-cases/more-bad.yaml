@@ -1,0 +1,31 @@
+# expect: `more` is `{ask, answer, sources}`
+# expect: ask “The reason” is the learner's question, ending in `?`
+# expect: `more` has no field `extra`
+# expect: `url` is a full https:// link
+# expect: needs `title`, `url` and `why`
+# expect: each open extra reading
+# expect: `more` joins two thoughts with “;”
+# expect: `more` has a sentence of 25 words (≤ 24)
+# C10l folds: the fold's shape, its sources and one step fold a scene.
+title: Bad folds
+question: What makes a fold wrong?
+answer: Its shape.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Folds gone wrong
+    sources:
+      - {title: No link}
+    steps:
+      - say: First line.
+        more: just text
+      - say: Second line.
+        more:
+          ask: The reason
+          extra: 1
+          answer:
+            - It adds up; it does not cancel.
+            - We add every one of the numbers in the column and then we divide that whole total by how many numbers there were in it.
+          sources:
+            - {title: A page, url: 'http://example.com', why: none}

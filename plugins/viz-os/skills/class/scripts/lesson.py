@@ -21,7 +21,7 @@ import strip  # noqa: E402
 
 # a board scene: one stretch of the page, its steps written beside a pinned table or a figure (board.md)
 ADV = {"idea", "see", "shows"}   # an adv scene's picture plan (adv.md, not board.md)
-BOARD = {"beat", "table", "steps", "assemble"} | ADV
+BOARD = {"beat", "table", "steps", "assemble", "sources", "ask"} | ADV
 TOP_EXTRA = {"series", "episode", "recall", "home"}
 NOT_PROSE_EXTRA = {"mark", "beat", "col", "row", "lhs", "toggle", "when", "idea", "see", "shows"}
 RECALL_TITLE, RECALL_MAX = "Before we start: from last time", 5

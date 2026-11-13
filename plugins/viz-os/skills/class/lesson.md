@@ -36,6 +36,7 @@ The lint checks the ends: `plan` first, a `problem` before any `formula`, `limit
 | `compare` | Puts two cases side by side so one difference stands out. Optional. | `compare` |
 | `misconception` | Names a wrong idea a learner is likely to hold, shows why it fails, gives the right one. Optional. | `compare` (bad, good), a think stop |
 | `aside` | One short detour the learner will want: a name's history, a common variant. Optional; keep it to 2–3 steps. | `note` |
+| `refresher` | An earlier idea the lesson leans on, taught again for a learner who has lost it. It sits after `next`, and the step that needs it links to it with `refresh` (`board.md`, Refreshers). Optional; not counted in the scenes. | the figure of the idea |
 
 Leave out a middle beat the topic does not need, and say so in the reply. Never leave out `by-hand`, `formula` (when the topic has a formula), or `limits`.
 
@@ -73,22 +74,26 @@ Pick the moves the topic needs; this is a menu, not a template. Each line says w
 18. **Limitation as its own beat.** Always: one whole scene, on the same data.
 19. **Simplify first.** The method has several parameters. Freeze all but one, learn that one, then free the rest ("fix the slope and learn only the offset").
 20. **Show the change, don't name it.** When a step changes a colour, a count or a place, draw before and after: a colour as dots in their true colour (`rgb:`), a count as `units`, a place as plane marks.
+21. **Transfer stop.** Always, once, in the last third: a `think` with `transfer: <field>` that asks where the same move works in another field. The question gives the other case's input; the answer says what carries over and one place it breaks ("One bad well would dominate it, as here"). The page tags it **Elsewhere**.
 
 ## 5. Voice
 You are a teacher at a whiteboard talking to one student. Each step's `say:` is the one line you would say while writing.
 
 - **One breath per step.** The lint counts the words (`board.md`; a sketch's limit is in `page.md`). Short sentences. Active voice. Keep lines about even in length.
+- **The full voice** (`learner.voice: full`, only when the learner asked for it) gives a step 2 or 3 short sentences: what we do, why, and what it means. It writes more sentences, not longer ones. Join them with a word (So, But, Because, Notice), never with ";".
 - **Say only what helps.** Cut "Here is", "Now" and "as we did". Cut a line that only repeats the title or the card under it, and a note that repeats its line. If a step has nothing left to say, merge it with the next.
 - **On a board, write a symbol as math**: `$w_0$`, not w0, so it takes its colour. The lint warns on a bare name.
 - **Name each figure mark with a linked word** (`==label==`, `board.md`): the word takes the mark's colour and lights it, so the figure needs no text on it.
-- **Say what you are doing, then why**: "Square each distance. Now every one counts, and far cells count most."
+- **Say what you are doing, then why**: the `say` is what we do ("Square each distance."), the step's `why` is the reason ("Now every one counts, and far cells count most."). The lint asks for a `why` on every step that computes.
 - **Use the learner's words**: "cells", "CD3 level", "counts", not "observations" or "the random variable".
-- **Define a term once**, the first time, as plain words then the term: "how far a cell sits from the mean (its deviation)".
+- **Define a term once**, the first time, as plain words then the term: "how far a cell sits from the mean (its deviation)". A fold (`more`) is read on its own: define its terms again inside it.
+- **An old idea goes in a refresher**, not in the story: when a step leans on something the learner may have lost (a cosine, a mean), link a refresher at the end, and keep the step's own line about this lesson.
+- **Depth goes in a fold**, not in the line: the line says what we do and why; a step's `more` answers the next question a curious learner would ask (`board.md`, Extra reading).
 - **Read the board aloud**: name the cell, the column, the number on screen. "c5 sits 2.4 above the mean." Numbers come from `{{…}}`, never typed.
 - **A think question is a real question**: it has one short answer the learner can reach from what is on the board. "Which cell sits farthest from the mean?" not "What do you think?".
 - **A think answer gives the answer and its reason** in one or two sentences.
 - **No hype, no filler**: no "amazing", "simply", "just", "as you can see".
-- **No made-up shorthand.** A label is a plain phrase, never two made-up names joined by a colon ("Red steps: red part"). Two symbols written differently never share a `short`.
+- **No made-up shorthand.** A label is a plain phrase, never two made-up names joined by a colon ("Red steps: red part"). Two symbols written differently never share a `short`. Name a thing by the field's own term, in plain words first ("every mix of H and E, the column space"; "what is left over, the residual"), never by a nickname made up for this lesson: the learner meets the real term in every other text.
 - **Say what just happened, not what to do.** "The area falls to 0.75 as the angle grows", not "Press play and watch the area".
 
 ## 6. Pacing
@@ -125,7 +130,7 @@ Open `snaps/desktop.png` (one photo per scene, each at its last step) and `snaps
 7. Is there a think stop before the hardest step? Does each think answer give a reason?
 8. Does the limits scene use the lesson's own data?
 9. Does the summary answer the opening question in the opening question's words?
-10. Does at least one question come from an angle the lesson did not take: an interview question, a different field, a reversed question?
+10. Does at least one question come from an angle the lesson did not take: an interview question, a reversed question? Does the transfer stop name a real field, and does its answer say what carries over and where it breaks?
 11. Could a learner redo the by-hand scene on a new table of 3 rows, from the page alone?
 
 If question 6 or 11 fails, the lesson does not teach yet: add the missing by-hand step, not more prose.

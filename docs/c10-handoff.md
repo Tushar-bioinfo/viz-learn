@@ -2,21 +2,8 @@
 
 The user starts a new chat per block with the strong model (Fable, high) and says "work on C10i" (or another block). You run that one block as orchestrator. Read this once, then [c10-visuals.md](c10-visuals.md) (the ledger: blocks, status, State now, Decisions, the loop), then only your block's rows in the design, [c10-plan-v2.md](c10-plan-v2.md). The ledger is the truth; this file gives the why, the sources and who does what. Written 9 Nov 2026 (plan v2).
 
-## Where we are (10 Nov)
-| Block | State |
-|---|---|
-| C10a 3D look, C10b build `space` | done, committed (3a568a8) |
-| C10d word-link mock-ups | done and approved: look A, twin glow, `==pixel==` syntax |
-| C10e build word links | done and approved 9 Nov; committed (adbeb22) |
-| C10i look and playground shell | half 1 done 9 Nov (the user picked the look); half 2 done and approved 10 Nov (the look is the kit's default; `quarters` mark); committed (adbeb22) |
-| C10g chooser (adv) | done and approved 9 Nov; committed (adbeb22) |
-| C10k proportions bench and the `chance` figure | done and approved 10 Nov (public-health toy: 80 homes, well against piped water; bench `out/c10/bench-prop/`); committed (adbeb22) |
-| C10c motion and hands-on | done and approved 10 Nov (camera glide on a pressed view word, tick fade, smooth run for every lesson; adv-only `views`, `hunt`, `split`; tried on the H&E bench); committed with C10j (12 Nov) |
-| C10j linked strip | done 12 Nov: look approved, built in `plugins/` as shape C (`strip`, `art.py`), tried on the H&E and blur test lessons; committed with C10c (12 Nov) |
-| C10f drawn parts (**next**) | todo |
-| C10h cold-start exam on two lessons | last |
-
-C10e, C10g, C10i and C10k were committed together in adbeb22 (10 Nov); C10c and C10j together on 12 Nov; neither is pushed. Still uncommitted in the tree: the user's own `docs/release.md`, `docs/update.md`, `tools/update*.py` and `tools/test_update.py`. Leave the user's files alone. Commit only when the user says.
+## Where we are
+Status lives in one place: [map.yaml](map.yaml), drawn by `python3 tools/block_map.py --check` (see the ledger's "Where we are"). Commits so far: 3a568a8 (C10b), adbeb22 (C10e, C10g, C10i, C10k), a25cac3 (C10c, C10j), 835a9ee (C10f); none pushed. Leave the user's own uncommitted files alone (`docs/release.md`, `docs/update.md`, `tools/update*.py`, `tools/test_update.py`). Commit only when the user says.
 
 ## What the user wants (their words, 8–9 Nov, condensed)
 - **Agents that choose the visual that builds the right intuition:** geometric, plain logic, an analogy, or a small worked example. The picture is chosen for the idea, not decoration. Lessons should not all show the same kinds of figure.
@@ -39,8 +26,8 @@ You are the costly model. Your work is to decide, write short briefs, look at sc
 | Reading many files or pages, finding where something lives, browsing references, taking and sorting screenshots, counting tokens, digesting a chat, first-pass checks | Terra 6.1 high | `--to codex --model gpt-6.1-terra --effort high` (`--role reviewer` when it must not edit) |
 | Code review, in proportion (ledger, "Who does what") | Terra 6.1 high, or Grok 4.7 high when the user says | `--to codex --model gpt-6.1-terra --effort high --role reviewer`; `--to grok --model grok-4.7 --effort high --role reviewer`; a second round resumes each with `--session` |
 | Deep research or repo clean-up | Sol 6.1 xhigh | `--to codex --model gpt-6.1-sol --effort xhigh` |
-| Second eye on design, new ideas (on trial in C10i) | Gemini 4 Argon high | `--to agy --model gemini-4-argon-high --effort high --role reviewer` |
-| The user's map artifact (link under Sources) | an in-chat Opus subagent, which has the Artifact tool | update in place, same link, at a block's end |
+| Second eye on design, new ideas (untried: the user skipped the C10i trial, 9 Nov) | Gemini 4 Argon high | `--to agy --model gemini-4-argon-high --effort high --role reviewer` |
+| The user's map artifact (URL in `map.yaml`) | you | update `docs/map.yaml`, run `python3 tools/block_map.py --check`, republish `out/map/index.html` to the same URL with the Artifact tool (read it first in a new chat) |
 | **You, by hand** | the look page in C10i; a mock-up that failed your gate twice; the ledger and this file | — |
 | Visual choices, approvals | the user | a playground and its settings line |
 
@@ -95,4 +82,4 @@ Only the user reviewed the look before; now you do first. Open the screenshots a
 Read reports and the ledger; open source files only for the span you need.
 
 ## Your loop
-Follow "The loop for every block" in the ledger. At a block's end: set its status, add a Decisions line, update State now, refresh this file's "Where we are", and have a subagent bring the map artifact up to date.
+Follow "The loop for every block" in the ledger. At a block's end: update the block in `map.yaml`, add a Decisions line in the ledger, rebuild and republish the map.

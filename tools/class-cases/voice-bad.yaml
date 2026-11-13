@@ -1,0 +1,13 @@
+# expect: `voice: 'long'` is `short`
+# C10l voice: only short and full exist.
+title: A bad voice
+question: Which voices exist?
+answer: Short and full.
+learner: {voice: long}
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Two voices
+    steps:
+      - say: The mean is the sum divided by the count.

@@ -1,0 +1,36 @@
+# expect: a transfer stop in scene 1 of 3: put it in the last third
+# expect: `transfer` is 11 words (≤ 6)
+# expect: `think` has no field `hint`
+# expect: `transfer` names the other field in a few words
+# C10l transfer: the stop's place in the lesson, its field name and the think's fields.
+title: Bad transfers
+question: Where does a transfer stop go?
+answer: Near the end.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Too soon
+    steps:
+      - think:
+          transfer: the spread of tablet weights in one batch from a factory
+          q: Where else would we measure spread like this?
+          a: Tablet weights in a batch.
+      - think:
+          transfer: 3
+          q: A second one?
+          a: No.
+      - think:
+          q: A third one?
+          a: No.
+          hint: none
+  - type: board
+    beat: summary
+    title: The answer
+    steps:
+      - say: Spread is one number.
+  - type: board
+    beat: next
+    title: Next
+    steps:
+      - say: Next time, two markers.

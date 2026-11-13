@@ -17,7 +17,27 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `no lead` | one short line linking the scene to the last |
 | `N steps (≤ 10)` | split the scene |
 | `6 steps in a row with no think stop` | add a `think` step |
-| `` `say` has N words (≤ 14) ``; also `think q` and an item's `say` (≤ 14), `note` (≤ 16), `think a` (≤ 18) | cut it, or move the rest to the next step |
+| `` `say` has N words (≤ 14) ``; also `think q` and an item's `say` (≤ 14), `note` (≤ 16), `think a` (≤ 18) | cut it, or move the rest to the next step. Lift the limits only when the learner asked for the full voice |
+| `` `say` has N words (≤ 50 in the full voice) ``; also `think q` (≤ 24), `think a` (≤ 40), `note` (≤ 30) | split it over two steps |
+| `` `say` has a sentence of N words (≤ 24) `` | the full voice writes more sentences, not longer ones: split the sentence |
+| `` `say` joins two thoughts with “;” `` | write two sentences, joined by a word such as So, But or Because |
+| `` this step works a `calc` but never says why `` (or a `col`, an `assemble`) | add `why:` to the step: the reason we do it, or what it lets us do next, in 12 words or fewer. A `calc`'s own `why` counts |
+| `` `why` is the reason at the end of the step's `say` `` | give the step a `say`; write `why` as one line of text |
+| `` `why` has N words (≤ 12) `` | cut it to the reason alone; the step's `say` holds what we do |
+| `` steps N, M each open extra reading `` | keep one step `more` a scene; move the rest into the scene's `more` |
+| `` `more` is `{ask, answer, sources}` `` / `` `more` has no field … `` | write the question as `ask`, the paragraphs as `answer`, any pages as `sources` |
+| `` `more` ask … ending in `?` `` / `` `more` ask has N words `` | the fold's label is the learner's question, 14 words at most |
+| `` `more` holds N words (≤ 160) `` / `` `more` has a sentence of N words `` | keep the reason that matters most, in short sentences; point to a source for the rest |
+| `` a refresher needs `ask:` `` / `` `ask` is the link line of a `refresher` scene `` | give the refresher its link line as a question ("Rusty on the mean?"); only a `beat: refresher` scene has one |
+| `` `refresh: X` names no scene `` / `` links to a `… ` scene `` / `` links back to an earlier scene `` | `refresh` names the `id` of a `beat: refresher` scene placed after `next` |
+| `` a refresher sits at the end `` | move the refresher scene after the `next` scene, so the story runs on without it |
+| `` no step links here `` | add `refresh: <id>` to the step that first needs the idea, or delete the refresher |
+| `` no transfer stop `` | near the end, add a `think` with `transfer: <field>` that asks where the same move works in another field |
+| `` a transfer stop in scene N of M `` | move it to the last third of the lesson, once the method is known |
+| `` `transfer` is N words `` / `` `transfer` names the other field `` | name only the field ("replicate wells on a plate"); the case goes in the question |
+| `` `think` has no field … `` | a think takes `q`, `a`, `set` and `transfer` |
+| `` … needs `title`, `url` and `why` `` / `` `url` is a full https:// link `` | each source is a page you opened: its title, its https link, and what the reader gets from it |
+| `` `voice: …` is `short` … or `full` `` | set `learner.voice` to `short` or `full`, or leave it out for short |
 | `` `beat` is …; use one of … `` | a beat from the list above |
 | `unknown step field` / `a step needs say` | steps take `say`, `add`, `mark`, `think`, `frame` |
 | `` `calc` has no field X `` (also `col`, `eqn`, `assemble`, `params`) | a comma inside an unquoted `{ }` value split it into a second key: quote the value |

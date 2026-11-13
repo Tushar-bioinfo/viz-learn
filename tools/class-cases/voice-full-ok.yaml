@@ -1,0 +1,16 @@
+# expect: not: words (≤
+# expect: not: has a sentence of
+# expect: not: joins two thoughts
+# C10l voice: the full voice lets a line hold 2 or 3 short sentences, so the short limits do not apply.
+title: A full teacher line
+question: What may a line hold in the full voice?
+answer: Two or three short sentences.
+learner: {goal: intuition+hand, knows: [mean], anchors: [flow cytometry], voice: full}
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Three short sentences
+    steps:
+      - say: We add every cell's level and divide by the number of cells. That gives the mean. So one number now stands for the whole column.
+        think: {q: Why divide by the number of cells and not by something else in the table?, a: Because the sum grows with every cell we add. Dividing by the count turns the total into a typical level for one cell.}

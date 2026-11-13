@@ -107,12 +107,15 @@ slides:
       cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}]
     steps:
       - say: Add the six CD3 levels and divide by six. That is the mean.
+        why: Every distance is measured from this middle.
         add: {calc: {say: The mean, expr: mean(cd3), name: xbar, fmt: 2}}
         mark: col:cd3
       - say: 'How far does c1 sit from the mean, {{xbar|2}}?'
+        why: One cell first, so the recipe is clear.
         add: {calc: {say: How far c1 sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
         mark: row:0
       - say: Do the same for every cell. Cells below the mean get a minus sign.
+        why: The spread needs every cell's distance.
         add: {col: {key: dev, label: distance, expr: cd3 - xbar, fmt: 2}}
         mark: col:dev
       - think:
@@ -130,6 +133,7 @@ slides:
       cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: dev, label: distance, expr: cd3 - xbar, fmt: 2}]
     steps:
       - say: Square each distance. Minus signs vanish, and every cell adds to the spread.
+        why: So far-off cells count most in the spread.
         add: {col: {key: sq, label: squared, expr: (cd3 - xbar)^2, fmt: 4}}
         mark: col:sq
       - think:
@@ -137,6 +141,7 @@ slides:
           a: '{{far_sq / at(sq, 2)|0}} times: {{far_sq|4}} against {{at(sq, 2)|4}}. Squares make far cells count much more.'
         mark: row:1
       - say: Add the six squares. This is the sum of squares.
+        why: Dividing this total next gives a typical square.
         add: {calc: {say: Sum of squares, expr: sum(sq), name: ss, fmt: 3}}
         mark: col:sq
       - say: Divide by one less than the number of cells. That is the variance.
@@ -179,6 +184,7 @@ slides:
     lead: Every symbol in the formula is a number we already worked.
     steps:
       - say: Our numbers, in the shape of the formula.
+        why: The same recipe then works for any set of cells.
         add:
           assemble:
             say: The variance of our six T cells
@@ -230,7 +236,7 @@ slides:
     title: Back to the two donors
     lead: Now the second number can tell them apart.
     steps:
-      - say: The same recipe on both donors. The means match; the variances do not.
+      - say: The same recipe on both donors. The means match. The variances do not.
         add:
           compare:
             a: {title: Donor A, tone: good, text: Cells close to the mean., visual: {stat: {value: '{{sA|3}}', label: variance of CD3, sub: 'mean {{mA|2}}'}}}
@@ -286,7 +292,11 @@ slides:
       - say: 'Mix the types: the variance of all twelve is {{s2_all|2}}, {{all_ratio|0}}× the T cells''.'
       - think:
           q: So is that big all-cell variance noise?
-          a: No, it is groups. Variance assumes one group around one middle; gate first, then measure spread.
+          a: No, it is groups. Variance assumes one group around one middle. So gate first, then measure spread.
+      - think:
+          transfer: factory quality control
+          q: Bolt lengths from one machine. What does variance tell the factory?
+          a: How evenly the machine cuts, in squared units. One jammed bolt would dominate it, as here.
 
   - type: recap
     answer: Variance is the average squared distance from the mean, with n − 1 at the bottom.

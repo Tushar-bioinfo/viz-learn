@@ -1,0 +1,23 @@
+# expect: builds
+# expect: not: `more`
+# expect: not: sources`
+# C10l folds: a step fold and a scene's Context and limits, with sources, build and check clean.
+title: Extra reading
+question: Where does extra reading go?
+answer: In closed folds.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Two folds
+    more: The mean moves toward a far value. The median does not.
+    sources:
+      - {title: Mean (Wikipedia), url: 'https://en.wikipedia.org/wiki/Mean', why: Kinds of mean and what each is for.}
+    steps:
+      - say: The mean is the sum divided by the count.
+        more:
+          ask: Why divide by the count?
+          answer:
+            - The sum grows with every cell we add. Dividing by the count gives a typical value for one cell.
+          sources:
+            - {title: Arithmetic mean (Wikipedia), url: 'https://en.wikipedia.org/wiki/Arithmetic_mean', why: The definition and a worked example.}

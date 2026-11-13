@@ -1,0 +1,33 @@
+# expect: a refresher needs `ask:`
+# expect: `ask` is the link line of a `refresher` scene
+# expect: `refresh: nowhere` names no scene
+# expect: `refresh: early` links to a `problem` scene
+# expect: a refresher sits at the end, after the `next` tease
+# expect: no step links here: add `refresh: lonely`
+# C10l refresher: its link line, what a step may link to, and its place at the end.
+title: Bad refreshers
+question: What makes a refresher wrong?
+answer: Its place and its link.
+slides:
+  - type: title
+  - type: board
+    id: early
+    beat: problem
+    title: The problem
+    ask: Is this a link line?
+    steps:
+      - say: First line.
+        refresh: nowhere
+      - say: Second line.
+        refresh: early
+  - type: board
+    id: lonely
+    beat: refresher
+    title: A refresher too soon
+    steps:
+      - say: A side note on means.
+  - type: board
+    beat: next
+    title: Next
+    steps:
+      - say: Next time, the spread.

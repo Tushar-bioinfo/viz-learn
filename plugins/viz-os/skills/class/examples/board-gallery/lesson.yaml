@@ -95,18 +95,31 @@ slides:
       cols: [{key: id, label: cell}, {key: cd3, label: CD3}]
     steps:
       - say: 'Start from the mean, {{xbar|2}}. How far does c1 sit from it?'
+        why: Spread is about how far cells sit from their centre.
         add: {calc: {say: How far c1 sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
         mark: row:0
       - say: Do the same for every cell. Some are below the mean, some above.
+        why: One cell cannot show the spread of all six.
         add: {col: {key: dev, label: distance, expr: cd3 - xbar, fmt: 2}}
         mark: col:dev
       - think:
           q: Why not add the distances up as they are?
           a: 'They cancel: the sum is {{sum_dev|2}}. The mean sits where the pluses and minuses balance.'
-      - say: Square each distance. Now every one counts, and far cells count most.
+      - say: Square each distance.
+        why: Now every one counts, and far cells count most.
         add: {col: {key: sq, label: squared, expr: (cd3 - xbar)^2, fmt: 2}}
         mark: col:sq
       - say: Add the squares, then divide by one less than the number of cells.
+        why: That turns the total into a typical squared distance.
+        more:
+          ask: Why one less than the number of cells, and not all six?
+          answer:
+            - We measured each distance from our own mean, not from the true mean of all cells. Our mean sits in the middle of our six, so the distances to it come out a little too small.
+            - Dividing by one less makes up for that on average. This fix is called Bessel's correction. It is only needed when the true mean is unknown, which is almost always.
+          sources:
+            - title: Bessel's correction (Wikipedia)
+              url: https://en.wikipedia.org/wiki/Bessel%27s_correction
+              why: A worked example where the sample mean gives a smaller variance, and why n − 1 corrects it.
         add:
           - {calc: {say: Sum of squares, expr: sum(sq), name: ss, fmt: 2}}
           - {calc: {say: The variance, expr: ss / (n - 1), name: s2, fmt: 2}}
@@ -139,6 +152,7 @@ slides:
     lead: Every symbol in the formula is a number we already worked.
     steps:
       - say: Our numbers, in the shape of the formula.
+        why: Each symbol then holds a number we already worked.
         add:
           assemble:
             say: The variance of our six cells
@@ -227,7 +241,7 @@ slides:
       pw1: at(w1_trace, t - (t > 0))
       pw2: at(w2_trace, t - (t > 0))
     steps:
-      - say: A first guess. ==called T:Shaded== cells are called T; the ring marks a wrong one.
+      - say: A first guess. ==called T:Shaded== cells are called T. The ring marks a wrong one.
         add:
           - {params: {say: 'The line, at this update', names: [w0, w1, w2]}}
           - plane:
@@ -301,6 +315,10 @@ slides:
       - think:
           q: A sample mixes T cells and B cells. Is its large CD3 variance noise?
           a: No, it is two groups. Variance assumes one group around one middle.
+      - think:
+          transfer: replicate wells on a plate
+          q: One sample sits in six wells. What does their variance measure?
+          a: How much the method wobbles on one sample. One bad well would dominate it, as here.
 
   - type: recap
     answer: Variance is the average squared distance from the mean, with n − 1 at the bottom.

@@ -1,5 +1,5 @@
 # expect: clean
-# A full small lesson on the mean that passes every rule, including the browser check.
+# A full small lesson on the mean that passes every rule, including the browser check (with C10l's step reasons and transfer stop).
 title: Where the mean sits
 subtitle: Three cells, one middle
 question: Where does the mean sit among these cells?
@@ -68,8 +68,10 @@ slides:
       cols: [{key: cell, label: cell}, {key: cd3, label: CD3}]
     steps:
       - say: Add the three CD3 levels.
+        why: The total holds every cell once.
         add: {calc: {say: Sum of CD3, expr: sum(cd3), name: tot}}
       - say: 'Divide that sum by the number of cells, {{n}}.'
+        why: Sharing the total gives one level per cell.
         add: {calc: {say: The mean, expr: tot / n, name: xbar}}
       - think:
           q: Why divide by the number of cells?
@@ -81,6 +83,7 @@ slides:
     lead: Each symbol is a number we made.
     steps:
       - say: Our numbers, in the shape of the formula.
+        why: Each symbol then points at a number we made.
         add:
           assemble:
             say: The mean of our three cells
@@ -103,6 +106,10 @@ slides:
       - think:
           q: Two groups share one mean. Is that middle real?
           a: No. It can sit between the groups.
+      - think:
+          transfer: replicate wells on a plate
+          q: One sample sits in three wells. What does their mean give?
+          a: One reading for the sample. A bad well still pulls it, as here.
 
   - type: recap
     answer: The mean is the sum of the levels divided by the number of cells.

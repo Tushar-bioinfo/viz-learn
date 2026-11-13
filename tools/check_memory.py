@@ -41,6 +41,15 @@ def tests():
     kept = [ln for ln in PROFILE.read_text().splitlines() if not ln.startswith("history:")]
     yield "learner: one history line, home set, comments kept, rerun unchanged", (
         once == twice and once.count("topic: variance") == 1 and "home: home/cells.json" in once and all(ln in once for ln in kept))
+    shutil.copy(PROFILE, HOME / "learner.yaml")
+    run("memory.py", "learner", "--voice", "full")
+    full = (HOME / "learner.yaml").read_text()
+    run("memory.py", "learner", "--voice", "short")
+    short = (HOME / "learner.yaml").read_text()
+    code, _ = run("memory.py", "learner", "--voice", "loud")
+    yield "learner: --voice sets one `voice:` line, keeps the rest, refuses other voices", (
+        full.count("\nvoice: full") == 1 and short.count("\nvoice: short") == 1 and "voice: full" not in short and code != 0
+        and all(ln in short for ln in PROFILE.read_text().splitlines()))
     import yaml
     ok = True
     for ind in ("", "  "):   # a history list written at column 0 or indented, with a wrapped block entry

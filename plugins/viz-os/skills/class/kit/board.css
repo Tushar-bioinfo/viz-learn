@@ -22,7 +22,30 @@ html.ls-page .s-title .question .qt { font-size: 26px; }
 html.ls-page .s-recap .recap { flex: none; }
 /* a deck slide between scenes expects a tall box */
 html.ls-page .slide:not(.s-board, .s-title, .s-recap) { height: 720px; }
-.lsmore { padding: 16px 24px; font-size: 20px; line-height: 1.4; display: flex; flex-direction: column; gap: 8px; }
+/* extra reading: a closed fold, its question beside a + box; open, a quiet column of paragraphs and sources */
+details.lfold { margin: 10px 0 0; }
+details.lfold.lsmore { margin: 28px 0 0; }
+details.lfold > summary { display: flex; gap: 8px; align-items: baseline; width: fit-content; list-style: none; cursor: pointer; font: 500 15px/1.4 var(--f-mono); color: var(--mist); }
+details.lfold > summary::-webkit-details-marker { display: none; }
+details.lfold > summary:hover { color: var(--ink); }
+details.lfold > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.lbox { flex: none; width: 17px; height: 17px; box-sizing: border-box; display: inline-grid; place-items: center; transform: translateY(2px); border: 1px solid var(--thin); font: 600 14px/1 var(--f-mono); color: var(--mist); }
+.lbox::before { content: "+"; }
+details[open] > summary .lbox { border-color: var(--accent); color: var(--accent); }
+details[open] > summary .lbox::before { content: "\2212"; }
+.lfb { max-width: 46em; margin-top: 6px; padding: 2px 0 2px 14px; border-left: 2px solid var(--line-dim); font-size: 17px; line-height: 1.55; color: var(--mist); }
+.lfb p { margin: 0 0 10px; }
+.lfb p.lsrc { font-size: 16px; }
+.lfb p.lsrc + p.lsrc { margin-top: -4px; }
+.lread { font: 600 15px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+.lfb a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.lfb a:hover { text-decoration-color: var(--accent); }
+/* the Study switch, fixed at the lower left: open or close every fold */
+#lsstudy { position: fixed; left: 10px; bottom: 10px; z-index: 21; display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: var(--bg); border: 1px solid var(--line-dim); font: 500 14px var(--f-mono); color: var(--mist); }
+#lsstudy .sl { font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+#lsstudy button { padding: 2px 8px; background: transparent; border: 1px solid var(--line); color: var(--ink); font: 600 14px var(--f-mono); cursor: pointer; }
+#lsstudy button:hover { border-color: var(--accent); color: var(--accent); }
+.no-anim #lsstudy { display: none; }
 
 /* the top bar shows how far down the page you are; the rail steps a scene at a time */
 #lsbar { position: fixed; top: 0; left: 0; height: 4px; width: 0; background: var(--accent); z-index: 20; }
@@ -130,6 +153,7 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board .st.now .cline .num { background: var(--accent); border-color: var(--accent); color: var(--on); }
 .board .cline .say { font-size: 18px; font-weight: 400; line-height: 1.5; }
 .board .cline .cwhy { font-size: 18px; line-height: 1.5; }
+.board .st .say > .swhy { color: var(--mist); }
 .board .cline .math { font-size: 29px; }
 .board .lt.tc { color: var(--tc); }
 /* a piece of a formula never breaks across rows; board.js shrinks it to fit */
@@ -487,3 +511,35 @@ html.ls-page .board .bi.fork { padding: 8px; box-sizing: content-box; max-width:
 .board .fork .fh { fill: transparent; cursor: pointer; outline: none; pointer-events: all; }
 .board .fork .fh:focus-visible { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 4; }
 .board .bi.fork.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
+
+/* a refresher link under a step's line, and the button back from the end scene */
+.board .st .lref { margin: 4px 0 0; font: 15px/1.4 var(--f-mono); color: var(--mist); }
+.board .st .lref a { color: var(--accent); text-decoration: none; margin-left: 4px; }
+.board .st .lref a:hover { text-decoration: underline; }
+#lsback { position: fixed; left: 10px; top: 14px; z-index: 30; font: 14px var(--f-mono); color: var(--ink); background: var(--surf2); border: 2px solid var(--accent); padding: 8px 14px; cursor: pointer; }
+#lsback[hidden] { display: none; }
+.no-anim #lsback { display: none; }
+
+/* a transfer stop: the same move in another field, named before the question */
+.board .think.ttr .tfield { color: var(--mist); }
+
+/* no tags on a board (the user, 13 Nov: "I thought these label tags on stuff were retired"). The deck draws a label, a
+   shape, an eyebrow and the "New notation" key as a small boxed chip; on a board each is plain text: no border, ground or
+   hard shadow. The scene chip in the head stays (it sits outside .board). lesson.js audits it: a boxed tag is a warning */
+.board .eyebrow, .board .wtag, .board .lg-tag { background: none; border: 0; box-shadow: none; padding: 0; transform: none; }
+.board .eyebrow { font-size: 15px; color: var(--mist); letter-spacing: .08em; }
+.board .shape { background: none; border: 0; padding: 0; font-size: 17px; color: var(--mist); }
+.board .shape.out { color: var(--accent); }
+.board .imgbox .il, .board .imgbox .il.now { background: none; border: 0; box-shadow: none; padding: 0; font-size: 22px; font-weight: 700;
+  text-shadow: 0 0 6px var(--bg), 0 0 3px var(--bg); }
+.board .imgbox .il.now { color: var(--accent); }
+.board .notation .wtag { display: none; }
+.board .notation .nt { background: none; border: 0; padding: 0; }
+.board .notation .nt .nw::before { content: "= "; }
+
+/* the step card breathes: room inside the frame and between its parts */
+.board .bops .opcard { padding: 30px 34px 32px; }
+.board .bops .opcard .ok { gap: 18px; }
+.board .bops .opcard .otop { gap: 8px; }
+.board .bops .opcard .ow { display: flex; flex-direction: column; gap: 10px; }
+.board .bops .opcard .ow .small { margin-bottom: 2px; }

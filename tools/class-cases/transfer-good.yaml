@@ -1,0 +1,28 @@
+# expect: builds
+# expect: not: transfer stop
+# expect: not: has no field
+# C10l transfer: one stop in the last third, with its field named. The page tags it "Elsewhere" (checked in the browser).
+title: A good transfer
+question: Where does a transfer stop go?
+answer: Near the end, as a think stop.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: Two donors have the same mean CD3 but different spread.
+  - type: board
+    beat: limits
+    title: Where it breaks
+    steps:
+      - say: One far cell can give most of the sum of squares.
+  - type: board
+    beat: next
+    title: Next
+    steps:
+      - say: Next time, two markers at once.
+      - think:
+          transfer: replicate wells on a plate
+          q: One sample sits in six wells. What does their variance measure?
+          a: How much the method wobbles on one sample.

@@ -8,7 +8,7 @@ title: How spread out are six cells?
 subtitle: Variance, built on the board one line at a time
 question: How do we put one number on how spread out a set of measurements is?   # asked on the title slide
 answer: Take each value's distance from the mean, square it, add the squares, and divide by n − 1.
-learner: {goal: intuition+hand, knows: [mean], anchors: [flow cytometry]}        # from the probe
+learner: {goal: intuition+hand, knows: [mean], anchors: [flow cytometry], voice: short}   # from the probe and the profile
 # beats: plan · problem · data · by-hand · picture · formula · run · limits · summary · next   (the spine, one line per scene)
 series: spread        # the series this lesson belongs to (memory.py's name for it)
 episode: 2            # its place in the series, from 1
@@ -38,7 +38,7 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 ```yaml
 - type: board
   beat: by-hand            # one of: plan problem data by-hand picture formula run what-if limits summary next
-                           #         analogy compare misconception aside
+                           #         analogy compare misconception aside, and refresher (at the end, below)
   title: Work it out by hand
   lead: Distance from the mean, for every cell, then one number.
   table: {from: cells, cols: [{key: id, label: cell}, {key: cd3, label: CD3}]}
@@ -54,6 +54,9 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 | `table` | the pinned table on the left (30% of the width). Leave it out and the scene takes the full width |
 | `derive`, `controls` | as on a deck slide, plus the run and the toggle |
 | `steps` | 1–10 steps. Split a scene that needs more |
+| `more` | the scene's context and limits: what the reader may want after the scene, in plain text. It opens from a closed **Context and limits** fold at the scene's end |
+| `sources` | pages you read for this scene, as `{title, url, why}` (below); listed at the end of its Context and limits fold |
+| `ask` | a `refresher` scene's link line, a question at most 14 words ("Rusty on angles and cosine?"); only a refresher has one |
 
 ### How a scene is laid out
 A lesson is one long page, a scene after a scene. You give the order; the kit places everything, never by coordinates. A scene is a head (beat label, title, lead), then its steps in order. What is written stays, and the learner scrolls back to it. Only a think answer waits.
@@ -81,6 +84,7 @@ table:
 ```yaml
 steps:
   - say: Start from the mean. How far does c1 sit from it?       # the teacher's line
+    why: Spread is about how far cells sit from their centre.     # the reason, in grey at the end of the line
     add: {calc: {say: How far c1 sits, row: 0, expr: cd3 - xbar, name: d1, fmt: 2}}
     mark: row:0
   - think:
@@ -89,13 +93,48 @@ steps:
 ```
 | Field | What it does |
 |---|---|
-| `say` | one teacher line for this step, at most 14 words |
+| `say` | one teacher line for this step, at most 14 words. In the full voice (`learner.voice: full`), 2 or 3 sentences, at most 50 words, each sentence at most 24 |
+| `why` | the reason for this step, drawn in grey at the end of its `say`, at most 12 words (full voice: one sentence, 24). Say why we do it or what it lets us do next, not what it does. A step that adds a `calc`, `col` or `assemble` needs one (a `calc`'s own `why` counts) |
 | `add` | one item, or a list of items, written with this step |
 | `mark` | lights a table row, column, cell or item while this step is lit (see Marks) |
-| `think` | a pause-and-think stop: `{q, a}`, the question at most 14 words, the answer at most 18. The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer |
+| `think` | a pause-and-think stop: `{q, a}`, the question at most 14 words, the answer at most 18 (full voice: 24 and 40). The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer. Add `transfer: <field>` (at most 6 words) to make it the lesson's transfer stop, tagged **Elsewhere** with the field named before the question: one a lesson, in its last third (`lesson.md`, move 21) |
 | `frame` | the run frame this step shows (see Controls) |
+| `more` | extra reading for this step: `{ask, answer, sources}`, a closed fold after what the step writes (see Extra reading) |
+| `refresh` | the `id` of a refresher scene at the end; the step shows that scene's `ask` and a **Refresher ▸** link under its line (see Refreshers) |
 
 A think step's `say` is optional; its question is the line. A think question has one short answer the learner can reach from the board. On a figure with Next, a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it.
+
+### Extra reading
+```yaml
+  - say: Add the squares, then divide by one less than the number of cells.
+    more:
+      ask: Why one less than the number of cells, and not all six?   # the fold's label: the learner's question
+      answer:                                                         # paragraphs, short sentences, no ";"
+        - We measured each distance from our own mean, not from the true mean. …
+        - Dividing by one less makes up for that on average. This fix is called Bessel's correction. …
+      sources:
+        - {title: Bessel's correction (Wikipedia), url: 'https://en.wikipedia.org/wiki/Bessel%27s_correction', why: A worked example of the smaller variance.}
+```
+A fold opens with a click and starts closed; the **Study** switch at the lower left opens or closes every fold on the page. Put in a fold what a curious learner asks next: why this choice, where a rule comes from, what the field calls it. The page must teach without it. One step fold a scene (the lint warns past one); the scene's own `more` holds the rest.
+- **Give every term its meaning in the fold too**, the first time it appears there: plain words then the term, or the term then its meaning in brackets ("unweighted (every pixel counts the same)"). A fold is read on its own, so a term defined higher up the page is defined again.
+- **List only pages you opened** while writing, with `why` saying what the reader gets there. `url` is a full `https://` link.
+- At most 160 words a fold; each sentence at most 24.
+
+### Refreshers
+A refresher is an earlier idea the lesson leans on, such as the cosine before a projection. It is a whole board scene with `beat: refresher`, placed after the `next` scene, so the story runs on without it. The step that first needs it links to it:
+```yaml
+  - say: 'Squared onto each alone, the parts are {{short_a|2}} and {{short_b|2}}: $H$ and $E$ are {{he_angle|1}}° apart.'
+    refresh: cosine-refresher           # the refresher scene's id
+  …
+- type: board                           # after `next`
+  id: cosine-refresher
+  beat: refresher
+  ask: Rusty on angles and cosine?      # the link line the step shows
+  title: 'Cosine: how much two directions agree'
+  lead: A side note. One number says how much two arrows point the same way.
+  steps: [ … ]
+```
+The link jumps to the refresher, and a **back to where you were** button returns the reader to the line they left. A refresher teaches like any scene: worked numbers, a figure, a think stop. It is not counted in the lesson's 8–14 scenes. Link one only where a learner may have lost the idea; the lint warns on a refresher no step links to.
 
 ### Marks
 | Target | Lights |
@@ -232,7 +271,7 @@ add:
 
 `ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 16:9; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
 
-**A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours.
+**A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours. Nothing else on a board is a boxed tag either: an image's `labels`, a matrix's shape, the step card's heading and its notation key draw as plain text, and the browser check warns on any label drawn in a box.
 
 A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows on the scene's second step. Dots on a category axis sit at the left edge of their band: add 0.5 to `x` to centre them.
 
@@ -312,7 +351,7 @@ add:
     marks:
       - points: {from: pixels, at: od, rgb: od}
       - {vector: H, label: H}
-      - {sheet: [H, E], max: [1.4, 1.1], label: stain sheet, says: every mix of H and E}
+      - {sheet: [H, E], max: [1.4, 1.1], label: column space, says: every mix of H and E}
       - {point: px, rgb: od, ring: true, label: pixel, says: the pixel you mix}
       - {foot: {from: px, onto: [H, E]}, label: residual, says: what no H and E mix explains}
 ```

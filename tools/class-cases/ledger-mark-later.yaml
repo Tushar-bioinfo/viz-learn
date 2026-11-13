@@ -1,0 +1,28 @@
+# expect: not: but its number first shows
+# expect: builds
+# A plane mark that waits for step 3 names m's number. The calc on step 2 works m first, and its line shows m's
+# symbol there. The ledger must keep step 2 as where m's number first shows, not the mark's step 3 (cold run, 13 Nov).
+title: A later mark does not move a number
+question: Where does m's number first show?
+answer: On the worked line, one step before the mark.
+data: {a: 1.5, b: 2.5, m: 2.0}
+symbols:
+  m: {tex: '\mu', says: the middle of a and b, short: middle, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Work the middle
+    lead: The mark waits; the worked line comes first.
+    steps:
+      - say: Two values, a and b.
+        add:
+          plane:
+            x: {label: x, min: 0, max: 4}
+            y: {label: y, min: 0, max: 4}
+            marks:
+              - {point: [a, b], color: s1, label: start}
+              - {point: [m, m], color: accent, label: middle, step: 3, says: 'the middle at {{m|1}}'}
+      - say: Average the two values.
+        add: {calc: {say: The middle, expr: (a + b) / 2, name: m, fmt: 1}}
+      - say: The middle sits on the plane.
