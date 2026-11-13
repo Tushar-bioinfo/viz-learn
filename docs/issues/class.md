@@ -232,3 +232,10 @@ Fixed from the user's marked screenshots of `board-gallery` (the picture scene's
 - **Recorder 7, open: board.md does not list `recorder`.** It had 1 line of budget, so it was not touched; the lint gate, adv.md §9e and lint.md name it.
 - **Recorder 8, open: only the case and one test lesson use it.** `tools/class-cases/recorder-good` and `out/c10/n5/recorder/growth` (two board scenes). No shipped example was changed.
 - **Recorder 9, fixed (review round, 13 Nov): ticks, decimals, `fmt`, the readout's place.** A tiny range drew thousands of ticks; 2.5 and 0.25 steps were labelled 3 and 0.3; readings below 0.0001 all printed 0.0000; `fmt: '101'` built and drew no dots; a long time name ran under the readout. Cases `recorder-tinier-good`, `recorder-ticks-good`, `recorder-tiny-good`, `recorder-bad-fmt`, `recorder-bad-longname`. With no `fmt`, each reading now prints with its own decimals (0.05, 0.685), so a column's values no longer share one width.
+
+## Houses (N5, 2026-11-13)
+- **Houses 1, open: the ill units fill first, in reading order.** The mock-up scattered the filled houses by unit id (`where`); `chance` keeps its count-them-off order, which also lets a run move one house at a time. Ask the user if the scatter is wanted.
+- **Houses 2, open: names beside the dots repeat the legend.** The legend row carries the cards and linked words, so it stays. A name that does not fit beside its dot goes above it, or is left out when a ruler is drawn (the ruler sits above the line).
+- **Houses 3, open: the mock-up's markers on stems above the line are not ported.** The dots stay on the share line, as before; the names carry a ground-coloured edge so the line does not run through them.
+- **Houses 4, open: the first look (lit grids and gap bar at rest) is piece 5's.** Not built here.
+- **Houses 5, open: only a case and a bench copy use it.** `tools/class-cases/chance-house-good` and `out/c10/n5/houses/bench/` (the proportions bench with well `s1`, piped `s2`, pool `s4`, `unit: house`). The original bench `out/c10/bench-prop/` still says `s4`/`s1` and squares: it would need those colours and `unit: house`. No shipped example uses `chance`.

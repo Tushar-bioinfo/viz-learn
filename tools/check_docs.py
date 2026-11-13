@@ -31,6 +31,7 @@ ADV_ONLY |= {"groups", "axis", "gap_says", "step_says", "tally", "ends", "_kit"}
 ADV_ONLY |= {"beads", "part", "whole", "colors"}   # beads (§9c), adv-only since N5
 ADV_ONLY |= {"group", "glyphs"}   # a slope table (§9d), adv-only since N5
 ADV_ONLY |= {"recorder", "wash"}   # recorder (§9e), adv-only since N5
+ADV_ONLY |= {"unit"}   # chance `unit: house` (§9), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 

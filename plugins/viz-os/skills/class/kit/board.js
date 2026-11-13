@@ -475,6 +475,13 @@
   // Text on it: the axis name and tick numbers only. The four marks (the two groups, `gap`, `noise step`) take the legend
   // row, cards and linked words as a plane's marks do. It is drawn at the size it shows, and a number that changes moves
   // its marks over --m-state on the kit's one curve (no move with reduced motion)
+  // The C10p two-share look (N5): a filled unit takes its group's colour, a hollow one grey ink; `unit: house` draws each unit
+  // as a small house (one closed path, centred in its cell). The share line runs to the next named tick past the furthest
+  // share or ruler end on any frame, so it never rescales during a run. The outer dots carry their group names beside them
+  // when there is room. The gap runs see-through from the lower group's colour to the higher's; its word, swatch and card follow
+  const CH_SHAPE = { house: (x, y, s) => { const h = s / 2, bw = s * .38, ev = y - h + s * .46, f = v => v.toFixed(2);
+    return `M${f(x)},${f(y - h)} L${f(x + h)},${f(ev)} L${f(x + bw)},${f(ev)} L${f(x + bw)},${f(y + h)} L${f(x - bw)},${f(y + h)} L${f(x - bw)},${f(ev)} L${f(x - h)},${f(ev)} Z`; } };
+  let chNo = 0;
   const CH = { most: 12, cols: 10, gapG: 50, cellMax: 34, top: 8, ruler: 56, plain: 22, below: 68, unitMin: 9, tallyMin: 9, l: 40, r: 30 };
   const GEO = new Set(['x', 'y', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy', 'r', 'width', 'height']);
   const bezier = (x1, y1, x2, y2) => t => { let u = t;
@@ -488,10 +495,10 @@
     const node = h('div', 'bi chance fr'); node.dataset.at = at; if (p.id) node.dataset.id = p.id;
     const leg = h('div', 'plegend'); node.appendChild(leg);
     const wrap = h('div', 'pwrap'); node.appendChild(wrap);
-    const svg = sv('svg', { class: 'pl ch' }, wrap);
+    const svg = sv('svg', { class: 'pl ch' }, wrap), defs = sv('defs', {}, svg), gid = `chg${++chNo}`;
     const R = { node, issues: [], kind: 'chance', w: 0, h: 0, leg: LEG, linked: new Set(), cols: [], wlOn: null, hotM: null };
-    const G = list(p.groups).slice(0, 2).map((g, i) => ({ ...g, c: col(g.color || ['s4', 's1'][i]) }));
-    const gapC = col('s3'), stepC = col('s2'), rr = ratio != null ? ratioOf(ratio, null) : null;
+    const G = list(p.groups).slice(0, 2).map((g, i) => ({ ...g, c: col(g.color || ['s1', 's2'][i]) }));
+    const gapC = 'var(--ink)', stepC = col('s3'), rr = ratio != null ? ratioOf(ratio, null) : null;
     const num = (x, where) => L.val(x, ctx.scope, `slide ${ctx.index + 1} chance ${where}`);
     const pts = v => L.fmt(100 * v, 1), say = (t, d) => t != null ? String(t) : d;
     R.cols = [...G.map(g => g.c), gapC, stepC];
@@ -508,21 +515,27 @@
       return { v, s, gap: s[0] - s[1], step }; };
     const now = () => read(ctx.scope, []);
     // every frame the scene's run can reach, worked out with the page's own derive: the first frame each problem shows on
-    const sweep = () => { const out = new Map(), n = Math.max(1, env.frames || 0);
+    // and the furthest the shares or the ruler reach on any frame (`T`), so the share line keeps one scale over the run
+    const sweep = () => { const out = new Map(), n = Math.max(1, env.frames || 0); let T = 0;
       for (let f = 0; f < n; f++) { const sc = env.frames ? L.derive(L.scope(ctx.scope, { [env.name]: f }), env.derive, `slide ${ctx.index + 1}`) : ctx.scope, bad = [];
-        const S = read(sc, bad); if (S.step && Math.abs(S.gap) / S.step > CH.most) bad.push(`the gap is ${Math.round(Math.abs(S.gap) / S.step)} noise steps; the ruler counts up to ${CH.most}, so check \`step\` is a share, not a percent`);
+        const S = read(sc, bad), lo = Math.min(...S.s), hi = Math.max(...S.s);
+        T = Math.max(T, hi, S.step ? lo + Math.min(CH.most, Math.max(1, Math.ceil((hi - lo) / S.step - 1e-9))) * S.step : 0); if (S.step && Math.abs(S.gap) / S.step > CH.most) bad.push(`the gap is ${Math.round(Math.abs(S.gap) / S.step)} noise steps; the ruler counts up to ${CH.most}, so check \`step\` is a share, not a percent`);
         bad.forEach(b => { const k = b.replace(/ is .*/, ''); if (!out.has(k)) out.set(k, `the chance figure: ${b}${env.frames ? ` (at frame ${f})` : ''}`); }); }
-      return [...out.values()]; };
+      return { issues: [...out.values()], T: Math.min(1, T) }; };
+    // the share line's end: names every 10 points (every 20 when that needs more than 6), a tick between, at least one name
+    const axisOf = T => { const ns = Math.ceil(T / .1 - 1e-9) <= 6 ? .1 : .2; return { ns, top: Math.min(1, Math.max(1, Math.ceil(T / ns - 1e-9)) * ns) }; };
+    const gradOf = S => { const lo = S.s[0] < S.s[1] ? 0 : 1; return [G[lo].c, G[1 - lo].c]; };   // the gap's colours, lower share first
     const MK = [
-      ...G.map((g, i) => ({ kind: 'dot', says: say(g.says, `Each square is one member of the ${g.name} group, filled when it has the outcome. The dot on the line is the share filled.`),
+      ...G.map((g, i) => ({ kind: 'dot', says: say(g.says, `Each ${p.unit === 'house' ? 'house' : 'square'} is one member of the ${g.name} group, filled when it has the outcome. The dot on the line is the share filled.`),
         value: S => `${L.fmt(S.v[i].x)} of ${L.fmt(S.v[i].n)} (${pts(S.s[i])}%)` })),
       { kind: 'line', says: say(p.gap_says, 'The distance between the two shares: the difference the data show.'), value: S => `${pts(Math.abs(S.gap))} points` },
       { kind: 'ruler', says: say(p.step_says, 'How far apart the two shares land by chance alone, as a rule, when both groups share one rate. Each tick is one more step.'),
         value: S => S.step == null ? null : `${pts(S.step)} points` },
     ];
+    const gapSwatch = ([a, b]) => `<svg width="24" height="12" viewBox="0 0 24 12"><defs><linearGradient id="${gid}s" gradientUnits="userSpaceOnUse" x1="1" x2="23" y1="0" y2="0"><stop offset="0" style="stop-color:${a}"/><stop offset="1" style="stop-color:${b}"/></linearGradient></defs><line x1="1" y1="6" x2="23" y2="6" style="stroke:url(#${gid}s);stroke-width:3;stroke-opacity:.75"/></svg>`;
     const tipOn = (el, m) => { const mk = MK[m], c = R.cols[m];
       el.classList.add('says', 'vt'); el.setAttribute('tabindex', '0'); glow(el, c); el.setAttribute('aria-description', mk.says); pauseButton();
-      el._pd = () => ({ swatch: swatch(mk.kind, c), c, name: R.keys[m], says: mk.says, value: mk.value(now()), shape: null, scope: ctx.scope }); };
+      el._pd = () => ({ swatch: m === 2 ? gapSwatch(gradOf(now())) : swatch(mk.kind, c), c, name: R.keys[m], says: mk.says, value: mk.value(now()), shape: null, scope: ctx.scope }); };
     // the drawing: every piece keyed, so a new frame moves what changed and leaves the rest
     const els = new Map(), tweens = []; let raf = 0, drawnW = 0;
     const tick = t => { const { ms, ease } = R.mo; for (let q = tweens.length - 1; q >= 0; q--) { const w = tweens[q], k = Math.min(1, (t - w.t0) / ms);
@@ -547,9 +560,9 @@
       const W = R.w, g = geo(W); if (W < 40) { R.issues.push('the chance figure has no room'); return false; }
       const hard = W !== drawnW || REDUCED; drawnW = W; R.h = rr ? R.box : Math.round(g.H); wrap.style.height = R.h + 'px';
       svg.setAttribute('viewBox', `0 0 ${W} ${Math.round(g.H)}`); svg.setAttribute('width', W); svg.setAttribute('height', R.h);
-      const S = now(); R.issues.push(...sweep());
+      const S = now(), sw = sweep(), A = axisOf(sw.T); R.issues.push(...sw.issues);
       if (p.tally != null) { const tl = list(num(p.tally, 'tally')).length; if (!env.frames) R.issues.push('the chance figure has a tally but the scene has no run, so no tally is drawn'); else if (tl !== env.frames) R.issues.push(`the chance figure's tally holds ${tl} entries but the run has ${env.frames} frames`); }
-      const lo = Math.min(...S.s), hi = Math.max(...S.s), xs = v => g.X0 + v * (g.X1 - g.X0), stepPx = S.step != null ? S.step * (g.X1 - g.X0) : 0;
+      const lo = Math.min(...S.s), hi = Math.max(...S.s), xs = v => g.X0 + v / A.top * (g.X1 - g.X0), stepPx = S.step != null ? S.step / A.top * (g.X1 - g.X0) : 0;
       if (g.cell * .8 < CH.unitMin) R.issues.push(`the chance figure's units are ${(g.cell * .8).toFixed(1)} px: give it more room`);
       if (g.F && g.s < CH.tallyMin) R.issues.push(`the chance figure's tally squares are ${g.s.toFixed(1)} px: give it more room`);
       if (S.step != null && stepPx < 16) R.issues.push(`one noise step is only ${stepPx.toFixed(0)} px on the share line, so its ticks crowd`);
@@ -565,23 +578,28 @@
       const gw = CH.cols * g.cell, left = g.X0 + (g.X1 - g.X0 - 2 * gw - CH.gapG) / 2;
       S.v.forEach((v, i) => { const gg = grp(`u${i}`, i), x0 = left + i * (gw + CH.gapG), c = G[i].c;
         for (let k = 0; k < v.n; k++) { const x = x0 + (k % CH.cols) * g.cell, y = CH.top + Math.floor(k / CH.cols) * g.cell, on = k < v.x;
-          put(gg, 'rect', `u${i}-${k}`, { x: x + g.cell * .1, y: y + g.cell * .1, width: g.cell * .8, height: g.cell * .8 },
-            on ? `fill:${c};stroke:${c};stroke-width:var(--w-data)` : `fill:none;stroke:${c};stroke-width:var(--w-data);stroke-opacity:.42`); }
+          const look = on ? `fill:${c};stroke:${c};stroke-width:var(--w-data)` : 'fill:none;stroke:var(--mist);stroke-width:var(--w-data);stroke-opacity:.7';
+          if (p.unit === 'house') put(gg, 'path', `u${i}-${k}`, { d: CH_SHAPE.house(x + g.cell / 2, y + g.cell / 2, g.cell * (on ? .8 : .76)), 'stroke-linejoin': 'round' }, look);
+          else put(gg, 'rect', `u${i}-${k}`, { x: x + g.cell * .1, y: y + g.cell * .1, width: g.cell * .8, height: g.cell * .8 }, look); }
         put(gg, 'rect', `uh${i}`, { x: x0, y: CH.top, width: gw, height: Math.ceil(v.n / CH.cols) * g.cell }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); });
       // the share line: ticks every 10, numbers every 20, its name under them at the right
       const ax = grp('axis', null, 'pax');
       put(ax, 'line', 'axl', { x1: g.X0, x2: g.X1, y1: g.ySh, y2: g.ySh }, 'stroke:var(--c-axis);stroke-width:var(--w-guide)');
-      for (let q = 0; q <= 100; q += 10) { const x = xs(q / 100);
-        put(ax, 'line', `axt${q}`, { x1: x, x2: x, y1: g.ySh, y2: g.ySh + (q % 20 ? 4 : 7) }, 'stroke:var(--c-tick);stroke-width:var(--w-guide)');
-        if (q % 20 === 0) put(ax, 'text', `axn${q}`, { x, y: g.ySh + 30, 'text-anchor': 'middle', class: 'tick' }, null, q); }
+      for (let k = 0; k <= Math.round(2 * A.top / A.ns); k++) { const q = Math.round(k * A.ns * 50), x = xs(q / 100);
+        put(ax, 'line', `axt${q}`, { x1: x, x2: x, y1: g.ySh, y2: g.ySh + (k % 2 ? 4 : 7) }, 'stroke:var(--c-tick);stroke-width:var(--w-guide)');
+        if (k % 2 === 0) put(ax, 'text', `axn${q}`, { x, y: g.ySh + 30, 'text-anchor': 'middle', class: 'tick' }, null, q); }
       put(ax, 'text', 'axname', { x: g.X1, y: g.ySh + 54, 'text-anchor': 'end', class: 'axt' }, null, L.plain(String(p.axis ?? 'share (%)'), ctx.scope));
       // the gap: the witness between the two dots
       const gp = grp('gap', 2);
-      put(gp, 'line', 'span', { x1: xs(lo), x2: xs(hi), y1: g.ySh, y2: g.ySh }, `stroke:${gapC};stroke-width:var(--w-wit);stroke-linecap:round`).setAttribute('class', 'cwit');
+      // when the groups swap sides the dots slide past each other: the bar's colours and the names change once they arrive
+      const [ga, gb] = gradOf(S), swap = !hard && R.grad && R.grad[0] !== ga, late = f => { clearTimeout(R.lateT); if (swap) R.lateT = setTimeout(f, R.mo.ms); else f(); }, lg = put(defs, 'linearGradient', 'grad', { id: gid, gradientUnits: 'userSpaceOnUse', x1: xs(lo), x2: Math.max(xs(hi), xs(lo) + .01), y1: 0, y2: 0 });
+      const s0 = put(lg, 'stop', 'gs0', { offset: 0 }), s1 = put(lg, 'stop', 'gs1', { offset: 1 }), pend = [];
+      late(() => { s0.setAttribute('style', `stop-color:${ga}`); s1.setAttribute('style', `stop-color:${gb}`); pend.forEach(t => { t.style.visibility = ''; }); }); R.grad = [ga, gb];
+      put(gp, 'line', 'span', { x1: xs(lo), x2: xs(hi), y1: g.ySh, y2: g.ySh }, `stroke:url(#${gid});stroke-opacity:.75;stroke-width:var(--w-wit);stroke-linecap:round`).setAttribute('class', 'cwit');
       put(gp, 'line', 'spanh', { x1: xs(lo), x2: xs(hi), y1: g.ySh, y2: g.ySh }, 'stroke:transparent;stroke-width:16;fill:none').setAttribute('class', 'chit');
       // the noise steps: a ruler from the lower share, a tick per step to the first whole step past the gap (at least 1), none past 100%
       // the last tick, worked out first: the first whole step past the gap (at least 1), at most CH.most, and none past 100%
-      if (S.step != null) { const rg = grp('ruler', 3), x0 = xs(lo), K = Math.max(0, Math.min(CH.most, Math.max(1, Math.ceil((hi - lo) / S.step - 1e-9)), Math.floor((1 - lo) / S.step + 1e-9))), end = x0 + K * stepPx;
+      if (S.step != null) { const rg = grp('ruler', 3), x0 = xs(lo), K = Math.max(0, Math.min(CH.most, Math.max(1, Math.ceil((hi - lo) / S.step - 1e-9)), Math.floor((A.top - lo) / S.step + 1e-9))), end = x0 + K * stepPx;
         put(rg, 'line', 'rl', { x1: x0, x2: end, y1: g.ySh - 14, y2: g.ySh - 14 }, `stroke:${stepC};stroke-width:var(--w-data)`);
         const most = Math.max(K, 4);   // ticks 0..4 always kept, so a tick slides in rather than pops; never more than CH.most + 1
         for (let k = 0; k <= CH.most; k++) { if (k > most) { if (els.has(`rt${k}`)) { put(rg, 'line', `rt${k}`, {}, 'opacity:0'); put(rg, 'text', `rn${k}`, {}, 'opacity:0'); } continue; }
@@ -591,7 +609,12 @@
         put(rg, 'rect', 'rh', { x: x0, y: g.ySh - 46, width: Math.max(8, end - x0), height: 40 }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); }
       // the dots on top of the span
       S.s.forEach((v, i) => { const dg = grp(`d${i}`, i); put(dg, 'circle', `m${i}`, { cx: xs(v), cy: g.ySh, r: 7 }, `fill:${G[i].c};stroke:var(--bg);stroke-width:var(--w-data)`);
-        put(dg, 'circle', `mh${i}`, { cx: xs(v), cy: g.ySh, r: 14 }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); });
+        put(dg, 'circle', `mh${i}`, { cx: xs(v), cy: g.ySh, r: 14 }, 'fill:transparent;stroke:none').setAttribute('class', 'chit');
+        // its name beside it, outward (the lower share's on its left); with no room there, above the dot when no ruler is drawn, else none
+        const left = v < S.s[1 - i] || (v === S.s[1 - i] && i === 1), nm = String(G[i].name ?? ''), fresh = !els.has(`nm${i}${left ? 'l' : 'r'}`), t = put(dg, 'text', `nm${i}${left ? 'l' : 'r'}`, { x: xs(v) + (left ? -14 : 14), y: g.ySh + 6, 'text-anchor': left ? 'end' : 'start', class: 'axt cname' }, `fill:${G[i].c}`, nm);   // a new key when it changes side, so it does not slide across
+        const tw = t.getComputedTextLength ? t.getComputedTextLength() : nm.length * 9, fits = left ? xs(v) - 14 - tw >= 2 : xs(v) + 14 + tw <= W - 2;
+        if (!fits) { t.setAttribute('x', xs(v)); t.setAttribute('y', g.ySh - 14); t.setAttribute('text-anchor', 'middle'); t.style.opacity = S.step == null ? 1 : 0; }
+        if (fresh && swap) { t.style.visibility = 'hidden'; pend.push(t); } });
       // the tally: a square per frame after frame 0
       if (g.F) { const tg = grp('tally', null, 'ptally'), far = list(num(p.tally, 'tally')), f = frameOf();
         for (let k = 1; k <= g.F; k++) { const x = g.X0 + ((k - 1) % g.per) * g.pitch, y = g.yT + Math.floor((k - 1) / g.per) * g.pitch, hit = +far[k] === 1;
@@ -609,9 +632,10 @@
       if (!leg.childElementCount) { leg.style.paddingLeft = `${Math.max(0, CH.l - 8)}px`;
         R.keys.forEach((t, m) => { const it = h('span', 'pk ' + MK[m].kind); it.style.setProperty('--c', R.cols[m]); it.innerHTML = `<i></i><span>${md(t)}</span>`; it.dataset.m = m; glow(it, R.cols[m]); leg.appendChild(it);
           tipOn(it.lastChild, m); ['pointerenter', 'focusin'].forEach(ev => it.addEventListener(ev, () => R.hover(m))); ['pointerleave', 'focusout'].forEach(ev => it.addEventListener(ev, () => R.hover(null))); }); }
+      const gi = leg.querySelector('.pk[data-m="2"] i'); if (gi) Object.assign(gi.style, { borderTop: '0', height: '4px', background: `linear-gradient(90deg, ${ga}, ${gb})`, opacity: .75 });
       R.paintWl();
       const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
-    R.wl = i => ({ c: R.cols[i], drawn: i < R.keys.length && env.shown() });   // its words wait until the reading reaches the figure
+    R.wl = i => ({ c: R.cols[i], grad: i === 2 && R.grad ? R.grad : null, drawn: i < R.keys.length && env.shown() });   // its words wait until the reading reaches the figure; the gap's word takes the bar's two colours
     R.paintWl = () => { const on = R.wlOn ?? R.hotM; node.classList.toggle('lnk-dim', R.wlOn != null);
       svg.querySelectorAll(':scope > g[data-m]').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); };
     R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
