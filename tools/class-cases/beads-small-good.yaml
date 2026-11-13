@@ -1,0 +1,26 @@
+# expect: builds
+# expect: not: `beads`
+# expect: not: beads mark
+# expect: not: linked word
+# expect: not: names nothing
+# N5 fix 1: one ring of 4 beads (the smallest whole) and own colours: the ring keeps its smallest size, the beads spread out.
+title: Two waters
+question: Is illness more common with well water?
+answer: In these homes, yes; whether chance could do it is the next question.
+data:
+  homes:
+    - {water: well, ill: 1, homes: 4}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: amount
+    see: well
+    shows: one ring of forty beads per water, the homes with an ill child filled
+    title: Eighty homes, two waters
+    lead: One bead is one home; a filled bead had an ill child.
+    steps:
+      - say: The ==well== ring fills one of its four beads.
+        add:
+          - beads: {from: homes, name: water, part: ill, whole: homes, key: "One bead, one home.", colors: [s4]}
+      - say: A small whole keeps the ring wide and spreads its beads.

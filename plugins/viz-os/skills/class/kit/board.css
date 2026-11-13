@@ -467,6 +467,7 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   .s-board [data-step] { opacity: 1; transform: none; }
   .board .bi.chance.cwait > * { visibility: visible !important; }
   .board .bi.fork.cwait > * { visibility: visible !important; }
+  .board .bi.beads.cwait > * { visibility: visible !important; }
 }
 /* chance: two groups as units, their shares, the gap and a ruler of noise steps (board.js chance). Hit areas take the pointer;
    a linked word lights its mark and dims the rest, the tally with them */
@@ -522,6 +523,25 @@ html.ls-page .board .bi.fork { padding: 8px; box-sizing: content-box; max-width:
 .board .fork .fh { fill: transparent; cursor: pointer; outline: none; pointer-events: all; }
 .board .fork .fh:focus-visible { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 4; }
 .board .bi.fork.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
+
+/* beads: one ring of beads per row, the part filled in the row's colour (board.js beads). No box round it; pointing at a ring
+   or its word lights it and dims the others */
+html.ls-page .board .bi.beads { padding: 8px; box-sizing: content-box; max-width: none; }
+.board .beads svg.bd { display: block; overflow: visible; }
+.board .beads text { font-family: var(--f-ui); }
+.board .beads .bdn { font-size: 30px; font-weight: 500; fill: var(--ink); letter-spacing: .02em; }
+.board .beads .bdw { font-size: 17px; fill: var(--mist); letter-spacing: .04em; }
+.board .beads .bdp { font-size: 44px; font-weight: 400; fill: var(--c); font-variant-numeric: tabular-nums; }
+.board .beads .bdt { font-size: 30px; fill: var(--mist); font-variant-numeric: tabular-nums; }
+.board .beads .bdl { stroke: var(--c-tick); stroke-width: var(--w-guide); }
+.board .beads .bdo { fill: none; stroke: var(--c-tick); stroke-width: 1.5; }
+.board .beads .bdf { fill: var(--c); stroke: none; }
+.board .beads .bdkt { font-size: 17px; fill: var(--mist); }
+.board .beads .bdh { fill: transparent; stroke: none; pointer-events: all; cursor: help; outline: none; }
+.board .beads .bdr { transition: opacity var(--m-state, 180ms) var(--ease, ease); }
+.board .bi.beads.lnk-dim .bdr:not(.lnk-on) { opacity: .3; }
+.board .bi.beads .bdr.lnk-on :is(.bdf, .bdp) { filter: brightness(1.15) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.board .bi.beads.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
 
 /* a refresher link under a step's line, and the button back from the end scene */
 .board .st .lref { margin: 4px 0 0; font: 15px/1.4 var(--f-mono); color: var(--mist); }

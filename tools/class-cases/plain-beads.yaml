@@ -1,0 +1,20 @@
+# expect: `beads` is for adv lessons only
+# N5: beads-good with no `idea:`: an adv-only figure in a plain lesson is an error
+title: Two waters
+question: Is illness more common with well water?
+answer: In these homes, yes; whether chance could do it is the next question.
+data:
+  homes:
+    - {water: well, ill: 18, homes: 40}
+    - {water: piped, ill: 9, homes: 40}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    title: Eighty homes, two waters
+    lead: One bead is one home; a filled bead had an ill child.
+    steps:
+      - say: The ==well== ring fills further round than the ==piped== ring.
+        add:
+          - beads: {from: homes, name: water, part: ill, whole: homes, key: "One bead, one home."}
+      - say: Both rings hold the same number of homes, so the filled arcs compare directly.

@@ -691,6 +691,76 @@
     return R;
   }
 
+  // ---------- beads: a part of a whole as a ring of beads, one ring per row of a data list (the C10p mock-up, 11 Nov) ----------
+  // One bead per unit of the whole, open; the part's beads filled, clockwise from the top, in the row's colour (`colors`, else s1, s2, s3, s4
+  // in order). Every ring is one size, so equal wholes draw equal rings. The row's name sits above its ring, large; the middle
+  // holds the part's column word, the part, a rule, the whole and the whole's column word, stacked. A key at the bottom right:
+  // one open bead and `key`. Each ring is a mark named by its row's name: a legend entry, a linked word and a card ("18 of 40
+  // homes are ill"); pointing at a ring lights it and dims the others. The figure is wide (the reading column)
+  // rMin clears the middle stack, so a small whole spreads its beads out; a filled bead is `fill` of an open one. The lint
+  // works out the largest whole from the same numbers (lesson_lint.py BEADS_*): change both together
+  const BD = { name: 30, gapName: 44, top: 6, foot: 54, pitch: 30, side: 40, rMax: 230, beadMax: 10, beadMin: 3.5, rMin: 110, fill: .72, most: 4 };
+  function beads(p, ctx, at, env) {
+    const node = h('div', 'bi beads fr'); node.dataset.at = at; if (p.id) node.dataset.id = p.id;
+    const leg = h('div', 'plegend'); node.appendChild(leg);
+    const svg = sv('svg', { class: 'bd' }, node);
+    const R = { node, issues: [], kind: 'beads', w: 0, h: 0, leg: LEG, linked: new Set(), cols: [], wlOn: null, hotM: null, pin: null };
+    const rows = () => { let v = []; try { v = list(L.val(p.from, ctx.scope, `slide ${ctx.index + 1} beads from`)); } catch (er) { R.issues.push(`the beads: ${er.message}`); }
+      return v.filter(r => r && typeof r === 'object').slice(0, BD.most).map(r => ({ name: String(r[p.name] ?? ''), part: +r[p.part], whole: +r[p.whole] })); };
+    const B0 = rows();
+    R.keys = B0.map(r => r.name); R.cols = B0.map((_, i) => col(list(p.colors)[i] || `s${i + 1}`));
+    const esc = t => L.esc(String(t));
+    const says = r => `${L.fmt(r.part)} of ${L.fmt(r.whole)} ${p.whole} are ${p.part}.`;
+    const tipOn = (el, i) => { const c = R.cols[i];
+      el.classList.add('says', 'vt'); glow(el, c); el.setAttribute('aria-description', says(B0[i])); pauseButton();
+      el._pd = () => { const r = rows()[i] || B0[i]; return { swatch: swatch('dot', c), c, name: r.name, says: says(r), value: `${L.fmt(r.part)} of ${L.fmt(r.whole)}`, shape: null, scope: ctx.scope }; }; };
+    // one ring size for all: as large as a slot allows, beads about BD.pitch apart round the largest whole
+    const geo = W => { const B = rows(), n = Math.max(1, B.length), most = Math.max(4, ...B.map(r => r.whole || 0)), slot = W / n;
+      const r = Math.max(BD.rMin, Math.min(BD.rMax, slot / 2 - BD.side, most * BD.pitch / (2 * Math.PI))), rb = Math.min(BD.beadMax, Math.PI * r / most * .62);
+      const cy = BD.top + BD.name + BD.gapName + rb + r; return { B, n, most, slot, r, rb, cy, H: Math.round(cy + r + rb + BD.foot) }; };
+    R.size = room => { R.w = Math.round(room.w - PAD); R.h = geo(R.w).H; node.style.width = R.w + 'px'; svg.setAttribute('width', R.w); svg.setAttribute('height', R.h); return R.w + PAD; };
+    R.hOf = W => geo(W).H;
+    R.layout = () => {
+      R.issues = []; const W = R.w, g = geo(W); R.h = g.H; svg.setAttribute('height', R.h); svg.setAttribute('viewBox', `0 0 ${W} ${g.H}`);
+      if (2 * (g.r + g.rb) > g.slot) R.issues.push(`the bead rings are ${Math.round(2 * (g.r + g.rb))} px across in ${Math.round(g.slot)} px each: give the figure more room, or fewer rows`);
+      if (g.rb < BD.beadMin) R.issues.push(`the beads are ${(2 * g.rb).toFixed(1)} px: a smaller whole, or fewer rows`);
+      let out = '';
+      g.B.forEach((r, i) => { const cx = g.slot * (i + .5), c = R.cols[i], at = (k, n) => { const a = -Math.PI / 2 + k * 2 * Math.PI / n; return [cx + g.r * Math.cos(a), g.cy + g.r * Math.sin(a)]; };
+        const ok = Number.isInteger(r.whole) && r.whole >= 4 && r.whole <= 120 && Number.isInteger(r.part) && r.part >= 0 && r.part <= r.whole;
+        if (!ok) { R.issues.push(`the beads row ${r.name}: ${p.part} ${r.part} of ${p.whole} ${r.whole} is not a whole number from 0 to a whole of 4 to 120`); return; }
+        let beadsOpen = '', beadsFull = '';
+        for (let k = 0; k < r.whole; k++) { const [x, y] = at(k, r.whole); beadsOpen += `<circle class="bdo" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${g.rb.toFixed(2)}"/>`;
+          if (k < r.part) beadsFull += `<circle class="bdf" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(g.rb * BD.fill).toFixed(2)}"/>`; }
+        const pw = String(L.fmt(r.part)), ww = String(L.fmt(r.whole)), rw = Math.max(pw.length * 26, ww.length * 18) + 40;
+        out += `<g class="bdr" data-m="${i}" style="--c:${c}">` +
+          `<text class="bdn" x="${cx}" y="${g.cy - g.r - g.rb - BD.gapName}" text-anchor="middle">${esc(r.name)}</text>${beadsOpen}${beadsFull}` +
+          `<text class="bdw" x="${cx}" y="${g.cy - 64}" text-anchor="middle">${esc(p.part)}</text>` +
+          `<text class="bdp" x="${cx}" y="${g.cy - 14}" text-anchor="middle">${esc(pw)}</text>` +
+          `<line class="bdl" x1="${cx - rw / 2}" x2="${cx + rw / 2}" y1="${g.cy + 2}" y2="${g.cy + 2}"/>` +
+          `<text class="bdt" x="${cx}" y="${g.cy + 38}" text-anchor="middle">${esc(ww)}</text>` +
+          `<text class="bdw" x="${cx}" y="${g.cy + 70}" text-anchor="middle">${esc(p.whole)}</text>` +
+          `<circle class="bdh" cx="${cx}" cy="${g.cy}" r="${(g.r + g.rb + 8).toFixed(1)}"/></g>`; });
+      const kx = W - 8, ky = g.H - 14;
+      out += `<g class="bdk"><text class="bdkt" x="${kx}" y="${ky}" text-anchor="end">${esc(L.plain(String(p.key ?? ''), ctx.scope))}</text></g>`;
+      svg.innerHTML = out;
+      const kt = svg.querySelector('.bdkt'); if (kt && p.key != null) { const w = kt.getComputedTextLength ? kt.getComputedTextLength() : 0;
+        kt.insertAdjacentHTML('beforebegin', `<circle class="bdo" cx="${(kx - w - 15).toFixed(1)}" cy="${ky - 6}" r="7"/>`); }
+      svg.querySelectorAll('.bdr').forEach(e => glow(e, R.cols[+e.dataset.m]));
+      svg.querySelectorAll('.bdh').forEach(e => { const i = +e.parentNode.dataset.m; tipOn(e, i);
+        e.addEventListener('pointerenter', () => R.hover(i)); e.addEventListener('pointerleave', () => R.hover(null)); });
+      // the legend row: one entry a ring, from the figure's left edge
+      if (!leg.childElementCount) R.keys.forEach((t, m) => { const it = h('span', 'pk dot'); it.style.setProperty('--c', R.cols[m]); it.innerHTML = `<i></i><span>${md(t)}</span>`; it.dataset.m = m; glow(it, R.cols[m]); leg.appendChild(it);
+        tipOn(it.lastChild, m); it.lastChild.setAttribute('tabindex', '0'); ['pointerenter', 'focusin'].forEach(ev => it.addEventListener(ev, () => R.hover(m))); ['pointerleave', 'focusout'].forEach(ev => it.addEventListener(ev, () => R.hover(null))); });
+      R.paintWl();
+      const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
+    R.wl = i => ({ c: R.cols[i], drawn: i < R.keys.length && env.shown() });
+    R.paintWl = () => { const on = R.wlOn ?? R.hotM; node.classList.toggle('lnk-dim', on != null);
+      svg.querySelectorAll('.bdr').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); };
+    R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.hover = i => { if (R.hotM === i) return; R.hotM = i; R.paintWl(); if (R.onHot) R.onHot(i); };
+    return R;
+  }
+
   // ---------- space: a 3D coordinate space the learner turns by dragging, the plane's sibling ----------
   // An orbit about the middle of the axes box (yaw free, pitch held between −10° and 80°), mild perspective and a depth fade.
   // Every piece is drawn far to near (the painter's rule): lines are cut into pieces and the sheet into cells, so a dot in front
@@ -1301,7 +1371,7 @@
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
     const isFig = it => it && (it.strip || it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
-    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || WIDEVIS.some(k => it[k] != null));
+    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || it.beads || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
@@ -1440,6 +1510,9 @@
     // a fork waits the same way; it is a wide figure, in the reading column
     const forkFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
       const fg = fork(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
+    // bead rings too
+    const beadsFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
+      const fg = beads(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
@@ -1484,6 +1557,7 @@
       else if (it.chance) { const fg = chanceFig({ ...it.chance, id: it.chance.id ?? it.id }, at, it.ratio ?? it.chance.ratio); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (it.fork) { const w = { wide: true, figs: [] }; zone = w; const fg = forkFig({ ...it.fork, id: it.fork.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
+      else if (it.beads) { const w = { wide: true, figs: [] }; zone = w; const fg = beadsFig({ ...it.beads, id: it.beads.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g rl'), at, pr.id);
@@ -1536,8 +1610,8 @@
     // Tab, so it never shows a think stop's answer early. A tap keeps a word lit until the next tap. It opens no card (a card
     // would cover the lines being read). Text that names no mark keeps ==text==, the orange underline
     const lkeys = new Map();
-    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork'].includes(fg.kind)) return;
-      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : fg.kind === 'chance' ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
+    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads'].includes(fg.kind)) return;
+      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : fg.kind === 'chance' || fg.kind === 'beads' ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
         const q = fg.kind === 'chart' ? (mk.kind === 'hline' ? mk.y : mk.kind === 'vline' ? mk.x : mk.kind === 'point' ? (mk.at || [])[1] ?? mk.y : null) : mk.vector ?? mk.point;
         const sym = typeof q === 'string' && (ctx.symbols || {})[q] ? q : null;   // first mark wins a shared key (the lint stops a link to one)
         [mk.label, fg.kind === 'chart' ? mk.name : null, mk.id, sym].forEach(k => { if (k != null && String(k).trim() && !lkeys.has(String(k).trim())) lkeys.set(String(k).trim(), [f, i, String(k).trim() === sym]); }); }); });

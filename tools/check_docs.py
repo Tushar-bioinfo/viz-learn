@@ -28,6 +28,7 @@ OBJS = r"(?:it\.\w+|s\.table|run\.c|ln\.c|ln\.f|A\.a|it|st|c|mk|P|F|a|x|cp|pr|nt
 # fields only an adv lesson writes (or only hands.py and strip.py make), documented in adv.md §9–11 instead of board.md
 ADV_ONLY = {"views", "hunt", "guess", "split", "drag", "was", "start", "foil"}   # not `by`, `to`, `on`, `along`: board.md documents them
 ADV_ONLY |= {"groups", "axis", "gap_says", "step_says", "tally", "ends", "_kit"}   # chance (§9), fork (§9b), strip (§11): adv-only since N4
+ADV_ONLY |= {"beads", "part", "whole", "colors"}   # beads (§9c), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 
@@ -150,6 +151,9 @@ def class_tests():
     yield f"board.md names every beat, step field, item, plane mark and top-level key{' (missing: ' + ', '.join(miss) + ')' if miss else ''}", not miss
     miss = sorted((lesson.ADV | {"depth"}) - code_words((CLASS / "adv.md").read_text()))
     yield f"adv.md names every adv field{' (missing: ' + ', '.join(miss) + ')' if miss else ''}", not miss
+    want = [lesson_lint.beads_most(n) for n in (1, 3, 4)]   # lint.md states the largest whole the lint computes
+    got = re.search(r"(\d+) for 1 or 2 rings, (\d+) for 3, (\d+) for 4", (CLASS / "lint.md").read_text())
+    yield f"lint.md states the beads limits beads_most computes ({want})", bool(got) and [int(x) for x in got.groups()] == want and lesson_lint.beads_most(2) == want[0]
     bad = [f"{f.name}:{i}" for f in sorted(CLASS.rglob("*.md")) for i, ln in enumerate(f.read_text().splitlines(), 1) if "docs/" in ln]
     yield f"no class skill file points at docs/{' (' + ', '.join(bad) + ')' if bad else ''}", not bad
 

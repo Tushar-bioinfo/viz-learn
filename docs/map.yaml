@@ -336,9 +336,10 @@ blocks:
     after: [N3]
     col: 4
     edges: false
-    status: next
-    ships: none
-    line: Seven pieces into the class kit, one block each, beads first.
+    status: active
+    ships: plugin
+    you: pick, review
+    line: Seven pieces into the class kit, one block each; bead rings done (7); slope lines (9) next.
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}

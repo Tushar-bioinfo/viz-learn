@@ -29,7 +29,7 @@ Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `b
 | `idea` | The learner asks | The picture | Draw it today with |
 |---|---|---|---|
 | `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix`; `strip` when the whole is a picture (§11) |
-| `amount` | how much, what share? | countable units, a level that fills | `units`, `parts`, `stat`, `chance` |
+| `amount` | how much, what share? | countable units, a level that fills | `units`, `parts`, `stat`, `chance`, `beads` (§9c) |
 | `cause` | what happens if I change this? | one handle moves one mark | `plane`, `chart`, `space`, `dist` |
 | `closest` | which choice is best? | your guess, its error, then the answer | `plane`, `space` |
 | `shortcut` | why not the easy way? | the wrong way as a ghost on the same frame | `plane`, `space`, `chart`, `compare` |
@@ -71,7 +71,7 @@ A lesson is adv once any board scene has `idea`.
 - One idea in more scenes than `depth` (warning): merge, or ask for more depth.
 - `learner.depth` is a whole number from 1 to 6 (error).
 - `idea`, `see` or `shows` on a slide that is not a board (error, in any lesson).
-- In a plain lesson, `chance`, `fork`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
+- In a plain lesson, `chance`, `fork`, `beads`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
 A spine of stubs fails the lint for its missing `steps`, and other lints warn about what is not written yet; the checks above that look at a figure wait for steps. The storyboard never runs the lint.
 
 ## 9. The `chance` figure: is a gap between two shares bigger than chance makes?
@@ -100,6 +100,14 @@ It draws each group as squares, 10 a row, the `ill` ones filled; one share line 
 It draws the start at the top and the 2 or 3 ends in a row below it, each reached by a curved path. Each path carries its `via` (how this end comes about, 3 words at most). Under each end are its `name` (4 words at most, in red with `bad: true`) and `num`, a line whose numbers come only from `{{…}}`. The end named by `see` is lit: an orange path, the others dimmed. Pointing at an end, pressing it or a linked word (`==shared evenly==` or `==two healthy cells==`) lights that end instead. It fills the reading column, and a scene holds one `fork`.
 - Drawn parts (`draw`, 1–3 an end): `cell` (plain, metaphase, dividing, dead), `nucleus`, `chromosome` (pair, single), `tissue` (plain, regions), `tube` (filled, empty), `plate` (filled, empty), `read` (full, short), `droplet` (empty, cell, bead, both, two), `lens`. Each takes `state`, and if you like `color` (a kit colour), `size` (40–240 px) and `turn` (degrees).
 - A cell's `chroms` names a data list from make_data.py: one letter per chromosome kind, with `*` after a damaged copy (`[A, B, C*]`). Each kind keeps one colour across the figure; a fork colours 4 kinds apart.
+
+## 9c. The `beads` figure: a part of a whole, counted
+```yaml
+- beads: {from: homes, name: water, part: ill, whole: homes, key: "One bead, one home."}   # homes: [{water: well, ill: 18, homes: 40}, …]
+```
+It draws one ring per record of `from` (1–4 records, from make_data.py), side by side and one size: a bead per unit of `whole`, the `part` beads filled clockwise from the top in the ring's colour (`colors: [s4, s1]`, one kit colour per record; else s1, s2, s3, s4 in order). Give a ring the colour its group has in the lesson's other figures. The record's `name` sits above its ring; the middle stacks the part, a rule and the whole, each under or over its column's key. The `key` words sit at the bottom right beside one open bead. Quote `key` when it holds a comma.
+- Each ring is a mark named by its `name` (text, never a bare `true` or number): a legend entry and a linked word (`==well==` lights that ring and dims the rest). Pointing at a ring opens its card ("18 of 40 homes are ill"). A scene holds one `beads`.
+- The `part` and `whole` keys show as one word each, so a key with a space is an error; the lint's other limits are in `lint.md`.
 
 ## 10. Space figures the learner moves: views, a hunt, a split
 The camera glides only when the learner presses something; a step never moves it.

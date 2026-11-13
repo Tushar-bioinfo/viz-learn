@@ -5,6 +5,7 @@ the beats in order, that every symbol shows after its number, and that numbers a
 recall cards; `lint_cards` and `lint_recall` stay here for sketch, whose pages keep their review cards.
 """
 import difflib
+import math
 import re
 
 # beats a scene can carry (lesson.md); the last four are optional moves
@@ -14,7 +15,7 @@ LESSON_BEATS = BEATS | {"refresher"}   # a refresher is a class lesson's end sce
 STEP = {"say", "why", "add", "mark", "think", "frame", "more", "refresh"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "space", "chance", "fork", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS = {"calc", "plane", "space", "chance", "fork", "beads", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -629,6 +630,74 @@ def lint_fork(Lx, w, fk, values):
         Lx.err(w, f"`fork` `see: {see}` names no end: write one end's `via` or `name`, the end lit at rest")
 
 
+# beads (adv.md): one ring of beads per row of a data list, one bead per unit of the whole, the part's beads filled (board.js beads)
+BEADS = {"from", "name", "part", "whole", "key", "colors", "id"}
+BEADS_ROWS, BEADS_WHOLE = (1, 4), (4, 120)   # rows a figure holds; beads a ring may hold at most
+# the ring's size, as board.js BD draws it in the reading column (1084 px wide at any desktop width): change both together
+BEADS_ROOM, BEADS_SIDE, BEADS_RMIN, BEADS_RMAX, BEADS_BEAD = 1084, 40, 110, 230, 3.5
+
+
+def beads_most(n):
+    """The largest whole a ring can hold when n rings share the room, with each bead at least BEADS_BEAD px in radius."""
+    r = max(BEADS_RMIN, min(BEADS_RMAX, BEADS_ROOM / n / 2 - BEADS_SIDE))
+    return min(BEADS_WHOLE[1], int(math.pi * r * .62 / BEADS_BEAD))
+
+
+def beads_rows(bd, values):
+    """The rows a `beads` figure draws: its `from` list, when it is a list of records; else []."""
+    rows = values.get(bd.get("from")) if isinstance(bd, dict) and isinstance(bd.get("from"), str) else None
+    return [r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
+
+
+def lint_beads(Lx, w, bd, values):
+    """A `beads` figure: its keys, its data list of 1–4 records, and in each record a name, a whole 4–120 and a part 0 to the whole."""
+    if not isinstance(bd, dict):
+        Lx.err(w, "`beads` is a mapping {from, name, part, whole, key}")
+        return
+    for k in sorted(set(bd) - BEADS, key=str):
+        hit = next(iter(difflib.get_close_matches(str(k), sorted(BEADS), 1, .6)), None)
+        Lx.err(w, f"`beads` has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(BEADS))}); a comma inside an unquoted `{{ }}` value splits it: quote the value"))
+    for k in ("from", "name", "part", "whole"):
+        if not (isinstance(bd.get(k), str) and bd[k].strip()):
+            Lx.err(w, f"`beads` needs `{k}:`" + (" (a data name holding a list of records, one per ring)" if k == "from" else " (a column of every record)"))
+            return
+    for k in ("part", "whole"):
+        if re.search(r"\s", bd[k].strip()):
+            Lx.err(w, f"`beads` `{k}: {bd[k]}` is more than one word: the ring shows each column's key as one word, so rename the column in make_data.py")
+    rows = values.get(bd["from"])
+    lo, hi = BEADS_ROWS
+    if not isinstance(rows, list) or not rows or not all(isinstance(r, dict) for r in rows):
+        Lx.err(w, f"`beads` `from: {bd['from']}` is not a list of records in the data: make_data.py writes it, one record per ring")
+        return
+    if not lo <= len(rows) <= hi:
+        Lx.err(w, f"`beads` `from: {bd['from']}` holds {len(rows)} records; the figure draws {lo} to {hi} rings side by side")
+    wlo, whi = BEADS_WHOLE[0], beads_most(min(max(len(rows), lo), hi))
+    cs = bd.get("colors")
+    if cs is not None:
+        if not isinstance(cs, list) or len(cs) != len(rows):
+            Lx.err(w, f"`beads` `colors` is a list of {len(rows)} kit colours, one per record of `{bd['from']}`; got {cs!r}")
+        for c in cs if isinstance(cs, list) else []:
+            if c not in COLOR_NAMES:
+                Lx.err(w, f"`beads` `colors`: `{c}` is not a kit colour ({', '.join(sorted(COLOR_NAMES))})")
+    for r, row in enumerate(rows, 1):
+        miss = [bd[k] for k in ("name", "part", "whole") if bd[k] not in row]
+        if miss:
+            Lx.err(w, f"`beads` record {r} of `{bd['from']}` has no column {', '.join(f'`{m}`' for m in miss)}")
+            continue
+        nm = row[bd["name"]]
+        if not (isinstance(nm, str) and nm.strip()):
+            Lx.err(w, f"`beads` record {r}: `{bd['name']}` is {nm!r}; a ring's name is its linked word, so make_data.py writes it as text (\"well\")")
+        p, t = row[bd["part"]], row[bd["whole"]]
+        whole_num = lambda q: NUM(q) and float(q).is_integer()
+        if not whole_num(t) or not wlo <= t:
+            Lx.err(w, f"`beads` record {r} ({nm}): `{bd['whole']}` is {t!r}; a ring holds a whole number of beads, at least {wlo}")
+        elif t > whi:
+            n = len(rows)
+            Lx.err(w, f"`beads` record {r} ({nm}): `{bd['whole']}` is {t:g}; {n} ring{'s hold' if n > 1 else ' holds'} at most {whi} beads each, so the beads stay large enough to see: use fewer rows or a smaller whole")
+        elif not whole_num(p) or not 0 <= p <= t:
+            Lx.err(w, f"`beads` record {r} ({row[bd['name']]}): `{bd['part']}` is {p!r}; it is a whole number from 0 to `{bd['whole']}` ({t:g})")
+
+
 def chance_name(nm):
     """A group name as the page shows it: case folded, runs of spaces as one (HTML collapses them)."""
     return " ".join(str(nm).split()).lower()
@@ -844,6 +913,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
     values = {**(deck.get("data") or {}), **(data or {})}
     chances = {}  # one `chance` per scene
     forks = {}    # one `fork` per scene
+    beads = {}    # one `beads` per scene
     said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
@@ -939,6 +1009,12 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                     s_fk.append(j + 1)
                     if len(s_fk) == 2:
                         Lx.err(w, f"this scene has a second `fork` (steps {s_fk[0]} and {s_fk[1]}): one `fork` per scene, so one end is lit at a time; put the second in its own scene")
+                if "beads" in it:
+                    lint_beads(Lx, w, it["beads"], values)
+                    s_bd = beads.setdefault(id(s), [])
+                    s_bd.append(j + 1)
+                    if len(s_bd) == 2:
+                        Lx.err(w, f"this scene has a second `beads` (steps {s_bd[0]} and {s_bd[1]}): one `beads` per scene, so each ring's name is one mark; put the second in its own scene")
                 if VIS & set(it):
                     vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
                     B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
@@ -1072,7 +1148,7 @@ def link_key(inner, keys):
     return whole if whole in keys else inner[:c].strip() if c > 0 and inner[:c].strip() in keys else None
 
 
-def scene_marks(s, symbols):
+def scene_marks(s, symbols, data=None):
     """Each linkable mark of a board scene's plane, space and chart, in board.js's order: (figure no, kind, mark no, mark,
     the step it shows on, its keys, a legend entry or not, the colour its word takes or None for one of its own)."""
     out, f = [], 0
@@ -1080,8 +1156,16 @@ def scene_marks(s, symbols):
         for it in as_list(st.get("add")) if isinstance(st, dict) else []:
             if not isinstance(it, dict):
                 continue
-            kind = next((k for k in ("plane", "space", "chart", "chance", "fork") if isinstance(it.get(k), dict)), None)
+            kind = next((k for k in ("plane", "space", "chart", "chance", "fork", "beads") if isinstance(it.get(k), dict)), None)
             if kind is None:
+                continue
+            if kind == "beads":   # one ring per record, named by its `name` column, in s1, s2, s3, s4 (board.js beads)
+                cs = it["beads"].get("colors") if isinstance(it["beads"].get("colors"), list) else []
+                for i, row in enumerate(beads_rows(it["beads"], data or {})[:BEADS_ROWS[1]]):
+                    nm = row.get(it["beads"].get("name"))
+                    if isinstance(nm, str) and nm.strip():   # a name that is not text is lint_beads' error
+                        out.append((f, kind, i, {"label": nm}, j + 1, [nm.strip()], True, cs[i] if i < len(cs) else f"s{i + 1}"))
+                f += 1
                 continue
             if kind == "fork":   # each end, by its path's word and its name; told apart by which path lights, not by colour
                 for i, e in enumerate(as_list(it["fork"].get("ends"))):
@@ -1181,13 +1265,13 @@ def near_rgb(a, b):
     return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5 <= 20   # out of 441: the same colour to the eye at body size
 
 
-def lint_links(Lx, deck):
+def lint_links(Lx, deck, data=None):
     """A mark with a legend entry has its linked word in the scene's text by the step that draws it; a ==word== that
     names no mark is no near-miss of one, nor a mark of another scene; two linked marks of one figure differ in colour;
     a plane `name:` whose mark has a linked word is not drawn."""
     symbols = deck.get("symbols") or {}
     slides = deck.get("slides") or []
-    boards = [(i, s, scene_marks(s, symbols)) for i, s in enumerate(slides) if isinstance(s, dict) and s.get("type") == "board"]
+    boards = [(i, s, scene_marks(s, symbols, data)) for i, s in enumerate(slides) if isinstance(s, dict) and s.get("type") == "board"]
     elsewhere = {}
     for i, s, marks in boards:
         for k in scene_keys(marks):
@@ -1244,7 +1328,7 @@ def lint_links(Lx, deck):
                 Lx.warn(where, f"linked words {ns} all take {col} in one figure, so the learner cannot tell which mark a word means: give each mark its own `color:`")
 
 
-def lint_bare(Lx, deck):
+def lint_bare(Lx, deck, data=None):
     """A symbol's name in plain words stays grey: written as $w_0$ it takes its colour. A linked ==H== is its TeX."""
     names = [k for k, v in (deck.get("symbols") or {}).items() if isinstance(v, dict) and (len(k) <= 2 or re.search(r"\d", k)) and k not in PLAIN]
     if not names:
@@ -1253,7 +1337,7 @@ def lint_bare(Lx, deck):
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
             continue
-        keys = scene_keys(scene_marks(s, deck.get("symbols") or {}))
+        keys = scene_keys(scene_marks(s, deck.get("symbols") or {}, data))
         unlink = lambda v: HILITE.sub(lambda m: " " if link_key(m.group(1), keys) else m.group(0), v)
         for j, st in enumerate(as_list(s.get("steps"))):
             if not isinstance(st, dict):
@@ -1968,7 +2052,7 @@ def lint_story(Lx, deck):
 # the scene's own table; `product` is a worked product (product.py opens it into lines that hold \prodpart).
 IDEAS = {
     "made-of": ("where does this number come from?", "loupe", ["table", "calc", "product", "vec", "matrix", "strip"]),
-    "amount": ("how much, what share?", "units", ["units", "parts", "stat", "chance"]),
+    "amount": ("how much, what share?", "units", ["units", "parts", "stat", "chance", "beads"]),
     "cause": ("what happens if I change this?", "handle", ["plane", "chart", "space", "dist"]),
     "closest": ("which choice is best?", "guess", ["plane", "space"]),
     "shortcut": ("why not the easy way?", "ghost", ["plane", "space", "chart", "compare"]),
@@ -2010,7 +2094,7 @@ def adv_only(deck):
             found = ["hunt"] if "hunt" in st else []
             for it in as_list(st.get("add")):
                 it = it if isinstance(it, dict) else {}
-                found += [k for k in ("chance", "fork", "strip") if k in it]
+                found += [k for k in ("chance", "fork", "beads", "strip") if k in it]
                 sp = it.get("space") if isinstance(it.get("space"), dict) else {}
                 found += ["views"] if "views" in sp else []
                 found += ["split"] if any(isinstance(m, dict) and "split" in m and "along" in m for m in as_list(sp.get("marks"))) else []
@@ -2039,12 +2123,12 @@ def scene_kinds(s):
     return out
 
 
-def scene_shows(s, symbols):
+def scene_shows(s, symbols, data=None):
     """What `see` may name in a board scene: {name: mark tuple or None}. Marks by label or id (scene_marks), chart
     series by name, table columns by key or label, and symbols the scene shows (read live, drawn, or in its maths).
     A mark keeps its name when a series, column or symbol shares it, so its link rule still applies."""
     out = {}
-    for m in scene_marks(s, symbols):
+    for m in scene_marks(s, symbols, data):
         for k in m[5]:
             out.setdefault(k, m)
     for _, it in items_of(s):
@@ -2089,7 +2173,7 @@ def two_states(s):
     return False
 
 
-def lint_adv(Lx, deck):
+def lint_adv(Lx, deck, data=None):
     """adv.md: a scene's idea, its witness (`see`), its foil, and the depth budget. A lesson with no `idea` is not adv."""
     boards = {id(s) for s in adv_boards(deck)}
     for i, s in enumerate(deck.get("slides") or []):
@@ -2128,13 +2212,13 @@ def lint_adv(Lx, deck):
                               "or pick the idea that fits the picture, or write the learner's own question, ending in `?`")
         if has and isinstance(see, str) and see.strip():
             see = see.strip()
-            can = scene_shows(s, symbols)
+            can = scene_shows(s, symbols, data)
             if see not in can:
                 hit = next((k for k in can if near(see, k)), None)
                 Lx.err(w, f"`see: {see}` names nothing this scene draws" + (f": did you mean `{hit}`?" if hit else "")
                           + " It is a mark's label or id, a chart series, a symbol the scene shows, or a table column")
             elif can[see] is not None:
-                keys, m = scene_keys(scene_marks(s, symbols)), can[see]
+                keys, m = scene_keys(scene_marks(s, symbols, data)), can[see]
                 if not any((x := link_key(inner, keys)) is not None and keys[x][:3] == m[:3]
                            for _, fld, v in scene_texts(s) if fld in SEEN for inner in HILITE.findall(v)):
                     Lx.err(w, f"`see: {see}` is the mark that carries the point, but no teacher line links its word: write =={see}== "
@@ -2289,9 +2373,10 @@ def lint_recall(Lx, deck, state):
 
 def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
+        values = {**(deck.get("data") or {}), **(data or {})}   # what a `beads` figure's rings are named from
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
-        lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck); lint_order(B, Lx, deck)
+        lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck, values); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_case(Lx, deck, data); lint_story(Lx, deck)
-        lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck); lint_adv(Lx, deck)
+        lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck, values); lint_adv(Lx, deck, values)
     return lesson_lint
