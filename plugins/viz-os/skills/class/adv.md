@@ -59,7 +59,7 @@ Up to `depth` scenes may work on one idea: a second example, a second picture. M
 ```bash
 python3 C/scripts/storyboard.py lessons/<slug>/lesson.yaml   # writes storyboard.svg beside the yaml
 ```
-It prints the path and one line (`10 scenes, 8 ideas, depth 2`). Show `storyboard.svg` to the user: one card per scene, with an icon for its idea; pointing at a card shows its `shows` and `see`. Ten cards with the same icon mean ten scenes that teach the same way. **Wait for an OK** before you make the data and write the scenes. Change the plan the user asks for, and run the storyboard again.
+It prints the path and one line (`10 scenes, 8 ideas, depth 2`). Show `storyboard.svg` to the user: one card per scene, with an icon for its idea; pointing at a card shows its `shows` and `see`. Ten cards with the same icon mean ten scenes that teach the same way. **Wait for an OK** before you make the data and write the scenes. If the user said "just build", show it and build on without waiting. Change the plan the user asks for, and run the storyboard again.
 
 ## 8. What the lint checks
 A lesson is adv once any board scene has `idea`.

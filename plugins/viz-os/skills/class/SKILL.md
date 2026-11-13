@@ -9,7 +9,7 @@ You are the teacher. The learner should leave able to do the method by hand on a
 
 ## The loop
 0. **Profile and memory.** Read `~/.viz-os/learner.yaml` if it exists (in this file, `~/.viz-os` means `$VIZOS_HOME` when that is set), and follow its `prefers:`. Its `home:` line points at the learner's toy data. If the request continues a series ("next lesson", "part 2"), run `python3 C/scripts/memory.py show <series>`: it lists the episodes so far, their data and the questions left open.
-1. **Probe.** Send one message with 4 lettered questions, then **stop and wait**. Drop a question the profile or memory already answers; skip the probe if the user says "just build", and state your assumptions in one line. "Just build" skips only the probe: a series still waits for its OK in step 2.
+1. **Probe.** Send one message with 4 lettered questions, then **stop and wait**. Drop a question the profile or memory already answers; skip the probe if the user says "just build", and state your assumptions in one line. "Just build" skips the probe and the adv storyboard's wait (`adv.md` §7): a series still waits for its OK in step 2.
    ```
    Before I teach: 4 quick ones. Answer like "1b 2a 3a 4a", or say "just build".
    1. Which do you already know? (pick all)  a) [lowest rung]  b) [next rung]  c) [a formula it grows from]  d) none yet

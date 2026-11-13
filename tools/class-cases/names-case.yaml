@@ -1,0 +1,20 @@
+# expect: differ only in case
+# Cold 5: cell c1 in the table and centre C1 in the text read as one name.
+title: Nearest centre
+question: Which centre is nearest?
+answer: The one with the smaller distance.
+data:
+  cells: [{id: c1, cd3: 8.1}, {id: c2, cd3: 2.0}]
+symbols:
+  m1: {tex: '\mu_1', says: the first centre's level, short: C1 level, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: Measure
+    lead: Each cell takes its nearest centre.
+    table: {from: cells, cols: [id, cd3]}
+    steps:
+      - say: Measure the first cell to C1.
+  - type: recap
+    answer: The one with the smaller distance.

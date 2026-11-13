@@ -102,7 +102,7 @@ PLANE = {"points": "{from, x, y, by, label, colors}", "shade": "[w0, w1, w2]", "
          "square": "[[x1, y1], [x2, y2]]", "text": "a label (and at: [x, y])", "ring": "[x, y]", "quarters": "[cx, cy]"}
 
 
-MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "dash", "when", "side", "from", "at", "id"}   # what every mark may also take (board.md)
+MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "dash", "when", "side", "from", "at", "id", "centre"}   # what every mark may also take (board.md)
 # legend limits and word counts (a {{number}}, $maths$ or `code` is one word) come from the deck: B.LEGEND_WORDS,
 # B.LEGEND_MAX, B.name_words
 
@@ -149,6 +149,8 @@ def lint_plane(B, Lx, w, pl, names):
             prose = " " in str(x) or mk.get(x) is None   # a key with no value, or with spaces, is the tail of a cut-off sentence
             Lx.err(w, f"plane mark {i + 1} (`{k}`) has no field `{x}` (it takes {', '.join(sorted(MARK_FIELDS))})"
                       + ("; it looks like the end of a sentence: a comma inside an unquoted `{ }` value splits it, so quote that value" if prose else ""))
+        if "centre" in mk and (k != "point" or mk["centre"] is not True):
+            Lx.err(w, f"plane mark {i + 1}: `centre: true` goes on a `point` (a centre drawn as a ring with a cross, never like a data dot)")
         if pl.get("fill") and k in ("vector", "foot", "square"):
             Lx.err(w, f"a plane with `fill` stretches its axes, so a `{k}` would not read true: delete `fill`, or drop the mark")
         if mk.get("when") is not None:
@@ -208,7 +210,7 @@ SPACE = {"points": "{from, at}", "point": "a position", "ring": "a position", "v
          "segment": "[P, Q]", "text": "a label (and at:)",
          "guess": "[a, b] on: [U, V] from: P (a hunt makes it)", "split": "[U, V] by: [a, b] (or the short {split: P, along: [U, V]})"}
 NUMBER = re.compile(r"[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?")   # a bare number, where a position is needed
-SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring", "id", "on", "was", "by", "to"}
+SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring", "centre", "id", "on", "was", "by", "to"}
 ON_SPACE = "a space draws no names on its marks: give the mark `label:` (its legend entry) and `says:` (its card)"
 
 
@@ -277,6 +279,8 @@ def lint_space(B, Lx, w, sp, names, symbols, values):
                       + ("; it looks like the end of a sentence: a comma inside an unquoted `{ }` value splits it, so quote that value" if prose else ""))
         if mk.get("when") is not None:
             ex(mk["when"])
+        if "centre" in mk and (k != "point" or mk["centre"] is not True):
+            Lx.err(w, f"{m}: `centre: true` goes on a `point` (a centre drawn as a ring with a cross, never like a data dot)")
         if "ring" in mk and "point" in mk and mk["ring"] is not True:
             Lx.err(w, f"{m}: `ring` on a point is `true` (a ring round the dot); for a ring alone write {{ring: P}}")
         rg = mk.get("rgb", v.get("rgb") if k == "points" and isinstance(v, dict) else None)
@@ -1052,7 +1056,7 @@ def step_lines(st):
 # ---- linked words (board.md, Highlights in text): ==pixel== names a mark of the scene's plane, space or chart
 HILITE = re.compile(r"==(.+?)==")
 TOKEN = re.compile(r"^(accent|s[1-5]|good|bad|mist|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}):")   # a colour before the colon: no link (board.js `md`)
-SPACE_DEF = {"points": "s1", "point": "ink", "ring": "ink", "vector": "ink", "sheet": "mist", "foot": "s2", "segment": "mist", "text": "mist"}   # board.js SDEF
+SPACE_DEF = {"points": "mist", "point": "ink", "ring": "ink", "vector": "ink", "sheet": "mist", "foot": "s2", "segment": "mist", "text": "mist"}   # board.js SDEF
 
 
 def shown(v):
@@ -1861,6 +1865,45 @@ def lint_names(B, Lx, deck):
             Lx.warn(f"symbols.{ns[0]}", f"{both} all have `short` “{symbols[ns[0]]['short']}”: a legend or a card cannot tell them apart; give each its own 2-word `short`")
 
 
+ID_WORD = re.compile(r"(?<![\w$\\{])[A-Za-z]+\d+[A-Za-z0-9]*(?![\w}])")   # a name with a digit: c1, C1, PC2, CD19
+
+
+def lint_case(Lx, deck, data):
+    """Two names the learner reads that differ only in case (cell c1 and centre C1) read as one name: rename one."""
+    seen = {}   # lower -> {form: first place}
+    def note(t, where):
+        for m in ID_WORD.findall(L_plain(re.sub(r"\{\{.*?\}\}|\$[^$]*\$", " ", str(t)))):   # a {{number}} or $maths$ is no name
+            seen.setdefault(m.lower(), {}).setdefault(m, where)
+    for n, v in (deck.get("symbols") or {}).items():
+        if isinstance(v, dict):
+            for k in ("short", "says"):
+                if v.get(k):
+                    note(v[k], f"symbols.{n}")
+    for i, sl in enumerate(deck.get("slides") or []):
+        for _, t in prose(sl):
+            note(t, slide_where(i, sl) if isinstance(sl, dict) else f"slide {i + 1}")
+    def froms(node):
+        if isinstance(node, dict):
+            t = node.get("table")
+            if isinstance(t, dict) and isinstance(t.get("from"), str):
+                yield t["from"]
+            for x in node.values():
+                yield from froms(x)
+        elif isinstance(node, list):
+            for x in node:
+                yield from froms(x)
+    for f in set(froms(deck.get("slides") or [])):   # a table shows its rows' words (cell ids)
+        v = {**(deck.get("data") if isinstance(deck.get("data"), dict) else {}), **(data or {})}.get(f)
+        for r in (v if isinstance(v, list) else []):
+            for x in (r.values() if isinstance(r, dict) else []):
+                if isinstance(x, str):
+                    note(x, "data.json")
+    for forms in seen.values():
+        if len(forms) > 1:
+            (a, wa), (b, wb) = list(forms.items())[:2]
+            Lx.warn(wb, f"“{a}” ({wa}) and “{b}” differ only in case: a learner reads them as one name; rename one in plain words (cell c1, Centre 1)")
+
+
 COLOUR_MARK = re.compile(r"==[\w-]+:(.*?)==")   # ==s3:red part== colours its text; keep the text
 LEAD_WORD = {"note", "tip", "hint", "example", "why", "check", "recall", "key", "step", "answer", "caution", "warning", "idea", "rule", "result"}
 PLAIN_SIDE = re.compile(r"^(?=.*[^\W\d_])[^$`{}\\\d]+$")   # words with a letter: no digit, $maths$, {{number}} or `code`
@@ -2229,6 +2272,6 @@ def make_lint(B, data):
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck); lint_order(B, Lx, deck)
-        lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_story(Lx, deck)
+        lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_case(Lx, deck, data); lint_story(Lx, deck)
         lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck); lint_adv(Lx, deck)
     return lesson_lint

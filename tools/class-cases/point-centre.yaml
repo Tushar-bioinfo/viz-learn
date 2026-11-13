@@ -1,0 +1,34 @@
+# expect: builds
+# expect: not: `centre: true` goes on a `point`
+# Cold 5: a centre is a point drawn as a ring with a cross, on a plane and in a space.
+title: Centres
+question: Where is the group's centre?
+answer: At the mean of its cells.
+data:
+  cells: [{id: c1, cd3: 8.1, cd19: 1.2}, {id: c2, cd3: 7.4, cd19: 2.0}, {id: c3, cd3: 6.8, cd19: 1.1}]
+  m: [7.43, 1.43, 0.5]
+  rows3: [{at: [8.1, 1.2, 0.5]}, {at: [7.4, 2.0, 0.8]}, {at: [6.8, 1.1, 0.3]}]
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: The centre
+    lead: The cells sit round their centre.
+    steps:
+      - say: The cells and their ==centre==.
+        add:
+          plane:
+            x: {label: marker 1, min: 0, max: 10}
+            y: {label: marker 2, min: 0, max: 10}
+            marks:
+              - points: {from: cells, x: cd3, y: cd19}
+              - {point: ['at(m, 0)', 'at(m, 1)'], centre: true, color: s1, label: centre, says: the mean of the three cells}
+      - say: In three markers, the ==mean point== again.
+        add:
+          space:
+            axes: [marker 1, marker 2, marker 3]
+            marks:
+              - {points: {from: rows3, at: at}}
+              - {point: m, centre: true, color: s1, label: mean point, says: the mean of the three cells}
+  - type: recap
+    answer: At the mean of its cells.

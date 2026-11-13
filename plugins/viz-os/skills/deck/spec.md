@@ -30,7 +30,7 @@ include: [ch2.yaml, ch3.yaml]         # optional: slides from other files, appen
                                       # derive, symbols and abbr join the deck's)
 slides: [ … ]
 ```
-Use each name once: a key in `data_file` must not also be in `data`. `says` is the meaning in plain words (about 6 words; the linter warns past 9 without a `short:`). `short` (2–3 words) labels the term on the formula and in step cards.
+Use each name once: a key in `data_file` must not also be in `data`. `says` is the meaning in plain words (about 6 words; the linter warns past 9 without a `short:`). `short` (2–3 words) labels the term on the formula and in step cards. A class lesson keeps it to 2 words (the class skill's `board.md` and its lint).
 
 ## Every slide
 | Field | What it does |

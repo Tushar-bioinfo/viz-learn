@@ -313,8 +313,9 @@
           if (one && ['mean', 'sum', 'var', 'sd'].includes(a.f) && !(opts.val && !arr)) {
             // a symbol that already names its item (x_i) keeps one subscript: x_i, not x_i_i.
             // A label with its own braces (cd3_t -> \mathrm{cd3}_{\mathrm{t}}) is kept and joins the index: cd3_{t,i}, with \bar{cd3}_t
-            const sy = (opts.sym && opts.sym(one)) || L.autoSym(one), lab = sy.match(/^(.*)_\{((?:[^{}]*\{[^{}]*\})+[^{}]*)\}$/);
-            const base = lab ? lab[1] : sy.replace(/_(\{[^{}]*\}|\w)$/, ''), xi = lab ? `${base}_{${lab[2]},i}` : `${base}_i`, xbar = lab ? `\\bar{${base}}_{${lab[2]}}` : `\\bar{${base}}`;
+            const sy = (opts.sym && opts.sym(one)) || L.autoSym(one), sp = supOf(sy), lab = sp.core.match(/^(.*)_\{((?:[^{}]*\{[^{}]*\})+[^{}]*)\}$/);
+            const base = lab ? lab[1] : sp.core.replace(/_(\{[^{}]*\}|\w)$/, ''), xi = indexed(sy, 'i');
+            const xbar = sp.sup ? `\\overline{${base}${sp.sup}}` : lab ? `\\bar{${base}}_{${lab[2]}}` : `\\bar{${base}}`;
             if (!arr) {
               const ss = `\\sum_i (${xi} - ${xbar})^2`;
               s = { mean: `\\tfrac{1}{n}\\sum_i ${xi}`, sum: `\\sum_i ${xi}`, var: `\\tfrac{1}{n-1}${ss}`, sd: `\\sqrt{\\tfrac{1}{n-1}${ss}}` }[a.f];
@@ -330,7 +331,7 @@
           }
           if (a.f === 'at' && a.args.length === 2 && a.args[0].t === 'id' && a.args[1].t === 'num') {   // one entry of a list: r_2 on the page, its number when substituting
             const nm = a.args[0].n, arr = opts.arr ? opts.arr(nm) : null, i = a.args[1].v;
-            s = arr && opts.val ? numTex(arr[i], fmtOf(nm, arr[i])) : `{${(opts.sym && opts.sym(nm)) || L.autoSym(nm)}}_{${i + 1}}`;
+            s = arr && opts.val ? numTex(arr[i], fmtOf(nm, arr[i])) : indexed((opts.sym && opts.sym(nm)) || L.autoSym(nm), i + 1);
             if (opts.wrap) s = opts.wrap(nm, s, occ++);
             break;
           }
@@ -369,6 +370,18 @@
     }
     return { tex: L.tex(ast, opts), eq: '\\htmlClass{approx}{\\approx}' };   // the audit reports these
   };
+  // a symbol's item index: x_i -> x_2, x_{i,2} -> x_{2,2} (the i is replaced, not stacked), d_i^2 -> d_2^2,
+  // cd3_t (a label in braces) -> cd3_{t,2}; a symbol with no index gets one: {x}_{2}; a sum keeps x_i
+  function supOf(sy) { const m = sy.match(/^(.*?)(\^(?:\{[^{}]*\}|\w))$/); return m ? { core: m[1], sup: m[2] } : { core: sy, sup: '' }; }
+  function indexed(sy, k) {
+    const { core, sup } = supOf(sy), lab = core.match(/^(.*)_\{((?:[^{}]*\{[^{}]*\})+[^{}]*)\}$/);
+    if (lab) return `${lab[1]}_{${lab[2]},${k}}${sup}`;
+    const m = core.match(/^(.*)_(?:\{([^{}]*)\}|(\w))$/);
+    if (!m) return k === 'i' ? `${core}_i${sup}` : `{${core}}_{${k}}${sup}`;
+    const parts = (m[2] ?? m[3]).split(','), j = parts.findIndex(q => q.trim() === 'i');
+    if (j >= 0) parts[j] = String(k); else if (k === 'i') parts.splice(0, parts.length, 'i'); else parts.unshift(String(k));   // no i: the row goes first, x_1 -> x_{2,1}
+    return parts.length === 1 && String(k).length === 1 ? `${m[1]}_${parts[0]}${sup}` : `${m[1]}_{${parts.join(',')}}${sup}`;
+  }
   function numTex(v, f) {
     if (Array.isArray(v)) return `[\\dots]`;
     const s = L.fmt(v, f);

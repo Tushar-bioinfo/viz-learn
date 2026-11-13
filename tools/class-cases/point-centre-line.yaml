@@ -1,0 +1,22 @@
+# expect: `centre: true` goes on a `point`
+# Cold 5: `centre` is a field of a point only.
+title: Centres
+question: Where is the group's centre?
+answer: At the mean of its cells.
+data: {m: [7.4, 1.4]}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: The centre
+    lead: A line through the centre.
+    steps:
+      - say: The ==level line==.
+        add:
+          plane:
+            x: {label: marker 1, min: 0, max: 10}
+            y: {label: marker 2, min: 0, max: 10}
+            marks:
+              - {line: ['-1.4', 0, 1], centre: true, color: s1, label: level line, says: the centre's height}
+  - type: recap
+    answer: At the mean of its cells.

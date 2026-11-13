@@ -72,8 +72,17 @@ html.ls-page .slide > .body.board { flex: none; display: flex; flex-direction: c
 .board .bpair { display: grid; grid-template-columns: var(--tcw, 30%) minmax(0, 1fr); gap: 20px; align-items: start; }
 .board .bpair.stacked { display: flex; flex-direction: column; gap: 28px; align-items: stretch; }
 .board .tcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: sticky; top: 24px; align-self: start; }
-.board .bpair.stacked .tcol, .board .tcol.nostick { position: static; }
-.board .bpair.stacked .tcol { align-self: stretch; }
+/* stacked above its work, the table pins as a strip at the top of the window (Cold 8), on the page's ground so the work
+   slides under it; a table taller than half the window (.nostick, board.js) scrolls with the page instead */
+.board .bpair.stacked .tcol { align-self: stretch; top: 0; z-index: 6; background: var(--bg); padding: 8px 0 10px; box-shadow: 0 10px 14px -10px rgba(0, 0, 0, .8); }
+.board .bpair.stacked:not(.measure) .tcard table.t th { padding: 4px 10px 6px; }
+.board .bpair.stacked:not(.measure) .tcard table.t td { font-size: 16px; padding: 4px 10px; }
+.board .tcol.nostick { position: static; }
+/* in a viewer that scrolls a box round the whole page, the table follows the part on show (board.js pinFollow) */
+.board .bpair.follow { position: relative; }
+.board .bpair.follow .tcol { position: relative; top: 0; z-index: 6; }
+.board .bpair.follow.stacked .tcol { background: var(--bg); }
+.board .bpair > .ftile { position: absolute; left: 0; width: 1px; opacity: 0; pointer-events: none; }
 .board .bpair.stacked .tcard { align-self: center; }
 .board .tcol > .note { width: 0; min-width: 100%; box-sizing: border-box; }
 html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: var(--card); border: 1px solid var(--thin); box-shadow: none; }
@@ -298,6 +307,8 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .board .pk i { display: inline-block; width: 22px; height: 0; border-top: 4px solid var(--c); }
 .board .pk.dash i { border-top-style: dashed; border-top-width: 3px; }
 .board .pk.dot i { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--c); }
+.board .pk.centre i { width: 16px; height: 16px; box-sizing: border-box; border: 2.5px solid var(--c); border-radius: 50%;
+  background: linear-gradient(var(--c), var(--c)) center / 8px 2.5px no-repeat, linear-gradient(var(--c), var(--c)) center / 2.5px 8px no-repeat; }
 .board .pk.arrow i { width: 18px; border-right: 0; position: relative; }
 .board .pk.arrow i::after { content: ""; position: absolute; right: -8px; top: -7px; border: 5px solid transparent; border-left: 8px solid var(--c); }
 .board .pk.ruler i { width: 20px; height: 8px; border: 2px solid var(--c); border-top: 0; }
@@ -543,3 +554,11 @@ html.ls-page .board .bi.fork { padding: 8px; box-sizing: content-box; max-width:
 .board .bops .opcard .otop { gap: 8px; }
 .board .bops .opcard .ow { display: flex; flex-direction: column; gap: 10px; }
 .board .bops .opcard .ow .small { margin-bottom: 2px; }
+
+/* a dist on a board (Chance 101): the family card wears the pop-up's glass, not the deck's grey plate; its name is plain
+   orange words, not a boxed chip. The chart's mark labels already left the plot for the legend (board.js distHooks) */
+.board .famcard { background: rgba(11, 12, 14, .55); -webkit-backdrop-filter: blur(4px) saturate(1.2); backdrop-filter: blur(4px) saturate(1.2);
+  border: 1px solid var(--line-dim); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.board .famcard .fn { border: 0; padding: 0; letter-spacing: .08em; font-size: 15px; }
+.board .famcard .msep { height: 1px; }
+.board .famcard .mrow.vs { border-top-width: 1px; }

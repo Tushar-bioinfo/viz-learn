@@ -365,7 +365,9 @@
       if (D) {
         // the chart, and beside it the family card: its name, each parameter with its meaning and live value (or its slider), then mean and variance
         vis.classList.add('vis-dist'); const row = h('div', 'distrow'), col = h('div', 'distchart'); row.appendChild(col); vis.appendChild(row);
-        const C = L.chart(col, D.spec, () => ctx.scope, { vis });
+        // a class board passes its mark hooks (ctx.distHooks): the marks' labels become legend names with cards, never tags on the plot
+        if (ctx.distHooks) D.spec.marks.forEach(m => { if (m.label && m.name == null) m.name = m.label; });
+        const C = L.chart(col, D.spec, () => ctx.scope, { vis, ...(ctx.distHooks ? ctx.distHooks(D.spec) : {}) });
         const d = v.dist, says = d.says || {}, card = h('div', 'famcard');
         const val = x => `<span class="pv2 iv" data-x="${L.esc(String(x))}"></span>`;
         const eq = (key, tex, x, cls = '') => `<div class="mrow${cls}"><span class="mk">${key}</span><span class="tx" data-tex="${L.esc(tex)}"></span><span class="eqs">=</span>${val(x)}</div>`;

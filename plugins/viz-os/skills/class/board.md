@@ -64,7 +64,7 @@ A lesson is one long page, a scene after a scene. You give the order; the kit pl
 - **Lines**: steps before the first figure run down the page. All text starts at the page's left edge, like a paper; only figures and equations sit in the middle.
 - **Figure block**: a figure (`plane`, `space`, `chart`, `image`, `stat`, `units`) starts a block. It holds the figure and the steps after it, until the next figure or a wide item. The figure sits at the left of the page and stays in view while its lines scroll past beside it, 20 px away. The figure is sized first, from 70% of the page; the text takes all that is left, never under 30%. Side by side needs 520 px of figure and 300 px of text. A narrower window, or a formula too long for the text column at 20 px, puts that figure above its lines, in the middle of the page.
 - **Wide items** (`assemble`, `compare`, `ops`, `dist`, `parts`, `flow`) run the full width and end the block. A wide figure sits in the middle at 1100 px or the page, and may reach 1280 on a big window. A formula card and a `compare` run the page, with their text on its left edge and a formula's equations in the middle.
-- **Table scene**: the table stays in view in the left 30%, then any `note` or `params` with `side: true` under it. The rest of the scene sits to its right. A table too wide for 30% takes the room it needs; if that leaves under 520 px, it goes on top and does not stay in view.
+- **Table scene**: the table stays in view in the left 30%, then any `note` or `params` with `side: true` under it. The rest of the scene sits to its right. A table too wide for 30% takes the room it needs; if that leaves under 520 px, or a worked line runs past the work's edge, it goes on top and pins as a smaller strip at the top of the window (the reading line moves just under it). A table taller than half the window then scrolls with the page: keep 3–8 rows.
 - **Reading**: as a step passes the reading line, 45% down the window, it lights up, the table's next column fills in and the row in use lights. Hovering a step does the same. Scrolling never changes a figure.
 - **Next and Back**: a figure gets them only if it changes: a mark, series or label with `step`, a run's frames (`frame:` or `stops`), an `ops` step. With one state it has no buttons. It starts at its first stop. A click on a line goes to its stop, and the ← → keys step the figure nearest the reading line.
 - **Sizes**: a figure owns its shape. A plane's comes from its axis ranges, a space is 4:3, a chart's from its `ratio`, an image's from the image. The layout gives a width and a height limit, never a box to fill. With the scene's head at the top of the window, a figure and its buttons fit on screen.
@@ -166,7 +166,7 @@ Drawn as a numbered line: `d₁ = xᵢ − x̄ = 4.3 − 5.70 = −1.40`, symbol
 |---|---|
 | `say` | a short label for the line (≤ 9 words) |
 | `why` | a grey half-line after it (≤ 12 words) |
-| `row` | reads that row of the table (from 0): a table column's name in `expr` takes that row's value, and its cell lights in the line's colour |
+| `row` | reads that row of the table (from 0): a table column's name in `expr` takes that row's value, and its cell lights in the line's colour. Without `row`, a name means what the data holds, never the table: `sum(cd3)` adds the whole list `cd3` in `data.json`, not the scene table's rows. To work on a subset (one group's 3 cells), make that list in `make_data.py` and name it |
 | `expr` | the computation, an expression over data, derive, earlier lines and the row |
 | `name` | names the result, so later lines and `{{name}}` can use it. A name that is also in `data.json` must come out the same, or the check warns that `make_data.py` and the page disagree |
 | `fmt` | rounds the result only; each input shows with its own `fmt` |
@@ -312,8 +312,8 @@ add:
 
 | Mark | Takes | Draws |
 |---|---|---|
-| `points` | `{from, x, y, by, label, colors}` | a dot per row of `from`; `x`, `y` are row keys; `label` names each dot from a key; `by` a key that picks the colour from `colors: {T: {color: s1, label: T cell}}` (each colour joins the legend) |
-| `point` | `[x, y]` | one dot; `name` labels it |
+| `points` | `{from, x, y, by, label, colors}` | a dot per row of `from`; `x`, `y` are row keys; `label` names each dot from a key; `by` a key that picks the colour from `colors: {T: {color: s1, label: T cell}}` (each colour joins the legend). With no `by` and no `color` the dots are neutral grey: a series colour would read as a group the legend names |
+| `point` | `[x, y]` | one dot; `name` labels it. `centre: true` draws a centre (a mean, a cluster's centre) as a ring with a cross, so it never reads as one more data dot |
 | `line` | `[w0, w1, w2]` | the line across the box (a line that misses the box says so in the legend) |
 | `shade` | `[w0, w1, w2]` | the half of the box where w0 + w1·x + w2·y > 0; `side: '-'` shades the other half |
 | `segment` | `[[x1, y1], [x2, y2]]` | a line between two points; `name` labels its middle |
@@ -359,8 +359,8 @@ A position is a name that gives 3 numbers (a `kind: vector` symbol, a data list,
 
 | Mark | Takes | Draws |
 |---|---|---|
-| `points` | `{from, at}` | a dot per row of `from`; `at` is the column whose cells are 3 numbers |
-| `point` | a position | one dot; `ring: true` adds an accent ring |
+| `points` | `{from, at}` | a dot per row of `from`; `at` is the column whose cells are 3 numbers; neutral grey unless given a `color` |
+| `point` | a position | one dot; `ring: true` adds an accent ring; `centre: true` draws a centre as a ring with a cross |
 | `ring` | a position | a ring round a point: "this one" |
 | `vector` | a position, `from:` | an arrow from `from` (default the origin) |
 | `sheet` | `[U, V]`, `max: [a, b]`, `min:` | the flat piece a·U + b·V, a from `min` (default 0) to `max`, tinted from V's colour to U's |

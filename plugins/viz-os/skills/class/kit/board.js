@@ -252,7 +252,8 @@
 
   // a legend or card swatch per kind of mark: a line, a dashed line, an arrow, a dot, a soft block
   const SWATCH = { line: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:3"/>', dash: '<line x1="1" y1="6" x2="23" y2="6" style="stroke:C;stroke-width:2.5;stroke-dasharray:5 3"/>',
-    arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', ring: '<circle cx="12" cy="6" r="4.5" style="fill:none;stroke:C;stroke-width:2"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>',
+    arrow: '<line x1="1" y1="6" x2="15" y2="6" style="stroke:C;stroke-width:3"/><polygon points="23,6 14,1.5 14,10.5" style="fill:C"/>', dot: '<circle cx="12" cy="6" r="5" style="fill:C;stroke:none"/>', ring: '<circle cx="12" cy="6" r="4.5" style="fill:none;stroke:C;stroke-width:2"/>',
+    centre: '<circle cx="12" cy="6" r="5" style="fill:none;stroke:C;stroke-width:2"/><path d="M9.5 6h5M12 3.5v5" style="stroke:C;stroke-width:1.8;stroke-linecap:round"/>', area: '<rect x="3" y="1" width="18" height="10" style="fill:C;fill-opacity:.45"/>',
     ruler: '<polyline points="2,2 2,9 22,9 22,2" style="fill:none;stroke:C;stroke-width:2"/><line x1="12" y1="4" x2="12" y2="9" style="stroke:C;stroke-width:2"/>' };
   const swatch = (kind, c) => `<svg width="24" height="12" viewBox="0 0 24 12">${(SWATCH[kind] || SWATCH.line).replace(/C/g, c)}</svg>`;
 
@@ -268,7 +269,7 @@
     const SW = SWATCH;
     const tipOn = (el, mk, c, kind) => {
       el.classList.add('says', 'vt'); el.setAttribute('tabindex', '0'); glow(el, c === 'var(--ink)' ? 'var(--mist)' : c); el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope)); pauseButton();
-      el._pd = () => ({ swatch: `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg>`, c: c === 'var(--ink)' ? 'var(--mist)' : c, name: mk.name ?? mk.label, says: mk.says, shape: kind === 'dot' ? 'one point' : null, scope: ctx.scope }); };
+      el._pd = () => ({ swatch: `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg>`, c: c === 'var(--ink)' ? 'var(--mist)' : c, name: mk.name ?? mk.label, says: mk.says, shape: kind === 'dot' || kind === 'centre' ? 'one point' : null, scope: ctx.scope }); };
     const m = { l: 62, r: 18, t: 14, b: 60 }, boxOf = () => { const X = p.x || {}, Y = p.y || {}; return [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)]; };
     // the picture takes its room. An equal plane keeps one scale on both axes and shows more of the plane on both sides, so the
     // data stay at true scale in any shape. With `fill` the plot holds 16:9, going to 2:1 if the window is short, each axis at its own scale
@@ -328,7 +329,7 @@
       // dots, named points and lines first, so every name placed after them clears them
       list(p.marks).forEach(mk => { const where = `slide ${ctx.index + 1} plane`; if (mk.when != null && !num(mk.when, where)) return;
         if (mk.points) list(L.val(mk.points.from, ctx.scope, where)).forEach(r => dots.push([sx(r[mk.points.x]), sy(r[mk.points.y])]));
-        if (mk.point) { const [x, y] = pt(mk.point, where); dots.push([sx(x), sy(y)]); }
+        if (mk.point) { const [x, y] = pt(mk.point, where); dots.push(mk.centre ? [sx(x), sy(y), 17] : [sx(x), sy(y)]); }
         if (mk.ring) { const [x, y] = pt(mk.ring, where); dots.push([sx(x), sy(y), 23]); }
         const L2 = mk.line ? clipLine(pt(mk.line, where), box) : mk.segment ? list(mk.segment).map(q => pt(q, where)) : null;
         if (L2) segs.push([sx(L2[0][0]), sy(L2[0][1]), sx(L2[1][0]), sy(L2[1][1])]);
@@ -379,7 +380,7 @@
           const seen = new Set(), whole = (j, own, who) => trueCheck(i, own.hex, own.lv, [['name', mk.name], ['label', mk.label]].filter(([w, t]) => t != null && wrongWords(t, own.hex || '#000').length && !seen.has(w) && seen.add(w)), st, j, who);
           rows.forEach((r, j) => { const x = r[P.x], y = r[P.y], gk = P.by ? r[P.by] : null, who = P.label ? r[P.label] : null;
             if (!inBox(x, y)) R.issues.push(`point ${r[P.label] ?? ''} is outside the picture`);
-            const own = mk.rgb != null ? rgbOf(mk.rgb, x, y, L.scope(ctx.scope, r), where, i, r, j, who) : { hex: colors[gk] && colors[gk].color || colors[gk] || mk.color || 's1', lv: null };
+            const own = mk.rgb != null ? rgbOf(mk.rgb, x, y, L.scope(ctx.scope, r), where, i, r, j, who) : { hex: colors[gk] && colors[gk].color || colors[gk] || mk.color || 'mist', lv: null };   // plain dots are neutral: s1 is a series colour, and a legend may give it a meaning
             if (P.label) trueCheck(i, own.hex, own.lv, [['dot', r[P.label]]], st, j);
             if (HEX.test(own.hex || '')) whole(j, own, who ?? `row ${j + 1}`);
             sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${col(own.hex)}` }, g); });
@@ -387,7 +388,12 @@
           if (mk.rgb == null) Object.entries(colors).forEach(([k, v]) => { const hx = v && v.color || v; trueCheck(i, hx, null, [['label', (v && v.label) || k]], st); legend.push({ text: (v && v.label) || k, c: col(hx), kind: 'dot', st }); });
         } else if (mk.point) {
           const [x, y] = pt(mk.point, where); outside(i, 'point', [x, y]);
-          sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${c}` }, g); name(nm, sx(x), sy(y), g, null, false, null, mk, c, 'dot'); key(mk, c, 'dot', st);
+          // a centre (a mean, a cluster's centre) is a ring with a cross, so it never reads as one more data dot
+          const X = sx(x), Y = sy(y), kd = mk.centre ? 'centre' : 'dot';
+          if (mk.centre) { sv('circle', { cx: X, cy: Y, r: 13, style: `fill:var(--bg);fill-opacity:.7;stroke:${c};stroke-width:3` }, g);
+            sv('path', { d: `M${X - 7},${Y}h14M${X},${Y - 7}v14`, style: `stroke:${c};stroke-width:3;stroke-linecap:round` }, g); }
+          else sv('circle', { cx: X, cy: Y, r: 10, style: `fill:${c}` }, g);
+          name(nm, X, Y, g, null, false, null, mk, c, kd); key(mk, c, kd, st);
         } else if (mk.segment) {
           const [a, b] = list(mk.segment).map(q => pt(q, where)); outside(i, 'segment', a, b);
           seg(a, b, g, c, mk.dash); if (nm) name(nm, sx((a[0] + b[0]) / 2), sy((a[1] + b[1]) / 2), g, null, false, midSpots(sx(a[0]), sy(a[1]), sx(b[0]), sy(b[1])), mk, c, mk.dash ? 'dash' : 'line'); key(mk, c, mk.dash ? 'dash' : 'line', st);
@@ -709,7 +715,7 @@
   const glowOf = c => { glow(document.createElement('span'), c); return glows[c]; };
   const SPACE = ['points', 'point', 'ring', 'vector', 'sheet', 'foot', 'segment', 'text', 'guess', 'split'];   // a mark's kind; `ring: true` on a point is a field
   // a foot is teal, not accent, so its linked word is told apart from a ringed point's accent ring
-  const SDEF = { points: 's1', point: 'ink', ring: 'ink', vector: 'ink', sheet: 'mist', foot: 's2', segment: 'mist', text: 'mist', guess: 's4', split: 'mist' };
+  const SDEF = { points: 'mist', point: 'ink', ring: 'ink', vector: 'ink', sheet: 'mist', foot: 's2', segment: 'mist', text: 'mist', guess: 's4', split: 'mist' };
   // the look was picked at the bench's size, a longest axis of 2.6 OD units: perspective (focal 5), the depth fade and the
   // right-angle mark are in those units, and scale with each space
   const OD0 = 2.6, FOCAL = 5, RAD = Math.PI / 180, PMIN = -10, PMAX = 80, HOME = [38, 20], SHAPE3 = 4 / 3;
@@ -868,6 +874,9 @@
           seg(g.o, vlerp(g.o, g.e, Math.max(0, 1 - .1 * u / L0 * Math.min(1, .8 * hl / q))), 6, `stroke:${c};stroke-width:${w};stroke-linecap:round`, m, 8);   // the line stops under its head
           put(tip.d - .001, `<polygon points="${n1(tip.x)},${n1(tip.y)} ${n1(bx - dy * hw)},${n1(by + dx * hw)} ${n1(bx + dy * hw)},${n1(by - dx * hw)}" style="fill:${c}"/>`, m); }
         else if (g.k === 'points') g.rows.forEach(row => dot(row.at, 5.5, `fill:${row.hex};stroke:var(--ink);stroke-opacity:.55;stroke-width:1.1`, m));
+        else if (g.k === 'point' && g.p && mk.centre === true) { const q = proj(g.p), r = Math.max(9, 11 * q.k), a = r * .55, op = q.fade.toFixed(2);
+          dot(g.p, 11, `fill:var(--bg);fill-opacity:.7;stroke:${c};stroke-width:2.6`, m, .002);
+          put(q.d - .0025, `<path d="M${n1(q.x - a)},${n1(q.y)}H${n1(q.x + a)}M${n1(q.x)},${n1(q.y - a)}V${n1(q.y + a)}" style="stroke:${c};stroke-width:2.6;stroke-linecap:round;opacity:${op}"/>`, m); }
         else if (g.k === 'point' && g.p) { if (mk.ring === true) dot(g.p, 12.5, `fill:none;stroke:${g.rc};stroke-width:${wOf(g.rc)}`, m, .001); dot(g.p, 8, `fill:${c};stroke:var(--ink);stroke-opacity:.55;stroke-width:1.1`, m, .002); }
         else if (g.k === 'ring' && g.p) dot(g.p, 11.5, `fill:none;stroke:${c};stroke-width:${wOf(c)}`, m, .0005);
         else if (g.k === 'segment' && g.a) seg(g.a, g.b, 6, `stroke:${c};stroke-width:${wOf(c)};stroke-linecap:round${mk.dash ? ';stroke-dasharray:6 4' : ''}`, m, 3);
@@ -1092,7 +1101,7 @@
         g.c = k === 'point' && spec != null && g.p ? hx(g.p) : c; if (k === 'points') g.rows.forEach(row => { row.hex = spec != null ? hx(row.at, row.r) : c; });
         g.rc = mk.color != null ? c : 'var(--accent)'; g.c2 = c;
         if (k === 'sheet') { const [su, sv2] = list(mk.sheet).map(symOfV), cs = q => cssRGB(mk.color != null ? c : q && q.color && q.color !== 'ink' ? col(q.color) : 'var(--mist)'); g.cU = cs(su); g.cV = cs(sv2); }
-        g.lk = k === 'vector' ? 'arrow' : k === 'sheet' ? 'area' : k === 'foot' || (k === 'segment' && mk.dash) ? 'dash' : k === 'segment' || k === 'guess' ? 'line' : k === 'ring' || mk.ring === true ? 'ring' : 'dot';
+        g.lk = k === 'vector' ? 'arrow' : k === 'sheet' ? 'area' : k === 'foot' || (k === 'segment' && mk.dash) ? 'dash' : k === 'segment' || k === 'guess' ? 'line' : k === 'ring' || mk.ring === true ? 'ring' : mk.centre === true ? 'centre' : 'dot';
         if (k === 'split') { g.lk = 'arrow'; const [a1, b1] = list(mk.split).map(symOfV); g.cU2 = col(a1 && a1.color || 's5'); g.cV2 = col(b1 && b1.color || 's3'); }   // each part in its vector's colour
         g.lc = mk.ring === true ? g.rc : k === 'sheet' && mk.color == null ? 'var(--mist)' : k === 'points' && spec != null ? 'var(--mist)' : g.c;
         const cc = g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc; g.hg = glowOf(cc);
@@ -1220,6 +1229,27 @@
     return R;
   }
 
+  // Cold 8: a viewer that shows the page at its full height inside a box it scrolls (a side pane) leaves position: sticky
+  // nothing to pin to, and the window never scrolls. Then the table follows the part of the page on show, read from thin
+  // tiles down its scene that an IntersectionObserver watches (it sees the top window's edges even from inside a frame)
+  const stretched = () => { const se = document.scrollingElement || document.documentElement;
+    return se.scrollHeight <= innerHeight + 2 && innerHeight > ((typeof screen !== 'undefined' && screen.availHeight) || 900) * 1.2; };
+  function pinFollow(pair, col) {
+    let io = null, tiles = [];
+    const seen = new Map(), TILE = 40;
+    const place = () => { const vis = [...seen.values()]; if (!vis.length) return;
+      const top = Math.min(...vis.map(r => r.top)), box = pair.getBoundingClientRect(), h = col.offsetHeight, pad = pair.classList.contains('stacked') ? 0 : 24;
+      const off = col.classList.contains('nostick') ? 0 : Math.max(0, Math.min(top + pad - box.top, box.height - h));
+      col.style.transform = off > 0 ? `translateY(${Math.round(off)}px)` : ''; };
+    const off = () => { if (io) io.disconnect(); io = null; tiles.forEach(tl => tl.remove()); tiles = []; seen.clear(); col.style.transform = ''; pair.classList.remove('follow'); };
+    return () => {
+      if (typeof IntersectionObserver !== 'function' || !stretched()) return off();
+      off(); pair.classList.add('follow');
+      io = new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting) seen.set(e.target, e.intersectionRect); else seen.delete(e.target); }); place(); },
+        { threshold: [0, .125, .25, .375, .5, .625, .75, .875, 1] });
+      for (let y = 0; y < pair.offsetHeight; y += TILE) { const tl = h('i', 'ftile'); tl.style.top = y + 'px'; tl.style.height = Math.min(TILE, pair.offsetHeight - y) + 'px'; pair.appendChild(tl); tiles.push(tl); io.observe(tl); } };
+  }
+
   const FIG = 520, SIDE = 300, GAP = 20, UNDER = 1280, READ = 1100;   // beside needs 520 px of figure and 300 of side column; a wide figure's column is 1100, and a figure in it may reach 1280
   const sideOf = W => Math.max(SIDE, Math.ceil(W * .3));              // the figure is sized from the 70%; the text then takes all that is left
   const SHAPE = 16 / 9, WIDEST = 2, FIGH = 820;                       // a chart's shape unless it has a ratio; how wide it may go in a short window; the tallest figure
@@ -1276,7 +1306,10 @@
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
       if (c.chart) { list(c.chart.series).forEach(m); list(c.chart.marks).forEach(m); } list(c.labels).forEach(m); return c; };
-    const visual = v => { const c = clicks(v); ctx.chartOpts = c.chart ? markHooks(c.chart) : null; try { const V = L.visual(c, ctx); V.hooks = ctx.chartOpts; vis.push(V); return V; } finally { ctx.chartOpts = null; } };
+    const visual = v => { const c = clicks(v); ctx.chartOpts = c.chart ? markHooks(c.chart) : null;
+      // a dist builds its chart spec inside the deck kit: the kit asks for the same hooks once the spec exists
+      if (c.dist) ctx.distHooks = spec => (ctx.chartOpts = markHooks(spec));
+      try { const V = L.visual(c, ctx); V.hooks = ctx.chartOpts; vis.push(V); return V; } finally { ctx.chartOpts = null; ctx.distHooks = null; } };
     // a chart's marks on a board: no tag on the plot. A named mark (its `name`, or the `short` of the symbol that is its value)
     // takes a legend entry after the series, with a swatch drawn as the mark is; the mark (a hit area at least 14 px wide, 24 px
     // round a point) and its entry open the board's card: the symbol's card, or the name, the value now and `says`
@@ -1293,7 +1326,7 @@
       const bare = v => typeof v === 'string' && /^[A-Za-z_]\w*$/.test(v) && S[v] ? v : null;
       const symOfMk = mk => mk.kind === 'hline' ? bare(mk.y) : mk.kind === 'vline' ? bare(mk.x) : mk.kind === 'point' ? bare((mk.at || [])[1] ?? mk.y) : null;
       const nameOf = mk => mk.name ?? (symOfMk(mk) ? S[symOfMk(mk)].short : null);
-      const kindOf = mk => ['band', 'area'].includes(mk.kind) ? 'area' : mk.kind === 'point' ? 'dot' : mk.kind === 'arrow' ? 'arrow' : mk.dash === false ? 'line' : 'dash';
+      const kindOf = mk => ['band', 'area'].includes(mk.kind) ? 'area' : mk.kind === 'point' ? 'dot' : mk.kind === 'arrow' ? 'arrow' : mk.dash === false || mk.kind === 'span' ? 'line' : 'dash';
       // a mark with no `color` whose value is a symbol with a colour is drawn in that colour, as the symbol is everywhere else.
       // Set on the board's copy of the spec before the chart draws, as a real colour (the chart knows only some names)
       list(spec.marks).forEach(m => { const q = m && !m.color && symOfMk(m), B = q && bookOf(), sc = B && B.S[q] && B.S[q].color; if (sc && sc !== 'ink') m.color = realColor(col(sc)); });
@@ -1773,7 +1806,7 @@
       zt.innerHTML = `<table class="t"><thead><tr>${tcols.map(c => `<th class="${c.expr ? 'der' : ''}${colHead(c.key) ? ' tsy' : ''}"${colHead(c.key) ? ` style="--sc:${colHead(c.key)}"` : ''} data-col="${L.esc(c.key)}"${wt(c)}><span class="cv">${md(c.label || c.key)}</span></th>`).join('')}</tr></thead>
         <tbody>${rows.map((r, i) => `<tr data-r="${i}">${tcols.map(c => `<td class="${c.expr ? 'der' : ''}" data-r="${i}" data-col="${L.esc(c.key)}"${stp(c)}><span class="cv">${cell(c, r)}</span></td>`).join('')}</tr>`).join('')}</tbody></table>`;
       // the table fills its 30%; one too wide for that takes what it needs, and if that leaves the work too little it goes above it
-      if (pair) { pair.classList.add('stacked'); const W = pair.clientWidth, w = Math.max(zt.offsetWidth, sideOf(W)); pair.style.setProperty('--tcw', w + 'px'); pair.classList.toggle('stacked', W - w - GAP < FIG); }
+      if (pair) { pair.classList.add('stacked', 'measure'); const W = pair.clientWidth, w = Math.max(zt.offsetWidth, sideOf(W)); pair.classList.remove('measure'); pair.style.setProperty('--tcw', w + 'px'); pair.classList.toggle('stacked', W - w - GAP < FIG); }   // measured at full size: the strip's smaller type is not the size beside
     };
 
     // highlights, on the things themselves: the row a worked line reads (its cells in the line's colours), and any
@@ -1841,7 +1874,9 @@
     const overrun = () => { let moved = false; blocks.forEach(b => { if (b.wide || !b.node.classList.contains('beside')) return; const edge = b.side.getBoundingClientRect().right;
       if ([...b.side.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1)) b.over = moved = true; });
       if (moved) { place(); drawLines(); } };
-    const stick = () => node.querySelectorAll('.tcol, .ffig').forEach(e => e.classList.toggle('nostick', e.offsetHeight > innerHeight - 48));
+    // a table stacked above its work pins as a strip at the top: only while it takes at most half the window
+    const stick = () => { node.querySelectorAll('.tcol, .ffig').forEach(e => e.classList.toggle('nostick', e.offsetHeight > (e.closest('.bpair.stacked') && e.classList.contains('tcol') ? innerHeight * .5 : innerHeight - 48)));
+      if (pair && zl) (pair._follow = pair._follow || pinFollow(pair, zl))(); };
 
     const R = {
       node, steps: n, stages,
@@ -1856,7 +1891,9 @@
       reset: () => { stages.forEach(S => S.to(0)); thinks.forEach(e => setThink(e, false)); read = lit = 0; R.repaint(); },
       figs,   // for the checks: a space figure's probe() and view()
       // the reading line, in window pixels: every step whose top has passed it counts as read
+      // A stacked table pinned as a strip at the top moves the line to just under it, so the step being read is never behind it
       spy: y => { const b = node.getBoundingClientRect(); let k = 0;
+        if (y !== Infinity && pair && zl && pair.classList.contains('stacked') && !zl.classList.contains('nostick')) { const tb = zl.getBoundingClientRect(); if (tb.top <= 1) y = Math.max(y, tb.bottom + 24); }
         if (y === Infinity || b.bottom < y) k = n; else if (b.top <= y) stepEls.forEach(e => { if (e.getBoundingClientRect().top <= y) k = Math.max(k, +e.dataset.at); });
         if (k === read) return; read = k; fill(k); if (over == null) { light(k); mark(k); } wsync(); },
       hover: k => { over = k; const c = k ?? read; fill(Math.max(read, c)); light(c); mark(c); },
