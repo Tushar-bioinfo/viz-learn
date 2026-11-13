@@ -1,0 +1,38 @@
+# expect: builds
+# expect: not: `pileup`
+# expect: not: the pileup
+# expect: not: mark target
+# expect: B2 · gene B · treated 2: 1,349 reads
+# N5: a scene that pins the count table and draws the same rows as a `pileup`: `row:`, `col:` and `cell:` light both.
+title: Which guides drop out
+question: Which genes do the cells need to grow?
+answer: The genes whose guides lose reads in the treated dishes.
+data:
+  guides:
+    - {guide: A1, gene: gene A, c1: 394, c2: 526, c3: 561, t1: 135, t2: 144, t3: 116}
+    - {guide: A2, gene: gene A, c1: 461, c2: 277, c3: 305, t1: 110, t2: 176, t3: 125}
+    - {guide: A3, gene: gene A, c1: 431, c2: 786, c3: 429, t1: 391, t2: 638, t3: 513}
+    - {guide: B1, gene: gene B, c1: 258, c2: 510, c3: 216, t1: 659, t2: 581, t3: 613}
+    - {guide: B2, gene: gene B, c1: 596, c2: 662, c3: 462, t1: 1244, t2: 1349, t3: 1277}
+    - {guide: B3, gene: gene B, c1: 255, c2: 204, c3: 193, t1: 476, t2: 356, t3: 332}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: amount
+    see: gene A
+    shows: the count table beside its reads drawn as stacks of dots
+    title: The table and its dots
+    lead: Each number in the table is one stack of dots.
+    table: {from: guides, cols: [guide, gene, c1, c2, c3, t1, t2, t3]}
+    steps:
+      - say: The same counts, drawn as reads on the gene.
+        add:
+          - pileup: {from: guides, name: guide, group: gene, runs: {control: [c1, c2, c3], treated: [t1, t2, t3]}}
+      - say: Guide B2 is one row of the table.
+        mark: row:4
+      - say: The second treated dish is one column.
+        mark: col:t2
+      - say: One cell is one stack.
+        mark: cell:4:t2
+      - say: The stacks of ==gene A== shrink in the treated dishes.

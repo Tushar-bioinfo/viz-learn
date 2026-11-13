@@ -14,10 +14,10 @@ updated: 2026-11-13
 title: C10, advanced visuals for class lessons
 
 now: >-
-  13 Nov: N5 colour wheel (8), houses (11) and the guided first look (5) are committed on this
-  branch; houses and the first look were built in their own sessions and merged. The wheel's red
-  and green moved to your pair B so every colour-blind bar passes. 325/325 class cases, 19/19 doc
-  tests. Left in N5: the CRISPR `pileup` (12), built in its own session and waiting for your approval.
+  13 Nov: N5 is built: all seven picked pieces are committed on this branch (bead rings, slope
+  lines, recorder, colour wheel, houses, guided first look, CRISPR read pileup). The last four ran
+  in parallel, three in their own sessions, and were merged here: 348/348 class cases, 20/20 doc
+  tests. Not pushed. Next proposed: C10h, the cold-start exam.
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -46,15 +46,6 @@ waiting:
         moment, the cap of 4 mark hues, and which mark counts as the witness.
 
 next:
-  - id: N5
-    title: Build the picked starter-look pieces, one block each
-    more: |
-      The user's N3 pick (13 Nov): ship 5 7 8 9 10 11 12; 1 2 3 4 6 stay reference.
-      Proposed order, cheapest and most reused first: bead rings (7), slope lines (9),
-      recorder strip under a new name (10), colour wheel (8), houses (11, deck kit: full run),
-      CRISPR revamp (12, settle its conditional pick first), guided first look (5, a kit
-      default: try on 2 lessons). Each adds an estimated 2-6 lines of docs; after N4 they
-      go where N4 puts adv-only figures. Facts: `out/c10/n3/kit-cost.md`.
   - id: C10h
     title: Cold-start exam on two adv lessons
     more: |
@@ -335,10 +326,10 @@ blocks:
     after: [N3]
     col: 4
     edges: false
-    status: active
+    status: done
     ships: plugin
     you: pick, review
-    line: "Seven pieces into the class kit; 7, 9, 10, 8, 11 and 5 done; the CRISPR pileup (12) waits on you."
+    line: "All seven picks are in the class kit: beads, slope, recorder, wheel, houses, first look, pileup."
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}

@@ -33,6 +33,7 @@ ADV_ONLY |= {"group", "glyphs"}   # a slope table (§9d), adv-only since N5
 ADV_ONLY |= {"recorder", "wash"}   # recorder (§9e), adv-only since N5
 ADV_ONLY |= {"wheel"}   # wheel (§9f), adv-only since N5
 ADV_ONLY |= {"unit"}   # chance `unit: house` (§9), adv-only since N5
+ADV_ONLY |= {"pileup", "runs", "unit"}   # pileup (§9g), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 
@@ -171,6 +172,9 @@ def class_tests():
     yield f"lint.md states the wheel limits WHEEL_GROUPS and WHEEL_NAME hold ({wg} groups, {wn} characters)", ok
     css = dict(re.findall(r"--ch-(red|green|blue): (#[0-9a-f]{6})", (CLASS / "kit/board.css").read_text()))
     yield f"board.css --ch-* and lesson_lint.WHEEL_LIGHT name the same light colours ({css})", css == lesson_lint.WHEEL_LIGHT
+    (r0, r1), (g0, g1), (c0, c1), pw = lesson_lint.PILEUP_ROWS, lesson_lint.PILEUP_GROUPS, lesson_lint.PILEUP_REPS, lesson_lint.PILEUP_WORDS   # lint.md states the pileup limits
+    ok = f"{r0} to {r1} rows in {g0} to {g1} groups" in lt and f"{c0} to {c1} count columns" in lt and f"{pw} words at most, as text" in lt
+    yield f"lint.md states the pileup limits PILEUP_ROWS, PILEUP_GROUPS, PILEUP_REPS and PILEUP_WORDS hold", ok
     js = (CLASS / "kit/parts.js").read_text()   # the slope glyphs: the lint's copy, parts.js and adv.md name the same set
     drawn = set(re.findall(r"^    '?([a-z-]+)'?: \{ r: ", js, re.M))
     named = set(re.findall(r"`([a-z-]+)`", (CLASS / "adv.md").read_text().split("## 9d.")[1].split("## 10.")[0])) & (drawn | set(lesson_lint.GLYPHS))

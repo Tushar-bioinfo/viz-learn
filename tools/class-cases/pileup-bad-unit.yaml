@@ -1,0 +1,33 @@
+# expect: `pileup` `unit:` is what a dot counts, in 2 words at most
+# N5: pileup-good with one fault (a long unit).
+title: Which guides drop out
+question: Which genes do the cells need to grow?
+answer: The genes whose guides lose reads in the treated dishes.
+data:
+  guides:
+    - {guide: A1, gene: gene A, c1: 394, c2: 526, c3: 561, t1: 135, t2: 144, t3: 116}
+    - {guide: A2, gene: gene A, c1: 461, c2: 277, c3: 305, t1: 110, t2: 176, t3: 125}
+    - {guide: A3, gene: gene A, c1: 431, c2: 786, c3: 429, t1: 391, t2: 638, t3: 513}
+    - {guide: B1, gene: gene B, c1: 258, c2: 510, c3: 216, t1: 659, t2: 581, t3: 613}
+    - {guide: B2, gene: gene B, c1: 596, c2: 662, c3: 462, t1: 1244, t2: 1349, t3: 1277}
+    - {guide: B3, gene: gene B, c1: 255, c2: 204, c3: 193, t1: 476, t2: 356, t3: 332}
+    - {guide: C1, gene: gene C, c1: 521, c2: 914, c3: 462, t1: 375, t2: 604, t3: 465}
+    - {guide: C2, gene: gene C, c1: 378, c2: 396, c3: 327, t1: 346, t2: 387, t3: 353}
+    - {guide: C3, gene: gene C, c1: 475, c2: 527, c3: 354, t1: 305, t2: 459, t3: 427}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: amount
+    see: gene B
+    shows: each guide's reads as stacks of dots, control above the chromosome line and treated below
+    title: Nine guides, six dishes
+    lead: Each dot stands for a few sequencing reads.
+    steps:
+      - say: Each guide cuts its gene; ==gene B==, ==gene A== and ==gene C== each have three guides.
+        add:
+          - pileup: {from: guides, name: guide, group: gene, runs: {control: [c1, c2, c3], treated: [t1, t2, t3]}, unit: sequencing reads counted}
+      - say: This guide's stacks grow in the treated dishes.
+        mark: row:4
+      - say: This one treated dish holds the most reads of all.
+        mark: cell:4:t2

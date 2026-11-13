@@ -16,6 +16,7 @@ STEP = {"say", "why", "add", "mark", "think", "frame", "more", "refresh"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
 ITEMS = {"calc", "plane", "space", "chance", "fork", "beads", "recorder", "wheel", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS |= {"pileup"}   # pileup (adv.md §9g), N5
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -1030,6 +1031,99 @@ def lint_wheel(Lx, w, wh, values):
         if long:
             Lx.err(w, f"`wheel` group name `{long[0]}` is {len(long[0])} characters; a group name outside the ring is {WHEEL_NAME} at most")
 
+# pileup (adv.md §9g): counts in two runs as a read pileup on a chromosome line, one stack of dots per repeat (board.js pileup)
+PILEUP = {"from", "name", "group", "runs", "unit", "colors", "id"}
+PILEUP_ROWS, PILEUP_GROUPS, PILEUP_REPS, PILEUP_WORDS = (2, 12), (1, 3), (1, 4), 2   # rows; groups, one kit colour each; columns a run; words in a name
+
+
+def pileup_runs(pu):
+    """A `pileup`'s runs as [(name, [column keys])] when `runs` is a mapping of lists of keys; else []."""
+    rn = pu.get("runs") if isinstance(pu, dict) else None
+    return [(k, [str(c) for c in v]) for k, v in rn.items() if isinstance(v, list)] if isinstance(rn, dict) else []
+
+
+def pileup_rows(pu, values):
+    """The rows a `pileup` draws: its `from` list, when it is a list of records; else []."""
+    rows = values.get(pu.get("from")) if isinstance(pu, dict) and isinstance(pu.get("from"), str) else None
+    return rows if isinstance(rows, list) and rows and all(isinstance(r, dict) for r in rows) else []
+
+
+def pileup_groups(pu, values):
+    """A `pileup`'s groups (its marks), each `group` value once, in row order."""
+    out = []
+    for row in pileup_rows(pu, values):
+        g = row.get(pu.get("group"))
+        if isinstance(g, str) and g.strip() and g.strip() not in out:
+            out.append(g.strip())
+    return out
+
+
+def lint_pileup(Lx, w, pu, values):
+    """A `pileup` figure: its keys, two runs of equal columns, its data list of rows, each with a name, a group and whole counts."""
+    if not isinstance(pu, dict):
+        Lx.err(w, "`pileup` is a mapping {from, name, group, runs, unit}")
+        return
+    for k in sorted(set(pu) - PILEUP, key=str):
+        hit = next(iter(difflib.get_close_matches(str(k), sorted(PILEUP), 1, .6)), None)
+        Lx.err(w, f"`pileup` has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(PILEUP))}); a comma inside an unquoted `{{ }}` value splits it: quote the value"))
+    for k in ("from", "name", "group"):
+        if not (isinstance(pu.get(k), str) and pu[k].strip()):
+            Lx.err(w, f"`pileup` needs `{k}:`" + (" (a data name holding a list of records, one per row)" if k == "from" else " (a column of every record: " + ("each row's name, as text)" if k == "name" else "the group a row belongs to, as text)")))
+            return
+    if "unit" in pu and not (isinstance(pu["unit"], str) and pu["unit"].strip() and len(pu["unit"].split()) <= PILEUP_WORDS):
+        Lx.err(w, f"`pileup` `unit:` is what a dot counts, in {PILEUP_WORDS} words at most (`unit: reads`); got {pu['unit']!r}")
+    rn, lo, hi = pu.get("runs"), *PILEUP_REPS
+    runs = pileup_runs(pu)
+    if not isinstance(rn, dict) or len(rn) != 2 or len(runs) != 2:
+        Lx.err(w, f"`pileup` `runs:` is two named runs, each a list of columns, the first drawn above the line and the second below (`runs: {{control: [c1, c2], treated: [t1, t2]}}`); got {rn!r}")
+        return
+    for name, cs in runs:
+        if not isinstance(name, str) or not name.strip() or len(name.split()) > PILEUP_WORDS or name.strip().isdigit():
+            Lx.err(w, f"`pileup` run name {name!r} is words, {PILEUP_WORDS} at most, as text (`control`); a number, even quoted, is not a name (the page would put the runs in number order)")
+        if not lo <= len(cs) <= hi or len(cs) != len(runs[0][1]):
+            Lx.err(w, f"`pileup` run `{name}` has {len(cs)} columns; each run has the same number, {lo} to {hi} (one stack per repeat)")
+    keys = [c for _, cs in runs for c in cs]
+    twice = sorted({c for c in keys if keys.count(c) > 1})
+    if twice:
+        Lx.err(w, f"`pileup` `runs` names the column `{twice[0]}` twice: each repeat is its own column")
+    rows = values.get(pu["from"])
+    if not isinstance(rows, list) or not rows or not all(isinstance(r, dict) for r in rows):
+        Lx.err(w, f"`pileup` `from: {pu['from']}` is not a list of records in the data: make_data.py writes it, one record per row")
+        return
+    rlo, rhi = PILEUP_ROWS
+    if not rlo <= len(rows) <= rhi:
+        Lx.err(w, f"`pileup` `from: {pu['from']}` holds {len(rows)} rows; the figure draws {rlo} to {rhi}")
+    seen, apart = [], None   # the groups in row order; the first row out of its group's run
+    for r, row in enumerate(rows):
+        miss = [k for k in (pu["name"], pu["group"], *keys) if k not in row]
+        if miss:
+            Lx.err(w, f"`pileup` row {r} (from 0) of `{pu['from']}` has no column {', '.join(f'`{m}`' for m in miss)}")
+            return
+        for k in (pu["name"], pu["group"]):
+            if not (isinstance(row[k], str) and row[k].strip()):
+                Lx.err(w, f"`pileup` row {r} (from 0): `{k}` is {row[k]!r}; make_data.py writes it as text (\"A1\", \"gene A\")")
+                return
+        bad = next((k for k in keys if not (NUM(row[k]) and float(row[k]).is_integer() and row[k] >= 0)), None)
+        if bad is not None:
+            Lx.err(w, f"`pileup` row {r} (from 0) ({row[pu['name']]}): `{bad}` is {row[bad]!r}; a count is a whole number from 0")
+        g = row[pu["group"]].strip()
+        if seen and g != seen[-1] and g in seen and apart is None:
+            apart = r
+            Lx.err(w, f"`pileup` row {r} (from 0) ({row[pu['name']]}) is in group `{g}`, but that group's rows do not sit together: sort `{pu['from']}` by `{pu['group']}` in make_data.py")
+        if not seen or g != seen[-1]:
+            seen.append(g)
+    groups = pileup_groups(pu, values)
+    glo, ghi = PILEUP_GROUPS
+    if not glo <= len(groups) <= ghi:
+        Lx.err(w, f"`pileup` has {len(groups)} groups in `{pu['group']}`; it draws {glo} to {ghi}, one kit colour each")
+    cs = pu.get("colors")
+    if cs is not None:
+        if not isinstance(cs, list) or len(cs) != len(groups):
+            Lx.err(w, f"`pileup` `colors` is a list of {len(groups)} kit colours, one per group of `{pu['group']}`; got {cs!r}")
+        for c in cs if isinstance(cs, list) else []:
+            if not isinstance(c, str) or c not in COLOR_NAMES:
+                Lx.err(w, f"`pileup` `colors`: `{c}` is not a kit colour ({', '.join(sorted(COLOR_NAMES))})")
+
 
 def chance_name(nm):
     """A group name as the page shows it: case folded, runs of spaces as one (HTML collapses them)."""
@@ -1251,6 +1345,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
     beads = {}    # one `beads` per scene
     recorders = {}   # one `recorder` per scene
     wheels = {}   # one `wheel` per scene
+    pileups = {}   # one `pileup` per scene
     said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
@@ -1365,6 +1460,12 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                     s_wh.append(j + 1)
                     if len(s_wh) == 2:
                         Lx.err(w, f"this scene has a second `wheel` (steps {s_wh[0]} and {s_wh[1]}): one `wheel` per scene, so `mark: row:N` and each track's word light one thing; put the second in its own scene")
+                if "pileup" in it:
+                    lint_pileup(Lx, w, it["pileup"], values)
+                    s_pu = pileups.setdefault(id(s), [])
+                    s_pu.append(j + 1)
+                    if len(s_pu) == 2:
+                        Lx.err(w, f"this scene has a second `pileup` (steps {s_pu[0]} and {s_pu[1]}): one `pileup` per scene, so `mark: row:N` and each group's name light one figure; put the second in its own scene")
                 if VIS & set(it):
                     vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
                     B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
@@ -1418,6 +1519,16 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                            and (tb is None or isinstance(tb, dict) and tb.get("from") == it["wheel"].get("from"))]
                     if whl and whl[0] and int(mark[4:]) >= len(whl[0]):
                         Lx.err(w, f"`mark: {mark}` names record {mark[4:]}, but the `wheel` draws {len(whl[0])} (rows count from 0)")
+                for pu in [it["pileup"] for _, it in items_of(s) if isinstance(it.get("pileup"), dict)
+                           and (tb is None or isinstance(tb, dict) and tb.get("from") == it["pileup"].get("from"))][:1]:
+                    # a row is a pileup's row, a column one of its runs' columns and a cell one stack, with no table or a table on its `from`
+                    pm = re.match(r"^(?:row:(\d+)|col:(.+)|cell:(\d+):(.+))$", mark) if isinstance(mark, str) else None
+                    pn, pkeys = len(pileup_rows(pu, values)), [k for _, ks in pileup_runs(pu) for k in ks]
+                    pr, pc = (pm.group(1) or pm.group(3), pm.group(2) or pm.group(4)) if pm else (None, None)
+                    if pr is not None and pn and int(pr) >= pn:
+                        Lx.err(w, f"`mark: {mark}` names row {pr}, but the `pileup` draws {pn} (rows count from 0)")
+                    if pc is not None and tb is None and pkeys and pc not in pkeys:
+                        Lx.err(w, f"`mark: {mark}` names the column `{pc}`, but the `pileup`'s runs hold {', '.join(f'`{k}`' for k in pkeys)}")
         # a name on the plot is a word the learner must know: the mark says it (hover), or a teacher line has named it by then
         lines = [st.get("say") for st in steps if isinstance(st, dict)]
         for w, mk, at in named:
@@ -1514,6 +1625,12 @@ def scene_marks(s, symbols, data=None):
     for j, st in enumerate(as_list(s.get("steps"))):
         for it in as_list(st.get("add")) if isinstance(st, dict) else []:
             if not isinstance(it, dict):
+                continue
+            if isinstance(it.get("pileup"), dict):   # one mark per group, named by its value, in `colors` or s1, s2, s3 (board.js pileup)
+                cs = it["pileup"].get("colors") if isinstance(it["pileup"].get("colors"), list) else []
+                for i, g in enumerate(pileup_groups(it["pileup"], data or {})):
+                    out.append((f, "pileup", i, {"label": g}, j + 1, [g], True, cs[i] if i < len(cs) else f"s{i + 1}"))
+                f += 1
                 continue
             kind = next((k for k in ("plane", "space", "chart", "chance", "fork", "beads", "recorder", "wheel") if isinstance(it.get(k), dict)), None)
             if kind is None:
@@ -2439,6 +2556,7 @@ IDEAS = {
     "angle": ("what does it look like from the right side?", "view", ["space", "plane"]),
     "like": ("what is it like?", "pair", ["compare"]),
 }
+IDEAS["amount"][2].append("pileup")   # pileup (adv.md §9g), N5
 BOOKENDS = ("plan", "summary", "next")      # scenes that carry no idea
 FOIL = ("misconception", "limits")          # beats that draw the wrong way beside the right way, as `shortcut` does
 DEPTH = 2                                   # scenes one idea may fill, unless learner.depth says more
@@ -2471,6 +2589,7 @@ def adv_only(deck):
             for it in as_list(st.get("add")):
                 it = it if isinstance(it, dict) else {}
                 found += [k for k in ("chance", "fork", "beads", "recorder", "wheel", "strip") if k in it]
+                found += ["pileup"] if "pileup" in it else []   # pileup (adv.md §9g), N5
                 sp = it.get("space") if isinstance(it.get("space"), dict) else {}
                 found += ["views"] if "views" in sp else []
                 found += ["split"] if any(isinstance(m, dict) and "split" in m and "along" in m for m in as_list(sp.get("marks"))) else []

@@ -29,7 +29,7 @@ Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `b
 | `idea` | The learner asks | The picture | Draw it today with |
 |---|---|---|---|
 | `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix`; `strip` when the whole is a picture (§11); `wheel` for colours (§9f) |
-| `amount` | how much, what share? | countable units, a level that fills | `units`, `parts`, `stat`, `chance`, `beads` (§9c) |
+| `amount` | how much, what share? | countable units, a level that fills | `units`, `parts`, `stat`, `chance`, `beads` (§9c), `pileup` (§9g) |
 | `cause` | what happens if I change this? | one handle moves one mark | `plane`, `chart`, `space`, `dist` |
 | `closest` | which choice is best? | your guess, its error, then the answer | `plane`, `space` |
 | `shortcut` | why not the easy way? | the wrong way as a ghost on the same frame | `plane`, `space`, `chart`, `compare` |
@@ -71,7 +71,7 @@ A lesson is adv once any board scene has `idea`.
 - One idea in more scenes than `depth` (warning): merge, or ask for more depth.
 - `learner.depth` is a whole number from 1 to 6 (error).
 - `idea`, `see` or `shows` on a slide that is not a board (error, in any lesson).
-- In a plain lesson, `chance`, `fork`, `beads`, `recorder`, a table's `style: slope`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
+- In a plain lesson, `chance`, `fork`, `beads`, `recorder`, `pileup`, a table's `style: slope`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
 - In a plain lesson, `wheel` too (error).
 A spine of stubs fails the lint for its missing `steps`, and other lints warn about what is not written yet; the checks above that look at a figure wait for steps. The storyboard never runs the lint.
 
@@ -135,6 +135,14 @@ It draws the readings of `from` (a data list from make_data.py, in time order) a
 It draws the records of `from` (a data list from make_data.py) round a ring, one slot each, in one arc per `group` (optional: without it, one arc; arcs in the order of each group's first row), with the group's name outside. The inner ring is each record's chip in its true colour: `rgb` names the column of three whole numbers 0-255. `cols` are 1 to 3 columns, each a key or `{key, label, fmt}` as a table column takes: each is a track of spokes, its length to scale (one scale over all values, from 0). A column labelled red, green or blue takes its plain light colour; any other takes s1, s2, s3 in order. `fmt` sets the readout's decimals. Quote `key` when it holds a comma. It draws the `made-of` idea: what a colour is made of.
 - Each track is a mark named by its label: a linked word (`==red==`) lights it. A scene holds one `wheel`.
 - `mark: row:N` lights record N (rows count from 0; with a `table` on other data, the row is the table's), as pointing at its chip does: the chip ringed, its spokes brighter, the readout on the top row. Arrows move between records. The lint's limits are in `lint.md`.
+
+## 9g. The `pileup` figure: counts in two runs, as reads piled on a gene
+```yaml
+- pileup: {from: guides, name: guide, group: gene, runs: {control: [c1, c2, c3], treated: [t1, t2, t3]}, unit: reads}   # guides: [{guide: A1, gene: gene A, c1: 394, …, t3: 116}, …]
+```
+It draws the rows of `from` (a data list from make_data.py, sorted by `group`) as a genome browser's read pileup: a chromosome line, a bar per `group` (a gene) in its colour, a cut mark and the `name` of each row (a guide). `runs` names two runs in order, each a list of count columns, one per repeat: the first run's stacks of dots pile up above the line, the second's hang below it. The kit picks how many counts one dot stands for and writes it in the key ("One dot is 50 reads."; `unit` is the word, `reads` if left out). No count shows at rest. `colors` gives one kit colour per group (else s1, s2, s3).
+- Each group is a mark named by its value: a linked word (`==gene B==` lights its stacks). A scene holds one `pileup`.
+- `mark: row:N` lights a row's stacks and its counts, `cell:N:t2` one stack and its count, `col:t2` one repeat's stacks, as pointing does (with a `table` on other data, they are the table's). A pinned `table` on the same `from` shows the numbers beside their dots. The lint's limits are in `lint.md`.
 
 ## 10. Space figures the learner moves: views, a hunt, a split
 The camera glides only when the learner presses something; a step never moves it.

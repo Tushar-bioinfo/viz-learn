@@ -514,6 +514,8 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   .board .bi.wheel.cwait > * { visibility: visible !important; }
   .board .wheel :is(.wr, .ws, .wt, .wtn) { transition: none; }
   .board .recorder :is(.rcr *, .rct, .rcw) { transition: none; }
+  .board .bi.pileup.cwait > * { visibility: visible !important; }
+  .board .pileup :is(.pud, .pub, .pun, .puc) { transition: none; }
 }
 /* chance: two groups as units, their shares, the gap and a ruler of noise steps (board.js chance). Hit areas take the pointer;
    a linked word lights its mark and dims the rest, the tally with them */
@@ -652,6 +654,39 @@ html.ls-page .board .bi.wheel { padding: 8px; box-sizing: content-box; max-width
 /* a track's linked word or its name lights the track; the other tracks dim */
 .board .wheel svg.lnk-dim :is(.ws, .wt, .wtn):not(.lnk-on) { opacity: .25; }
 .board .bi.wheel.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
+
+/* pileup: counts in two runs as a read pileup on a chromosome line (board.js pileup). No box round it. A lit stack (.on: pointing,
+   focus; .src: mark cell; .hcol: mark col) or row (.wrow: mark row) glows and shows its readout on the top row; the rest dim */
+html.ls-page .board .bi.pileup { padding: 8px; box-sizing: content-box; max-width: none; }
+.board .pileup svg.pu { display: block; overflow: visible; }
+.board .pileup text { font-family: var(--f-ui); }
+.board .pileup .puln { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: .7; }
+.board .pileup .putk { stroke: var(--mist); stroke-width: .8; opacity: .3; }
+.board .pileup :is(.pudsh, .puar) { fill: none; stroke: var(--mist); stroke-width: 1.1; opacity: .75; stroke-linejoin: round; stroke-linecap: round; }
+.board .pileup .pudw { opacity: .35; }
+.board .pileup .pucell { fill: var(--mist); opacity: .5; }
+.board .pileup :is(.pul, .pun, .puk) { font-size: 17px; fill: var(--mist); letter-spacing: .02em; }
+.board .pileup .puname { fill: var(--ink); }
+.board .pileup :is(.pug, .pur) { color: var(--c); }
+.board .pileup .pub { fill: var(--c); opacity: .4; }
+.board .pileup .pun { fill: var(--c); }
+.board .pileup .puc { fill: none; stroke: var(--c); stroke-width: 2; }
+.board .pileup .puf { stroke: var(--c); stroke-width: 1.4; opacity: .45; }
+.board .pileup .pud { fill: var(--c); }
+.board .pileup .pud0 { fill: var(--mist); }
+.board .pileup .puo { font-size: 17px; fill: var(--c); font-variant-numeric: tabular-nums; display: none; }
+.board .pileup .puh { fill: transparent; stroke: none; pointer-events: all; cursor: help; outline: none; }
+.board .pileup .puh:focus-visible { stroke: var(--accent); stroke-width: 2; }
+.board .pileup :is(.pud, .pub, .pun, .puc) { transition: opacity var(--m-hover) var(--ease), filter var(--m-hover) var(--ease); }
+/* lit: pointing or focus wins over a step's mark */
+.board .pileup .pus.on > .puo, .board .pileup svg:not(.hov) .pus.src > .puo, .board .pileup svg:not(.hov):not(:has(.pus.src)) .pur.wrow > .puro { display: inline; }
+.board .pileup .pus.on .pud, .board .pileup svg:not(.hov) :is(.pus.src, .pus.hcol, .pur.wrow .pus) .pud, .board .pileup svg.lnk .pur.lnk-on .pud { filter: brightness(1.15) drop-shadow(0 0 4px var(--hg, rgba(162, 159, 151, .45))); }
+.board .pileup svg.hov .pus:not(.on) .pud,
+.board .pileup svg:not(.hov):has(.pur.wrow) .pur:not(.wrow) .pud,
+.board .pileup svg:not(.hov):has(.pus.src) .pus:not(.src) .pud,
+.board .pileup svg:not(.hov):has(.pus.hcol) .pus:not(.hcol) .pud,
+.board .pileup svg.lnk :is(.pur, .pug):not(.lnk-on) :is(.pud, .pub, .pun, .puc) { opacity: .3; }
+.board .bi.pileup.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
 
 /* a refresher link under a step's line, and the button back from the end scene */
 .board .st .lref { margin: 4px 0 0; font: 15px/1.4 var(--f-mono); color: var(--mist); }

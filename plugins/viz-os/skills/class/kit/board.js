@@ -1032,6 +1032,123 @@
     return R;
   }
 
+  // ---------- pileup: counts in two runs as a genome browser's read pileup (the C10p S6 mock-up, "2, read pileup", 12 Nov) ----------
+  // One chromosome line across the figure, a tick for every base; on it a bar per group (a gene) in its colour with its name over it,
+  // and a cut mark per row (a guide) with the row's name under the line. The first run's counts pile up above the line and the
+  // second run's hang below it, one stack of dots per repeat; a small culture dish sits before each run's name. One dot is `per`
+  // counts: the smallest 1, 2 or 5 × 10^k that keeps the fullest stack to PU.most dots. Dots are packed, so a stack's height reads at
+  // a glance and its dots can still be counted. No count shows at rest (the user, 11 Nov). A lit stack (pointing, focus, arrows,
+  // `mark: cell:N:key`) shows its readout on the top row, a lit row (`mark: row:N`) its counts, and `mark: col:key` lights one
+  // sample's stacks; the rest dim. Each group is a mark named by its value: a linked word. No frame and no card. The lint's limits
+  // (lesson_lint.py PILEUP_*) keep a stack's dots and names readable
+  const PU = { top: 46, foot: 46, band: 72, gap: 30, sGap: 7, right: 30, dish: 26, most: 30, pitch: 16, dot: 5.5, dotMin: 2.2, half: 240, halfMin: 72, char: 9.5 };
+  const puPer = top => { if (!(top > 0) || !Number.isFinite(top)) return 1; for (let e = 1; ; e *= 10) for (const m of [1, 2, 5]) if (Math.ceil(top / (m * e)) <= PU.most) return m * e; };
+  let puNo = 0;
+  function pileup(p, ctx, at, env) {
+    const node = h('div', 'bi pileup'); node.dataset.at = at; node.dataset.from = String(p.from ?? ''); if (p.id) node.dataset.id = p.id;
+    const svg = sv('svg', { class: 'pu', role: 'group' }, node), uid = `pu${++puNo}`;
+    const R = { node, issues: [], kind: 'pileup', w: 0, h: 0, linked: new Set(), wlOn: null, hotS: null, hotG: null, focusS: 0, S: [], gi: [] };
+    const runs = p.runs && typeof p.runs === 'object' && !Array.isArray(p.runs) ? Object.entries(p.runs).map(([n, cs]) => ({ name: n, cols: list(cs).map(String) })) : [];
+    const unit = String(p.unit ?? 'reads'), esc = t => L.esc(String(t)), say = t => L.plain(String(t ?? ''), ctx.scope);
+    const rows = () => { let v = []; try { v = list(L.val(p.from, ctx.scope, `slide ${ctx.index + 1} pileup from`)); } catch (er) { R.issues.push(`the pileup: ${er.message}`); }
+      return v.filter(r => r && typeof r === 'object'); };
+    const gOf = r => String(r[p.group] ?? '').trim();
+    R.keys = [...new Set(rows().map(gOf))]; R.cols = R.keys.map((_, i) => col(list(p.colors)[i] || `s${i + 1}`));
+    const pen = (pts, seed, closed = false, amp = .6) => (L.ink && L.ink.hand) ? L.ink.hand(pts, seed, closed, amp) : 'M' + pts.map(q => q.join(' ')).join('L') + (closed ? 'Z' : '');
+    const ring = (cx, cy, r) => Array.from({ length: 20 }, (_, k) => [cx + r * Math.cos(Math.PI * k / 10), cy + r * Math.sin(Math.PI * k / 10)]);
+    const tw = (t, cls) => { const e = sv('text', { class: cls }, svg); e.textContent = t; e.style.display = 'inline'; const w = e.getComputedTextLength ? e.getComputedTextLength() : t.length * 9; e.remove(); return w; };
+    // the shape, from the width alone (so a size pass and the drawing agree): the slots and stack widths, then the pack (the number
+    // of dots across a stack whose pitch is largest while the fullest stack stays within PU.half), then the height, which is the
+    // tallest first-run stack above the band and the tallest second-run stack below it
+    const geo = W => { const B = rows(), n = B.length, reps = runs.length ? runs[0].cols.length : 0;
+      if (runs.length !== 2 || !reps || runs[1].cols.length !== reps || !n) return { bad: `the pileup needs rows in \`${p.from}\` and two runs of the same number of columns`, H: PU.top + PU.foot + PU.band + 2 * PU.halfMin };
+      const V = B.map(r => runs.map(run => run.cols.map(c => +r[c])));
+      if (V.flat(2).some(v => !(Number.isInteger(v) && v >= 0))) return { bad: 'the pileup\'s counts are not all whole numbers from 0', H: PU.top + PU.foot + PU.band + 2 * PU.halfMin };
+      const per = puPer(Math.max(0, ...V.flat(2))), dots = v => Math.round(v / per), most = Math.max(1, ...V.flat(2).map(dots));
+      const gi = B.map(r => Math.max(0, R.keys.indexOf(gOf(r))));
+      let ch = 0; const gch = gi.map((g, i) => (i && g !== gi[i - 1] ? ++ch : ch));
+      const LG = Math.round(2 + PU.dish + Math.max(...runs.map(r => say(r.name).length)) * PU.char + 24), RM = PU.right;
+      const slotW = (W - LG - RM - ch * PU.gap) / n, sw = (slotW - 16 - (reps - 1) * PU.sGap) / reps;
+      // the pitch only shrinks as more dots go across, so the first count that fits is the best; with none, six across
+      let A = 6, pitch = Math.min(PU.pitch, sw / 6);
+      for (let a = 1; a <= 6; a++) { const q = Math.min(PU.pitch, sw / a); if (Math.ceil(most / a) * q <= PU.half) { A = a; pitch = q; break; } }
+      const tall = a => Math.max(0, ...V.map(r => Math.max(...r[a].map(dots)))), up = Math.max(PU.halfMin, Math.ceil(tall(0) / A) * pitch + 8), down = Math.max(PU.halfMin, Math.ceil(tall(1) / A) * pitch + 8);
+      const mid = PU.top + up + PU.band / 2;
+      return { B, n, reps, V, per, dots, gi, gch, ch, LG, RM, slotW, sw, A, pitch, rd: Math.min(PU.dot, pitch * .36), up, down, mid, H: Math.round(mid + PU.band / 2 + down + PU.foot) }; };
+    R.size = room => { R.w = Math.round(room.w - PAD); R.h = geo(R.w).H; node.style.width = R.w + 'px'; svg.setAttribute('width', R.w); svg.setAttribute('height', R.h); return R.w + PAD; };
+    R.hOf = W => geo(W).H;
+    R.layout = () => {
+      R.issues = []; const W = R.w, G = geo(W), Hh = G.H; R.h = Hh; svg.setAttribute('height', Hh); svg.setAttribute('viewBox', `0 0 ${W} ${Hh}`);
+      if (G.bad) { R.issues.push(G.bad); svg.innerHTML = ''; return false; }
+      const { B, n, reps, V, per, gi, gch, LG, RM, slotW, sw, A, pitch, rd, up, down, mid } = G; R.gi = gi;
+      const DG = PU.dish, gx = i => LG + (i + .5) * slotW + gch[i] * PU.gap, f1 = q => q.toFixed(1), f2 = q => q.toFixed(2);
+      if (!(rd >= PU.dotMin)) R.issues.push(`the pileup's dots are ${(2 * Math.max(0, rd)).toFixed(1)} px: give it more room, or fewer rows or repeats`);
+      if (Math.ceil(G.dots(Math.max(...V.flat(2))) / A) * pitch > PU.half) R.issues.push(`the pileup's fullest stack is taller than ${PU.half} px: give it more room, or fewer rows or repeats`);
+      const wide = B.map(r => say(r[p.name])).find(t => tw(t, 'pul') > slotW - 4);
+      if (wide != null) R.issues.push(`the pileup's row name \`${wide}\` is wider than its slot (${Math.round(slotW)} px): shorter names, or fewer rows`);
+      // the chromosome: one long line across, a tick for every base
+      let o = `<g class="puchr"><path class="puln" d="${pen([[LG - 10, mid], [W - RM + 6, mid]], uid + 'chr', false, .4)}"/>`;
+      for (let x = LG - 6; x < W - RM; x += 7) o += `<line class="putk" x1="${x}" x2="${x}" y1="${mid - 2.5}" y2="${mid + 2.5}"/>`;
+      o += '</g>';
+      // the runs' names at the left, each after a culture dish, with an arrow out from the line: the first piles up, the second hangs down
+      runs.forEach((run, a) => { const s = a ? 1 : -1, y = mid + s * (PU.band / 2 + (a ? down : up) / 2), ya = mid + s * (PU.band / 2 + 6), yb = y + s * 26;
+        o += `<g class="purun"><path class="pudsh" d="${pen(ring(13, y, 9), uid + 'd' + a, true, .2)}"/><path class="pudsh pudw" d="${pen(ring(13, y, 6.5), uid + 'w' + a, true, .2)}"/>` +
+          [[-.3, -.15], [.25, -.25], [0, .3]].map(([dx, dy]) => `<circle class="pucell" cx="${f1(13 + dx * 9)}" cy="${f1(y + dy * 9)}" r="1.5"/>`).join('') +
+          `<text class="pul" x="${2 + DG}" y="${f1(y + 6)}">${esc(say(run.name))}</text>` +
+          `<path class="puar" d="${pen([[LG - 14, ya], [LG - 14, yb]], uid + 'a' + a, false, .2)}"/><path class="puar" d="M${LG - 18} ${f1(yb - s * 5)}L${LG - 14} ${f1(yb)}L${LG - 10} ${f1(yb - s * 5)}"/></g>`; });
+      // a bar per group on the line, in its colour, its name over it
+      R.keys.forEach((g, k) => { const rs = gi.map((q, i) => (q === k ? i : -1)).filter(i => i >= 0); if (!rs.length) return;
+        const x0 = gx(rs[0]) - slotW / 2 + 6, x1 = gx(rs[rs.length - 1]) + slotW / 2 - 6;
+        if (tw(say(g), 'pun') > x1 - x0 + slotW / 2) R.issues.push(`the pileup's group name \`${say(g)}\` is wider than its bar: a shorter name`);
+        o += `<g class="pug" data-g="${k}" style="--c:${R.cols[k]}"><rect class="pub" x="${f1(x0)}" y="${mid - 5}" width="${f1(x1 - x0)}" height="10" rx="3"/>` +
+          `<text class="pun" x="${f1((x0 + x1) / 2)}" y="${f1(mid - 14)}" text-anchor="middle">${esc(say(g))}</text></g>`; });
+      // each row: its cut mark and name; its stacks, each with its readout (shown only when lit) and its own touch area
+      const stackSays = (i, a, k) => `${say(B[i][p.name])} · ${say(R.keys[gi[i]])} · ${say(runs[a].name)}${reps > 1 ? ' ' + (k + 1) : ''}: ${L.fmt(V[i][a][k])} ${unit}`;
+      const rowSays = i => `${say(B[i][p.name])} · ${say(R.keys[gi[i]])} · ` + runs.map((run, a) => `${say(run.name)} ${V[i][a].map(v => L.fmt(v)).join(', ')}`).join(' · ') + ` ${unit}`;
+      const ry = PU.top - 20; let j = 0, roW = 0; R.S = [];
+      B.forEach((r, i) => { const x = gx(i);
+        roW = Math.max(roW, tw(rowSays(i), 'puo'));
+        o += `<g class="pur" data-r="${i}" data-g="${gi[i]}" style="--c:${R.cols[gi[i]]}">` +
+          `<path class="puc" d="M${f1(x - 2)} ${mid - 6}L${f1(x + 2)} ${mid + 6}"/><text class="pul puname" x="${f1(x)}" y="${f1(mid + 28)}" text-anchor="middle">${esc(say(r[p.name]))}</text>` +
+          `<text class="puo puro" x="${f1(W / 2)}" y="${ry}" text-anchor="middle">${esc(rowSays(i))}</text>`;
+        runs.forEach((run, a) => { const s = a ? 1 : -1, y0 = mid + s * PU.band / 2;
+          run.cols.forEach((key, k) => { const v = V[i][a][k], nd = Math.round(v / per), sx = x - slotW / 2 + 8 + k * (sw + PU.sGap), off = (sw - A * pitch) / 2, t = stackSays(i, a, k);
+            R.S.push({ i, a, k }); roW = Math.max(roW, tw(t, 'puo'));
+            o += `<g class="pus" data-r="${i}" data-col="${esc(key)}" data-s="${j}" data-n="${nd}"><line class="puf" x1="${f1(sx)}" x2="${f1(sx + sw)}" y1="${y0}" y2="${y0}"/>`;
+            for (let q = 0; q < nd; q++) o += `<circle class="pud" cx="${f2(sx + off + (q % A + .5) * pitch)}" cy="${f2(y0 + s * (Math.floor(q / A) + .5) * pitch)}" r="${f2(rd)}"/>`;
+            o += `<text class="puo" x="${f1(W / 2)}" y="${ry}" text-anchor="middle">${esc(t)}</text>` +
+              `<rect class="puh" x="${f1(sx - 2)}" y="${f1(a ? y0 : y0 - up)}" width="${f1(sw + 4)}" height="${f1(a ? down : up)}" tabindex="${j === R.focusS ? 0 : -1}" role="button" aria-label="${esc(t)}"/></g>`;
+            j++; }); });
+        o += '</g>'; });
+      if (roW > W - 8) R.issues.push(`the pileup's readout (${Math.round(roW)} px) is wider than the figure: shorter names`);
+      // the key: one dot and what it stands for, at the bottom right
+      const kw = per === 1 ? `Each dot is one of the ${unit}.` : `One dot is ${L.fmt(per)} ${unit}.`, kx = W - RM, ky = Hh - 12, kwW = tw(kw, 'puk');
+      if (kwW + 24 > W - 8) R.issues.push(`the pileup's key (${Math.round(kwW)} px) is wider than the figure: a shorter unit`);
+      o += `<g class="pukey"><circle class="pud0" cx="${f1(kx - kwW - 10)}" cy="${ky - 6}" r="${f2(Math.max(rd, 3))}"/><text class="puk" x="${kx}" y="${ky}" text-anchor="end">${esc(kw)}</text></g>`;
+      svg.innerHTML = o; svg.setAttribute('aria-label', `${say(unit)} for ${n} rows on one line: ${say(runs[0].name)} above, ${say(runs[1].name)} below. ${kw}`);
+      svg.querySelectorAll('.pur, .pug').forEach(e => glow(e, R.cols[+e.dataset.g]));
+      // pointing, focus and arrows: left and right step through the stacks in order, up and down cross to the other run's stack
+      const hits = [...svg.querySelectorAll('.puh')];
+      hits.forEach((hit, q) => { hit.addEventListener('pointerenter', () => R.hot(q)); hit.addEventListener('pointerleave', () => R.hot(hits.indexOf(document.activeElement) >= 0 ? hits.indexOf(document.activeElement) : null));
+        hit.addEventListener('focus', () => { R.focusS = q; hits.forEach(e => e.setAttribute('tabindex', e === hit ? 0 : -1)); R.hot(q); });
+        hit.addEventListener('blur', () => R.hot(null));
+        hit.addEventListener('keydown', ev => { const S = R.S[q], d = { ArrowLeft: -1, ArrowRight: 1 }[ev.key];
+          const up = { ArrowUp: 0, ArrowDown: 1 }[ev.key], to = ev.key === 'Home' ? 0 : ev.key === 'End' ? hits.length - 1 : d != null ? Math.max(0, Math.min(hits.length - 1, q + d))
+            : up != null ? R.S.findIndex(o2 => o2.i === S.i && o2.k === S.k && o2.a === up) : null;
+          if (to == null || to < 0) return; ev.preventDefault(); hits[to].focus(); }); });
+      svg.querySelectorAll('.pug').forEach(e => { const k = +e.dataset.g; e.addEventListener('pointerenter', () => R.hoverG(k)); e.addEventListener('pointerleave', () => R.hoverG(null)); });
+      R.paintWl(); return false; };
+    R.wl = i => ({ c: R.cols[i], drawn: i < R.keys.length && env.shown() });
+    R.paintWl = () => { const g = R.wlOn ?? R.hotG; svg.classList.toggle('lnk', g != null); svg.classList.toggle('hov', R.hotS != null);
+      svg.querySelectorAll('.pug, .pur').forEach(e => e.classList.toggle('lnk-on', +e.dataset.g === g));
+      svg.querySelectorAll('.pus').forEach(e => e.classList.toggle('on', +e.dataset.s === R.hotS)); };
+    R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    const gNow = () => (R.hotS != null && R.S[R.hotS] ? R.gi[R.S[R.hotS].i] : R.hotG);
+    R.hot = q => { if (R.hotS === q) return; R.hotS = q; R.paintWl(); if (R.onHot) R.onHot(gNow() ?? null); };
+    R.hoverG = k => { if (R.hotG === k) return; R.hotG = k; R.paintWl(); if (R.onHot) R.onHot(gNow() ?? null); };
+    return R;
+  }
+
   // ---------- space: a 3D coordinate space the learner turns by dragging, the plane's sibling ----------
   // An orbit about the middle of the axes box (yaw free, pitch held between −10° and 80°), mild perspective and a depth fade.
   // Every piece is drawn far to near (the painter's rule): lines are cut into pieces and the sheet into cells, so a dot in front
@@ -1659,7 +1776,7 @@
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
     const isFig = it => it && (it.strip || it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
-    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || it.beads || it.recorder || it.wheel || WIDEVIS.some(k => it[k] != null));
+    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || it.beads || it.recorder || it.wheel || it.pileup || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
@@ -1809,6 +1926,9 @@
     // and a colour wheel
     const wheelFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
       const fg = wheel(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
+    // and a read pileup
+    const pileupFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
+      const fg = pileup(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
@@ -1856,6 +1976,7 @@
       else if (it.beads) { const w = { wide: true, figs: [] }; zone = w; const fg = beadsFig({ ...it.beads, id: it.beads.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.recorder) { const w = { wide: true, figs: [] }; zone = w; const fg = recorderFig({ ...it.recorder, id: it.recorder.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.wheel) { const w = { wide: true, figs: [] }; zone = w; const fg = wheelFig({ ...it.wheel, id: it.wheel.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
+      else if (it.pileup) { const w = { wide: true, figs: [] }; zone = w; const fg = pileupFig({ ...it.pileup, id: it.pileup.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g rl'), at, pr.id);
@@ -1909,8 +2030,8 @@
     // would cover the lines being read). Text that names no mark keeps ==text==, the orange underline
     const lkeys = new Map();
     if (slopeFig) figs.push(slopeFig);
-    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads', 'slope', 'recorder', 'wheel'].includes(fg.kind)) return;
-      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : ['chance', 'beads', 'slope', 'recorder', 'wheel'].includes(fg.kind) ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
+    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads', 'slope', 'recorder', 'wheel', 'pileup'].includes(fg.kind)) return;
+      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : ['chance', 'beads', 'slope', 'recorder', 'wheel', 'pileup'].includes(fg.kind) ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
         const q = fg.kind === 'chart' ? (mk.kind === 'hline' ? mk.y : mk.kind === 'vline' ? mk.x : mk.kind === 'point' ? (mk.at || [])[1] ?? mk.y : null) : mk.vector ?? mk.point;
         const sym = typeof q === 'string' && (ctx.symbols || {})[q] ? q : null;   // first mark wins a shared key (the lint stops a link to one)
         [mk.label, fg.kind === 'chart' ? mk.name : null, mk.id, sym].forEach(k => { if (k != null && String(k).trim() && !lkeys.has(String(k).trim())) lkeys.set(String(k).trim(), [f, i, String(k).trim() === sym]); }); }); });
@@ -2317,11 +2438,11 @@
       let m;
       // a slope table's row is its line (g.sl), its column its stem (g.ss), its cell the row's dot on that stem (.sd). A recorder's
       // reading is a row too when the scene has no table, or the table reads the recorder's own `from`; else row:N is the table's
-      // A colour wheel's record likewise
-      const own = k => s.table ? `.bi.${k}[data-from="${CSS.escape(String(s.table.from))}"]` : `.bi.${k}`;
-      if ((m = /^row:(\d+)$/.exec(t))) return { els: [...(zt ? zt.querySelectorAll(`tbody tr[data-r="${m[1]}"], g.sl[data-r="${m[1]}"]`) : []), ...node.querySelectorAll(`${own('recorder')} g.rcr[data-r="${m[1]}"], ${own('wheel')} g.wr[data-r="${m[1]}"]`)], cls: 'wrow' };
-      if ((m = /^col:(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`[data-col="${CSS.escape(m[1])}"]:not(.sd)`)], cls: 'hcol' };
-      if ((m = /^cell:(\d+):(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`:is(td, .sd)[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`)], cls: 'src' };
+      // A colour wheel's record likewise; a pileup's row is a guide (g.pur), its column one sample's stacks and its cell one stack (g.pus), on the same terms
+      const own = k => s.table ? `.bi.${k}[data-from="${CSS.escape(String(s.table.from))}"]` : `.bi.${k}`, rec = own('recorder'), pu = own('pileup');
+      if ((m = /^row:(\d+)$/.exec(t))) return { els: [...(zt ? zt.querySelectorAll(`tbody tr[data-r="${m[1]}"], g.sl[data-r="${m[1]}"]`) : []), ...node.querySelectorAll(`${rec} g.rcr[data-r="${m[1]}"], ${own('wheel')} g.wr[data-r="${m[1]}"], ${pu} g.pur[data-r="${m[1]}"]`)], cls: 'wrow' };
+      if ((m = /^col:(.+)$/.exec(t))) return { els: [...(zt ? zt.querySelectorAll(`[data-col="${CSS.escape(m[1])}"]:not(.sd)`) : []), ...node.querySelectorAll(`${pu} g.pus[data-col="${CSS.escape(m[1])}"]`)], cls: 'hcol' };
+      if ((m = /^cell:(\d+):(.+)$/.exec(t))) return { els: [...(zt ? zt.querySelectorAll(`:is(td, .sd)[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`) : []), ...node.querySelectorAll(`${pu} g.pus[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`)], cls: 'src' };
       if ((m = /^#(.+)$/.exec(t))) return { els: [...node.querySelectorAll(`[data-id="${CSS.escape(m[1])}"]`)], cls: 'hl' };
       return { els: [], cls: '' };
     };
