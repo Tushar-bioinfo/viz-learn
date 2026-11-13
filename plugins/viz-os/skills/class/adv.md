@@ -33,7 +33,7 @@ Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `b
 | `cause` | what happens if I change this? | one handle moves one mark | `plane`, `chart`, `space`, `dist` |
 | `closest` | which choice is best? | your guess, its error, then the answer | `plane`, `space` |
 | `shortcut` | why not the easy way? | the wrong way as a ghost on the same frame | `plane`, `space`, `chart`, `compare` |
-| `process` | how does it move, step by step? | a run with stops and a trail | `plane`, `chart`, `space`, `ops` |
+| `process` | how does it move, step by step? | a run with stops and a trail | `plane`, `chart`, `space`, `ops`, `recorder` (§9e) |
 | `connect` | how do the pieces feed each other? | input, operation, output, lit together | `flow`, `ops`, `product`, `assemble` |
 | `outcomes` | what can happen? | one start, 2–3 aligned ends | `fork` (§9b), `compare`, `parts` |
 | `chance` | is this difference real? | dots as draws, the gap in noise units | `chance` (§9), `dist`, `chart` |
@@ -71,7 +71,7 @@ A lesson is adv once any board scene has `idea`.
 - One idea in more scenes than `depth` (warning): merge, or ask for more depth.
 - `learner.depth` is a whole number from 1 to 6 (error).
 - `idea`, `see` or `shows` on a slide that is not a board (error, in any lesson).
-- In a plain lesson, `chance`, `fork`, `beads`, a table's `style: slope`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
+- In a plain lesson, `chance`, `fork`, `beads`, `recorder`, a table's `style: slope`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
 A spine of stubs fails the lint for its missing `steps`, and other lints warn about what is not written yet; the checks above that look at a figure wait for steps. The storyboard never runs the lint.
 
 ## 9. The `chance` figure: is a gap between two shares bigger than chance makes?
@@ -117,6 +117,14 @@ table: {from: cells, style: slope, group: type, cols: [{key: id, label: cell}, {
 `style: slope` draws the scene's table as lines (`grid`, the default, draws rows and columns). The first column names each line, as text. Every other column, and each `col` a step adds, is an upright scale (a stem); all stems share one scale, from 0, or from the smallest value when that is below 0. Each row is one line through its values, in its `group`'s colour. A group keeps the colour a plane's `points` with the same `by:` gives it, else takes s1, s2, s3 in order. A stem a step adds stands faint until the reading gets there.
 - Each group is a mark: a key entry and a linked word (`==mono==` lights its lines). `mark: row:N`, a worked line's `row:` and pointing light one line; `col:` lights a stem.
 - `glyphs` (optional) draws a small object beside each name: `lymphocyte`, `monocyte`, `tag`, `tree-round`, `tree-slim`, `tree-cone`. The limits are in `lint.md`.
+
+## 9e. The `recorder` figure: readings taken in time order
+```yaml
+- recorder: {from: growth, x: {key: min, label: minutes}, y: {key: od, label: density, fmt: 2}, name: density, key: "Higher trace, cloudier broth."}   # growth: [{min: 0, od: 0.051}, …]
+```
+It draws the readings of `from` (a data list from make_data.py, in time order) as a recorder's paper strip: time runs left to right at its true spacing, a pen trace joins the readings, a dot on each, and the pen rests on the last one. `x` is the time column and `y` the value the pen follows: a key, or `{key, label, fmt}` as a table column takes. An ink wash fills from the trace to the floor; write `wash: false` when the area under the line means nothing (a tide height, a temperature). `color` is one kit colour (s1 if left out). Quote `key` when it holds a comma.
+- The trace is one mark named by `name`: the key at the bottom right (its `key` words, else `name`) and a linked word (`==density==` lights the trace). A scene holds one `recorder`.
+- `mark: row:N` lights reading N (rows count from 0; with a `table` on other data, the row is the table's), as pointing at it does: drop lines to both rules, its value and the readout "time · value". Arrows move between readings. The lint's limits are in `lint.md`.
 
 ## 10. Space figures the learner moves: views, a hunt, a split
 The camera glides only when the learner presses something; a step never moves it.

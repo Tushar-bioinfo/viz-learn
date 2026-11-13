@@ -1,0 +1,28 @@
+# expect: builds
+# expect: not: the recorder
+# expect: hours · level 0.0000123
+# expect: hours · level 0.0000234
+# expect: hours · level 0.0000345
+# N5 fix: tiny readings print as stored, each different (review finding 3)
+title: A small series
+question: How does the reading move?
+answer: As the trace shows.
+data:
+  s:
+    - {t: 0, v: 1.23e-05}
+    - {t: 1, v: 2.34e-05}
+    - {t: 2, v: 3.45e-05}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: process
+    see: level
+    shows: a few readings as a pen trace on a recorder strip
+    title: A few readings
+    lead: Each dot is one reading.
+    steps:
+      - say: The ==level== trace moves with each reading.
+        add:
+          - recorder: {from: s, x: {key: t, label: hours}, y: {key: v, label: level}, name: level}
+      - say: The pen rests on the last reading.

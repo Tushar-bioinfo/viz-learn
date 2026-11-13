@@ -15,7 +15,7 @@ LESSON_BEATS = BEATS | {"refresher"}   # a refresher is a class lesson's end sce
 STEP = {"say", "why", "add", "mark", "think", "frame", "more", "refresh"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "space", "chance", "fork", "beads", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS = {"calc", "plane", "space", "chance", "fork", "beads", "recorder", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -850,6 +850,103 @@ def lint_table_style(Lx, where, s, values):
             Lx.err(where, f"slope `glyphs` `{k}: {v}`: no glyph named `{v}`" + (f": did you mean `{hit}`?" if hit else f"; the glyphs are {', '.join(GLYPHS)}"))
 
 
+# recorder (adv.md): a paper strip with a pen trace through readings taken in time order (board.js recorder)
+RECORDER = {"from", "x", "y", "name", "key", "wash", "color", "id"}
+RECORDER_AXIS = {"key", "label", "fmt"}
+RECORDER_ROWS, RECORDER_WORDS = (3, 60), 2   # readings a strip draws; words in the trace's name (a legend entry)
+FMT_MOST = 15   # the most digits a format asks for: a float holds about 15 to 17, and the browser's own limit is 100
+
+
+def fmt_ok(f):
+    """A number format the kit's L.fmt draws: a whole number of decimals, or a `{{name|fmt}}` fill's format (FMT), its digits at most FMT_MOST."""
+    if isinstance(f, bool) or not isinstance(f, (int, str)):
+        return False
+    m = FMT.search("|" + str(f))
+    return bool(m) and m.start() == 0 and all(int(d) <= FMT_MOST for d in re.findall(r"\d+", str(f)))
+
+
+def recorder_axis(v):
+    """A `recorder` `x` or `y` as {key, label, fmt}: a bare key is its own label; anything else gives {}."""
+    if isinstance(v, str) and v.strip():
+        return {"key": v.strip(), "label": v.strip()}
+    if isinstance(v, dict) and isinstance(v.get("key"), str) and v["key"].strip():
+        return {"label": v["key"], **v}
+    return {}
+
+
+def recorder_rows(rc, values):
+    """The readings a `recorder` draws: its `from` list, when it is a list of records; else []."""
+    rows = values.get(rc.get("from")) if isinstance(rc, dict) and isinstance(rc.get("from"), str) else None
+    return rows if isinstance(rows, list) and rows and all(isinstance(r, dict) for r in rows) else []
+
+
+def lint_recorder(Lx, w, rc, values):
+    """A `recorder` figure: its keys, its data list of readings, each with a finite time and value, the times strictly rising."""
+    if not isinstance(rc, dict):
+        Lx.err(w, "`recorder` is a mapping {from, x, y, name, key}")
+        return
+    for k in sorted(set(rc) - RECORDER, key=str):
+        hit = next(iter(difflib.get_close_matches(str(k), sorted(RECORDER), 1, .6)), None)
+        Lx.err(w, f"`recorder` has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(RECORDER))}); a comma inside an unquoted `{{ }}` value splits it: quote the value"))
+    nm = rc.get("name")
+    if not (isinstance(nm, str) and nm.strip()):
+        Lx.err(w, "`recorder` needs `name:`, the trace's name in words: its legend entry and linked word")
+    elif len(nm.split()) > RECORDER_WORDS:
+        Lx.err(w, f"`recorder` `name: {nm}` is {len(nm.split())} words; the trace's name is a legend entry, {RECORDER_WORDS} words at most")
+    if "key" in rc and not (isinstance(rc["key"], str) and rc["key"].strip()):
+        Lx.err(w, f"`recorder` `key:` is the key's words, as text; got {rc['key']!r}")
+    if "wash" in rc and not isinstance(rc["wash"], bool):
+        Lx.err(w, f"`recorder` `wash:` is true or false; got {rc['wash']!r}")
+    if "color" in rc and rc["color"] not in COLOR_NAMES:
+        Lx.err(w, f"`recorder` `color: {rc['color']}` is not a kit colour ({', '.join(sorted(COLOR_NAMES))})")
+    axes = {}
+    for a in ("x", "y"):
+        v = rc.get(a)
+        if v is None:
+            Lx.err(w, f"`recorder` needs `{a}:`, a column key of every reading, or {{key, label, fmt}}" + (" (the time)" if a == "x" else " (the value the pen follows)"))
+            continue
+        ax = recorder_axis(v)
+        if not ax:
+            Lx.err(w, f"`recorder` `{a}: {v!r}` is not a column: write a key, or {{key, label, fmt}}")
+            continue
+        for k in sorted(set(ax) - RECORDER_AXIS, key=str):
+            Lx.err(w, f"`recorder` `{a}` has no field `{k}` (it takes key, label, fmt)")
+        if not (isinstance(ax["label"], str) and ax["label"].strip()):
+            Lx.err(w, f"`recorder` `{a}` `label:` is words; got {ax['label']!r}")
+        f = ax.get("fmt")
+        if f is not None and not fmt_ok(f):
+            Lx.err(w, f"`recorder` `{a}` `fmt: {f!r}` is not a number format: decimals 0 to {FMT_MOST} (`fmt: 2`), or `sN`, `%N`, `eN`, `,`, `int` as in a `{{{{name|fmt}}}}` fill")
+        axes[a] = ax["key"]
+    src = rc.get("from")
+    if not (isinstance(src, str) and src.strip()):
+        Lx.err(w, "`recorder` needs `from:`, a data name holding a list of records, one per reading")
+        return
+    rows = values.get(src)
+    if not isinstance(rows, list) or not rows or not all(isinstance(r, dict) for r in rows):
+        Lx.err(w, f"`recorder` `from: {src}` is not a list of records in the data: make_data.py writes it, one record per reading")
+        return
+    lo, hi = RECORDER_ROWS
+    if not lo <= len(rows) <= hi:
+        Lx.err(w, f"`recorder` `from: {src}` holds {len(rows)} readings; a strip draws {lo} to {hi}")
+    if len(axes) < 2:
+        return
+    good = True
+    for r, row in enumerate(rows):
+        for a, key in axes.items():
+            if key not in row:
+                Lx.err(w, f"`recorder` reading {r} (from 0) of `{src}` has no column `{key}` (its `{a}`)")
+                good = False
+            elif not (NUM(row[key]) and math.isfinite(row[key])):
+                Lx.err(w, f"`recorder` reading {r} (from 0) of `{src}`: `{key}` is {row[key]!r}, not a finite number")
+                good = False
+        if not good:
+            return
+    ts = [row[axes["x"]] for row in rows]
+    back = next((r for r in range(1, len(ts)) if not ts[r] > ts[r - 1]), None)
+    if back is not None:
+        Lx.err(w, f"`recorder` reading {back} (from 0) of `{src}`: its `{axes['x']}` {ts[back]:g} does not come after {ts[back - 1]:g}; the times rise strictly, in reading order")
+
+
 def chance_name(nm):
     """A group name as the page shows it: case folded, runs of spaces as one (HTML collapses them)."""
     return " ".join(str(nm).split()).lower()
@@ -1066,6 +1163,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
     chances = {}  # one `chance` per scene
     forks = {}    # one `fork` per scene
     beads = {}    # one `beads` per scene
+    recorders = {}   # one `recorder` per scene
     said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
@@ -1168,6 +1266,12 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                     s_bd.append(j + 1)
                     if len(s_bd) == 2:
                         Lx.err(w, f"this scene has a second `beads` (steps {s_bd[0]} and {s_bd[1]}): one `beads` per scene, so each ring's name is one mark; put the second in its own scene")
+                if "recorder" in it:
+                    lint_recorder(Lx, w, it["recorder"], values)
+                    s_rc = recorders.setdefault(id(s), [])
+                    s_rc.append(j + 1)
+                    if len(s_rc) == 2:
+                        Lx.err(w, f"this scene has a second `recorder` (steps {s_rc[0]} and {s_rc[1]}): one `recorder` per scene, so `mark: row:N` and its name each light one trace; put the second in its own scene")
                 if VIS & set(it):
                     vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
                     B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
@@ -1212,6 +1316,11 @@ def lint_scenes(B, Lx, deck, glob, data=None):
             for mark in as_list(st.get("mark")):
                 if not isinstance(mark, str) or not MARK.match(mark):
                     Lx.err(w, f"`mark: {mark!r}` is not a target: use row:<i>, col:<key>, cell:<i>:<key> or #<id> (rows count from 0)")
+                elif mark.startswith("row:"):   # a row is a recorder's reading with no table, or a table on the recorder's own `from`
+                    rec = [recorder_rows(it["recorder"], values) for _, it in items_of(s) if isinstance(it.get("recorder"), dict)
+                           and (tb is None or isinstance(tb, dict) and tb.get("from") == it["recorder"].get("from"))]
+                    if rec and rec[0] and int(mark[4:]) >= len(rec[0]):
+                        Lx.err(w, f"`mark: {mark}` names reading {mark[4:]}, but the `recorder` draws {len(rec[0])} (rows count from 0)")
         # a name on the plot is a word the learner must know: the mark says it (hover), or a teacher line has named it by then
         lines = [st.get("say") for st in steps if isinstance(st, dict)]
         for w, mk, at in named:
@@ -1309,8 +1418,14 @@ def scene_marks(s, symbols, data=None):
         for it in as_list(st.get("add")) if isinstance(st, dict) else []:
             if not isinstance(it, dict):
                 continue
-            kind = next((k for k in ("plane", "space", "chart", "chance", "fork", "beads") if isinstance(it.get(k), dict)), None)
+            kind = next((k for k in ("plane", "space", "chart", "chance", "fork", "beads", "recorder") if isinstance(it.get(k), dict)), None)
             if kind is None:
+                continue
+            if kind == "recorder":   # one trace, named by `name`, in its `color` or s1 (board.js recorder)
+                nm = it["recorder"].get("name")
+                if isinstance(nm, str) and nm.strip():
+                    out.append((f, kind, 0, {"label": nm}, j + 1, [nm.strip()], True, it["recorder"].get("color") or "s1"))
+                f += 1
                 continue
             if kind == "beads":   # one ring per record, named by its `name` column, in s1, s2, s3, s4 (board.js beads)
                 cs = it["beads"].get("colors") if isinstance(it["beads"].get("colors"), list) else []
@@ -2213,7 +2328,7 @@ IDEAS = {
     "cause": ("what happens if I change this?", "handle", ["plane", "chart", "space", "dist"]),
     "closest": ("which choice is best?", "guess", ["plane", "space"]),
     "shortcut": ("why not the easy way?", "ghost", ["plane", "space", "chart", "compare"]),
-    "process": ("how does it move, step by step?", "run", ["plane", "chart", "space", "ops"]),
+    "process": ("how does it move, step by step?", "run", ["plane", "chart", "space", "ops", "recorder"]),
     "connect": ("how do the pieces feed each other?", "strip", ["flow", "ops", "product", "assemble"]),
     "outcomes": ("what can happen?", "fork", ["fork", "compare", "parts"]),
     "chance": ("is this difference real?", "draws", ["chance", "dist", "chart"]),
@@ -2251,7 +2366,7 @@ def adv_only(deck):
             found = ["hunt"] if "hunt" in st else []
             for it in as_list(st.get("add")):
                 it = it if isinstance(it, dict) else {}
-                found += [k for k in ("chance", "fork", "beads", "strip") if k in it]
+                found += [k for k in ("chance", "fork", "beads", "recorder", "strip") if k in it]
                 sp = it.get("space") if isinstance(it.get("space"), dict) else {}
                 found += ["views"] if "views" in sp else []
                 found += ["split"] if any(isinstance(m, dict) and "split" in m and "along" in m for m in as_list(sp.get("marks"))) else []

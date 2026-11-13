@@ -761,6 +761,147 @@
     return R;
   }
 
+  // ---------- recorder: readings taken in time order, as a chart recorder's paper strip (the C10p mock-up, look C, 11 Nov) ----------
+  // A strip of dark paper with a soft shadow: feed holes along both margins, a torn left edge, the roll on the right, a fine grid
+  // and the value and time rules. Time runs left to right at its true spacing, so uneven gaps stay uneven. The pen trace joins
+  // the readings, a dot on each; an ink wash (a fill and fine hatching) runs from the trace down to the floor unless `wash: false`.
+  // The pen rests on the last reading, leaning away from the trace, on the paper. A lit reading (pointing, focus, arrows or
+  // `mark: row:N`) shows dashed drops to both rules, a bigger dot, its value (the data's decimals or the column's `fmt`) and a
+  // readout "time · value" on the top row (no card, which would cover it); the trace dims a little. The trace is one mark named `name`: the key at the
+  // bottom right and a linked word light it. The figure is wide (the reading column) and wears no frame
+  const RC = { top: 40, foot: 62, hole: 13, inset: 14, edge: 54, roll: 16, left: 24, right: 50, pen: 48, penW: 5, holeGap: 26, ratio: .42, hMin: 360, hMax: 520, ticks: 12 };
+  let recNo = 0;
+  function recorder(p, ctx, at, env) {
+    const node = h('div', 'bi recorder'); node.dataset.at = at; node.dataset.from = String(p.from ?? ''); if (p.id) node.dataset.id = p.id;
+    const svg = sv('svg', { class: 'rc', role: 'group' }, node), uid = `rc${++recNo}`;
+    const R = { node, issues: [], kind: 'recorder', w: 0, h: 0, linked: new Set(), wlOn: null, hotR: null, keyHot: false, focusR: 0 };
+    const ax = v => typeof v === 'string' ? { key: v, label: v } : v && typeof v === 'object' ? { label: v.key, ...v } : {};
+    const X = ax(p.x), Y = ax(p.y), c = col(p.color || 's1'), name = String(p.name ?? '');
+    R.keys = [name]; R.cols = [c];
+    const esc = t => L.esc(String(t)), say = t => L.plain(String(t ?? ''), ctx.scope);
+    const rows = () => { let v = []; try { v = list(L.val(p.from, ctx.scope, `slide ${ctx.index + 1} recorder from`)); } catch (er) { R.issues.push(`the recorder: ${er.message}`); }
+      return v.filter(r => r && typeof r === 'object').map(r => [+r[X.key], +r[Y.key]]); };
+    // the decimals a number is written with, from its shortest exact form (2.5 → 1, 0.25 → 2, 0.0000123 → 7, 1e-12 → 12), so a
+    // value printed with them reads exactly as stored and two different readings never print the same
+    const decOf = v => { const m = /^(\d+)(?:\.(\d+))?(?:e([+-]\d+))?$/.exec(String(Math.abs(v))); return m ? Math.min(100, Math.max(0, (m[2] || '').length - +(m[3] || 0))) : 0; };
+    const exact = v => L.fmt(v, decOf(v));
+    // a round scale: from 0 (or the lowest value) in 1, 2, 2.5 or 5 steps, at most 10 of them; time starts at its first reading's step
+    // Every tolerance is a share of the step, so a tiny range gets the same ten-odd ticks as a large one; the ticks are a whole
+    // number of steps (`n`, at most RC.ticks), each worked out to the step's own decimals, so its label is its exact value
+    const clean = q => +q.toPrecision(12);
+    const scale = (vs, from0) => { const lo = Math.min(...vs), hi = Math.max(...vs), base = from0 ? Math.min(0, lo) : lo, span = hi - base || Math.abs(hi) || 1;
+      let st = clean(10 ** Math.floor(Math.log10(span / 5))); const nice = s => { const e = 10 ** Math.floor(Math.log10(s) + 1e-9), m = s / e; return clean((m < 1.5 ? 2 : m < 2.2 ? 2.5 : m < 3 ? 5 : 10) * e); };
+      while (span / st > 10) st = nice(st);
+      const dec = decOf(st), at = k => +(from + k * st).toFixed(dec), from = clean(Math.floor(base / st + 1e-9) * st);
+      let n = Math.max(1, Math.ceil((hi - from) / st - 1e-9));
+      if (n > RC.ticks) { R.issues.push(`the recorder's scale needs ${n} steps; it draws ${RC.ticks}`); n = RC.ticks; }
+      return { from, hi: at(n), step: st, n, dec, at }; };
+    const H = W => Math.round(Math.max(RC.hMin, Math.min(RC.hMax, W * RC.ratio)));
+    const pen = (pts, seed, closed = false, amp = .6) => (L.ink && L.ink.hand) ? L.ink.hand(pts, seed, closed, amp) : 'M' + pts.map(q => q.join(' ')).join('L') + (closed ? 'Z' : '');
+    const tw = (t, cls) => { const e = sv('text', { class: cls }, svg); e.textContent = t; const w = e.getComputedTextLength ? e.getComputedTextLength() : t.length * 9; e.remove(); return w; };
+    R.size = room => { R.w = Math.round(room.w - PAD); R.h = H(R.w); node.style.width = R.w + 'px'; svg.setAttribute('width', R.w); svg.setAttribute('height', R.h); return R.w + PAD; };
+    R.hOf = W => H(W);
+    R.layout = () => {
+      R.issues = []; const W = R.w, Hh = H(W); R.h = Hh; svg.setAttribute('height', Hh); svg.setAttribute('viewBox', `0 0 ${W} ${Hh}`);
+      const B = rows(), n = B.length;
+      if (n < 3 || B.some(([t, v]) => !Number.isFinite(t) || !Number.isFinite(v))) { R.issues.push(`the recorder draws ${n} readings of \`${X.key}\` and \`${Y.key}\`: it needs 3 or more, each two finite numbers`); svg.innerHTML = ''; return false; }
+      if (B.some(([t], i) => i && !(t > B[i - 1][0]))) R.issues.push('the recorder\'s times do not rise in reading order');
+      const ts = B.map(r => r[0]), vs = B.map(r => r[1]);
+      const sy = scale(vs, true), sx = scale(ts, false), fy = Number.isInteger(Y.fmt) ? Y.fmt : null, fx = Number.isInteger(X.fmt) ? X.fmt : null;
+      const yLab = v => L.fmt(v, Math.max(sy.dec, fy ?? 0)), xLab = t => L.fmt(t, Math.max(sx.dec, fx ?? 0));
+      const fv = v => Y.fmt != null ? L.fmt(v, Y.fmt) : exact(v), ft = t => X.fmt != null ? L.fmt(t, X.fmt) : exact(t);
+      const yt = Array.from({ length: sy.n + 1 }, (_, k) => sy.at(k)), tt = Array.from({ length: sx.n + 1 }, (_, k) => sx.at(k));
+      const tickW = Math.max(...yt.map(v => tw(yLab(v), 'rcl')));
+      const xa = Math.round(2 + tickW + 14), xb = W - RC.edge, yT = RC.top, yB = Hh - RC.foot, mT = yT + RC.hole + 2, mB = yB - RC.hole - 2;
+      const y0 = yT + RC.hole + RC.inset, y1 = yB - RC.hole - RC.inset, x0 = xa + RC.left, x1 = xb - RC.right;
+      const XS = t => x0 + (t - sx.from) / (sx.hi - sx.from) * (x1 - x0), YS = v => y1 - (v - sy.from) / (sy.hi - sy.from) * (y1 - y0), f1 = q => q.toFixed(1);
+      const gap = Math.min(...ts.slice(1).map((t, i) => XS(t) - XS(ts[i]))), r = Math.max(3, Math.min(5.5, gap * .3));
+      if (gap < 6) R.issues.push(`the recorder's closest readings are ${gap.toFixed(1)} px apart: give it more room, or fewer readings`);
+      let o = `<defs><filter id="${uid}s" x="-5%" y="-10%" width="110%" height="130%"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#000" flood-opacity=".75"/></filter>` +
+        `<pattern id="${uid}h" patternUnits="userSpaceOnUse" width="9" height="9" patternTransform="rotate(40)"><line class="rchl" x1="0" y1="0" x2="0" y2="9"/></pattern>` +
+        `<linearGradient id="${uid}f" x1="0" y1="0" x2="0" y2="1"><stop class="rcf0" offset="0"/><stop class="rcf1" offset="1"/></linearGradient></defs>`;
+      // the paper: its sheet lifted by a shadow, its edges, feed holes and margins, the fine grid (5 squares a step, when 7 px or more), the rules
+      o += `<g class="rcp"><rect class="rcs" x="${xa}" y="${yT}" width="${xb - xa}" height="${yB - yT}" filter="url(#${uid}s)"/>` +
+        `<path class="rce" d="${pen([[xa, yT], [xb, yT]], uid + 'top', false, .6)}"/><path class="rce" d="${pen([[xa, yB], [xb, yB]], uid + 'bot', false, .6)}"/>`;
+      for (let x = xa + 12; x < xb - 6; x += RC.holeGap) o += `<circle class="rch" cx="${f1(x)}" cy="${yT + RC.hole / 2 + 1}" r="3.2"/><circle class="rch" cx="${f1(x)}" cy="${yB - RC.hole / 2 - 1}" r="3.2"/>`;
+      o += `<line class="rcm" x1="${xa}" x2="${xb}" y1="${mT}" y2="${mT}"/><line class="rcm" x1="${xa}" x2="${xb}" y1="${mB}" y2="${mB}"/>`;
+      const minor = (s, at, horiz) => { if (Math.abs(at(s.from + s.step / 5) - at(s.from)) < 7) return;
+        for (let k = 1; k < 5 * s.n; k++) if (k % 5) { const q = f1(at(s.from + k * s.step / 5));
+          o += horiz ? `<line class="rcg" x1="${xa}" x2="${xb}" y1="${q}" y2="${q}"/>` : `<line class="rcg" x1="${q}" x2="${q}" y1="${mT}" y2="${mB}"/>`; } };
+      minor(sy, YS, true); minor(sx, XS, false);
+      const yEvery = (y1 - y0) / Math.max(1, yt.length - 1) < 26 ? 2 : 1;
+      yt.forEach((v, k) => { const q = f1(YS(v)); o += `<line class="rcu" x1="${xa}" x2="${xb}" y1="${q}" y2="${q}"/>`;
+        if (k % yEvery === 0) o += `<text class="rcl" x="${xa - 12}" y="${f1(YS(v) + 5)}" text-anchor="end">${esc(yLab(v))}</text>`; });
+      const stepPx = (x1 - x0) / Math.max(1, tt.length - 1), tEvery = Math.max(1, Math.ceil((Math.max(...tt.map(t => tw(xLab(t), 'rcl'))) + 18) / stepPx));
+      tt.forEach((t, k) => { const q = f1(XS(t)); o += `<line class="rcu" x1="${q}" x2="${q}" y1="${mT}" y2="${mB}"/>`;
+        if (k % tEvery === 0) o += `<text class="rcl" x="${q}" y="${yB + 24}" text-anchor="middle">${esc(xLab(t))}</text>`; });
+      // the paper's ends: torn on the left, wound on its roll on the right
+      const tear = []; for (let y = yT, k = 0; y <= yB; y += 7, k++) tear.push([xa + (k % 2 ? 2 + 3 * Math.abs(Math.sin(k * 2.3)) : Math.abs(Math.sin(k * 1.7))), Math.min(y, yB)]);
+      const ring = (cx, cy, rx, ry) => Array.from({ length: 24 }, (_, k) => [cx + rx * Math.cos(Math.PI * 2 * k / 24), cy + ry * Math.sin(Math.PI * 2 * k / 24)]);
+      o += `<path class="rce" d="${pen(tear, uid + 'tear', false, .3)}"/>` +
+        `<path class="rce" d="${pen([[xb, yT - 8], [xb, yB + 8]], uid + 'ra', false, .4)}"/><path class="rce" d="${pen([[xb + RC.roll, yT - 8], [xb + RC.roll, yB + 8]], uid + 'rb', false, .4)}"/>` +
+        `<path class="rce" d="${pen(ring(xb + RC.roll / 2, yT - 8, RC.roll / 2, 3.5), uid + 'rt', true, .3)}"/>` +
+        `<path class="rce" d="${pen(ring(xb + RC.roll / 2, yB + 8, RC.roll / 2, 3.5).filter(([, y]) => y >= yB + 8), uid + 'rd', false, .3)}"/></g>`;
+      // the axis names: the value's over its labels, the time's with an arrow on the bottom line
+      o += `<text class="rcn" x="2" y="${yT - 14}">${esc(say(Y.label))}</text><text class="rcn" x="2" y="${Hh - 9}">${esc(say(X.label))} →</text>`;
+      // the ink: the wash to the floor, the trace, then each reading (its slice of strip to point at, its drops, value, readout and dot)
+      const pts = B.map(([t, v]) => [XS(t), YS(v)]), line = pts.map(q => `${q[0].toFixed(2)} ${q[1].toFixed(2)}`).join('L'), yF = f1(YS(sy.from));
+      o += `<g class="rci" style="--c:${c}">`;
+      if (p.wash !== false) { const d = `M${f1(pts[0][0])} ${yF}L${line}L${f1(pts[n - 1][0])} ${yF}Z`; o += `<path class="rcw" d="${d}" fill="url(#${uid}f)"/><path class="rcw rcx" d="${d}" fill="url(#${uid}h)"/>`; }
+      o += `<path class="rct" d="M${line}"/></g>`;
+      // the readout: on the top row, centred over the paper, clear of the value's name (the bottom row holds the time's name and
+      // the key). One place for all readings, measured at its widest
+      const kx = xb, ky = Hh - 9, ros = B.map(([t, v]) => `${ft(t)} ${say(X.label)} · ${name} ${fv(v)}`), roW = Math.max(...ros.map(q => tw(q, 'rcn')));
+      const yNameEnd = 2 + tw(say(Y.label), 'rcn'), rx = Math.max((xa + xb) / 2, yNameEnd + 24 + roW / 2);
+      if (rx + roW / 2 > xb) R.issues.push(`the recorder's readout (${Math.round(roW)} px) runs into the name \`${say(Y.label)}\`: shorter names or labels`);
+      B.forEach(([t, v], i) => { const [x, y] = pts[i], lo = i ? (pts[i - 1][0] + x) / 2 : xa, hi = i + 1 < n ? (pts[i + 1][0] + x) / 2 : xb, above = y - y0 > 34;
+        const ro = ros[i];
+        o += `<g class="rcr" data-r="${i}" style="--c:${c}">` +
+          `<line class="rcd" x1="${f1(x)}" x2="${f1(x)}" y1="${f1(y)}" y2="${mB}"/><line class="rcd" x1="${xa}" x2="${f1(x)}" y1="${f1(y)}" y2="${f1(y)}"/>` +
+          `<text class="rcv" x="${f1(Math.min(Math.max(x, xa + 30), xb - 30))}" y="${f1(above ? y - r - 12 : y + r + 24)}" text-anchor="middle">${esc(fv(v))}</text>` +
+          `<text class="rco" x="${f1(rx)}" y="${yT - 14}" text-anchor="middle">${esc(ro)}</text>` +
+          `<circle class="rcdot" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r.toFixed(2)}"/>` +
+          `<rect class="rchit" x="${lo.toFixed(2)}" y="${yT}" width="${(hi - lo).toFixed(2)}" height="${yB - yT}" tabindex="${i === R.focusR ? 0 : -1}" role="button" aria-label="${esc(ro)}"/></g>`; });
+      // the pen: a stylus on the last reading. Of the four diagonal leans that stay on the paper it takes the one farthest from the
+      // trace coming in (up and to the right when that is free); then every 15°; never off the paper, so never outside the figure
+      const [lx, ly] = pts[n - 1], inA = Math.atan2(pts[n - 2][1] - ly, pts[n - 2][0] - lx), reach = RC.pen + r + 6;
+      const onPaper = q => { const ex = lx + Math.cos(q) * reach, ey = ly + Math.sin(q) * reach, sx2 = Math.abs(Math.sin(q)) * RC.penW, sy2 = Math.abs(Math.cos(q)) * RC.penW;
+        return ex - sx2 > xa + 6 && ex + sx2 < xb - 6 && ey - sy2 > mT + 2 && ey + sy2 < mB - 2; };
+      const apart = q => Math.abs(((q - inA) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+      const best = qs => qs.filter(onPaper).reduce((b, q) => b == null || apart(q) > apart(b) + .3 ? q : b, null);
+      let a = best([-1, 1, -3, 3].map(k => k * Math.PI / 4)); if (a == null) a = best(Array.from({ length: 24 }, (_, k) => (k - 12) * Math.PI / 12));
+      if (a == null) R.issues.push('the recorder\'s pen does not fit on the paper: give the figure more room');
+      else { const ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux, tip = [lx + ux * (r + 1), ly + uy * (r + 1)], P = (s, q) => [tip[0] + ux * s + nx * q, tip[1] + uy * s + ny * q];
+        o += `<g class="rcpen"><path d="${pen([tip, P(12, RC.penW), P(RC.pen, RC.penW), P(RC.pen, -RC.penW), P(12, -RC.penW)], uid + 'pen', true, .3)}"/>` +
+          `<path d="${pen([P(RC.pen - 10, RC.penW), P(RC.pen - 10, -RC.penW)], uid + 'band', false, .2)}"/><circle class="rctip" cx="${f1(tip[0])}" cy="${f1(tip[1])}" r="1.6"/></g>`; }
+      // the key: a short line in the trace's colour and its words, ending on the strip's right edge
+      const kw = say(p.key ?? name), kwW = tw(kw, 'rck');
+      o += `<g class="rck0" style="--c:${c}"><line class="rct" x1="${f1(kx - kwW - 34)}" x2="${f1(kx - kwW - 12)}" y1="${ky - 11}" y2="${ky - 3}"/><text class="rck" x="${kx}" y="${ky}" text-anchor="end">${esc(kw)}</text>` +
+        `<rect class="rckh" x="${f1(kx - kwW - 38)}" y="${ky - 20}" width="${f1(kwW + 40)}" height="26"/></g>`;
+      svg.innerHTML = o; svg.style.setProperty('--c', c); svg.setAttribute('aria-label', `${name}: ${n} readings of ${say(Y.label)} over ${say(X.label)}`);
+      // the time's name and the key share the bottom line: the audit says when they meet
+      const xNameEnd = 2 + tw(`${say(X.label)} →`, 'rcn');
+      if (xNameEnd + 24 > kx - kwW - 38) R.issues.push(`the recorder's name \`${say(X.label)}\` runs into its key: a shorter \`key\` or label`);
+      // no card: the readout on the top row says the reading, and a card would cover it
+      svg.querySelectorAll('.rcr').forEach(e => { const i = +e.dataset.r, hit = e.querySelector('.rchit');
+        hit.addEventListener('pointerenter', () => R.hot(i)); hit.addEventListener('pointerleave', () => R.hot(null));
+        hit.addEventListener('focus', () => { R.focusR = i; svg.querySelectorAll('.rchit').forEach(q => q.setAttribute('tabindex', q === hit ? 0 : -1)); R.hot(i); });
+        hit.addEventListener('blur', () => R.hot(null));
+        // arrows (and Home, End) move to the next reading; Tab leaves the strip
+        hit.addEventListener('keydown', ev => { const k = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[ev.key], to = ev.key === 'Home' ? 0 : ev.key === 'End' ? n - 1 : k != null ? Math.max(0, Math.min(n - 1, i + k)) : null;
+          if (to == null) return; ev.preventDefault(); const q = svg.querySelector(`.rcr[data-r="${to}"] .rchit`); if (q) q.focus(); }); });
+      const key = svg.querySelector('.rck0'); glow(key, c);
+      key.addEventListener('pointerenter', () => { R.keyHot = true; R.paintWl(); if (R.onHot) R.onHot(0); });
+      key.addEventListener('pointerleave', () => { R.keyHot = false; R.paintWl(); if (R.onHot) R.onHot(R.hotR == null ? null : 0); });
+      R.paintWl(); return false; };
+    R.wl = i => ({ c, drawn: i === 0 && env.shown() });
+    R.paintWl = () => { svg.classList.toggle('lit', R.wlOn === 0 || R.keyHot); svg.classList.toggle('hov', R.hotR != null);
+      svg.querySelectorAll('.rcr').forEach(e => e.classList.toggle('on', +e.dataset.r === R.hotR)); };
+    R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.hot = i => { if (R.hotR === i) return; R.hotR = i; R.paintWl(); if (R.onHot) R.onHot(i == null ? null : 0); };
+    return R;
+  }
+
   // ---------- space: a 3D coordinate space the learner turns by dragging, the plane's sibling ----------
   // An orbit about the middle of the axes box (yaw free, pitch held between −10° and 80°), mild perspective and a depth fade.
   // Every piece is drawn far to near (the painter's rule): lines are cut into pieces and the sheet into cells, so a dot in front
@@ -1385,7 +1526,7 @@
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
     const isFig = it => it && (it.strip || it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
-    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || it.beads || WIDEVIS.some(k => it[k] != null));
+    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || it.beads || it.recorder || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
@@ -1527,6 +1668,9 @@
     // bead rings too
     const beadsFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
       const fg = beads(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
+    // and a recorder strip
+    const recorderFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
+      const fg = recorder(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
@@ -1572,6 +1716,7 @@
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (it.fork) { const w = { wide: true, figs: [] }; zone = w; const fg = forkFig({ ...it.fork, id: it.fork.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.beads) { const w = { wide: true, figs: [] }; zone = w; const fg = beadsFig({ ...it.beads, id: it.beads.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
+      else if (it.recorder) { const w = { wide: true, figs: [] }; zone = w; const fg = recorderFig({ ...it.recorder, id: it.recorder.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g rl'), at, pr.id);
@@ -1625,8 +1770,8 @@
     // would cover the lines being read). Text that names no mark keeps ==text==, the orange underline
     const lkeys = new Map();
     if (slopeFig) figs.push(slopeFig);
-    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads', 'slope'].includes(fg.kind)) return;
-      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : ['chance', 'beads', 'slope'].includes(fg.kind) ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
+    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads', 'slope', 'recorder'].includes(fg.kind)) return;
+      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : ['chance', 'beads', 'slope', 'recorder'].includes(fg.kind) ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
         const q = fg.kind === 'chart' ? (mk.kind === 'hline' ? mk.y : mk.kind === 'vline' ? mk.x : mk.kind === 'point' ? (mk.at || [])[1] ?? mk.y : null) : mk.vector ?? mk.point;
         const sym = typeof q === 'string' && (ctx.symbols || {})[q] ? q : null;   // first mark wins a shared key (the lint stops a link to one)
         [mk.label, fg.kind === 'chart' ? mk.name : null, mk.id, sym].forEach(k => { if (k != null && String(k).trim() && !lkeys.has(String(k).trim())) lkeys.set(String(k).trim(), [f, i, String(k).trim() === sym]); }); }); });
@@ -2021,8 +2166,10 @@
     const marksAt = k => { const out = []; steps.forEach((st, j) => { if (st && (map[j].at === k || map[j].q === k)) list(st.mark).forEach(m => out.push(String(m))); }); return out; };
     const targetOf = t => {
       let m;
-      // a slope table's row is its line (g.sl), its column its stem (g.ss), its cell the row's dot on that stem (.sd)
-      if ((m = /^row:(\d+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`tbody tr[data-r="${m[1]}"], g.sl[data-r="${m[1]}"]`)], cls: 'wrow' };
+      // a slope table's row is its line (g.sl), its column its stem (g.ss), its cell the row's dot on that stem (.sd). A recorder's
+      // reading is a row too when the scene has no table, or the table reads the recorder's own `from`; else row:N is the table's
+      const rec = s.table ? `.bi.recorder[data-from="${CSS.escape(String(s.table.from))}"]` : '.bi.recorder';
+      if ((m = /^row:(\d+)$/.exec(t))) return { els: [...(zt ? zt.querySelectorAll(`tbody tr[data-r="${m[1]}"], g.sl[data-r="${m[1]}"]`) : []), ...node.querySelectorAll(`${rec} g.rcr[data-r="${m[1]}"]`)], cls: 'wrow' };
       if ((m = /^col:(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`[data-col="${CSS.escape(m[1])}"]:not(.sd)`)], cls: 'hcol' };
       if ((m = /^cell:(\d+):(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`:is(td, .sd)[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`)], cls: 'src' };
       if ((m = /^#(.+)$/.exec(t))) return { els: [...node.querySelectorAll(`[data-id="${CSS.escape(m[1])}"]`)], cls: 'hl' };

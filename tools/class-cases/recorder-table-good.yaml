@@ -1,0 +1,36 @@
+# expect: builds
+# expect: not: names reading
+# expect: not: mark target
+# expect: not: the recorder
+# N5 fix: a table on other data and a recorder in one scene: row:N is the table's alone, so row 4 past the 3 readings is fine (review finding 6)
+title: A small series
+question: How does the reading move?
+answer: As the trace shows.
+data:
+  s:
+    - {t: 0, v: 1}
+    - {t: 1, v: 2}
+    - {t: 2, v: 3}
+  groups:
+    - {g: A, n: 40}
+    - {g: B, n: 55}
+    - {g: C, n: 30}
+    - {g: D, n: 20}
+    - {g: E, n: 61}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: process
+    see: level
+    shows: a few readings as a pen trace on a recorder strip
+    title: A few readings
+    lead: Each dot is one reading.
+    table: {from: groups, cols: [g, n]}
+    steps:
+      - say: The ==level== trace moves with each reading.
+        add:
+          - recorder: {from: s, x: {key: t, label: hours}, y: {key: v, label: level}, name: level}
+      - say: The pen rests on the last reading.
+      - say: The table's fifth row is a group, not a reading.
+        mark: row:4

@@ -502,6 +502,8 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   .board .bi.chance.cwait > * { visibility: visible !important; }
   .board .bi.fork.cwait > * { visibility: visible !important; }
   .board .bi.beads.cwait > * { visibility: visible !important; }
+  .board .bi.recorder.cwait > * { visibility: visible !important; }
+  .board .recorder :is(.rcr *, .rct, .rcw) { transition: none; }
 }
 /* chance: two groups as units, their shares, the gap and a ruler of noise steps (board.js chance). Hit areas take the pointer;
    a linked word lights its mark and dims the rest, the tally with them */
@@ -576,6 +578,44 @@ html.ls-page .board .bi.beads { padding: 8px; box-sizing: content-box; max-width
 .board .bi.beads.lnk-dim .bdr:not(.lnk-on) { opacity: .3; }
 .board .bi.beads .bdr.lnk-on :is(.bdf, .bdp) { filter: brightness(1.15) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
 .board .bi.beads.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
+
+/* recorder: readings in time order as a recorder's paper strip (board.js recorder). No box round it; the paper has its own shadow.
+   A lit reading (.on: pointing, focus; .wrow: mark row:N) shows its drops, value and readout, and the trace dims a little */
+html.ls-page .board .bi.recorder { padding: 8px; box-sizing: content-box; max-width: none; }
+.board .recorder svg.rc { display: block; overflow: visible; }
+.board .recorder text { font-family: var(--f-ui); }
+.board .recorder .rcs { fill: color-mix(in srgb, var(--mist) 6%, #16181c); stroke: none; }
+.board .recorder .rce, .board .recorder .rcpen path { fill: none; stroke: var(--ink); stroke-width: 1.1; opacity: .8; stroke-linejoin: round; }
+.board .recorder .rcpen path:first-child { fill: var(--bg); }
+.board .recorder .rctip { fill: var(--ink); opacity: .85; }
+.board .recorder .rch { fill: none; stroke: var(--mist); stroke-width: 1.1; opacity: .55; }
+.board .recorder .rcm { stroke: var(--mist); stroke-width: 1; opacity: .35; stroke-dasharray: 2 5; }
+.board .recorder .rcg { stroke: var(--mist); stroke-width: .8; opacity: .13; }
+.board .recorder .rcu { stroke: var(--mist); stroke-width: 1; opacity: .3; }
+.board .recorder .rcl { font-size: 15px; fill: var(--mist); font-variant-numeric: tabular-nums; }
+.board .recorder .rcn, .board .recorder .rck { font-size: 17px; fill: var(--mist); letter-spacing: .02em; }
+.board .recorder .rcw { stroke: none; }
+.board .recorder .rcf0 { stop-color: var(--c); stop-opacity: .22; }
+.board .recorder .rcf1 { stop-color: var(--c); stop-opacity: .02; }
+.board .recorder .rchl { stroke: var(--c); stroke-width: 1.2; opacity: .5; }
+.board .recorder .rci, .board .recorder .rcr, .board .recorder .rck0 { color: var(--c); }
+.board .recorder .rct { fill: none; stroke: var(--c); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.board .recorder .rcdot { fill: var(--c); stroke: var(--bg); stroke-width: 1.5; transition: stroke var(--m-hover) var(--ease), stroke-width var(--m-hover) var(--ease), opacity var(--m-hover) var(--ease); }
+.board .recorder .rcd { stroke: var(--c); stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .8; display: none; }
+.board .recorder .rcv { font-size: 18px; fill: var(--c); font-variant-numeric: tabular-nums; display: none; }
+.board .recorder .rco { font-size: 17px; fill: var(--ink); font-variant-numeric: tabular-nums; display: none; }
+.board .recorder .rchit { fill: transparent; stroke: none; pointer-events: all; cursor: help; outline: none; }
+.board .recorder .rckh { fill: transparent; pointer-events: all; cursor: help; }
+.board .recorder :is(.rct, .rcw) { transition: opacity var(--m-state) var(--ease), filter var(--m-state) var(--ease); }
+/* lit: pointing or focus wins over a step's mark; the trace and the other dots dim a little */
+.board .recorder svg:not(.hov) .rcr.wrow, .board .recorder .rcr.on { --lit: 1; }
+.board .recorder svg:not(.hov) .rcr.wrow :is(.rcd, .rcv, .rco), .board .recorder .rcr.on :is(.rcd, .rcv, .rco) { display: inline; }
+.board .recorder svg:not(.hov) .rcr.wrow .rcdot, .board .recorder .rcr.on .rcdot { stroke: var(--c); stroke-width: 5; }
+.board .recorder svg:is(.hov, :has(.rcr.wrow)) :is(.rct, .rcw) { opacity: .7; }
+.board .recorder svg:is(.hov, :has(.rcr.wrow)) .rcr:not(.on, .wrow) .rcdot, .board .recorder svg.hov .rcr.wrow:not(.on) .rcdot { opacity: .5; }
+/* the trace's word or its key lights the trace */
+.board .recorder svg.lit .rci .rct, .board .recorder svg.lit .rck0 .rct { opacity: 1; stroke-width: 3.2; filter: brightness(1.15) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.board .bi.recorder.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
 
 /* a refresher link under a step's line, and the button back from the end scene */
 .board .st .lref { margin: 4px 0 0; font: 15px/1.4 var(--f-mono); color: var(--mist); }

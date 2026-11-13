@@ -14,10 +14,10 @@ updated: 2026-11-13
 title: C10, advanced visuals for class lessons
 
 now: >-
-  13 Nov: N5 slope lines (9) approved and committed as `style: slope` on the pinned scene
-  table (the user's shape B), adv-only: two Terra 6.1 high reviewers, two rounds, eight
-  findings fixed. Quick check clean, 279/279 class cases, 14/14 doc tests. Next: the
-  recorder strip (10), which needs a new name since `strip` is taken.
+  13 Nov: N5 recorder strip (10) approved and committed as its own adv-only figure `recorder`
+  (the user's shape A), with `wash: false` for a tide: two Terra 6.1 high reviewers, two rounds,
+  eight findings fixed. Quick check clean, 301/301 class cases, 16/16 doc tests. Next: the
+  colour wheel (8).
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -338,7 +338,7 @@ blocks:
     status: active
     ships: plugin
     you: pick, review
-    line: "Seven pieces into the class kit, one block each; bead rings (7) and slope lines (9) done; recorder strip (10) next."
+    line: "Seven pieces into the class kit, one block each; bead rings (7), slope lines (9) and recorder strip (10) done; colour wheel (8) next."
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}

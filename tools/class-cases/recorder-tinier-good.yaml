@@ -1,0 +1,27 @@
+# expect: builds
+# expect: not: the recorder
+# expect: · 0.0000000000030 ·
+# expect: level 0.000000000003
+# N5 fix: a 1e-12 range: about ten ticks, not ten thousand, and exact labels (review findings 1, 2)
+title: A small series
+question: How does the reading move?
+answer: As the trace shows.
+data:
+  s:
+    - {t: 0, v: 1.0e-12}
+    - {t: 1, v: 2.0e-12}
+    - {t: 2, v: 3.0e-12}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: process
+    see: level
+    shows: a few readings as a pen trace on a recorder strip
+    title: A few readings
+    lead: Each dot is one reading.
+    steps:
+      - say: The ==level== trace moves with each reading.
+        add:
+          - recorder: {from: s, x: {key: t, label: hours}, y: {key: v, label: level}, name: level}
+      - say: The pen rests on the last reading.

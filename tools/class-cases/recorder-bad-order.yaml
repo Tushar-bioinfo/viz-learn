@@ -1,0 +1,38 @@
+# expect: its `min` 120 does not come after 120
+# N5: recorder-good with one fault (a time that does not rise).
+title: A flask that clouds over
+question: How fast does a flask of E. coli grow?
+answer: Slowly at first, fastest in the middle, then not at all.
+data:
+  growth:
+    - {min: 0, od: 0.051}
+    - {min: 30, od: 0.05}
+    - {min: 60, od: 0.051}
+    - {min: 90, od: 0.049}
+    - {min: 120, od: 0.091}
+    - {min: 120, od: 0.162}
+    - {min: 180, od: 0.279}
+    - {min: 210, od: 0.445}
+    - {min: 240, od: 0.685}
+    - {min: 270, od: 0.923}
+    - {min: 300, od: 1.176}
+    - {min: 330, od: 1.283}
+    - {min: 360, od: 1.419}
+    - {min: 390, od: 1.479}
+    - {min: 420, od: 1.531}
+    - {min: 450, od: 1.588}
+    - {min: 480, od: 1.587}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: process
+    see: density
+    shows: the flask's cloudiness read every 30 minutes, as a pen trace on a recorder strip
+    title: Eight hours of readings
+    lead: Each dot is one reading of the broth's cloudiness.
+    steps:
+      - say: The ==density== trace stays flat, then climbs, then levels off.
+        add:
+          - recorder: {from: growth, x: {key: min, label: minutes}, y: {key: od, label: density, fmt: 2}, name: density, key: "Higher trace, cloudier broth."}
+      - say: The pen rests on the last reading.

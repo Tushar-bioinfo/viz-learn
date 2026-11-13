@@ -1,0 +1,55 @@
+# expect: builds
+# expect: not: `recorder`
+# expect: not: the recorder
+# expect: not: linked word
+# N5: a `recorder` with `wash: false`: the tide, whose area under the line means nothing.
+title: A harbour tide
+question: How does the water rise and fall?
+answer: Twice a day, by about three metres.
+data:
+  tide:
+    - {hour: 0, metres: 4.32}
+    - {hour: 1, metres: 4.02}
+    - {hour: 2, metres: 3.18}
+    - {hour: 3, metres: 2.11}
+    - {hour: 4, metres: 1.23}
+    - {hour: 5, metres: 0.61}
+    - {hour: 6, metres: 0.43}
+    - {hour: 7, metres: 0.67}
+    - {hour: 8, metres: 1.45}
+    - {hour: 9, metres: 2.45}
+    - {hour: 10, metres: 3.54}
+    - {hour: 11, metres: 3.99}
+    - {hour: 12, metres: 4.34}
+    - {hour: 13, metres: 4.05}
+    - {hour: 14, metres: 3.42}
+    - {hour: 15, metres: 2.5}
+    - {hour: 16, metres: 1.53}
+    - {hour: 17, metres: 0.85}
+    - {hour: 18, metres: 0.61}
+    - {hour: 19, metres: 0.59}
+    - {hour: 20, metres: 1.24}
+    - {hour: 21, metres: 2.06}
+    - {hour: 22, metres: 3.1}
+    - {hour: 23, metres: 3.72}
+    - {hour: 24, metres: 4.16}
+    - {hour: 25, metres: 4.19}
+    - {hour: 26, metres: 3.6}
+    - {hour: 27, metres: 2.79}
+    - {hour: 28, metres: 1.93}
+    - {hour: 29, metres: 1.14}
+    - {hour: 30, metres: 0.72}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: process
+    see: height
+    shows: the water height read every hour, as a pen trace on a recorder strip
+    title: Thirty hours at the gauge
+    lead: Each dot is one reading of the water height.
+    steps:
+      - say: The ==height== trace rises and falls twice a day.
+        add:
+          - recorder: {from: tide, x: {key: hour, label: hours}, y: {key: metres, label: height}, name: height, key: "Higher trace, deeper water.", wash: false}
+      - say: The pen rests on the last reading.

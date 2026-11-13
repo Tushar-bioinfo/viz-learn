@@ -1,0 +1,24 @@
+# expect: `recorder` `y` `fmt: '101'` is not a number format
+# N5 fix: a `fmt` the kit cannot draw (review finding 4)
+title: A small series
+question: How does the reading move?
+answer: As the trace shows.
+data:
+  s:
+    - {t: 0, v: 1}
+    - {t: 1, v: 2}
+    - {t: 2, v: 3}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: process
+    see: level
+    shows: a few readings as a pen trace on a recorder strip
+    title: A few readings
+    lead: Each dot is one reading.
+    steps:
+      - say: The ==level== trace moves with each reading.
+        add:
+          - recorder: {from: s, x: {key: t, label: hours}, y: {key: v, label: level, fmt: '101'}, name: level}
+      - say: The pen rests on the last reading.

@@ -1,0 +1,24 @@
+# expect: the recorder's name `hours since the flask was first put in the warm room` runs into its key
+# N5 fix: a time name long enough to meet the key: the browser audit says so (review finding 7)
+title: A small series
+question: How does the reading move?
+answer: As the trace shows.
+data:
+  s:
+    - {t: 0, v: 1}
+    - {t: 1, v: 2}
+    - {t: 2, v: 3}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: process
+    see: level
+    shows: a few readings as a pen trace on a recorder strip
+    title: A few readings
+    lead: Each dot is one reading.
+    steps:
+      - say: The ==level== trace moves with each reading.
+        add:
+          - recorder: {from: s, x: {key: t, label: hours since the flask was first put in the warm room}, y: {key: v, label: level}, name: level, key: "A higher trace means a higher level of the broth in the flask on the warm shelf today."}
+      - say: The pen rests on the last reading.

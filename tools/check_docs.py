@@ -30,6 +30,7 @@ ADV_ONLY = {"views", "hunt", "guess", "split", "drag", "was", "start", "foil"}  
 ADV_ONLY |= {"groups", "axis", "gap_says", "step_says", "tally", "ends", "_kit"}   # chance (§9), fork (§9b), strip (§11): adv-only since N4
 ADV_ONLY |= {"beads", "part", "whole", "colors"}   # beads (§9c), adv-only since N5
 ADV_ONLY |= {"group", "glyphs"}   # a slope table (§9d), adv-only since N5
+ADV_ONLY |= {"recorder", "wash"}   # recorder (§9e), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 
@@ -155,6 +156,11 @@ def class_tests():
     want = [lesson_lint.beads_most(n) for n in (1, 3, 4)]   # lint.md states the largest whole the lint computes
     got = re.search(r"(\d+) for 1 or 2 rings, (\d+) for 3, (\d+) for 4", (CLASS / "lint.md").read_text())
     yield f"lint.md states the beads limits beads_most computes ({want})", bool(got) and [int(x) for x in got.groups()] == want and lesson_lint.beads_most(2) == want[0]
+    lt, rl = (CLASS / "lint.md").read_text(), lesson_lint.RECORDER_ROWS   # lint.md states the recorder limits the lint uses
+    ok = f"{rl[0]} to {rl[1]} readings" in lt and f"{lesson_lint.RECORDER_WORDS} words at most" in lt.split("`recorder` `name: X`")[-1].split("\n")[0]
+    yield f"lint.md states the recorder limits RECORDER_ROWS and RECORDER_WORDS hold ({rl}, {lesson_lint.RECORDER_WORDS} words)", ok
+    ok = f"decimals 0 to {lesson_lint.FMT_MOST} (`fmt: 2`)" in lt
+    yield f"lint.md states the recorder fmt limit FMT_MOST holds ({lesson_lint.FMT_MOST})", ok
     js = (CLASS / "kit/parts.js").read_text()   # the slope glyphs: the lint's copy, parts.js and adv.md name the same set
     drawn = set(re.findall(r"^    '?([a-z-]+)'?: \{ r: ", js, re.M))
     named = set(re.findall(r"`([a-z-]+)`", (CLASS / "adv.md").read_text().split("## 9d.")[1].split("## 10.")[0])) & (drawn | set(lesson_lint.GLYPHS))
