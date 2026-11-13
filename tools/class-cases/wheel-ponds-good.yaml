@@ -1,0 +1,44 @@
+# expect: builds
+# expect: not: `wheel`
+# expect: not: the wheel
+# expect: not: names nothing
+# expect: sample 7 · green | algae 1.99 · silt 0.51 · tannin 0.17
+# N5: a `wheel` of 18 pond samples with three columns that are not red, green or blue, so the tracks take s1, s2, s3.
+title: What is in the pond water?
+question: Why is one pond brown and another green?
+answer: The brown one holds tannin from peat; the green one holds algae.
+data:
+  samples:
+    - {group: clear, rgb: [200, 201, 194], algae: 0.14, silt: 0.54, tannin: 0.08}
+    - {group: clear, rgb: [188, 220, 158], algae: 0.2, silt: 0.22, tannin: 0.09}
+    - {group: clear, rgb: [200, 215, 151], algae: 0.1, silt: 0.52, tannin: 0.16}
+    - {group: clear, rgb: [192, 195, 167], algae: 0.22, silt: 0.56, tannin: 0.07}
+    - {group: clear, rgb: [175, 214, 174], algae: 0.14, silt: 0.42, tannin: 0.15}
+    - {group: clear, rgb: [182, 225, 172], algae: 0.18, silt: 0.38, tannin: 0.17}
+    - {group: green, rgb: [70, 146, 90], algae: 1.67, silt: 0.51, tannin: 0.24}
+    - {group: green, rgb: [61, 138, 54], algae: 1.99, silt: 0.51, tannin: 0.17}
+    - {group: green, rgb: [74, 147, 59], algae: 2.01, silt: 0.4, tannin: 0.29}
+    - {group: green, rgb: [67, 137, 53], algae: 1.66, silt: 0.64, tannin: 0.18}
+    - {group: green, rgb: [47, 113, 52], algae: 1.96, silt: 0.59, tannin: 0.16}
+    - {group: green, rgb: [69, 132, 55], algae: 1.77, silt: 0.31, tannin: 0.21}
+    - {group: peaty, rgb: [109, 66, 46], algae: 0.29, silt: 0.81, tannin: 2.04}
+    - {group: peaty, rgb: [121, 73, 47], algae: 0.5, silt: 0.74, tannin: 1.71}
+    - {group: peaty, rgb: [102, 69, 21], algae: 0.3, silt: 0.69, tannin: 1.49}
+    - {group: peaty, rgb: [99, 77, 24], algae: 0.23, silt: 0.7, tannin: 1.92}
+    - {group: peaty, rgb: [129, 71, 69], algae: 0.47, silt: 0.88, tannin: 1.87}
+    - {group: peaty, rgb: [117, 77, 25], algae: 0.35, silt: 0.62, tannin: 1.48}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: made-of
+    see: tannin
+    shows: each sample as a chip in its water's colour, with a spoke for each thing it holds
+    title: Eighteen ponds
+    lead: Each chip is one sample of pond water in its true colour.
+    steps:
+      - say: The ==tannin== spokes are long only in the peaty ponds.
+        add:
+          - wheel: {from: samples, rgb: rgb, group: group, cols: [algae, silt, tannin], key: "Longer spoke, stronger reading.", fmt: 2}
+      - say: This sample is a green pond.
+        mark: row:7

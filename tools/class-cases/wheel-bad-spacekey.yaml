@@ -1,0 +1,63 @@
+# expect: has no column ` od_r `
+# N5: wheel-good with one fault (a bare key written with spaces: the kit reads it as written, so no record has it).
+title: What colour is a stained pixel?
+question: Why does a nucleus look purple?
+answer: It holds back much red and green light and little blue, so blue light gets through.
+data:
+  pixels:
+    - {id: 0, group: nucleus, rgb: [51, 26, 127], od_r: 0.699, od_g: 0.986, od_b: 0.302}
+    - {id: 1, group: nucleus, rgb: [44, 22, 114], od_r: 0.762, od_g: 1.055, od_b: 0.349}
+    - {id: 2, group: nucleus, rgb: [43, 18, 110], od_r: 0.771, od_g: 1.156, od_b: 0.365}
+    - {id: 3, group: nucleus, rgb: [61, 29, 130], od_r: 0.620, od_g: 0.946, od_b: 0.293}
+    - {id: 4, group: nucleus, rgb: [61, 30, 136], od_r: 0.620, od_g: 0.929, od_b: 0.274}
+    - {id: 5, group: nucleus, rgb: [43, 15, 115], od_r: 0.776, od_g: 1.224, od_b: 0.346}
+    - {id: 6, group: nucleus, rgb: [72, 48, 147], od_r: 0.550, od_g: 0.727, od_b: 0.238}
+    - {id: 7, group: nucleus, rgb: [42, 28, 122], od_r: 0.784, od_g: 0.952, od_b: 0.320}
+    - {id: 8, group: nucleus, rgb: [45, 21, 113], od_r: 0.749, od_g: 1.076, od_b: 0.352}
+    - {id: 9, group: nucleus, rgb: [55, 40, 124], od_r: 0.663, od_g: 0.802, od_b: 0.312}
+    - {id: 10, group: nucleus, rgb: [59, 46, 133], od_r: 0.635, od_g: 0.741, od_b: 0.283}
+    - {id: 11, group: nucleus, rgb: [64, 33, 137], od_r: 0.601, od_g: 0.892, od_b: 0.269}
+    - {id: 12, group: nucleus, rgb: [65, 35, 126], od_r: 0.591, od_g: 0.865, od_b: 0.306}
+    - {id: 13, group: nucleus, rgb: [53, 24, 125], od_r: 0.685, od_g: 1.030, od_b: 0.309}
+    - {id: 14, group: stroma, rgb: [189, 43, 207], od_r: 0.130, od_g: 0.776, od_b: 0.091}
+    - {id: 15, group: stroma, rgb: [158, 36, 176], od_r: 0.209, od_g: 0.850, od_b: 0.161}
+    - {id: 16, group: stroma, rgb: [169, 47, 184], od_r: 0.178, od_g: 0.737, od_b: 0.142}
+    - {id: 17, group: stroma, rgb: [202, 72, 213], od_r: 0.100, od_g: 0.547, od_b: 0.079}
+    - {id: 18, group: stroma, rgb: [150, 25, 171], od_r: 0.230, od_g: 1.004, od_b: 0.175}
+    - {id: 19, group: stroma, rgb: [155, 32, 175], od_r: 0.217, od_g: 0.900, od_b: 0.162}
+    - {id: 20, group: stroma, rgb: [150, 33, 178], od_r: 0.232, od_g: 0.893, od_b: 0.157}
+    - {id: 21, group: stroma, rgb: [189, 47, 188], od_r: 0.129, od_g: 0.735, od_b: 0.132}
+    - {id: 22, group: stroma, rgb: [217, 34, 213], od_r: 0.070, od_g: 0.870, od_b: 0.078}
+    - {id: 23, group: stroma, rgb: [196, 71, 202], od_r: 0.115, od_g: 0.557, od_b: 0.100}
+    - {id: 24, group: stroma, rgb: [150, 40, 169], od_r: 0.231, od_g: 0.809, od_b: 0.178}
+    - {id: 25, group: stroma, rgb: [166, 59, 200], od_r: 0.187, od_g: 0.637, od_b: 0.105}
+    - {id: 26, group: stroma, rgb: [204, 65, 198], od_r: 0.097, od_g: 0.591, od_b: 0.110}
+    - {id: 27, group: stroma, rgb: [151, 22, 176], od_r: 0.227, od_g: 1.067, od_b: 0.160}
+    - {id: 28, group: stroma, rgb: [169, 34, 172], od_r: 0.178, od_g: 0.877, od_b: 0.170}
+    - {id: 29, group: stroma, rgb: [173, 39, 189], od_r: 0.169, od_g: 0.819, od_b: 0.130}
+    - {id: 30, group: background, rgb: [223, 181, 244], od_r: 0.058, od_g: 0.148, od_b: 0.018}
+    - {id: 31, group: background, rgb: [223, 194, 240], od_r: 0.059, od_g: 0.120, od_b: 0.026}
+    - {id: 32, group: background, rgb: [241, 234, 228], od_r: 0.025, od_g: 0.037, od_b: 0.049}
+    - {id: 33, group: background, rgb: [235, 198, 241], od_r: 0.035, od_g: 0.110, od_b: 0.024}
+    - {id: 34, group: background, rgb: [223, 200, 229], od_r: 0.058, od_g: 0.105, od_b: 0.046}
+    - {id: 35, group: background, rgb: [244, 213, 245], od_r: 0.020, od_g: 0.079, od_b: 0.017}
+    - {id: 36, group: background, rgb: [225, 199, 240], od_r: 0.054, od_g: 0.107, od_b: 0.026}
+    - {id: 37, group: background, rgb: [253, 245, 239], od_r: 0.004, od_g: 0.017, od_b: 0.028}
+    - {id: 38, group: background, rgb: [238, 204, 242], od_r: 0.029, od_g: 0.096, od_b: 0.023}
+    - {id: 39, group: background, rgb: [236, 213, 238], od_r: 0.033, od_g: 0.078, od_b: 0.030}
+    - {id: 40, group: dab, rgb: [109, 45, 68], od_r: 0.371, od_g: 0.750, od_b: 0.577}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: made-of
+    see: red
+    shows: each pixel as a chip in its true colour, with a spoke for each light it held back
+    title: Each pixel and the light it held back
+    lead: Each chip is one pixel in its true colour.
+    steps:
+      - say: The ==red== spokes are long round the nuclei.
+        add:
+          - wheel: {from: pixels, rgb: rgb, group: group, cols: [" od_r ", {key: od_g, label: green}, {key: od_b, label: blue}], key: "Longer spoke, more held.", fmt: 2}
+      - say: This pixel is a nucleus.
+        mark: row:5

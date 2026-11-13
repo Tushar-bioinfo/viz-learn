@@ -770,6 +770,10 @@
   // readout "time · value" on the top row (no card, which would cover it); the trace dims a little. The trace is one mark named `name`: the key at the
   // bottom right and a linked word light it. The figure is wide (the reading column) and wears no frame
   const RC = { top: 40, foot: 62, hole: 13, inset: 14, edge: 54, roll: 16, left: 24, right: 50, pen: 48, penW: 5, holeGap: 26, ratio: .42, hMin: 360, hMax: 520, ticks: 12 };
+  // the decimals a number is written with, from its shortest exact form (2.5 → 1, 0.25 → 2, 0.0000123 → 7, 1e-12 → 12), so a
+  // value printed with them reads exactly as stored and two different readings never print the same (recorder and wheel readouts)
+  const decOf = v => { const m = /^(\d+)(?:\.(\d+))?(?:e([+-]\d+))?$/.exec(String(Math.abs(v))); return m ? Math.min(100, Math.max(0, (m[2] || '').length - +(m[3] || 0))) : 0; };
+  const exact = v => L.fmt(v, decOf(v));
   let recNo = 0;
   function recorder(p, ctx, at, env) {
     const node = h('div', 'bi recorder'); node.dataset.at = at; node.dataset.from = String(p.from ?? ''); if (p.id) node.dataset.id = p.id;
@@ -781,10 +785,6 @@
     const esc = t => L.esc(String(t)), say = t => L.plain(String(t ?? ''), ctx.scope);
     const rows = () => { let v = []; try { v = list(L.val(p.from, ctx.scope, `slide ${ctx.index + 1} recorder from`)); } catch (er) { R.issues.push(`the recorder: ${er.message}`); }
       return v.filter(r => r && typeof r === 'object').map(r => [+r[X.key], +r[Y.key]]); };
-    // the decimals a number is written with, from its shortest exact form (2.5 → 1, 0.25 → 2, 0.0000123 → 7, 1e-12 → 12), so a
-    // value printed with them reads exactly as stored and two different readings never print the same
-    const decOf = v => { const m = /^(\d+)(?:\.(\d+))?(?:e([+-]\d+))?$/.exec(String(Math.abs(v))); return m ? Math.min(100, Math.max(0, (m[2] || '').length - +(m[3] || 0))) : 0; };
-    const exact = v => L.fmt(v, decOf(v));
     // a round scale: from 0 (or the lowest value) in 1, 2, 2.5 or 5 steps, at most 10 of them; time starts at its first reading's step
     // Every tolerance is a share of the step, so a tiny range gets the same ten-odd ticks as a large one; the ticks are a whole
     // number of steps (`n`, at most RC.ticks), each worked out to the step's own decimals, so its label is its exact value
@@ -899,6 +899,108 @@
       svg.querySelectorAll('.rcr').forEach(e => e.classList.toggle('on', +e.dataset.r === R.hotR)); };
     R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
     R.hot = i => { if (R.hotR === i) return; R.hotR = i; R.paintWl(); if (R.onHot) R.onHot(i == null ? null : 0); };
+    return R;
+  }
+
+  // ---------- wheel: records that each carry their own colour, round a ring (the C10p mock-up, round 3, idea 3, 11 Nov) ----------
+  // One slot per record round the ring, one arc per group (a small gap between groups, a larger one at the top for the track
+  // names), the group's name outside its arc. The inner ring is each record's chip in its true colour (`rgb`, three whole
+  // numbers 0-255). One track per column (1-3) goes out from the chips; each reading is a spoke from its track's inner edge,
+  // its length to scale (one scale over all values, from 0). A column labelled red, green or blue takes its plain light colour
+  // (--ch-red, --ch-green, --ch-blue: the theme's mint green reads as teal), any other s1, s2, s3 in order. Names start with a
+  // capital (the user, 11 Nov). A lit record (pointing, focus, arrows or `mark: row:N`) rings its chip, brightens its spokes and
+  // dims the rest; its readout sits on the top row (no card). Each track is a mark named by its label: a linked word or its name
+  // lights it. The figure is wide (the reading column) and wears no frame
+  const WH = { top: 44, foot: 34, names: 34, side: 190, ratio: .5, hMin: 480, hMax: 640, chip: 22, gap: 1.5, topGap: 5, rMin: 150 };
+  function wheel(p, ctx, at, env) {
+    const node = h('div', 'bi wheel'); node.dataset.at = at; node.dataset.from = String(p.from ?? ''); if (p.id) node.dataset.id = p.id;
+    const svg = sv('svg', { class: 'wh', role: 'group' }, node);
+    const R = { node, issues: [], kind: 'wheel', w: 0, h: 0, linked: new Set(), wlOn: null, keyJ: null, hotR: null, hotJ: null, focusR: 0 };
+    const ax = v => typeof v === 'string' ? { key: v, label: v } : v && typeof v === 'object' ? { label: v.key, ...v } : {};
+    const C = list(p.cols).slice(0, 3).map(ax), ch = j => String(C[j].label ?? '').trim().toLowerCase();
+    R.keys = C.map(c => String(c.label ?? '')); R.cols = C.map((_, j) => ['red', 'green', 'blue'].includes(ch(j)) ? `var(--ch-${ch(j)})` : `var(--s${j + 1})`);
+    const esc = t => L.esc(String(t)), say = t => L.plain(String(t ?? ''), ctx.scope), cap = w => w.charAt(0).toUpperCase() + w.slice(1);
+    const noun = String(p.from ?? '').replace(/([^s])s$/, '$1');   // "pixels" → "pixel": a record's name in the readout, numbered from 0 as row:N
+    const tw = (t, cls) => { const e = sv('text', { class: cls }, svg); e.textContent = t; const w = e.getComputedTextLength ? e.getComputedTextLength() : t.length * 9; e.remove(); return w; };
+    const rows = () => { let v = []; try { v = list(L.val(p.from, ctx.scope, `slide ${ctx.index + 1} wheel from`)); } catch (er) { R.issues.push(`the wheel: ${er.message}`); }
+      return v.filter(r => r && typeof r === 'object'); };
+    const H = W => Math.round(Math.max(WH.hMin, Math.min(WH.hMax, W * WH.ratio)));
+    R.size = room => { R.w = Math.round(room.w - PAD); R.h = H(R.w); node.style.width = R.w + 'px'; svg.setAttribute('width', R.w); svg.setAttribute('height', R.h); return R.w + PAD; };
+    R.hOf = W => H(W);
+    R.layout = () => {
+      R.issues = []; const W = R.w, Hh = H(W); R.h = Hh; svg.setAttribute('height', Hh); svg.setAttribute('viewBox', `0 0 ${W} ${Hh}`);
+      const B = rows(), n = B.length, k = C.length, vals = B.map(r => C.map(c => +r[c.key]));
+      const ok = r => Array.isArray(r[p.rgb]) && r[p.rgb].length === 3 && r[p.rgb].every(q => Number.isInteger(q) && q >= 0 && q <= 255);
+      if (!n || !k || !B.every(ok) || vals.flat().some(v => !Number.isFinite(v) || v < 0)) { R.issues.push(`the wheel draws ${n} records and ${k} columns: each record needs \`${p.rgb}\`, three whole numbers 0-255, and readings that are numbers 0 or more`); svg.innerHTML = ''; return false; }
+      const grp = B.map(r => p.group != null ? String(r[p.group] ?? '') : ''), top = Math.max(...vals.flat()) || 1;
+      const cx = W / 2, cy = WH.top + (Hh - WH.top - WH.foot) / 2, Rout = Math.min((Hh - WH.top - WH.foot) / 2 - WH.names, W / 2 - WH.side);
+      if (Rout < WH.rMin) R.issues.push(`the wheel is ${Math.round(2 * Rout)} px across: give it more room`);
+      const r0 = Rout * .24, r1 = r0 + WH.chip + 12, tg = 10, Ln = (Rout - r1 - tg * (k - 1)) / k, base = j => r1 + j * (Ln + tg);
+      // the slots: one a record, WH.gap more between groups, WH.topGap at the top for the track names. A group's records sit
+      // together in one arc, the arcs in the order of each group's first row and the records in row order inside it; `ang`,
+      // `row:N`, the readout's number and the DOM (Tab) order stay the data's row N. `ord` is the ring order, for the arrows
+      const gs = [...new Set(grp)], ord = B.map((_, i) => i).sort((a, b) => gs.indexOf(grp[a]) - gs.indexOf(grp[b]) || a - b), pos = [];
+      ord.forEach((i, q) => { pos[i] = q; });
+      const dt = 2 * Math.PI / (n + WH.gap * (gs.length - 1) + WH.topGap), ang = [];
+      let s = WH.topGap / 2 + .5; ord.forEach((i, q) => { if (q && grp[i] !== grp[ord[q - 1]]) s += WH.gap; ang[i] = -Math.PI / 2 + s * dt; s += 1; });
+      if (r0 * dt < 4) R.issues.push(`the wheel's chips are ${(Math.floor(r0 * dt * 10) / 10).toFixed(1)} px wide: give it more room, or fewer records`);
+      const pt = (a, r) => [cx + r * Math.cos(a), cy + r * Math.sin(a)], f2 = q => q.toFixed(2), sw = Math.max(2, Math.min(5, r1 * dt * .45));
+      const sector = (a0, a1, ra, rb) => { const [x0, y0] = pt(a0, ra), [x1, y1] = pt(a1, ra), [x2, y2] = pt(a1, rb), [x3, y3] = pt(a0, rb);
+        return `M${f2(x0)},${f2(y0)}A${f2(ra)},${f2(ra)} 0 0 1 ${f2(x1)},${f2(y1)}L${f2(x2)},${f2(y2)}A${f2(rb)},${f2(rb)} 0 0 0 ${f2(x3)},${f2(y3)}Z`; };
+      const fv = (j, v) => (C[j].fmt ?? p.fmt) != null ? L.fmt(v, C[j].fmt ?? p.fmt) : exact(v);   // `fmt` wins; else the data's decimals
+      let o = '';
+      // the arcs: each group's track lines, and its name outside the ring
+      const runs = gs.map(g => { const m = ord.filter(i => grp[i] === g); return { g, a0: ang[m[0]] - dt / 2, a1: ang[m[m.length - 1]] + dt / 2 }; });
+      runs.forEach(u => { for (let j = 0; j < k; j++) { const r = base(j), [x0, y0] = pt(u.a0, r), [x1, y1] = pt(u.a1, r);
+        o += `<path class="wt" data-j="${j}" style="--c:${R.cols[j]}" d="M${f2(x0)},${f2(y0)}A${f2(r)},${f2(r)} 0 ${u.a1 - u.a0 > Math.PI ? 1 : 0} 1 ${f2(x1)},${f2(y1)}"/>`; } });
+      // the names sit at their arc's middle; names that touch are pushed apart along the ring, step by step, and one pushed
+      // more than a slot from its arc gets a short line back to it
+      const gl = runs.filter(u => u.g).map(u => { const t = cap(say(u.g)), am = (u.a0 + u.a1) / 2; return { t, am, a: am, gw: tw(t, 'wg') }; });
+      const box = q => { const [tx, ty] = pt(q.a, Rout + 18), c = Math.cos(q.a), anc = c > .3 ? 'start' : c < -.3 ? 'end' : 'middle', y = ty + 6 + Math.sin(q.a) * 6;
+        const x0 = anc === 'start' ? tx : anc === 'end' ? tx - q.gw : tx - q.gw / 2; return { tx, y, anc, x0, x1: x0 + q.gw, y0: y - 17, y1: y + 5 }; };   // the 18 px font's box
+      const touch = (q, u) => { const e = box(q), f = box(u); return e.x0 < f.x1 + 6 && f.x0 < e.x1 + 6 && e.y0 < f.y1 + 2 && f.y0 < e.y1 + 2; };
+      const nb = i => (i < gl.length - 1 || gl.length > 2) && gl.length > 1 ? gl[(i + 1) % gl.length] : null;   // the next name round the ring
+      for (let it = 0, moved = true; moved && it < 400; it++) { moved = false; gl.forEach((q, i) => { const u = nb(i); if (u && touch(q, u)) { q.a -= .004; u.a += .004; moved = true; } }); }
+      gl.forEach((q, i) => { const e = box(q), u = nb(i);
+        if (e.x0 < 0 || e.x1 > W || e.y0 < 0 || e.y1 > Hh) R.issues.push(`the wheel's group name \`${q.t}\` runs out of the figure: a shorter name`);
+        if (u && touch(q, u)) R.issues.push(`the wheel's group names \`${q.t}\` and \`${u.t}\` overlap: fewer groups or shorter names`);
+        if (Math.abs(q.a - q.am) > dt) { const [x0, y0] = pt(q.am, Rout + 3), [x1, y1] = pt(q.a, Rout + 9); o += `<line class="wgl" x1="${f2(x0)}" y1="${f2(y0)}" x2="${f2(x1)}" y2="${f2(y1)}"/>`; }
+        o += `<text class="wg" x="${f2(e.tx)}" y="${f2(e.y)}" text-anchor="${e.anc}">${esc(q.t)}</text>`; });
+      // the track names, in the gap at the top, each in its track's colour
+      C.forEach((c, j) => { o += `<text class="wtn" data-j="${j}" style="--c:${R.cols[j]}" x="${f2(cx)}" y="${f2(cy - base(j) - Ln / 2 + 5)}" text-anchor="middle">${esc(cap(say(c.label)))}</text>`; });
+      // each record: its chip, a spoke a reading, hit areas over the chip and each track's slot, and the readouts (the chip's and
+      // each spoke's), which show on the top row when lit
+      const nm = i => `${noun} ${i}${grp[i] ? ' · ' + say(grp[i]) : ''}`, ros = B.map((_, i) => `${nm(i)} | ` + C.map((c, j) => `${say(c.label)} ${fv(j, vals[i][j])}`).join(' · '));
+      if (Math.max(...ros.map(q => tw(q, 'wo'))) > cx - 40) R.issues.push('the wheel\'s readout runs past the middle of the top row: shorter labels or group names');
+      B.forEach((r, i) => { const a = ang[i];
+        o += `<g class="wr" data-r="${i}"><path class="wc" d="${sector(a - dt * .42, a + dt * .42, r0, r0 + WH.chip)}" fill="rgb(${r[p.rgb].join(',')})"/><text class="wo" x="0" y="22">${esc(ros[i])}</text>`;
+        C.forEach((c, j) => { const [x0, y0] = pt(a, base(j)), [x1, y1] = pt(a, base(j) + vals[i][j] / top * Ln);
+          o += `<g class="ws" data-j="${j}" style="--c:${R.cols[j]}"><line class="wsl" x1="${f2(x0)}" y1="${f2(y0)}" x2="${f2(x1)}" y2="${f2(y1)}" stroke-width="${f2(sw)}"/>` +
+            `<text class="wo" x="0" y="22">${esc(`${nm(i)} · ${say(c.label)} ${fv(j, vals[i][j])}`)}</text><path class="wx" d="${sector(a - dt / 2, a + dt / 2, base(j) - 2, base(j) + Ln + 2)}"/></g>`; });
+        o += `<path class="wx wch" d="${sector(a - dt / 2, a + dt / 2, r0 - 2, r0 + WH.chip + 2)}" tabindex="${i === R.focusR ? 0 : -1}" role="button" aria-label="${esc(ros[i])}"/></g>`; });
+      // the key: a short grey spoke and its words, ending on the bottom right
+      if (p.key != null) { const kw = say(p.key), kl = W - 8 - tw(kw, 'wkt') - 12;
+        o += `<line class="wkl" x1="${f2(kl - 22)}" x2="${f2(kl)}" y1="${Hh - 14}" y2="${Hh - 14}" stroke-width="${f2(sw)}"/><text class="wkt" x="${W - 8}" y="${Hh - 8}" text-anchor="end">${esc(kw)}</text>`; }
+      svg.innerHTML = o; svg.setAttribute('aria-label', `${n} ${p.from} round a wheel: ${C.map(c => say(c.label)).join(', ')}`);
+      svg.querySelectorAll('.wr').forEach(e => { const i = +e.dataset.r, hit = e.querySelector('.wch');
+        e.querySelectorAll('.wx').forEach(q => { const j = q === hit ? null : +q.parentNode.dataset.j;
+          q.addEventListener('pointerenter', () => R.hot(i, j)); q.addEventListener('pointerleave', () => R.hot(null, null)); });
+        hit.addEventListener('focus', () => { R.focusR = i; svg.querySelectorAll('.wch').forEach(q => q.setAttribute('tabindex', q === hit ? 0 : -1)); R.hot(i, null); });
+        hit.addEventListener('blur', () => R.hot(null, null));
+        // arrows (and Home, End) move round the ring; Tab leaves it
+        hit.addEventListener('keydown', ev => { const d = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[ev.key], to = ev.key === 'Home' ? ord[0] : ev.key === 'End' ? ord[n - 1] : d != null ? ord[(pos[i] + d + n) % n] : null;
+          if (to == null) return; ev.preventDefault(); const q = svg.querySelector(`.wr[data-r="${to}"] .wch`); if (q) q.focus(); }); });
+      svg.querySelectorAll('.wtn').forEach(e => { const j = +e.dataset.j;
+        e.addEventListener('pointerenter', () => { R.keyJ = j; R.paintWl(); if (R.onHot) R.onHot(j); });
+        e.addEventListener('pointerleave', () => { R.keyJ = null; R.paintWl(); if (R.onHot) R.onHot(R.hotJ); }); });
+      R.paintWl(); return false; };
+    R.wl = j => ({ c: R.cols[j], drawn: j < R.keys.length && env.shown() });
+    R.paintWl = () => { const lt = R.wlOn ?? R.keyJ; svg.classList.toggle('hov', R.hotR != null); svg.classList.toggle('lnk-dim', lt != null);
+      svg.querySelectorAll('.wr').forEach(e => { const on = +e.dataset.r === R.hotR; e.classList.toggle('on', on); e.querySelector(':scope > .wo').classList.toggle('vis', on && R.hotJ == null);
+        e.querySelectorAll('.ws').forEach(q => q.querySelector('.wo').classList.toggle('vis', on && +q.dataset.j === R.hotJ)); });
+      svg.querySelectorAll('[data-j]').forEach(e => e.classList.toggle('lnk-on', +e.dataset.j === lt)); };
+    R.wlLight = j => { if (R.wlOn !== j) { R.wlOn = j; R.paintWl(); } };
+    R.hot = (i, j) => { if (R.hotR === i && R.hotJ === j) return; R.hotR = i; R.hotJ = j; R.paintWl(); if (R.onHot) R.onHot(j); };
     return R;
   }
 
@@ -1526,7 +1628,7 @@
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
     const isFig = it => it && (it.strip || it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
-    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || it.beads || it.recorder || WIDEVIS.some(k => it[k] != null));
+    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || it.beads || it.recorder || it.wheel || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
@@ -1671,6 +1773,9 @@
     // and a recorder strip
     const recorderFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
       const fg = recorder(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
+    // and a colour wheel
+    const wheelFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
+      const fg = wheel(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
@@ -1717,6 +1822,7 @@
       else if (it.fork) { const w = { wide: true, figs: [] }; zone = w; const fg = forkFig({ ...it.fork, id: it.fork.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.beads) { const w = { wide: true, figs: [] }; zone = w; const fg = beadsFig({ ...it.beads, id: it.beads.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.recorder) { const w = { wide: true, figs: [] }; zone = w; const fg = recorderFig({ ...it.recorder, id: it.recorder.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
+      else if (it.wheel) { const w = { wide: true, figs: [] }; zone = w; const fg = wheelFig({ ...it.wheel, id: it.wheel.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g rl'), at, pr.id);
@@ -1770,8 +1876,8 @@
     // would cover the lines being read). Text that names no mark keeps ==text==, the orange underline
     const lkeys = new Map();
     if (slopeFig) figs.push(slopeFig);
-    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads', 'slope', 'recorder'].includes(fg.kind)) return;
-      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : ['chance', 'beads', 'slope', 'recorder'].includes(fg.kind) ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
+    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads', 'slope', 'recorder', 'wheel'].includes(fg.kind)) return;
+      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : ['chance', 'beads', 'slope', 'recorder', 'wheel'].includes(fg.kind) ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
         const q = fg.kind === 'chart' ? (mk.kind === 'hline' ? mk.y : mk.kind === 'vline' ? mk.x : mk.kind === 'point' ? (mk.at || [])[1] ?? mk.y : null) : mk.vector ?? mk.point;
         const sym = typeof q === 'string' && (ctx.symbols || {})[q] ? q : null;   // first mark wins a shared key (the lint stops a link to one)
         [mk.label, fg.kind === 'chart' ? mk.name : null, mk.id, sym].forEach(k => { if (k != null && String(k).trim() && !lkeys.has(String(k).trim())) lkeys.set(String(k).trim(), [f, i, String(k).trim() === sym]); }); }); });
@@ -2168,8 +2274,9 @@
       let m;
       // a slope table's row is its line (g.sl), its column its stem (g.ss), its cell the row's dot on that stem (.sd). A recorder's
       // reading is a row too when the scene has no table, or the table reads the recorder's own `from`; else row:N is the table's
-      const rec = s.table ? `.bi.recorder[data-from="${CSS.escape(String(s.table.from))}"]` : '.bi.recorder';
-      if ((m = /^row:(\d+)$/.exec(t))) return { els: [...(zt ? zt.querySelectorAll(`tbody tr[data-r="${m[1]}"], g.sl[data-r="${m[1]}"]`) : []), ...node.querySelectorAll(`${rec} g.rcr[data-r="${m[1]}"]`)], cls: 'wrow' };
+      // A colour wheel's record likewise
+      const own = k => s.table ? `.bi.${k}[data-from="${CSS.escape(String(s.table.from))}"]` : `.bi.${k}`;
+      if ((m = /^row:(\d+)$/.exec(t))) return { els: [...(zt ? zt.querySelectorAll(`tbody tr[data-r="${m[1]}"], g.sl[data-r="${m[1]}"]`) : []), ...node.querySelectorAll(`${own('recorder')} g.rcr[data-r="${m[1]}"], ${own('wheel')} g.wr[data-r="${m[1]}"]`)], cls: 'wrow' };
       if ((m = /^col:(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`[data-col="${CSS.escape(m[1])}"]:not(.sd)`)], cls: 'hcol' };
       if ((m = /^cell:(\d+):(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`:is(td, .sd)[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`)], cls: 'src' };
       if ((m = /^#(.+)$/.exec(t))) return { els: [...node.querySelectorAll(`[data-id="${CSS.escape(m[1])}"]`)], cls: 'hl' };

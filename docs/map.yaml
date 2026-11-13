@@ -14,10 +14,11 @@ updated: 2026-11-13
 title: C10, advanced visuals for class lessons
 
 now: >-
-  13 Nov: N5 recorder strip (10) approved and committed as its own adv-only figure `recorder`
-  (the user's shape A), with `wash: false` for a tide: two Terra 6.1 high reviewers, two rounds,
-  eight findings fixed. Quick check clean, 301/301 class cases, 16/16 doc tests. Next: the
-  colour wheel (8).
+  13 Nov: N5 colour wheel (8) approved and committed as its own adv-only figure `wheel` (your
+  shape A): two Terra 6.1 high reviewers, five findings fixed (one arc per group, data decimals,
+  6-59 records, 8 groups, 18-letter names). 323/323 class cases, 19/19 doc tests. Open: red and
+  green tracks fail the deutan bar (11.9 of 15.9); a fix is being tried. Houses (11) and the first
+  look (5) are committed on their own branches and merge next; CRISPR (12) waits on you.
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -338,7 +339,7 @@ blocks:
     status: active
     ships: plugin
     you: pick, review
-    line: "Seven pieces into the class kit, one block each; bead rings (7), slope lines (9) and recorder strip (10) done; colour wheel (8) next."
+    line: "Seven pieces into the class kit; 7, 9, 10, 8 done; 11 and 5 committed on side branches; 12 waits on you."
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}

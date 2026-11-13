@@ -28,7 +28,7 @@ Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `b
 ## 3. The idea table
 | `idea` | The learner asks | The picture | Draw it today with |
 |---|---|---|---|
-| `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix`; `strip` when the whole is a picture (§11) |
+| `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix`; `strip` when the whole is a picture (§11); `wheel` for colours (§9f) |
 | `amount` | how much, what share? | countable units, a level that fills | `units`, `parts`, `stat`, `chance`, `beads` (§9c) |
 | `cause` | what happens if I change this? | one handle moves one mark | `plane`, `chart`, `space`, `dist` |
 | `closest` | which choice is best? | your guess, its error, then the answer | `plane`, `space` |
@@ -72,6 +72,7 @@ A lesson is adv once any board scene has `idea`.
 - `learner.depth` is a whole number from 1 to 6 (error).
 - `idea`, `see` or `shows` on a slide that is not a board (error, in any lesson).
 - In a plain lesson, `chance`, `fork`, `beads`, `recorder`, a table's `style: slope`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
+- In a plain lesson, `wheel` too (error).
 A spine of stubs fails the lint for its missing `steps`, and other lints warn about what is not written yet; the checks above that look at a figure wait for steps. The storyboard never runs the lint.
 
 ## 9. The `chance` figure: is a gap between two shares bigger than chance makes?
@@ -125,6 +126,14 @@ table: {from: cells, style: slope, group: type, cols: [{key: id, label: cell}, {
 It draws the readings of `from` (a data list from make_data.py, in time order) as a recorder's paper strip: time runs left to right at its true spacing, a pen trace joins the readings, a dot on each, and the pen rests on the last one. `x` is the time column and `y` the value the pen follows: a key, or `{key, label, fmt}` as a table column takes. An ink wash fills from the trace to the floor; write `wash: false` when the area under the line means nothing (a tide height, a temperature). `color` is one kit colour (s1 if left out). Quote `key` when it holds a comma.
 - The trace is one mark named by `name`: the key at the bottom right (its `key` words, else `name`) and a linked word (`==density==` lights the trace). A scene holds one `recorder`.
 - `mark: row:N` lights reading N (rows count from 0; with a `table` on other data, the row is the table's), as pointing at it does: drop lines to both rules, its value and the readout "time · value". Arrows move between readings. The lint's limits are in `lint.md`.
+
+## 9f. The `wheel` figure: records that each have a true colour
+```yaml
+- wheel: {from: pixels, rgb: rgb, group: group, cols: [{key: od_r, label: red}, {key: od_g, label: green}, {key: od_b, label: blue}], key: "Longer spoke, more held.", fmt: 2}   # pixels: [{group: nucleus, rgb: [51, 26, 127], od_r: 0.70, …}, …]
+```
+It draws the records of `from` (a data list from make_data.py) round a ring, one slot each, in one arc per `group` (optional: without it, one arc; arcs in the order of each group's first row), with the group's name outside. The inner ring is each record's chip in its true colour: `rgb` names the column of three whole numbers 0-255. `cols` are 1 to 3 columns, each a key or `{key, label, fmt}` as a table column takes: each is a track of spokes, its length to scale (one scale over all values, from 0). A column labelled red, green or blue takes its plain light colour; any other takes s1, s2, s3 in order. `fmt` sets the readout's decimals. Quote `key` when it holds a comma. It draws the `made-of` idea: what a colour is made of.
+- Each track is a mark named by its label: a linked word (`==red==`) lights it. A scene holds one `wheel`.
+- `mark: row:N` lights record N (rows count from 0; with a `table` on other data, the row is the table's), as pointing at its chip does: the chip ringed, its spokes brighter, the readout on the top row. Arrows move between records. The lint's limits are in `lint.md`.
 
 ## 10. Space figures the learner moves: views, a hunt, a split
 The camera glides only when the learner presses something; a step never moves it.

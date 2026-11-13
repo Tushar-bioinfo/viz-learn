@@ -31,6 +31,7 @@ ADV_ONLY |= {"groups", "axis", "gap_says", "step_says", "tally", "ends", "_kit"}
 ADV_ONLY |= {"beads", "part", "whole", "colors"}   # beads (§9c), adv-only since N5
 ADV_ONLY |= {"group", "glyphs"}   # a slope table (§9d), adv-only since N5
 ADV_ONLY |= {"recorder", "wash"}   # recorder (§9e), adv-only since N5
+ADV_ONLY |= {"wheel"}   # wheel (§9f), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 
@@ -161,6 +162,14 @@ def class_tests():
     yield f"lint.md states the recorder limits RECORDER_ROWS and RECORDER_WORDS hold ({rl}, {lesson_lint.RECORDER_WORDS} words)", ok
     ok = f"decimals 0 to {lesson_lint.FMT_MOST} (`fmt: 2`)" in lt
     yield f"lint.md states the recorder fmt limit FMT_MOST holds ({lesson_lint.FMT_MOST})", ok
+    wr, wc = lesson_lint.WHEEL_ROWS, lesson_lint.WHEEL_COLS   # lint.md states the wheel limits the lint uses; board.css holds its light colours
+    ok = f"{wr[0]} to {wr[1]} records" in lt and f"a list of {wc[0]} to {wc[1]} columns" in lt
+    yield f"lint.md states the wheel limits WHEEL_ROWS and WHEEL_COLS hold ({wr}, {wc})", ok
+    wg, wn = lesson_lint.WHEEL_GROUPS, lesson_lint.WHEEL_NAME
+    ok = f"{wg} groups at most, each name {wn} characters at most" in lt
+    yield f"lint.md states the wheel limits WHEEL_GROUPS and WHEEL_NAME hold ({wg} groups, {wn} characters)", ok
+    css = dict(re.findall(r"--ch-(red|green|blue): (#[0-9a-f]{6})", (CLASS / "kit/board.css").read_text()))
+    yield f"board.css --ch-* and lesson_lint.WHEEL_LIGHT name the same light colours ({css})", css == lesson_lint.WHEEL_LIGHT
     js = (CLASS / "kit/parts.js").read_text()   # the slope glyphs: the lint's copy, parts.js and adv.md name the same set
     drawn = set(re.findall(r"^    '?([a-z-]+)'?: \{ r: ", js, re.M))
     named = set(re.findall(r"`([a-z-]+)`", (CLASS / "adv.md").read_text().split("## 9d.")[1].split("## 10.")[0])) & (drawn | set(lesson_lint.GLYPHS))

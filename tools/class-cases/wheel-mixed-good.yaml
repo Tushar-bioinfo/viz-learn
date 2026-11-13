@@ -1,0 +1,36 @@
+# expect: builds
+# expect: not: the wheel
+# expect: pixel 1 · stroma | red 0.13 · green 0.776 · blue 0.091
+# N5: groups A, B, A, B, ... in row order: one arc and one name per group; row:1 is the data's row 1 (a stroma pixel); no `fmt`, so readouts keep the data's 3 decimals.
+title: What colour is a stained pixel?
+question: Why does a nucleus look purple?
+answer: It holds back much red and green light and little blue, so blue light gets through.
+data:
+  pixels:
+    - {id: 0, group: nucleus, rgb: [51, 26, 127], od_r: 0.699, od_g: 0.986, od_b: 0.302}
+    - {id: 14, group: stroma, rgb: [189, 43, 207], od_r: 0.130, od_g: 0.776, od_b: 0.091}
+    - {id: 1, group: nucleus, rgb: [44, 22, 114], od_r: 0.762, od_g: 1.055, od_b: 0.349}
+    - {id: 15, group: stroma, rgb: [158, 36, 176], od_r: 0.209, od_g: 0.850, od_b: 0.161}
+    - {id: 2, group: nucleus, rgb: [43, 18, 110], od_r: 0.771, od_g: 1.156, od_b: 0.365}
+    - {id: 16, group: stroma, rgb: [169, 47, 184], od_r: 0.178, od_g: 0.737, od_b: 0.142}
+    - {id: 3, group: nucleus, rgb: [61, 29, 130], od_r: 0.620, od_g: 0.946, od_b: 0.293}
+    - {id: 17, group: stroma, rgb: [202, 72, 213], od_r: 0.100, od_g: 0.547, od_b: 0.079}
+    - {id: 4, group: nucleus, rgb: [61, 30, 136], od_r: 0.620, od_g: 0.929, od_b: 0.274}
+    - {id: 18, group: stroma, rgb: [150, 25, 171], od_r: 0.230, od_g: 1.004, od_b: 0.175}
+    - {id: 5, group: nucleus, rgb: [43, 15, 115], od_r: 0.776, od_g: 1.224, od_b: 0.346}
+    - {id: 19, group: stroma, rgb: [155, 32, 175], od_r: 0.217, od_g: 0.900, od_b: 0.162}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: made-of
+    see: red
+    shows: each pixel as a chip in its true colour, with a spoke for each light it held back
+    title: Each pixel and the light it held back
+    lead: Each chip is one pixel in its true colour.
+    steps:
+      - say: The ==red== spokes are long round the nuclei.
+        add:
+          - wheel: {from: pixels, rgb: rgb, group: group, cols: [{key: od_r, label: red}, {key: od_g, label: green}, {key: od_b, label: blue}], key: "Longer spoke, more held."}
+      - say: This pixel is a nucleus.
+        mark: row:1

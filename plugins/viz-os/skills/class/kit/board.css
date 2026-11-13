@@ -3,6 +3,8 @@
    do not load this file. These tokens are read at boot for the drawings, so a colour changed here reaches the SVGs too. */
 :root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #5bfbcb; --s2: #4bbbfb; --s3: #9973a8; --s4: #6be619; --s5: #4b77fa;
   --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315;
+  /* plain red, green and blue light for the wheel's channel tracks (board.js wheel): not lesson colours, since s4 is mint-green and reads as teal (the user, 11 Nov) */
+  --ch-red: #ff4646; --ch-green: #46e65a; --ch-blue: #4682ff;
   /* the figure look (design: the C10 look). Three line weights: 1 px guides, 2 px marks, 3.5 px for the witness (for now the mark
      drawn in the accent colour), which alone glows at rest. board.js reads --w-data and --w-wit and sizes arrowheads from them */
   --w-guide: 1px; --w-data: 2px; --w-wit: 3.5px; --c-grid: #191a1c; --c-frame: #2c2d2b; --c-tick: #7d7a73; --c-axis: #a29f97;
@@ -503,6 +505,8 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   .board .bi.fork.cwait > * { visibility: visible !important; }
   .board .bi.beads.cwait > * { visibility: visible !important; }
   .board .bi.recorder.cwait > * { visibility: visible !important; }
+  .board .bi.wheel.cwait > * { visibility: visible !important; }
+  .board .wheel :is(.wr, .ws, .wt, .wtn) { transition: none; }
   .board .recorder :is(.rcr *, .rct, .rcw) { transition: none; }
 }
 /* chance: two groups as units, their shares, the gap and a ruler of noise steps (board.js chance). Hit areas take the pointer;
@@ -616,6 +620,31 @@ html.ls-page .board .bi.recorder { padding: 8px; box-sizing: content-box; max-wi
 /* the trace's word or its key lights the trace */
 .board .recorder svg.lit .rci .rct, .board .recorder svg.lit .rck0 .rct { opacity: 1; stroke-width: 3.2; filter: brightness(1.15) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
 .board .bi.recorder.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
+
+/* wheel: records round a ring, each one's chip in its true colour and a spoke a reading (board.js wheel). No box round it.
+   A lit record (.on: pointing, focus; .wrow: mark row:N) rings its chip in ink and brightens its spokes; the others dim */
+html.ls-page .board .bi.wheel { padding: 8px; box-sizing: content-box; max-width: none; }
+.board .wheel svg.wh { display: block; overflow: visible; }
+.board .wheel text { font-family: var(--f-ui); }
+.board .wheel .wt { fill: none; stroke: var(--c); stroke-width: 1; opacity: .35; }
+.board .wheel .wg { font-size: 18px; fill: var(--ink); letter-spacing: .02em; }
+.board .wheel .wtn { font-size: 15px; fill: var(--c); letter-spacing: .02em; cursor: help; }
+.board .wheel .wc { stroke: var(--bg); stroke-width: 1; }
+.board .wheel .wsl { stroke: var(--c); stroke-linecap: round; }
+.board .wheel .wo { font-size: 17px; fill: var(--ink); font-variant-numeric: tabular-nums; display: none; }
+.board .wheel .wo.vis, .board .wheel svg:not(.hov) .wr.wrow > .wo { display: inline; }
+.board .wheel .wx { fill: transparent; stroke: none; pointer-events: all; cursor: help; outline: none; }
+.board .wheel .wkl { stroke: var(--mist); stroke-linecap: round; }
+.board .wheel .wgl { stroke: var(--mist); stroke-width: 1; }
+.board .wheel .wkt { font-size: 17px; fill: var(--mist); }
+.board .wheel :is(.wr, .ws, .wt, .wtn) { transition: opacity var(--m-state) var(--ease); }
+.board .wheel svg:is(.hov, :has(.wr.wrow)) .wr:not(.on, .wrow), .board .wheel svg.hov .wr.wrow:not(.on) { opacity: .4; }
+.board .wheel .wr:is(.on, .wrow) .wc { stroke: var(--ink); stroke-width: 2.5; }
+.board .wheel svg.hov .wr.wrow:not(.on) .wc { stroke: var(--bg); stroke-width: 1; }
+.board .wheel .wr:is(.on, .wrow) .wsl { filter: brightness(1.15) drop-shadow(0 0 5px var(--c)); }
+/* a track's linked word or its name lights the track; the other tracks dim */
+.board .wheel svg.lnk-dim :is(.ws, .wt, .wtn):not(.lnk-on) { opacity: .25; }
+.board .bi.wheel.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */
 
 /* a refresher link under a step's line, and the button back from the end scene */
 .board .st .lref { margin: 4px 0 0; font: 15px/1.4 var(--f-mono); color: var(--mist); }

@@ -15,7 +15,7 @@ LESSON_BEATS = BEATS | {"refresher"}   # a refresher is a class lesson's end sce
 STEP = {"say", "why", "add", "mark", "think", "frame", "more", "refresh"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "space", "chance", "fork", "beads", "recorder", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS = {"calc", "plane", "space", "chance", "fork", "beads", "recorder", "wheel", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -866,9 +866,10 @@ def fmt_ok(f):
 
 
 def recorder_axis(v):
-    """A `recorder` `x` or `y` as {key, label, fmt}: a bare key is its own label; anything else gives {}."""
+    """A `recorder` `x` or `y` (or a `wheel` column) as {key, label, fmt}: a bare key is its own label; anything else gives {}.
+    The key stays as written, spaces and all, since the kit reads it so: a key no reading holds is then the missing-column error."""
     if isinstance(v, str) and v.strip():
-        return {"key": v.strip(), "label": v.strip()}
+        return {"key": v, "label": v}
     if isinstance(v, dict) and isinstance(v.get("key"), str) and v["key"].strip():
         return {"label": v["key"], **v}
     return {}
@@ -945,6 +946,88 @@ def lint_recorder(Lx, w, rc, values):
     back = next((r for r in range(1, len(ts)) if not ts[r] > ts[r - 1]), None)
     if back is not None:
         Lx.err(w, f"`recorder` reading {back} (from 0) of `{src}`: its `{axes['x']}` {ts[back]:g} does not come after {ts[back - 1]:g}; the times rise strictly, in reading order")
+
+
+# wheel (adv.md): records round a ring, each one's chip in its true colour and a spoke a reading (board.js wheel)
+WHEEL = {"from", "rgb", "group", "cols", "key", "fmt", "id"}
+WHEEL_COL = {"key", "label", "fmt"}
+WHEEL_ROWS, WHEEL_COLS = (6, 59), (1, 3)   # records a ring holds; columns, one track each
+# groups (arcs) and a group name's characters: probe lessons at 1440 and 1280 (the deck check's width) found 59 records in 8
+# groups keep the chips 4 px wide (60 draw 3.9 px), and 8 names of 18 wide letters (W) fit round the ring apart; 19 run out
+WHEEL_GROUPS, WHEEL_NAME = 8, 18
+WHEEL_LIGHT = {"red": "#ff4646", "green": "#46e65a", "blue": "#4682ff"}   # board.css --ch-*: a track labelled so takes its light colour
+
+
+wheel_rows = recorder_rows   # the records a `wheel` draws: its `from` list, when it is a list of records; else []
+
+
+def lint_wheel(Lx, w, wh, values):
+    """A `wheel` figure: its keys, its data list of records, each with an rgb of three whole numbers 0-255, its group, and
+    a finite reading 0 or more in each column."""
+    if not isinstance(wh, dict):
+        Lx.err(w, "`wheel` is a mapping {from, rgb, group, cols, key, fmt}")
+        return
+    for k in sorted(set(wh) - WHEEL, key=str):
+        hit = next(iter(difflib.get_close_matches(str(k), sorted(WHEEL), 1, .6)), None)
+        Lx.err(w, f"`wheel` has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(WHEEL))}); a comma inside an unquoted `{{ }}` value splits it: quote the value"))
+    if "key" in wh and not (isinstance(wh["key"], str) and wh["key"].strip()):
+        Lx.err(w, f"`wheel` `key:` is the key's words, as text; got {wh['key']!r}")
+    if wh.get("fmt") is not None and not fmt_ok(wh["fmt"]):
+        Lx.err(w, f"`wheel` `fmt: {wh['fmt']!r}` is not a number format: decimals 0 to {FMT_MOST} (`fmt: 2`), or `sN`, `%N`, `eN`, `,`, `int`")
+    cols, lo, hi = as_list(wh.get("cols")), *WHEEL_COLS
+    if not isinstance(wh.get("cols"), list) or not lo <= len(cols) <= hi:
+        Lx.err(w, f"`wheel` `cols:` is a list of {lo} to {hi} columns, one track each; got {len(cols) if isinstance(wh.get('cols'), list) else repr(wh.get('cols'))}")
+    keys, labels = [], []
+    for c in cols if isinstance(wh.get("cols"), list) else []:
+        ax = recorder_axis(c)
+        if not ax:
+            Lx.err(w, f"`wheel` column {c!r} is not a column: write a key, or {{key, label, fmt}}")
+            continue
+        for k in sorted(set(ax) - WHEEL_COL, key=str):
+            Lx.err(w, f"`wheel` column `{ax['key']}` has no field `{k}` (it takes key, label, fmt)")
+        if ax.get("fmt") is not None and not fmt_ok(ax["fmt"]):
+            Lx.err(w, f"`wheel` column `{ax['key']}` `fmt: {ax['fmt']!r}` is not a number format: decimals 0 to {FMT_MOST} (`fmt: 2`)")
+        if str(ax["label"]).strip() in labels:
+            Lx.err(w, f"`wheel` has two columns labelled `{ax['label']}`: each label is a track's name and linked word, so give each its own")
+        keys.append(ax["key"]); labels.append(str(ax["label"]).strip())
+    rgb, grp, src = wh.get("rgb"), wh.get("group"), wh.get("from")
+    if not (isinstance(rgb, str) and rgb.strip()):
+        Lx.err(w, "`wheel` needs `rgb:`, the column holding each record's true colour as three whole numbers 0-255")
+    if grp is not None and not (isinstance(grp, str) and grp.strip()):
+        Lx.err(w, f"`wheel` `group:` is a column key; got {grp!r}")
+    if not (isinstance(src, str) and src.strip()):
+        Lx.err(w, "`wheel` needs `from:`, a data name holding a list of records")
+        return
+    rows = wheel_rows(wh, values)
+    if not rows:
+        Lx.err(w, f"`wheel` `from: {src}` is not a list of records in the data: make_data.py writes it, one record per slot")
+        return
+    lo, hi = WHEEL_ROWS
+    if not lo <= len(rows) <= hi:
+        Lx.err(w, f"`wheel` `from: {src}` holds {len(rows)} records; a wheel draws {lo} to {hi}")
+    for r, row in enumerate(rows):
+        bad = []
+        if isinstance(rgb, str) and rgb.strip():
+            v = row.get(rgb)
+            if not (isinstance(v, list) and len(v) == 3 and all(isinstance(q, int) and not isinstance(q, bool) and 0 <= q <= 255 for q in v)):
+                bad.append(f"`{rgb}` is {v!r}, not three whole numbers 0-255" if rgb in row else f"has no column `{rgb}` (its `rgb`)")
+        if isinstance(grp, str) and grp.strip() and grp not in row:
+            bad.append(f"has no column `{grp}` (its `group`)")
+        for key in keys:
+            if key not in row:
+                bad.append(f"has no column `{key}`")
+            elif not (NUM(row[key]) and math.isfinite(row[key]) and row[key] >= 0):
+                bad.append(f"`{key}` is {row[key]!r}, not a finite number 0 or more")
+        if bad:
+            Lx.err(w, f"`wheel` record {r} (from 0) of `{src}`: " + "; ".join(bad) + ": fix make_data.py")
+            return
+    if isinstance(grp, str) and grp.strip():
+        names = list(dict.fromkeys(" ".join(str(row[grp]).split()) for row in rows))
+        if len(names) > WHEEL_GROUPS:
+            Lx.err(w, f"`wheel` `group: {grp}` sorts the records into {len(names)} groups; a wheel names {WHEEL_GROUPS} at most round its ring")
+        long = [g for g in names if len(g) > WHEEL_NAME]
+        if long:
+            Lx.err(w, f"`wheel` group name `{long[0]}` is {len(long[0])} characters; a group name outside the ring is {WHEEL_NAME} at most")
 
 
 def chance_name(nm):
@@ -1164,6 +1247,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
     forks = {}    # one `fork` per scene
     beads = {}    # one `beads` per scene
     recorders = {}   # one `recorder` per scene
+    wheels = {}   # one `wheel` per scene
     said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
@@ -1272,6 +1356,12 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                     s_rc.append(j + 1)
                     if len(s_rc) == 2:
                         Lx.err(w, f"this scene has a second `recorder` (steps {s_rc[0]} and {s_rc[1]}): one `recorder` per scene, so `mark: row:N` and its name each light one trace; put the second in its own scene")
+                if "wheel" in it:
+                    lint_wheel(Lx, w, it["wheel"], values)
+                    s_wh = wheels.setdefault(id(s), [])
+                    s_wh.append(j + 1)
+                    if len(s_wh) == 2:
+                        Lx.err(w, f"this scene has a second `wheel` (steps {s_wh[0]} and {s_wh[1]}): one `wheel` per scene, so `mark: row:N` and each track's word light one thing; put the second in its own scene")
                 if VIS & set(it):
                     vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
                     B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
@@ -1321,6 +1411,10 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                            and (tb is None or isinstance(tb, dict) and tb.get("from") == it["recorder"].get("from"))]
                     if rec and rec[0] and int(mark[4:]) >= len(rec[0]):
                         Lx.err(w, f"`mark: {mark}` names reading {mark[4:]}, but the `recorder` draws {len(rec[0])} (rows count from 0)")
+                    whl = [wheel_rows(it["wheel"], values) for _, it in items_of(s) if isinstance(it.get("wheel"), dict)
+                           and (tb is None or isinstance(tb, dict) and tb.get("from") == it["wheel"].get("from"))]
+                    if whl and whl[0] and int(mark[4:]) >= len(whl[0]):
+                        Lx.err(w, f"`mark: {mark}` names record {mark[4:]}, but the `wheel` draws {len(whl[0])} (rows count from 0)")
         # a name on the plot is a word the learner must know: the mark says it (hover), or a teacher line has named it by then
         lines = [st.get("say") for st in steps if isinstance(st, dict)]
         for w, mk, at in named:
@@ -1418,13 +1512,20 @@ def scene_marks(s, symbols, data=None):
         for it in as_list(st.get("add")) if isinstance(st, dict) else []:
             if not isinstance(it, dict):
                 continue
-            kind = next((k for k in ("plane", "space", "chart", "chance", "fork", "beads", "recorder") if isinstance(it.get(k), dict)), None)
+            kind = next((k for k in ("plane", "space", "chart", "chance", "fork", "beads", "recorder", "wheel") if isinstance(it.get(k), dict)), None)
             if kind is None:
                 continue
             if kind == "recorder":   # one trace, named by `name`, in its `color` or s1 (board.js recorder)
                 nm = it["recorder"].get("name")
                 if isinstance(nm, str) and nm.strip():
                     out.append((f, kind, 0, {"label": nm}, j + 1, [nm.strip()], True, it["recorder"].get("color") or "s1"))
+                f += 1
+                continue
+            if kind == "wheel":   # one track per column, named by its label, in its light colour (red, green, blue) or s1, s2, s3
+                for i, c in enumerate(as_list(it["wheel"].get("cols"))[:WHEEL_COLS[1]]):
+                    lb = str(recorder_axis(c).get("label") or "").strip()
+                    if lb:
+                        out.append((f, kind, i, {"label": lb}, j + 1, [lb], False, WHEEL_LIGHT.get(lb.lower(), f"s{i + 1}")))
                 f += 1
                 continue
             if kind == "beads":   # one ring per record, named by its `name` column, in s1, s2, s3, s4 (board.js beads)
@@ -2323,7 +2424,7 @@ def lint_story(Lx, deck):
 # The idea table: name -> (the learner's question, the picture family, the items that can draw it today). `table` is
 # the scene's own table; `product` is a worked product (product.py opens it into lines that hold \prodpart).
 IDEAS = {
-    "made-of": ("where does this number come from?", "loupe", ["table", "calc", "product", "vec", "matrix", "strip"]),
+    "made-of": ("where does this number come from?", "loupe", ["table", "calc", "product", "vec", "matrix", "strip", "wheel"]),
     "amount": ("how much, what share?", "units", ["units", "parts", "stat", "chance", "beads"]),
     "cause": ("what happens if I change this?", "handle", ["plane", "chart", "space", "dist"]),
     "closest": ("which choice is best?", "guess", ["plane", "space"]),
@@ -2366,7 +2467,7 @@ def adv_only(deck):
             found = ["hunt"] if "hunt" in st else []
             for it in as_list(st.get("add")):
                 it = it if isinstance(it, dict) else {}
-                found += [k for k in ("chance", "fork", "beads", "recorder", "strip") if k in it]
+                found += [k for k in ("chance", "fork", "beads", "recorder", "wheel", "strip") if k in it]
                 sp = it.get("space") if isinstance(it.get("space"), dict) else {}
                 found += ["views"] if "views" in sp else []
                 found += ["split"] if any(isinstance(m, dict) and "split" in m and "along" in m for m in as_list(sp.get("marks"))) else []
