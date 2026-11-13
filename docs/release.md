@@ -1,6 +1,6 @@
 # Release
 
-Only when the user asks for a release, a commit or a push.
+Only when the user asks for a release, a commit or a push. The short `UPDATE` request uses [update.md](update.md) and `tools/update.py` to automate the steps below with candidate-bound checks and installation verification.
 
 ## Steps
 1. `tools/check-all.sh` passes (see `testing.md`). For a change to the skill files, a cold-start test has been run and judged.
