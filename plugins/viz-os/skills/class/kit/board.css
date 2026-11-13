@@ -4,7 +4,7 @@
 :root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #5bfbcb; --s2: #4bbbfb; --s3: #9973a8; --s4: #6be619; --s5: #4b77fa;
   --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315;
   /* plain red, green and blue light for the wheel's channel tracks (board.js wheel): not lesson colours, since s4 is mint-green and reads as teal (the user, 11 Nov) */
-  --ch-red: #ff4646; --ch-green: #46e65a; --ch-blue: #4682ff;
+  --ch-red: #e93a65; --ch-green: #87f538; --ch-blue: #4682ff;
   /* the figure look (design: the C10 look). Three line weights: 1 px guides, 2 px marks, 3.5 px for the witness (for now the mark
      drawn in the accent colour), which alone glows at rest. board.js reads --w-data and --w-wit and sizes arrowheads from them */
   --w-guide: 1px; --w-data: 2px; --w-wit: 3.5px; --c-grid: #191a1c; --c-frame: #2c2d2b; --c-tick: #7d7a73; --c-axis: #a29f97;

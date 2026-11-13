@@ -956,7 +956,7 @@ WHEEL_ROWS, WHEEL_COLS = (6, 59), (1, 3)   # records a ring holds; columns, one 
 # groups (arcs) and a group name's characters: probe lessons at 1440 and 1280 (the deck check's width) found 59 records in 8
 # groups keep the chips 4 px wide (60 draw 3.9 px), and 8 names of 18 wide letters (W) fit round the ring apart; 19 run out
 WHEEL_GROUPS, WHEEL_NAME = 8, 18
-WHEEL_LIGHT = {"red": "#ff4646", "green": "#46e65a", "blue": "#4682ff"}   # board.css --ch-*: a track labelled so takes its light colour
+WHEEL_LIGHT = {"red": "#e93a65", "green": "#87f538", "blue": "#4682ff"}   # board.css --ch-*: a track labelled so takes its light colour
 
 
 wheel_rows = recorder_rows   # the records a `wheel` draws: its `from` list, when it is a list of records; else []
