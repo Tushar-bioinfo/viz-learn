@@ -29,6 +29,7 @@ OBJS = r"(?:it\.\w+|s\.table|run\.c|ln\.c|ln\.f|A\.a|it|st|c|mk|P|F|a|x|cp|pr|nt
 ADV_ONLY = {"views", "hunt", "guess", "split", "drag", "was", "start", "foil"}   # not `by`, `to`, `on`, `along`: board.md documents them
 ADV_ONLY |= {"groups", "axis", "gap_says", "step_says", "tally", "ends", "_kit"}   # chance (§9), fork (§9b), strip (§11): adv-only since N4
 ADV_ONLY |= {"beads", "part", "whole", "colors"}   # beads (§9c), adv-only since N5
+ADV_ONLY |= {"group", "glyphs"}   # a slope table (§9d), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 
@@ -154,6 +155,14 @@ def class_tests():
     want = [lesson_lint.beads_most(n) for n in (1, 3, 4)]   # lint.md states the largest whole the lint computes
     got = re.search(r"(\d+) for 1 or 2 rings, (\d+) for 3, (\d+) for 4", (CLASS / "lint.md").read_text())
     yield f"lint.md states the beads limits beads_most computes ({want})", bool(got) and [int(x) for x in got.groups()] == want and lesson_lint.beads_most(2) == want[0]
+    js = (CLASS / "kit/parts.js").read_text()   # the slope glyphs: the lint's copy, parts.js and adv.md name the same set
+    drawn = set(re.findall(r"^    '?([a-z-]+)'?: \{ r: ", js, re.M))
+    named = set(re.findall(r"`([a-z-]+)`", (CLASS / "adv.md").read_text().split("## 9d.")[1].split("## 10.")[0])) & (drawn | set(lesson_lint.GLYPHS))
+    yield f"the slope glyphs match in lesson_lint.py, parts.js and adv.md ({len(drawn)})", set(lesson_lint.GLYPHS) == drawn == named
+    want = [lesson_lint.SLOPE_STEMS, lesson_lint.SLOPE_ROWS, lesson_lint.SLOPE_GROUPS]   # lint.md states the slope limits the lint holds
+    lm = (CLASS / "lint.md").read_text()
+    got = [re.search(p, lm) for p in (r"(\d+) to (\d+) number columns", r"holds (\d+) to (\d+) rows", r"with (\d+) to (\d+) values")]
+    yield f"lint.md states the slope limits the lint holds ({want})", all(got) and [tuple(int(x) for x in g.groups()) for g in got] == want
     bad = [f"{f.name}:{i}" for f in sorted(CLASS.rglob("*.md")) for i, ln in enumerate(f.read_text().splitlines(), 1) if "docs/" in ln]
     yield f"no class skill file points at docs/{' (' + ', '.join(bad) + ')' if bad else ''}", not bad
 

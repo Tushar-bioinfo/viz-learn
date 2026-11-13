@@ -1,0 +1,37 @@
+# expect: slope `group: type` has 1 value
+# N5: slope-good with one fault (onegroup).
+title: Three markers, six cells
+question: Which marker sets each cell type apart?
+answer: CD3 is high only on T cells, CD19 only on B cells, CD14 only on monocytes.
+data:
+  cells:
+    - {id: c1, type: T, cd3: 4.3, cd19: 0.7, cd14: 0.3}
+    - {id: c2, type: T, cd3: 0.5, cd19: 3.5, cd14: 0.4}
+    - {id: c3, type: T, cd3: 4.9, cd19: 0.7, cd14: 0.9}
+    - {id: c4, type: T, cd3: 0.6, cd19: 0.6, cd14: 4.2}
+    - {id: c5, type: T, cd3: 0.0, cd19: 4.3, cd14: 0.7}
+    - {id: c10, type: T, cd3: 1.3, cd19: 0.7, cd14: 4.6}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: made-of
+    see: mono
+    shows: one upright scale per marker, one line per cell in its type's colour
+    title: Six cells, three markers
+    lead: Each line is one cell; ==T== cells take their own colour.
+    table:
+      from: cells
+      style: slope
+      group: type
+      cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}, {key: cd14, label: CD14, fmt: 1}]
+      glyphs: {T: lymphocyte}
+    steps:
+      - say: The mono lines climb to the right; T and B lines fall.
+      - say: Cell c4 is a monocyte, low on CD3 and CD19.
+        mark: row:3
+      - say: A cell's mean level of the three markers sits in between.
+        add: {col: {key: mean, label: mean, expr: (cd3 + cd19 + cd14) / 3, fmt: 1}}
+        mark: col:mean
+      - say: Work c4's CD14 against its CD3.
+        add: {calc: {say: c4's CD14 over its CD3, row: 3, expr: cd14 / cd3, fmt: 2}}

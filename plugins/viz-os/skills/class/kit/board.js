@@ -1360,6 +1360,20 @@
     const pinH = () => Math.min(FIGH, innerHeight - 2 * STUCK - 1);
     const zl = s.table ? h('div', 'tcol') : null, zt = s.table ? h('div', 'tcard g plate') : null;   // the pinned column: the table, then side notes
     if (zl) zl.appendChild(zt);
+    // a slope table (adv.md §9d) draws the same rows as lines: each group of rows is a mark (a key entry and a linked word)
+    const SLOPE = !!(zt && s.table.style === 'slope');
+    const slopeRows = () => { try { return list(L.val(s.table.from, ctx.scope, `slide ${ctx.index + 1} table.from`)).filter(r => r && typeof r === 'object'); } catch (_) { return []; } };
+    // its groups in order of first appearance. A group the lesson already colours keeps that colour and its words: a plane's
+    // `points` with `by:` the same key and a `colors` entry for it (board.md). The others take the kit colours left, in order.
+    // lesson_lint.py slope_groups works this out the same way: change both together
+    const slopeGroups = () => { const key = s.table.group, gk = [], given = {};
+      slopeRows().forEach(r => { const g = r[key]; if (g != null && !gk.includes(String(g))) gk.push(String(g)); });
+      list((ctx.deck || {}).slides).forEach(sl => list(sl && sl.steps).forEach(st => list(st && st.add).forEach(it => list(it && it.plane && it.plane.marks).forEach(mk => {
+        const P = mk && mk.points; if (!P || P.by !== key || !P.colors || typeof P.colors !== 'object') return;
+        Object.entries(P.colors).forEach(([g, v]) => { const c = typeof v === 'string' ? { color: v } : v || {}; if (!(g in given) && c.color) given[g] = c; }); }))));
+      const free = PALETTE.filter(c => !gk.some(g => given[g] && given[g].color === c));
+      return gk.map(g => { const own = given[g]; return { g, c: col(own ? own.color : free.shift() || 'ink'), label: String((own && own.label) ?? g) }; }); };
+    const slopeFig = SLOPE ? { kind: 'slope', node: zt, wrap: zt, spec: {}, stops: [], at: 0, issues: [], keys: slopeGroups().map(q => q.g), linked: new Set(), paint: () => {}, wlOn: null, hotG: null, hotR: null } : null;
 
     // where steps go. `seg` is the running column: beside the table until something full-width ends it, then the full width
     let seg = null, cur = null, pending = null, zone = null, pair = null; const blocks = [];
@@ -1610,8 +1624,9 @@
     // Tab, so it never shows a think stop's answer early. A tap keeps a word lit until the next tap. It opens no card (a card
     // would cover the lines being read). Text that names no mark keeps ==text==, the orange underline
     const lkeys = new Map();
-    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads'].includes(fg.kind)) return;
-      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : fg.kind === 'chance' || fg.kind === 'beads' ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
+    if (slopeFig) figs.push(slopeFig);
+    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork', 'beads', 'slope'].includes(fg.kind)) return;
+      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : ['chance', 'beads', 'slope'].includes(fg.kind) ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
         const q = fg.kind === 'chart' ? (mk.kind === 'hline' ? mk.y : mk.kind === 'vline' ? mk.x : mk.kind === 'point' ? (mk.at || [])[1] ?? mk.y : null) : mk.vector ?? mk.point;
         const sym = typeof q === 'string' && (ctx.symbols || {})[q] ? q : null;   // first mark wins a shared key (the lint stops a link to one)
         [mk.label, fg.kind === 'chart' ? mk.name : null, mk.id, sym].forEach(k => { if (k != null && String(k).trim() && !lkeys.has(String(k).trim())) lkeys.set(String(k).trim(), [f, i, String(k).trim() === sym]); }); }); });
@@ -1721,7 +1736,8 @@
     const drawCtl = () => readouts.forEach(f => f());
     const driven = name => { const seen = new Set([name]), d = Object.entries(s.derive || {}); let more = true;
       while (more) { more = false; d.forEach(([k, x]) => { if (!seen.has(k) && L.names(String(x)).some(q => seen.has(q))) { seen.add(k); more = true; } }); } return seen; };
-    const driverOf = name => { const set = driven(name); return figs.find(fg => (exprsOf(fg.spec).match(/[A-Za-z_]\w*/g) || []).some(w => set.has(w))) || figs[figs.length - 1] || null; };
+    const driverOf = name => { const set = driven(name), fs = figs.filter(fg => fg.kind !== 'slope');   // a slope table takes no controls
+      return fs.find(fg => (exprsOf(fg.spec).match(/[A-Za-z_]\w*/g) || []).some(w => set.has(w))) || fs[fs.length - 1] || null; };
     const boxOf = fg => { if (fg) { if (!fg.box) { fg.box = h('div', 'controls np'); fg.wrap.appendChild(fg.box); } return fg.box; }
       if (!flowBox) { flowBox = h('div', 'controls np'); (seg || cur && cur.side || root).appendChild(flowBox); } return flowBox; };
     // the label: a symbol (its TeX, its colour, its card) or one word (its card from the control's own `says`)
@@ -1872,8 +1888,125 @@
 
     // ---------- the table ----------
     // the pinned table: the given columns, plus any column a step adds: it holds its place, and fills in when the reading gets there
+    // A slope table (the C10p mock-up, approved 11 Nov; a style of the table, the user's 13 Nov pick): the first column names
+    // each line; every other column is an upright ink stem, all on one scale from 0 (or the lowest value) to a round top. One
+    // line a row joins its values, in its group's colour, a dot on each stem. The outer stems carry each value and name, pushed
+    // apart when ends are close (a short lead back to the end); a middle stem shows its values only while the line is lit. A
+    // stem a step adds stands faint, its label showing, until the reading gets there; then its dots and the segments to it come in.
+    // Each row lights by `row:N`, a worked line's `row:` (its dots, on the stems it reads), pointing (a card with its values),
+    // and its group's key entry or linked word
+    const SL = { top: 78, foot: 64, lead: 24, gap: 10, sp: 150, lmin: 240, lmax: 380, near: 24, floor: 20, dot: 5.5 };
+    const slopeDraw = Wfix => {
+      const SF = slopeFig, tb = s.table, rows = slopeRows(), [nc, ...stems] = tcols, k = stems.length, ink = L.ink || {}, G = ink.GLYPHS || {}, gm = tb.glyphs || {};
+      SF.issues = []; if (!nc || !k) return 0;
+      const groups = slopeGroups(), gOf = r => groups.findIndex(q => q.g === String(r[tb.group]));
+      const esc = t => L.esc(String(t)), lab = c => L.plain(String(c.label ?? c.key), ctx.scope), names = rows.map(r => String(r[nc.key] ?? ''));
+      const V = rows.map((r, i) => stems.map(c => { let v = r[c.key]; if (c.expr) v = L.try(c.expr, L.scope(ctx.scope, r), `slide ${ctx.index + 1} column ${c.key}`);
+        if (typeof v === 'number' && Number.isFinite(v)) return v; SF.issues.push(`the slope table: ${names[i]}'s ${lab(c)} is ${typeof v === 'number' ? v : JSON.stringify(v)}, not a number`); return NaN; }));
+      // the scale holds 0 and every value; values all equal (all 0) still get a span of 1, so the ticks stay on the stem
+      const all = V.flat().filter(Number.isFinite), lo = Math.min(0, ...all), hi = Math.max(0, ...all), span = hi - lo || 1, stp = niceStep(span);
+      const from = Math.floor(lo / stp + 1e-9) * stp, top = from + Math.max(1, Math.ceil((Math.max(hi, lo + span) - from) / stp - 1e-9)) * stp;
+      // the scale's words: as many decimals as the finest stem or the step needs, so the two ends never read the same
+      const dec = Math.max(0, Math.ceil(-Math.log10(stp) - 1e-9), ...stems.map(c => /^\d+$/.test(String(c.fmt ?? '')) ? +c.fmt : 0));
+      const fm = (v, j) => L.fmt(v, stems[j].fmt), words = `One scale, ${L.fmt(from, dec)} to ${L.fmt(top, dec)}.`;
+      // what each text takes, measured in its own class
+      const meter = sv('svg', { class: 'sltab', width: 0, height: 0, style: 'position:absolute;visibility:hidden' }, zt);
+      const tw = (t, cls) => { const e = sv('text', { class: cls }, meter); e.textContent = t; const w = e.getComputedTextLength(); e.remove(); return w; };
+      const vw = Math.max(0, ...V.flatMap(r => [0, k - 1].map(j => Number.isFinite(r[j]) ? tw(fm(r[j], j), 'slv') : 0)));
+      const nwOf = names.map(t => tw(t, 'sln')), nw = Math.max(0, ...nwOf);
+      const glOf = a => G[gm[groups[a] && groups[a].g]] || null, gr = Math.max(0, ...groups.map((_, a) => (glOf(a) || {}).r || 0)), mr = gr || SL.dot;
+      const side = SL.lead + vw + SL.gap + nw + 8 + 2 * mr + 4;
+      const kw = groups.map(q => tw(q.label, 'skt')), keyW = kw.reduce((w, x) => w + 1.6 * mr + 8 + x + 28, 0) + tw(words, 'slk') + 24;
+      meter.remove();
+      // a stem a later stem follows may carry the end labels for a while: then the stems stand far enough apart for them
+      const ends0 = stems.map((_, j) => j > 0 && (j === k - 1 || stems.slice(j + 1).some(c => c.at))), sp = ends0.some((e, j) => e && j < k - 1) ? Math.max(SL.sp, Math.ceil(side + 16)) : SL.sp;
+      SF.minW = Math.ceil(Math.max(2 * side + (k - 1) * sp, keyW));
+      // the end labels of all rows must fit between the stem names and the key: closer together down to SL.floor (glyphs
+      // shrink to match), then a taller figure
+      let Lh = Math.max(SL.lmin, Math.min(SL.lmax, innerHeight - 420)), gap = Math.max(SL.near, 2 * gr + 4); const nr = rows.length;
+      if ((nr - 1) * gap > Lh + 24) { gap = Math.max(SL.floor, (Lh + 24) / (nr - 1)); Lh = Math.max(Lh, Math.ceil((nr - 1) * gap - 24)); }
+      const gk = gr ? Math.min(1, (gap - 4) / (2 * gr)) : 1;
+      const W = Math.max(SF.minW, Math.round(Wfix || 0)), y0 = SL.top + Lh, H = y0 + SL.foot;
+      const xs = stems.map((_, j) => side + j * (W - 2 * side) / (k - 1)), yOf = v => y0 - (v - from) / (top - from) * Lh;
+      const at = c => c && c.at ? ` data-step="${c.at}"` + (waits.has(c.at) ? ` data-wait="${c.at}"` : '') : '';
+      const later = (a, b) => (a && a.at || 0) >= (b && b.at || 0) ? a : b;   // a segment comes in with the later of its two stems
+      const pen = (pts, seed, amp = .6) => ink.hand ? ink.hand(pts, seed, false, amp) : 'M' + pts.map(q => q.join(' ')).join('L');
+      const n2 = Math.round((top - from) / stp), tick = n2 <= 5 ? stp / 2 : stp, nt = Math.round((top - from) / tick);
+      let out = '';
+      stems.forEach((c, j) => { const x = xs[j]; let tk = '';
+        for (let t = 0; t <= nt; t++) { const y = yOf(from + t * tick).toFixed(1); tk += `<line class="stk" x1="${x - 4}" x2="${x + 4}" y1="${y}" y2="${y}"/>`; }
+        out += `<g class="ss" data-col="${esc(c.key)}"${at(c)}><path class="ssl" d="${pen([[x, y0 + 8], [x, SL.top - 8]], 'stem' + j)}"/>${tk}` +
+          `<text class="sst" x="${x}" y="${SL.top - 34}" text-anchor="middle">${esc(lab(c))}</text></g>`; });
+      // the outer labels: those nearer than SL.near (or two glyphs) join a cluster centred on its values, until none overlap
+      const spread = (ys, gap, lo2 = SL.top - 6, hi2 = y0 + 18) => { let cl = ys.map((y, i) => ({ y, i })).filter(q => Number.isFinite(q.y)).sort((a, b) => a.y - b.y || a.i - b.i).map(q => ({ m: [q], sum: q.y, at: q.y }));
+        for (let moved = true; moved;) { moved = false;
+          for (let q = 1; q < cl.length; q++) { const A = cl[q - 1], C = cl[q];
+            if (A.at + A.m.length * gap > C.at + 1e-6) { const m = [...A.m, ...C.m], sum = A.sum + C.sum; cl.splice(q - 1, 2, { m, sum, at: sum / m.length - (m.length - 1) * gap / 2 }); moved = true; break; } } }
+        const o = [];
+        cl.forEach(c => { const a = Math.min(Math.max(c.at, lo2), hi2 - (c.m.length - 1) * gap); c.m.forEach((q, n) => { o[q.i] = a + n * gap; }); }); return o; };
+      const ends = stems.map((_, j) => j === 0 || ends0[j] ? spread(V.map(r => yOf(r[j])), gap) : null);
+      // a middle stem's values show only on lit lines: a group's word lights all its lines, so its values step apart too
+      const mids = stems.map((_, j) => { const o = []; if (j === 0) return o;
+        groups.forEach((_, a) => { const ii = rows.map((r, i) => gOf(r) === a ? i : -1).filter(i => i >= 0), ys = spread(ii.map(i => yOf(V[i][j]) - 10), 20, SL.top - 6, y0 + 10);
+          ii.forEach((i, n) => { o[i] = ys[n]; }); }); return o; });
+      const mark = (a, x, y, seed, sc = 1) => { const q = glOf(a); return q ? ink.glyph(gm[groups[a].g], x, y, seed, sc) : `<circle class="skd" cx="${x}" cy="${y}" r="${(SL.dot * sc).toFixed(1)}"/>`; };
+      V.forEach((r, i) => { const a = gOf(rows[i]), c = (groups[a] || {}).c || 'var(--mist)', pts = r.map((v, j) => [xs[j], yOf(v)]);
+        let body = '';
+        for (let j = 1; j < k; j++) { if (!Number.isFinite(r[j - 1]) || !Number.isFinite(r[j])) continue;
+          const d = `M${pts[j - 1][0].toFixed(1)} ${pts[j - 1][1].toFixed(1)}L${pts[j][0].toFixed(1)} ${pts[j][1].toFixed(1)}`;
+          body += `<g class="sgs"${at(later(stems[j - 1], stems[j]))}><path class="slh" d="${d}"/><path class="sll" d="${d}"/></g>`; }
+        const endAt = (j, sd) => { const [x, y] = pts[j], v = r[j], ly = ends[j][i], lx = x + sd * SL.lead, an = sd > 0 ? 'start' : 'end', nx = lx + sd * (vw + SL.gap);
+          return (Math.abs(ly - y) > 1 ? `<path class="sle" d="M${(x + sd * 8).toFixed(1)} ${y.toFixed(1)}L${(lx - sd * 5).toFixed(1)} ${ly.toFixed(1)}"/>` : '') +
+            `<text class="slv" x="${lx.toFixed(1)}" y="${(ly + 6).toFixed(1)}" text-anchor="${an}">${esc(fm(v, j))}</text>` +
+            `<text class="sln" x="${nx.toFixed(1)}" y="${(ly + 6).toFixed(1)}" text-anchor="${an}">${esc(names[i])}</text>` + mark(a, nx + sd * (nwOf[i] + 8 + mr * gk), ly, `r${i}e${j}`, gk); };
+        r.forEach((v, j) => { if (!Number.isFinite(v)) return; const [x, y] = pts[j];
+          let e = `<circle class="sd" data-r="${i}" data-col="${esc(stems[j].key)}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${SL.dot}"/>`;
+          if (j === 0) e += endAt(0, -1);
+          else { e += `<text class="slm" data-j="${j}" x="${(x + 12).toFixed(1)}" y="${(mids[j][i] ?? y - 10).toFixed(1)}">${esc(fm(v, j))}</text>`;
+            if (ends0[j]) e += `<g class="sre" data-j="${j}">${endAt(j, 1)}</g>`; }
+          body += `<g${at(stems[j])}>${e}</g>`; });
+        out += `<g class="sl vt says" data-r="${i}" data-g="${a}" tabindex="0" style="--c:${c}">${body}</g>`; });
+      // the bottom line: the groups at the left, each its glyph (or a dot) and its words, the scale's words at the right
+      let gx = 0;
+      groups.forEach((q, a) => { const cx = gx + .8 * mr, w = kw[a];
+        out += `<g class="sk" data-g="${a}" style="--c:${q.c}">${mark(a, cx, H - 20, 'key' + a, .8)}<text class="skt" x="${(gx + 1.6 * mr + 8).toFixed(1)}" y="${H - 13}">${esc(q.label)}</text></g>`;
+        gx += 1.6 * mr + 8 + w + 28; });
+      out += `<text class="slk" x="${W}" y="${H - 13}" text-anchor="end">${esc(words)}</text>`;
+      zt.innerHTML = `<svg class="sltab" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="group" aria-label="${esc(`${names.length} rows, one line each; ${words}`)}">${out}</svg>`;
+      SF.w = W; SF.h = H;
+      // pointing at a line (or Tab) lights it and opens its card; pointing at a key entry lights its group
+      const hotRow = i => { if (SF.hotR === i) return; SF.hotR = i; SF.paintWl(); if (SF.onHot) SF.onHot(i == null ? null : +zt.querySelector(`g.sl[data-r="${i}"]`).dataset.g); };
+      const hotKey = a => { if (SF.hotG === a) return; SF.hotG = a; SF.paintWl(); if (SF.onHot) SF.onHot(a); };
+      zt.querySelectorAll('g.sl').forEach(e => { const i = +e.dataset.r, a = +e.dataset.g, q = groups[a] || { c: 'var(--mist)', label: '' }; glow(e, q.c); pauseButton();
+        e._pd = () => ({ swatch: swatch('line', q.c), c: q.c, name: `${names[i]} · ${q.label}`, says: says(i, ' · '), value: null, shape: null, scope: ctx.scope });
+        ['pointerenter', 'focusin'].forEach(ev => e.addEventListener(ev, () => hotRow(i))); ['pointerleave', 'focusout'].forEach(ev => e.addEventListener(ev, () => hotRow(null))); });
+      zt.querySelectorAll('g.sk').forEach(e => { const a = +e.dataset.g; glow(e, groups[a].c); e.addEventListener('pointerenter', () => hotKey(a)); e.addEventListener('pointerleave', () => hotKey(null)); });
+      // what a row says: only the stems filled so far, so a card never shows a value the reading has not reached
+      const says = (i, sep) => V[i].map((v, j) => (SF.filled || [])[j] ? `${lab(stems[j])} ${Number.isFinite(v) ? fm(v, j) : '?'}` : null).filter(Boolean).join(sep);
+      SF.aria = i => `${names[i]}, ${(groups[gOf(rows[i])] || {}).label || ''}: ${says(i, ', ')}`;
+      SF.sig = null; SF.wait(); SF.paintWl(); return W;
+    };
+    if (slopeFig) { const SF = slopeFig;
+      SF.paintWl = () => { const g = zt.querySelector('svg.sltab'); if (!g) return; const r = SF.hotR, a = r == null ? SF.wlOn ?? SF.hotG : null, rg = r == null ? null : +(g.querySelector(`g.sl[data-r="${r}"]`) || { dataset: {} }).dataset.g;
+        g.classList.toggle('dim', r != null || a != null);
+        g.querySelectorAll('g.sl').forEach(e => e.classList.toggle('on', r != null ? +e.dataset.r === r : +e.dataset.g === a));
+        g.querySelectorAll('g.sk').forEach(e => e.classList.toggle('on', +e.dataset.g === (r != null ? rg : a))); };
+      SF.wl = a => ({ c: (slopeGroups()[a] || {}).c, drawn: a < SF.keys.length });
+      // the end labels sit on the rightmost stem filled so far, and move when a later stem fills; the rows' words follow
+      SF.wait = () => { const g = zt.querySelector('svg.sltab'); if (!g) return;
+        const filled = [...g.querySelectorAll('g.ss')].map(e => !e.matches('[data-step]:not(.shown), [data-wait]:not(.open)')), sig = filled.join();
+        if (sig === SF.sig) return; SF.sig = sig; SF.filled = filled; const end = filled.lastIndexOf(true);
+        g.querySelectorAll('[data-j]').forEach(e => e.classList.toggle('isend', +e.dataset.j === end));
+        if (SF.aria) g.querySelectorAll('g.sl').forEach(e => e.setAttribute('aria-label', SF.aria(+e.dataset.r))); };
+      SF.wlLight = a => { if (SF.wlOn !== a) { SF.wlOn = a; SF.paintWl(); } }; }
     const drawTable = () => {
       if (!zt) return;
+      // a slope table takes the room its stems and labels need, at least the table's 30%; with under 520 px left, it goes on top
+      if (SLOPE) { zt.classList.add('slope'); slopeDraw(0); if (!pair) return;
+        pair.classList.add('stacked', 'measure'); const W = pair.clientWidth, w = Math.max(zt.offsetWidth, sideOf(W)), cs = getComputedStyle(zt);
+        const pad = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'].reduce((q, p) => q + parseFloat(cs[p]), 0);
+        pair.classList.remove('measure'); pair.style.setProperty('--tcw', w + 'px'); const up = W - w - GAP < FIG; pair.classList.toggle('stacked', up);
+        slopeDraw(up ? Math.min(W - pad, Math.max(slopeFig.minW, 640)) : w - pad); return; }
       const rows = rowsOf(), colHead = q => ((ctx.symbols || {})[q] || {}).color === 'ink' ? null : symColor(q);
       const cell = (c, r) => { let v = r[c.key]; if (c.expr) v = L.try(c.expr, L.scope(ctx.scope, r), `slide ${ctx.index + 1} column ${c.key}`); return typeof v === 'number' ? L.fmt(v, c.fmt) : md(v); };
       const stp = c => (c.at ? ` data-step="${c.at}"` : '') + (waits.has(c.at) ? ` data-wait="${c.at}"` : ''), wt = c => waits.has(c.at) ? ` data-wait="${c.at}"` : '';
@@ -1888,9 +2021,10 @@
     const marksAt = k => { const out = []; steps.forEach((st, j) => { if (st && (map[j].at === k || map[j].q === k)) list(st.mark).forEach(m => out.push(String(m))); }); return out; };
     const targetOf = t => {
       let m;
-      if ((m = /^row:(\d+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`tbody tr[data-r="${m[1]}"]`)], cls: 'wrow' };
-      if ((m = /^col:(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`[data-col="${CSS.escape(m[1])}"]`)], cls: 'hcol' };
-      if ((m = /^cell:(\d+):(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`td[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`)], cls: 'src' };
+      // a slope table's row is its line (g.sl), its column its stem (g.ss), its cell the row's dot on that stem (.sd)
+      if ((m = /^row:(\d+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`tbody tr[data-r="${m[1]}"], g.sl[data-r="${m[1]}"]`)], cls: 'wrow' };
+      if ((m = /^col:(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`[data-col="${CSS.escape(m[1])}"]:not(.sd)`)], cls: 'hcol' };
+      if ((m = /^cell:(\d+):(.+)$/.exec(t)) && zt) return { els: [...zt.querySelectorAll(`:is(td, .sd)[data-r="${m[1]}"][data-col="${CSS.escape(m[2])}"]`)], cls: 'src' };
       if ((m = /^#(.+)$/.exec(t))) return { els: [...node.querySelectorAll(`[data-id="${CSS.escape(m[1])}"]`)], cls: 'hl' };
       return { els: [], cls: '' };
     };
@@ -1899,13 +2033,14 @@
       node.querySelectorAll('.wrow, .hcol, .src, .hl').forEach(e => { e.classList.remove('wrow', 'hcol', 'src', 'hl'); e.style.removeProperty('--tc'); });
       missing = [];
       lines.forEach(ln => { if (!ln.c || ln.at !== k || ln.c.row == null || !zt) return;
-        zt.querySelector(`tbody tr[data-r="${ln.c.row}"]`)?.classList.add('wrow');
-        ln.reads.forEach(q => { const td = zt.querySelector(`td[data-r="${ln.c.row}"][data-col="${CSS.escape(q)}"]`), c = symColor(q);
-          if (td && c) { td.classList.add('src'); td.style.setProperty('--tc', c); } }); });
+        zt.querySelector(`tbody tr[data-r="${ln.c.row}"], g.sl[data-r="${ln.c.row}"]`)?.classList.add('wrow');
+        // a grid cell takes the term's colour; a slope dot lights in its line's colour
+        ln.reads.forEach(q => { const td = zt.querySelector(`:is(td, .sd)[data-r="${ln.c.row}"][data-col="${CSS.escape(q)}"]`), c = symColor(q);
+          if (td && td.matches('.sd')) td.classList.add('src'); else if (td && c) { td.classList.add('src'); td.style.setProperty('--tc', c); } }); });
       marksAt(k).forEach(t => { const { els, cls } = targetOf(t); if (!els.length) { missing.push(t); return; }
-        els.forEach(e => { e.classList.add(cls); if (cls === 'src') e.style.setProperty('--tc', 'var(--accent)'); }); });
+        els.forEach(e => { e.classList.add(cls); if (cls === 'src' && !e.matches('.sd')) e.style.setProperty('--tc', 'var(--accent)'); }); });
     };
-    const fill = k => { if (zt) shown(zt, k); };
+    const fill = k => { if (zt) shown(zt, k); if (slopeFig) slopeFig.wait(); };
     const mark = k => { stepEls.forEach(e => e.classList.toggle('now', +e.dataset.at === k || +e.dataset.q === k)); root.querySelectorAll('.rl').forEach(e => e.classList.toggle('now', +e.dataset.at === k)); };   // a callout left outside its step lights with it
 
     // a strip: the drawing takes what the side column leaves (the side is 46% of the page, at least 300 px), no taller than the

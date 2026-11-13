@@ -213,3 +213,11 @@ Fixed from the user's marked screenshots of `board-gallery` (the picture scene's
 - **Beads 5, open: board.md does not list `beads`.** board.md:257 names the adv-only figures; it had one line of budget, so it was not touched. The lint gate (`adv_only`) and lint.md name `beads`.
 - **Beads 6, open: the rings' marks in the lint read the data through a module copy (`DATA` in `lesson_lint.py`).** `scene_marks` takes no data argument; `make_lint` fills `DATA` per run.
 
+## Slope lines (N5, 2026-11-13)
+- **Slope 1, open: the column glyph.** The mock-up's Y tag on each stem head (`glyphs.column`) is not ported; `tag` exists in `kit/parts.js` for it.
+- **Slope 3, open: width.** The table takes its labels' room plus 150 px between stems: 3 stems 568 px (card 586), 4 stems 718 px (card 736). At 1440 x 900 both sit beside the work. At 1280 x 800 the 3-stem table sits beside; the 4-stem one goes on top (460 px would be left). 5 stems will stack at 1440 too.
+- **Slope 4, settled: at most 5 groups.** The kit has five category colours (s1–s5), so the lint stops a 6th group (`SLOPE_GROUPS`); the user kept the cap in fix round 1. The reason is stated once, in `lint.md`.
+- **Slope 5, open (narrowed): a worked stem the lint cannot read.** Since fix round 1 the lint works plain sums (`plain_value` in `lesson_lint.py`) on every row and stops a value that is not finite (`slope-bad-expr`). A stem using a function (`sqrt`, `mean`, …) is still checked only in the browser.
+- **Slope 6, open: the lint reads the deck through a module copy (`_DECK` in `lesson_lint.py`)**, so `slope_groups` can find another scene's `points` colours; like Beads 6.
+- **Slope 7, open: other lessons not switched.** Only `out/c10/n5/slope/pca3` (an adv copy of `examples/pca-3-why`) uses it. Its "A third marker joins" scene changed teaching: the d₁, d₃ grid and the `prod13` column became the raw CD3, CD19, CD14 levels as lines; the covariance `calc` stays. The shipped example is unchanged.
+

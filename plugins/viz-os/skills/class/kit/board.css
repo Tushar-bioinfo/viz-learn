@@ -155,6 +155,40 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .board table.t td.src, .board table.t tr.wrow td.src { background: var(--surf2); box-shadow: none; color: var(--tc); font-weight: 750; }
 .board table.t th.tsy { color: var(--sc); }
 .board table.t th.hcol, .board table.t td.hcol { color: var(--accent); font-weight: 750; }
+/* a slope table (adv.md §9d, board.js slopeDraw): ink stems on one scale, one line a row in its group's colour. A lit line
+   (pointed at, `row:N`, a worked line's row, its group's word or key entry) is heavier, shows its middle values, and the rest
+   step back to 30%. A stem the reading has not reached stands faint with its label */
+.board svg.sltab { display: block; overflow: visible; font-family: var(--f-ui); }
+.board .sltab text { font-variant-numeric: tabular-nums; }
+.board .sltab .ssl { fill: none; stroke: var(--c-axis); stroke-width: 1.2; }
+.board .sltab .stk { stroke: var(--c-tick); stroke-width: var(--w-guide); }
+.board .sltab .sst { font-size: 20px; fill: var(--ink); letter-spacing: .02em; }
+.board .sltab .ss[data-step] { opacity: 1; transform: none; }
+.board .sltab .ss[data-step]:not(.shown) { opacity: .3; }
+.board .sltab .ss.hcol .ssl, .board .sltab .ss.hcol .stk { stroke: var(--accent); }
+.board .sltab .ss.hcol .sst { fill: var(--accent); font-weight: 700; }
+.board .sltab .sl { color: var(--c); transition: opacity var(--m-state) var(--ease), filter var(--m-hover) var(--ease); }
+.board .sltab .sll { fill: none; stroke: currentColor; stroke-width: var(--w-data); stroke-linecap: round; opacity: .9; }
+.board .sltab .slh { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; }
+.board .sltab .sd { fill: currentColor; stroke: var(--bg); stroke-width: 2; }
+.board .sltab .sle { fill: none; stroke: currentColor; stroke-width: 1; opacity: .5; }
+.board .sltab :is(.slv, .slm) { font-size: 18px; fill: var(--ink); }
+.board .sltab .sln { font-size: 18px; fill: currentColor; }
+.board .sltab .slm { display: none; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+.board .sltab .sl:is(.on, .wrow, .act, :focus-visible) .slm { display: inline; }
+.board .sltab .sl:is(.on, .wrow) .sll { stroke-width: var(--w-wit); opacity: 1; }
+.board .sltab.dim .sl:not(.on), .board .sltab:not(.dim):has(.sl.wrow) .sl:not(.wrow) { opacity: .3; }
+.board .sltab .sre:not(.isend) { display: none; }   /* the end labels show on the rightmost filled stem only (board.js SF.wait) */
+.board .sltab .slm.isend { display: none !important; }
+.board .sltab .sd.src { r: 8px; filter: drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+.board .sltab .gly .gl { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .95; }
+.board .sltab .gly .gn { fill: currentColor; fill-opacity: .4; stroke: currentColor; stroke-width: 1; }
+.board .sltab .skd { fill: currentColor; stroke: none; }
+.board .sltab .sk { color: var(--c); transition: opacity var(--m-hover) var(--ease); }
+.board .sltab .skt { font-size: 18px; fill: var(--ink); }
+.board .sltab.dim .sk:not(.on) { opacity: .45; }
+.board .sltab .slk { font-size: 16px; fill: var(--mist); }
+@media (prefers-reduced-motion: reduce) { .board .sltab .sl, .board .sltab .sk { transition: none; } }
 
 /* worked lines: the deck's calc look; term colours stay on all the time */
 .board .cline { grid-template-columns: 38px minmax(0, 1fr); gap: 14px; }

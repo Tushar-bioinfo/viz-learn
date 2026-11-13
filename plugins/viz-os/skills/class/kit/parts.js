@@ -1,7 +1,8 @@
 /* viz-os class: the box of drawn parts, as ink on the black board (SVG). The parts are the sketch skill's, redrawn
    (sketch/kit/parts.js); a `fork` draws them (board.js). Each part draws in its own box, -1..1 across, so size and turn
    live in one place. Colours are the kit's tokens (board.css), so a colour changed there reaches the parts.
-   VizOS.ink.part(name, {x, y, size, state, color, rot, id, chroms}) -> an SVG <g> string; `chroms` is a list of {c, mut}. */
+   VizOS.ink.part(name, {x, y, size, state, color, rot, id, chroms}) -> an SVG <g> string; `chroms` is a list of {c, mut}.
+   VizOS.ink.glyph(name, x, y, seed, k) -> a slope table's small drawn object (lymphocyte, monocyte, tag, trees). */
 (() => {
   const TAU = Math.PI * 2;
   const pal = { ink: 'var(--ink)', mist: 'var(--mist)', wash: 'var(--ink)', s1: 'var(--s1)', s2: 'var(--s2)', s3: 'var(--s3)', s4: 'var(--s4)', s5: 'var(--s5)', red: 'var(--bad)', bg: 'var(--bg)' };
@@ -139,5 +140,39 @@
     const r = (o.size || 100) / 2; px = 1 / r; const G = { R: rng(`${name}:${o.id || ''}`), c: pal[o.color] || o.color || pal.s5 };
     return `<g class="pt" data-part="${name}" transform="translate(${f(o.x)} ${f(o.y)}) rotate(${o.rot || 0}) scale(${f(r)})">${D[name](G, o)}</g>`;
   }
-  window.VizOS.ink = { part, STATES };
+  // ---- glyphs: a small drawn object beside a slope table's names and in its key (board.js slope; the C10p mock-up, 11 Nov).
+  // A glyph never carries data; it says what a line stands for. Drawn in px round (cx, cy), in currentColor, with a pen that
+  // wobbles a little, seeded. The lint keeps a copy of the names: lesson_lint.py GLYPHS, so change both together
+  function hand(pts, seed, closedPath, amp) {
+    const R = rng('hand:' + seed), out = [], seq = closedPath ? [...pts, pts[0]] : pts, segs = [];
+    let total = 0; for (let i = 0; i + 1 < seq.length; i++) { const l = Math.hypot(seq[i + 1][0] - seq[i][0], seq[i + 1][1] - seq[i][1]); segs.push(l); total += l; }
+    const waves = [1, 2, 3].map(k => ({ f: closedPath ? k + 1 : (k + R()) * 1.3, ph: R() * TAU, a: 1 / k }));
+    let s0 = 0;
+    segs.forEach((l, i) => { const a = seq[i], b = seq[i + 1], n = Math.max(1, Math.ceil(l / 4)), nx = -(b[1] - a[1]) / (l || 1), ny = (b[0] - a[0]) / (l || 1);
+      for (let j = 0; j < n; j++) { const t = j / n, s = (s0 + t * l) / (total || 1), w = amp * waves.reduce((q, v) => q + v.a * Math.sin(TAU * v.f * s + v.ph), 0) / 1.83;
+        out.push([a[0] + (b[0] - a[0]) * t + nx * w, a[1] + (b[1] - a[1]) * t + ny * w]); }
+      s0 += l; });
+    if (!closedPath) out.push(seq[seq.length - 1]);
+    return 'M' + out.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L') + (closedPath ? 'Z' : '');
+  }
+  const loop = (cx, cy, rx, ry, n = 28, dent = 0) => Array.from({ length: n }, (_, k) => { const a = TAU * k / n, d = dent ? 1 - dent * Math.exp(-Math.pow(Math.atan2(Math.sin(a + .9), Math.cos(a + .9)), 2) / .25) : 1; return [cx + rx * d * Math.cos(a), cy + ry * d * Math.sin(a)]; });
+  const line = (pts, seed, amp) => `<path class="gl" d="${hand(pts, seed, false, amp)}"/>`;
+  const rim = (pts, seed, amp) => `<path class="gl" d="${hand(pts, seed, true, amp)}"/>`;
+  const core = (pts, seed, amp, shut = true) => `<path class="gn" d="${hand(pts, seed, shut, amp)}"/>`;
+  const GLYPHS = {
+    // a lymphocyte (T or B cell): a small round cell, its round nucleus fills most of it
+    lymphocyte: { r: 10.5, says: 'a small round cell with a large round nucleus', draw: (x, y, s) => rim(loop(x, y, 10.5, 10.5), s + 'm', .5) + core(loop(x + .9, y + .5, 7.2, 7), s + 'n', .4) },
+    // a monocyte: a larger cell with a kidney-shaped nucleus
+    monocyte: { r: 13, says: 'a larger cell with a kidney-shaped nucleus', draw: (x, y, s) => rim(loop(x, y, 13, 12.4), s + 'm', .5) + core(loop(x - .6, y + 1, 8.6, 6.8, 36, .45), s + 'n', .3) },
+    // a marker on the cell's surface: a stretch of membrane with a Y-shaped tag standing on it
+    tag: { r: 14, says: 'a Y-shaped tag standing on a stretch of membrane', draw: (x, y, s) => line([[x - 15, y + 11], [x - 6, y + 9], [x + 6, y + 9], [x + 15, y + 11]], s + 'mb', .3) + line([[x, y + 9], [x, y - 1]], s + 'st', .2) + line([[x - 7, y - 10], [x, y - 1], [x + 7, y - 10]], s + 'y', .2) },
+    // trees, side on: a trunk under a crown. Round (a broadleaf like an oak), slim (a birch), cone (a pine)
+    'tree-round': { r: 12, says: 'a broadleaf tree: a round crown on a short trunk', draw: (x, y, s) => line([[x, y + 12], [x, y + 2]], s + 't', .2) + core(loop(x, y - 3, 10, 8.5), s + 'c', .6) },
+    'tree-slim': { r: 12, says: 'a slim tree like a birch: a narrow crown on a tall trunk', draw: (x, y, s) => line([[x, y + 12], [x, y - 2]], s + 't', .2) + core(loop(x, y - 4, 5.5, 8.5), s + 'c', .4) },
+    'tree-cone': { r: 12, says: 'a conifer like a pine: a cone of needles on a short trunk', draw: (x, y, s) => line([[x, y + 12], [x, y + 6]], s + 't', .2) + core([[x, y - 12], [x + 8, y + 6], [x - 8, y + 6]], s + 'c', .4) },
+  };
+  // glyph(name, cx, cy, seed, k) -> an SVG <g> string, k its scale round (cx, cy)
+  const glyph = (name, x, y, seed, k = 1) => { const G = GLYPHS[name]; if (!G) return '';
+    return `<g class="gly" data-glyph="${name}"${k !== 1 ? ` transform="translate(${f(x)} ${f(y)}) scale(${k}) translate(${f(-x)} ${f(-y)})"` : ''}>${G.draw(x, y, seed)}</g>`; };
+  window.VizOS.ink = { part, STATES, glyph, GLYPHS, hand };
 })();

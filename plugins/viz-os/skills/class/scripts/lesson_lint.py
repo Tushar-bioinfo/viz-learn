@@ -698,6 +698,158 @@ def lint_beads(Lx, w, bd, values):
             Lx.err(w, f"`beads` record {r} ({row[bd['name']]}): `{bd['part']}` is {p!r}; it is a whole number from 0 to `{bd['whole']}` ({t:g})")
 
 
+# slope table (adv.md §9d): a style of the scene's table, one stem per number column, one line per row (board.js slopeDraw)
+TABLE_STYLES = ("grid", "slope")
+SLOPE_STEMS, SLOPE_ROWS, SLOPE_GROUPS = (2, 5), (2, 12), (2, 5)   # stems after the name column; rows; groups, one kit colour each
+# the glyphs a slope table draws beside its names: a copy of kit/parts.js GLYPHS, so change both together
+GLYPHS = ("lymphocyte", "monocyte", "tag", "tree-round", "tree-slim", "tree-cone")
+_DECK = {}   # the lesson being linted, for slope_groups' colours from the other scenes (make_lint fills it per run)
+
+
+def slope_cols(s):
+    """A board scene's table columns as board.js draws them: the table's own, then each `col` a step adds."""
+    tb = s.get("table") if isinstance(s.get("table"), dict) else {}
+    cols = [{"key": c} if isinstance(c, str) else c for c in as_list(tb.get("cols")) if isinstance(c, (str, dict))]
+    return cols + [it["col"] for _, it in items_of(s) if isinstance(it.get("col"), dict)]
+
+
+def slope_groups(tb, rows, deck=None):
+    """[(group value, kit colour, its words)] in order of first appearance; a group a plane's `points` (same `by:`) colours
+    keeps that colour and label; the rest take s1..s5 left over, in order (board.js slopeGroups: change both together)."""
+    key, gk, given = tb.get("group"), [], {}
+    for r in rows:
+        if isinstance(r, dict) and r.get(key) is not None and str(r[key]) not in gk:
+            gk.append(str(r[key]))
+    for s in (deck if deck is not None else _DECK).get("slides") or []:
+        for st in as_list(s.get("steps")) if isinstance(s, dict) else []:
+            for it in as_list(st.get("add")) if isinstance(st, dict) else []:
+                pl = it.get("plane") if isinstance(it, dict) else None
+                for mk in as_list(pl.get("marks")) if isinstance(pl, dict) else []:
+                    P = mk.get("points") if isinstance(mk, dict) else None
+                    if isinstance(P, dict) and P.get("by") == key and isinstance(P.get("colors"), dict):
+                        for g, v in P["colors"].items():
+                            c = {"color": v} if isinstance(v, str) else v if isinstance(v, dict) else {}
+                            if str(g) not in given and c.get("color"):
+                                given[str(g)] = c
+    free = [c for c in ("s1", "s2", "s3", "s4", "s5") if not any(given.get(g, {}).get("color") == c for g in gk)]
+    return [(g, given[g]["color"], str(given[g].get("label", g))) if g in given else (g, free.pop(0) if free else "ink", g) for g in gk]
+
+
+def slope_rows(tb, values):
+    rows = values.get(tb.get("from")) if isinstance(tb, dict) and isinstance(tb.get("from"), str) else None
+    return [r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
+
+
+def plain_value(expr, names):
+    """A worked column's value on one row, for the plainest sums only: numbers, names, + - * / ^ and brackets. Anything
+    else returns None and is left to the browser check (the kit's JavaScript holds the one real evaluator; design.md)."""
+    import ast
+    try:
+        t = ast.parse(str(expr).replace("^", "**"), mode="eval").body
+    except SyntaxError:
+        return None
+    ops = {ast.Add: lambda a, b: a + b, ast.Sub: lambda a, b: a - b, ast.Mult: lambda a, b: a * b, ast.Pow: lambda a, b: a ** b,
+           ast.Div: lambda a, b: a / b if b else (math.nan if a == 0 else math.copysign(math.inf, a) * math.copysign(1, b))}
+
+    def ev(n):
+        if isinstance(n, ast.Constant) and NUM(n.value):
+            return float(n.value)
+        if isinstance(n, ast.Name) and NUM(names.get(n.id)):
+            return float(names[n.id])
+        if isinstance(n, ast.UnaryOp) and isinstance(n.op, (ast.USub, ast.UAdd)):
+            v = ev(n.operand)
+            return None if v is None else (-v if isinstance(n.op, ast.USub) else v)
+        if isinstance(n, ast.BinOp) and type(n.op) in ops:
+            x, y = ev(n.left), ev(n.right)
+            if x is None or y is None:
+                return None
+            try:
+                v = ops[type(n.op)](x, y)
+            except (OverflowError, ZeroDivisionError, ValueError):
+                return math.nan
+            return v if isinstance(v, float) else math.nan   # a negative number to a broken power gives a complex number
+        raise LookupError
+
+    try:
+        return ev(t)
+    except LookupError:
+        return None
+
+
+def lint_table_style(Lx, where, s, values):
+    """A board table's `style`: grid (the default) or slope; a slope table's columns, rows, groups and glyphs."""
+    tb = s.get("table")
+    if not isinstance(tb, dict):
+        return
+    st = tb.get("style", "grid")
+    if st not in TABLE_STYLES:
+        Lx.err(where, f"`table` `style: {st}` is not a table style: `grid` (the default, rows and columns) or `slope` (adv.md §9d)")
+        return
+    if st == "grid":
+        for k in ("group", "glyphs"):
+            if k in tb:
+                Lx.err(where, f"`table` `{k}` works only with `style: slope`; a grid table does nothing with it: delete it, or set `style: slope`")
+        return
+    cols = slope_cols(s)
+    first, stems = (cols[0] if cols else {}), cols[1:]
+    lo, hi = SLOPE_STEMS
+    if not lo <= len(stems) <= hi:
+        Lx.err(where, f"a slope table has {len(stems)} stem{'s' if len(stems) != 1 else ''}: give it {lo} to {hi} number columns after the first (the first column names each line)")
+    if first.get("expr") is not None:
+        Lx.err(where, f"a slope table's first column `{first.get('key')}` names each line: a `key` holding text, not an `expr`")
+    rows, src = slope_rows(tb, values), tb.get("from")
+    if not rows:
+        return   # `table needs from:` and an unknown name are reported elsewhere
+    rlo, rhi = SLOPE_ROWS
+    if not rlo <= len(rows) <= rhi:
+        Lx.err(where, f"a slope table draws one line per row: `{src}` holds {len(rows)} rows; it takes {rlo} to {rhi}")
+    fk = first.get("key")
+    if first.get("expr") is None and fk is not None:
+        bad = next(((r, row.get(fk)) for r, row in enumerate(rows) if not (isinstance(row.get(fk), str) and row[fk].strip())), None)
+        if bad:
+            Lx.err(where, f"a slope table's first column names each line, so it is text: row {bad[0]} `{fk}` is {bad[1]!r}")
+    scal = {n: v for n, v in (values or {}).items() if NUM(v)}
+    for c in stems:
+        k = c.get("key")
+        if c.get("expr") is not None:
+            # a worked stem: work it on each row; a sum the lint cannot read is left to the browser check
+            for r, row in enumerate(rows):
+                v = plain_value(c["expr"], {**scal, **{q: x for q, x in row.items() if NUM(x)}})
+                if v is not None and not math.isfinite(v):
+                    Lx.err(where, f"slope stem `{k}`: `{c['expr']}` on row {r} gives {'not a number' if math.isnan(v) else 'an infinite value'}, so the line has no point there: change the sum, or the data")
+                    break
+            continue
+        if k is None:
+            continue
+        bad = next(((r, row.get(k, "missing")) for r, row in enumerate(rows) if not (NUM(row.get(k)) and math.isfinite(row[k]))), None)
+        if bad:
+            Lx.err(where, f"slope stem `{k}`: row {bad[0]} is {bad[1]!r}, not a finite number; every stem is a number in every row, on one scale")
+    g = tb.get("group")
+    if not (isinstance(g, str) and g.strip()):
+        Lx.err(where, "a slope table needs `group:`, a key of every row: its lines take one colour a group")
+        return
+    miss = next((r for r, row in enumerate(rows) if row.get(g) is None), None)
+    if miss is not None:
+        Lx.err(where, f"slope `group: {g}` is not a key of row {miss} of `{src}`: every row needs its group")
+        return
+    vals = [q[0] for q in slope_groups(tb, rows)]
+    glo, ghi = SLOPE_GROUPS
+    if not glo <= len(vals) <= ghi:
+        Lx.err(where, f"slope `group: {g}` has {len(vals)} value{'s' if len(vals) != 1 else ''} ({', '.join(vals)}); the lines compare {glo} to {ghi} groups, one kit colour each")
+    gl = tb.get("glyphs")
+    if gl is None:
+        return
+    if not isinstance(gl, dict):
+        Lx.err(where, f"slope `glyphs` maps a group to a glyph ({{T: lymphocyte}}); got {gl!r}")
+        return
+    for k, v in gl.items():
+        if str(k) not in vals:
+            Lx.err(where, f"slope `glyphs` key `{k}` is not a value of `{g}` ({', '.join(vals)})")
+        if v not in GLYPHS:
+            hit = next(iter(difflib.get_close_matches(str(v), GLYPHS, 1, .6)), None)
+            Lx.err(where, f"slope `glyphs` `{k}: {v}`: no glyph named `{v}`" + (f": did you mean `{hit}`?" if hit else f"; the glyphs are {', '.join(GLYPHS)}"))
+
+
 def chance_name(nm):
     """A group name as the page shows it: case folded, runs of spaces as one (HTML collapses them)."""
     return " ".join(str(nm).split()).lower()
@@ -932,6 +1084,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                 Lx.err(where, "`table` needs `from:` (a data name holding the rows) and `cols:`")
             elif isinstance(tb.get("from"), str):
                 B.check_expr(Lx, f"{where} table", tb["from"], names)
+            lint_table_style(Lx, where, s, values)
         steps = as_list(s.get("steps"))
         if not steps:
             Lx.err(where, "a board needs `steps`: one teacher line each")
@@ -1202,6 +1355,10 @@ def scene_marks(s, symbols, data=None):
                             else mk.get("color") or (sc if sc and sc != "ink" else None) or SPACE_DEF.get(k)
                 out.append((f, kind, i, mk, shows, [str(x).strip() for x in keys if x is not None and str(x).strip()], entry, c))
             f += 1
+    tb = s.get("table")
+    if isinstance(tb, dict) and tb.get("style") == "slope" and isinstance(tb.get("group"), str):   # each group: a key entry and a linked word (board.js slopeFig)
+        for i, (g, c, _) in enumerate(slope_groups(tb, slope_rows(tb, data or {}))):
+            out.append((f, "slope", i, {"label": g}, 1, [g.strip()] if g.strip() else [], True, c))
     return out
 
 
@@ -2099,6 +2256,8 @@ def adv_only(deck):
                 found += ["views"] if "views" in sp else []
                 found += ["split"] if any(isinstance(m, dict) and "split" in m and "along" in m for m in as_list(sp.get("marks"))) else []
             out += [(f"slide {deck['slides'].index(s) + 1} step {j + 1}", f"`{k}` {fix}") for k in found]
+        if isinstance(s.get("table"), dict) and s["table"].get("style") == "slope":
+            out.append((f"slide {deck['slides'].index(s) + 1}", f"`style: slope` {fix}"))
     return out
 
 
@@ -2374,6 +2533,7 @@ def lint_recall(Lx, deck, state):
 def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
         values = {**(deck.get("data") or {}), **(data or {})}   # what a `beads` figure's rings are named from
+        _DECK.clear(); _DECK.update(deck)   # slope_groups reads the colours other scenes give a group
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck, values); lint_order(B, Lx, deck)

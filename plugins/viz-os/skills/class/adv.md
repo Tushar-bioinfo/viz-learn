@@ -71,7 +71,7 @@ A lesson is adv once any board scene has `idea`.
 - One idea in more scenes than `depth` (warning): merge, or ask for more depth.
 - `learner.depth` is a whole number from 1 to 6 (error).
 - `idea`, `see` or `shows` on a slide that is not a board (error, in any lesson).
-- In a plain lesson, `chance`, `fork`, `beads`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
+- In a plain lesson, `chance`, `fork`, `beads`, a table's `style: slope`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
 A spine of stubs fails the lint for its missing `steps`, and other lints warn about what is not written yet; the checks above that look at a figure wait for steps. The storyboard never runs the lint.
 
 ## 9. The `chance` figure: is a gap between two shares bigger than chance makes?
@@ -108,6 +108,15 @@ It draws the start at the top and the 2 or 3 ends in a row below it, each reache
 It draws one ring per record of `from` (1–4 records, from make_data.py), side by side and one size: a bead per unit of `whole`, the `part` beads filled clockwise from the top in the ring's colour (`colors: [s4, s1]`, one kit colour per record; else s1, s2, s3, s4 in order). Give a ring the colour its group has in the lesson's other figures. The record's `name` sits above its ring; the middle stacks the part, a rule and the whole, each under or over its column's key. The `key` words sit at the bottom right beside one open bead. Quote `key` when it holds a comma.
 - Each ring is a mark named by its `name` (text, never a bare `true` or number): a legend entry and a linked word (`==well==` lights that ring and dims the rest). Pointing at a ring opens its card ("18 of 40 homes are ill"). A scene holds one `beads`.
 - The `part` and `whole` keys show as one word each, so a key with a space is an error; the lint's other limits are in `lint.md`.
+
+## 9d. A slope table: each row a line across its number columns
+```yaml
+table: {from: cells, style: slope, group: type, cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}, {key: cd14, label: CD14, fmt: 1}],
+        glyphs: {T: lymphocyte, B: lymphocyte, mono: monocyte}}
+```
+`style: slope` draws the scene's table as lines (`grid`, the default, draws rows and columns). The first column names each line, as text. Every other column, and each `col` a step adds, is an upright scale (a stem); all stems share one scale, from 0, or from the smallest value when that is below 0. Each row is one line through its values, in its `group`'s colour. A group keeps the colour a plane's `points` with the same `by:` gives it, else takes s1, s2, s3 in order. A stem a step adds stands faint until the reading gets there.
+- Each group is a mark: a key entry and a linked word (`==mono==` lights its lines). `mark: row:N`, a worked line's `row:` and pointing light one line; `col:` lights a stem.
+- `glyphs` (optional) draws a small object beside each name: `lymphocyte`, `monocyte`, `tag`, `tree-round`, `tree-slim`, `tree-cone`. The limits are in `lint.md`.
 
 ## 10. Space figures the learner moves: views, a hunt, a split
 The camera glides only when the learner presses something; a step never moves it.

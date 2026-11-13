@@ -14,11 +14,10 @@ updated: 2026-11-13
 title: C10, advanced visuals for class lessons
 
 now: >-
-  13 Nov: N4 (token diet) is approved and committed: board.md 380 lines (+59 of 60), plain
-  reading path 12,219 to 11,266 words, and a lint refuses the six adv-only figures in a plain
-  lesson. Re-checked before the commit: quick check clean, 246/246 cases, 11/11 doc tests,
-  deck seam 9/9 byte-identical. Next: N5 builds the seven picked pieces, bead rings first;
-  context from three Haiku readers says the bead-ring docs must go in adv.md (one board.md line left).
+  13 Nov: N5 slope lines (9) approved and committed as `style: slope` on the pinned scene
+  table (the user's shape B), adv-only: two Terra 6.1 high reviewers, two rounds, eight
+  findings fixed. Quick check clean, 279/279 class cases, 14/14 doc tests. Next: the
+  recorder strip (10), which needs a new name since `strip` is taken.
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -339,7 +338,7 @@ blocks:
     status: active
     ships: plugin
     you: pick, review
-    line: Seven pieces into the class kit, one block each; bead rings done (7); slope lines (9) next.
+    line: "Seven pieces into the class kit, one block each; bead rings (7) and slope lines (9) done; recorder strip (10) next."
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}
