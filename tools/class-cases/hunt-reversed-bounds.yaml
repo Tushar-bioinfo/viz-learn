@@ -8,6 +8,10 @@ slides:
   - type: title
   - type: board
     beat: by-hand
+    idea: closest
+    see: point
+    shows: the point above the sheet, and the guess you drag
+    lead: The ==point== and its sheet.
     title: A hunt or a split
     steps:
       - say: The point and the sheet.

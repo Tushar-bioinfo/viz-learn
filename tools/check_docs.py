@@ -25,8 +25,9 @@ import lesson, lesson_lint, page_lint, sketch  # noqa: E402
 
 # board.js reads YAML fields off these objects (an item, a step, a control, a mark, a symbol); longest first
 OBJS = r"(?:it\.\w+|s\.table|run\.c|ln\.c|ln\.f|A\.a|it|st|c|mk|P|F|a|x|cp|pr|nt|s|X|Y|t|p)"
-# fields only an adv lesson writes (or only hands.py makes), documented in adv.md §10 instead of board.md
+# fields only an adv lesson writes (or only hands.py and strip.py make), documented in adv.md §9–11 instead of board.md
 ADV_ONLY = {"views", "hunt", "guess", "split", "drag", "was", "start", "foil"}   # not `by`, `to`, `on`, `along`: board.md documents them
+ADV_ONLY |= {"groups", "axis", "gap_says", "step_says", "tally", "ends", "_kit"}   # chance (§9), fork (§9b), strip (§11): adv-only since N4
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 

@@ -28,7 +28,7 @@ Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `b
 ## 3. The idea table
 | `idea` | The learner asks | The picture | Draw it today with |
 |---|---|---|---|
-| `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix`; `strip` when the whole is a picture (board.md) |
+| `made-of` | where does this number come from? | whole → one part → its numbers | the scene's `table`, `calc`, `product`, `vec`, `matrix`; `strip` when the whole is a picture (§11) |
 | `amount` | how much, what share? | countable units, a level that fills | `units`, `parts`, `stat`, `chance` |
 | `cause` | what happens if I change this? | one handle moves one mark | `plane`, `chart`, `space`, `dist` |
 | `closest` | which choice is best? | your guess, its error, then the answer | `plane`, `space` |
@@ -71,6 +71,7 @@ A lesson is adv once any board scene has `idea`.
 - One idea in more scenes than `depth` (warning): merge, or ask for more depth.
 - `learner.depth` is a whole number from 1 to 6 (error).
 - `idea`, `see` or `shows` on a slide that is not a board (error, in any lesson).
+- In a plain lesson, `chance`, `fork`, `strip`, `views`, `hunt`, `split` and `learner.depth` (error).
 A spine of stubs fails the lint for its missing `steps`, and other lints warn about what is not written yet; the checks above that look at a figure wait for steps. The storyboard never runs the lint.
 
 ## 9. The `chance` figure: is a gap between two shares bigger than chance makes?
@@ -122,3 +123,34 @@ space:
   Each part is drawn in its vector's colour, from the origin and tip to tail. The names `part_a`, `part_b` (the two amounts) and `miss` (how far the tip is from the point) go in lines. The first `think` at or after `step` moves the tips onto the point when its answer opens. `foil: true` adds the `shortcut` on the step after that think: square drops onto each vector alone, a common wrong answer whose amounts are `short_a` and `short_b`. The figure needs a `sheet` on the same two vectors.
 - Under the hood a hunt and a split make controls with `drag` (`guess`, `was`, `split`): their handles replace slider rows. The kit-made `guess` mark takes `on` and `was`; the `split` mark takes `by` and `to`. Do not write these by hand.
 - The lint stops on: a hunt with no `from`, no `on`, or no matching sheet; a split whose two vectors are parallel or have no sheet; a split with no `think` after it; a `start` that is not a data name with 2 numbers; a view word that names no view; a `views` key that is not a step; and a name of yours (in the scene, the data or the lesson's `derive`) that clashes with the kit's: `hunt_a`, `hunt_b`, `hunt_wa`, `hunt_wb`, `hunt_fa`, `hunt_fb`, `line` and `gap` for a hunt; `part_a`, `part_b`, `split_fa`, `split_fb`, `miss`, `short_a` and `short_b` for a split. It also stops on a sheet whose `max`/`min` is not 2 numbers or whose `min` is not below its `max`, a hunt field it does not know, a split point off the sheet, and a start or an answer the learner cannot drag to inside the sheet as drawn. What the lint cannot read (a point made by a formula) the page checks, and the browser check warns. A think's own `set` is kept beside the split's.
+
+## 11. The `strip` figure: a drawing, a window on it, and what the window holds
+One thing at three scales, joined by one pointer: the drawing (pinned at the left), a window the learner drags over it, and the window's contents as a grid of spots with a table of the shapes they fall on. The strip draws no maths of its own: it makes data names, and the other items of its step read them. A `space` on the same step stands under the window on the right; a `calc` or any line reads the names too.
+```yaml
+- say: Drag the window. Each ==spot== takes the colour drawn there.
+  add:
+    - strip: {art: tissue, window: {size: 96, start: DAB}, take: {spots: 12}, table: [h, e, drop], pick: drop}
+    - space:
+        axes: [OD red, OD green, OD blue]
+        marks:
+          - points: {from: window, at: od, rgb: od}
+          - {sheet: [H, E], max: [hw, ew], label: plane, says: every mix of H and E}   # derive: {hw: max(window_h) * 1.2, ew: max(window_e) * 1.2}
+          - {foot: {from: picked_od, onto: [H, E]}, label: drop, says: what no H and E mix explains}
+```
+| Field | What it does |
+|---|---|
+| `art` | the drawing's name: `art/<name>.svg` and `art/<name>.json` beside the lesson (the art, below) |
+| `window` | `size`: the window's side in the drawing's units; `start`: a shape id, or the start of a part name, where the window first sits |
+| `take` | `{spots: n}` (2–16 a side): a grid of n × n spots, each reading the shape drawn on top at its centre; or `shapes`: one row per shape in the window, with its `share` of the window |
+| `table` | up to 4 fields of the rows, as columns beside a swatch and the count; the picked spot's shape is always a row |
+| `pick` | a number field: the window starts on the spot with the most of it (else the middle spot) |
+| `slots` | `{name: data}`: a value for each spot, row by row (`n × n` numbers), such as a blur's weights; spots only, and not in `table` |
+
+The names it makes, kept current as the learner drags or presses: `window` (the rows: each shape's record with `row` and `col`, or `share`), `window_<f>` (field f of every row, as a list: `sum(window_weight * window_grey)`), and `picked_<f>` (field f of the picked row: `picked_od` is a position). A lesson holds one strip, and these names must not be in its data. A `space` whose `points` read `window` sizes its axes over every shape of the drawing, so no window runs off them, and frames what the window holds.
+
+**The art.** Write `make_art.py` beside the lesson: seeded, it writes `art/<name>.svg` and `art/<name>.json` (`{"about", "paint": "rgb", "unit": {"per", "name"}, "shapes": [{"id", "part", ...numbers}]}`). Every shape has a unique `id`, a `part` (what it is, in plain words) and the numbers the lesson reads; fills are flat `#rrggbb`, with no gradient, opacity, filter or image, so with `paint` the colour drawn is the colour recorded. Draw a background shape under everything, so no spot reads nothing. Then:
+```bash
+python3 C/scripts/art.py lessons/<slug>/art/<name>.svg   # checks the contract, writes <name>.hits.json (which shape is on top where)
+```
+`make_data.py` may add numbers to the records (as the H&E lesson adds each shape's `od`, `h`, `e` and `drop`); run `art.py` again after either file changes, or the build stops. Keep the drawing under 2 MB.
+The build adds `image` and `_kit` (the hit map, the records and where the window starts) to the strip; never write them.

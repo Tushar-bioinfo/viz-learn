@@ -14,9 +14,11 @@ updated: 2026-11-13
 title: C10, advanced visuals for class lessons
 
 now: >-
-  13 Nov: N2 (cold-run fixes) is committed (cb52ae1). N3 (ship or shelve the starter look)
-  is active: two Haiku 5.5 xhigh readers wrote the piece list and kit cost to `out/c10/n3/`;
-  the user picks which pieces go into the kit.
+  13 Nov: N4 (token diet) is approved and committed: board.md 380 lines (+59 of 60), plain
+  reading path 12,219 to 11,266 words, and a lint refuses the six adv-only figures in a plain
+  lesson. Re-checked before the commit: quick check clean, 246/246 cases, 11/11 doc tests,
+  deck seam 9/9 byte-identical. Next: N5 builds the seven picked pieces, bead rings first;
+  context from three Haiku readers says the bead-ring docs must go in adv.md (one board.md line left).
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -45,26 +47,15 @@ waiting:
         moment, the cap of 4 mark hues, and which mark counts as the witness.
 
 next:
-  - id: N3
-    title: Ship or shelve the starter look (C10n–p)
+  - id: N5
+    title: Build the picked starter-look pieces, one block each
     more: |
-      Four blocks of approved mock-ups live only in `out/c10/`: the frame, ink figures, the
-      mint palette, the stipple, bead rings, colour wheel, houses, slope lines, the guided
-      first look. None of it is in the plugin, and its palette and rules differ from the kit's.
-      A 15-minute choice: which pieces become kit items (and at what YAML cost), and which
-      stay as reference. Then one build block per piece.
-      Context (13 Nov): `out/c10/n3/inventory.md` (13 kept pieces, screenshots, approvals,
-      conflicts) and `out/c10/n3/kit-cost.md` (palette, YAML sketches, suggested build order).
-      Palette picked 13 Nov: mint everywhere; s4 green `#6be619`, s5 blue `#4270fa` (option C,
-      `out/c10/n3/hues.png`). Built in the kit 13 Nov (lilac, blue lifted for text contrast;
-      before/after `out/c10/n3/before-after-pca5.png`). Still to pick: which pieces become kit items.
-  - id: N4
-    title: Token diet for board.md
-    more: |
-      `board.md` is read on every lesson run and is 141 lines over its start, against a budget
-      of 60. Move the adv-only figures (`chance`, `fork`, `strip`) into `adv.md`, keep each word
-      limit in one place (`lint.md`), and lint "adv only" instead of saying it in prose.
-      Measure a cold run's tokens before and after.
+      The user's N3 pick (13 Nov): ship 5 7 8 9 10 11 12; 1 2 3 4 6 stay reference.
+      Proposed order, cheapest and most reused first: bead rings (7), slope lines (9),
+      recorder strip under a new name (10), colour wheel (8), houses (11, deck kit: full run),
+      CRISPR revamp (12, settle its conditional pick first), guided first look (5, a kit
+      default: try on 2 lessons). Each adds an estimated 2-6 lines of docs; after N4 they
+      go where N4 puts adv-only figures. Facts: `out/c10/n3/kit-cost.md`.
   - id: C10h
     title: Cold-start exam on two adv lessons
     more: |
@@ -324,7 +315,7 @@ blocks:
     after: [C10p]
     col: 2
     edges: false
-    status: active
+    status: done
     ships: none
     you: decide
     line: Which C10n–p mock-ups go into the kit.
@@ -335,9 +326,19 @@ blocks:
     after: [C10l]
     col: 3
     edges: false
+    status: done
+    ships: plugin
+    line: board.md back to +59 of 60 lines; adv-only figures are a lint error in a plain lesson.
+
+  - id: N5
+    name: Build the picks
+    lane: Next phase
+    after: [N3]
+    col: 4
+    edges: false
     status: next
     ships: none
-    line: board.md is 141 lines over its start; the budget is 60.
+    line: Seven pieces into the class kit, one block each, beads first.
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}

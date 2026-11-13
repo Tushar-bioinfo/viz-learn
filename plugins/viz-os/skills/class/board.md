@@ -1,6 +1,6 @@
 # lesson.yaml: the board reference
 
-Read this when you write scenes (loop step 4). `lesson.md` says what each scene is for; this file says how to write it. A lesson is a deck file (the sibling deck's `spec.md`) with `board` scenes in it, so every deck field, visual, expression and number format works here too. This file covers what the board adds. Copy patterns from `examples/board-gallery/lesson.yaml`, which uses every item below.
+Read this when you write scenes (loop step 4). `lesson.md` says what each scene is for; this file says how to write it. A lesson is a deck file (the sibling deck's `spec.md`) with `board` scenes in it, so every deck field, visual, expression and number format works here too. This file covers what the board adds. Copy patterns from `examples/board-gallery/lesson.yaml`, which shows every plain board item below (of the deck visuals, not `units` or `dist`).
 
 ## Top level
 ```yaml
@@ -103,22 +103,11 @@ steps:
 | `refresh` | the `id` of a refresher scene at the end; the step shows that scene's `ask` and a **Refresher ▸** link under its line (see Refreshers) |
 
 A think step's `say` is optional; its question is the line. A think question has one short answer the learner can reach from the board. On a figure with Next, a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it.
-
 ### Extra reading
-```yaml
-  - say: Add the squares, then divide by one less than the number of cells.
-    more:
-      ask: Why one less than the number of cells, and not all six?   # the fold's label: the learner's question
-      answer:                                                         # paragraphs, short sentences, no ";"
-        - We measured each distance from our own mean, not from the true mean. …
-        - Dividing by one less makes up for that on average. This fix is called Bessel's correction. …
-      sources:
-        - {title: Bessel's correction (Wikipedia), url: 'https://en.wikipedia.org/wiki/Bessel%27s_correction', why: A worked example of the smaller variance.}
-```
-A fold opens with a click and starts closed; the **Study** switch at the lower left opens or closes every fold on the page. Put in a fold what a curious learner asks next: why this choice, where a rule comes from, what the field calls it. The page must teach without it. One step fold a scene (the lint warns past one); the scene's own `more` holds the rest.
+A fold (the gallery's by-hand scene has one) opens with a click and starts closed; the **Study** switch at the lower left opens or closes every fold on the page. Put in a fold what a curious learner asks next: why this choice, where a rule comes from, what the field calls it. The page must teach without it. One step fold a scene (the lint warns past one); the scene's own `more` holds the rest.
 - **Give every term its meaning in the fold too**, the first time it appears there: plain words then the term, or the term then its meaning in brackets ("unweighted (every pixel counts the same)"). A fold is read on its own, so a term defined higher up the page is defined again.
 - **List only pages you opened** while writing, with `why` saying what the reader gets there. `url` is a full `https://` link.
-- At most 160 words a fold; each sentence at most 24.
+- At most 160 words a fold, each sentence at most 24; its `ask` at most 14.
 
 ### Refreshers
 A refresher is an earlier idea the lesson leans on, such as the cosine before a projection. It is a whole board scene with `beat: refresher`, placed after the `next` scene, so the story runs on without it. The step that first needs it links to it:
@@ -164,7 +153,7 @@ add: {calc: {say: How far c1 sits, why: below the mean, so negative, row: 0, exp
 Drawn as a numbered line: `d₁ = xᵢ − x̄ = 4.3 − 5.70 = −1.40`, symbol = formula = numbers = result.
 | Field | What it does |
 |---|---|
-| `say` | a short label for the line (≤ 9 words) |
+| `say` | a short label for the line (≤ 14 words) |
 | `why` | a grey half-line after it (≤ 12 words) |
 | `row` | reads that row of the table (from 0): a table column's name in `expr` takes that row's value, and its cell lights in the line's colour. Without `row`, a name means what the data holds, never the table: `sum(cd3)` adds the whole list `cd3` in `data.json`, not the scene table's rows. To work on a subset (one group's 3 cells), make that list in `make_data.py` and name it |
 | `expr` | the computation, an expression over data, derive, earlier lines and the row |
@@ -233,7 +222,7 @@ Each name shows its symbol in its colour, its value now and its `short` name; it
 add: {note: 'The means are ==s1:{{mA|1}}== and ==s2:{{mB|1}}==, but B is **{{ratio|1}}×** as variable as A.'}
 add: {note: {text: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$', side: true, id: rule}}
 ```
-A string, or `{text, side, id}`. At most 16 words; the board is not for paragraphs.
+A string, or `{text, side, id}`. At most 16 words (full voice: 30); the board is not for paragraphs.
 
 ### `compare`: two cases side by side
 ```yaml
@@ -265,15 +254,11 @@ add:
     marks: [{kind: hline, y: xbar, step: 2}, {kind: band, y: [lo, hi], name: usual range, says: where most cells sit}]
   caption: The tallest stick sits farthest above the line.
 ```
-`chance` (two `groups` as units, their shares, the gap, a ruler of noise steps and an optional `tally`; `axis`, `gap_says`, `step_says`) is a figure for adv lessons only: write it as `adv.md` §9 shows.
-
-`fork` (one `start` above 2 or 3 `ends`, each drawn with parts from the box) is a figure for adv lessons only: write it as `adv.md` §9b shows.
+**Adv lessons only** (a lint error in a plain lesson): `chance`, `fork`, `strip`, and a `space`'s `views`, `hunt` and `split`. Write them as `adv.md` §9–11 shows.
 
 `ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 16:9; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
 
-**A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours. Nothing else on a board is a boxed tag either: an image's `labels`, a matrix's shape, the step card's heading and its notation key draw as plain text, and the browser check warns on any label drawn in a box.
-
-A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows on the scene's second step. Dots on a category axis sit at the left edge of their band: add 0.5 to `x` to centre them.
+**A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours. A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows on the scene's second step. Dots on a category axis sit at the left edge of their band: add 0.5 to `x` to centre them.
 
 An `image` is only for when the user asks for a picture (`D/scripts/image.py`). The picture has no text; put labels on it: `labels: [{text: c1, at: [0.08, 0.88]}]` (fractions from the top left, ≤ 4 words), and always `alt`.
 
@@ -285,29 +270,18 @@ add: {product: {m: X, v: p5, way: rows, name: y}}                    # a row at 
 add: {product: {m: X, v: p5, way: cols, name: y, plane: true}}       # a column at a time, as arrows tip to tail
 add: {product: {m: X, v: P, way: rows, name: XP, show: [[1, 2]]}}    # matrix × matrix: entry (1, 2), then all
 ```
-One step opens into one board step per line of working, each with its own teacher line:
+One step opens into one board step per line of working, each with its own teacher line (`says: [..]` gives yours, one per line, in order):
 - `way: rows` (the default), vector: `[row i] [v] = sum = entry i` for each row, then `name = [sums] = [result]`.
 - `way: cols`, vector: `name = v₁[col 1] + v₂[col 2]`, then the scaled columns, then `= [result]`.
 - Matrix × matrix, rows: one line per entry in `show` (`[row, column]`, from 1; default `[[1, 1]]`), then the whole result. Cols: one line per column of `v` in `show` (`[2]`; default `[1]`), then the whole result.
 `m` is a `kind: matrix` symbol; `v` a vector or matrix; both up to 4 × 4, drawn first with their numbers, and `m`'s columns must match `v`'s rows. `name` is a `kind: matrix|vector` symbol for the result: the kit computes it, so data.json need not hold it (if it does, they must agree at the controls' starting values), and a later product in the scene may use it. It may not be `m` or `v`. Its TeX heads the last line. Each matching pair of numbers shares a colour: `m`'s `cols`, else `v`'s `rows`. Every line follows a slider when a `derive` makes `m` or `v`.
-- `says: [..]`: your own teacher lines, one per line of working, in order.
 - `plane: true` (columns way, a vector, `m` with 2 rows): a plane with an arrow per scaled column, tip to tail, and a dot at the result; `axes: [CD3, CD19]` names its axes (default `entry 1`, `entry 2`).
 The `product` step holds nothing else: put a `think` or another item on the step before or after. No box round the answer anywhere (a lint error): the last line is the answer.
 
 ### `plane`: geometry with equal scales
 A coordinate plane with one scale for both axes, so a slope, a right angle and a square look like what they are. It fills its room by showing more of the plane: both axes widen on both sides at one scale, and ticks, grid and shading follow. The `x` and `y` ranges you write are the least it shows.
 
-Add `fill: true` to a plane that is a scatter, a line or a shaded side, with no right angle or length the lesson relies on. It takes the chart shape, 16:9 (up to 2:1 on a short window), with its own scale per axis, and fills its column. It cannot hold a `vector`, `foot` or `square`. Leave it off when the lesson compares the spread along the two axes, as a plot of PC scores does: one scale keeps that comparison true.
-```yaml
-add:
-  plane:
-    x: {label: CD3, min: 0, max: 10}
-    y: {label: CD19, min: 0, max: 10}
-    marks:
-      - points: {from: cells, x: cd3, y: cd19, label: id}
-      - {line: ['-xbar', 0, 1], color: accent, label: 'mean {{xbar|1}}'}
-      - {foot: {from: [far_i, 'at(cd3, far_i - 1)'], line: ['-xbar', 0, 1]}, color: ink, label: distance, step: 2}
-```
+Add `fill: true` to a plane that is a scatter, a line or a shaded side, with no right angle or length the lesson relies on. It takes the chart shape, 16:9 (up to 2:1 on a short window), with its own scale per axis, and fills its column. It cannot hold a `vector`, `foot` or `square`. Leave it off when the lesson compares the spread along the two axes, as a plot of PC scores does: one scale keeps that comparison true. The gallery's picture scene draws a plane with points, a line, a foot and a square.
 `x` and `y` take `label`, `min` and `max` (expressions allowed). Every value in a mark is an expression; **quote one that has a comma** (`'at(cd3, 2)'`), since a comma splits a YAML list. A line `[w0, w1, w2]` is the set where w0 + w1·x + w2·y = 0, so a flat line at height m is `['-m', 0, 1]` and an upright one at x = m is `['-m', 1, 0]`.
 
 | Mark | Takes | Draws |
@@ -339,22 +313,7 @@ Every mark also takes:
 Labels are placed clear of dots, lines, arrows, right-angle ticks, the edges of squares and shaded halves, and other labels; when no place is clear, the check warns. Keep 5 legend entries or fewer. Every `name` needs `says:`, or a teacher line that names it at or before its step; the lint warns otherwise, since a pop-up is not seen in print or a screenshot. A mark outside the box warns too: widen `min`/`max`.
 
 ### `space`: a 3D space the learner turns
-A plane with a third axis, for a point and the plane of two vectors: projection, least squares, colour unmixing. The learner drags to turn it, scrolls to zoom, and presses `edge` to look along the sheet, where a drop meets it at a right angle. It never moves by itself. One unit is one length on every axis, and a slider never rescales it: the kit sizes the axes from 5 values of each control (a sample when the combinations pass 4096), and the check warns if a mark still leaves them.
-```yaml
-symbols:
-  H: {tex: 'H', says: one unit of haematoxylin, kind: vector, color: s5}   # a vector symbol's color is its arrow's
-  E: {tex: 'E', says: one unit of eosin, kind: vector, color: s3}
-derive: {px: h*H + e*E}                    # lists add entry by entry
-add:
-  space:
-    axes: [OD red, OD green, OD blue]
-    marks:
-      - points: {from: pixels, at: od, rgb: od}
-      - {vector: H, label: H}
-      - {sheet: [H, E], max: [1.4, 1.1], label: column space, says: every mix of H and E}
-      - {point: px, rgb: od, ring: true, label: pixel, says: the pixel you mix}
-      - {foot: {from: px, onto: [H, E]}, label: residual, says: what no H and E mix explains}
-```
+A plane with a third axis, for a point and the plane of two vectors: projection, least squares, colour unmixing. The learner drags to turn it, scrolls to zoom, and presses `edge` to look along the sheet, where a drop meets it at a right angle. It never moves by itself. One unit is one length on every axis, and a slider never rescales it: the kit sizes the axes from 5 values of each control (a sample when the combinations pass 4096), and the check warns if a mark still leaves them. The gallery's run scene draws one, from `kind: vector` symbols.
 A position is a name that gives 3 numbers (a `kind: vector` symbol, a data list, a derive) or a written `[x, y, z]` of expressions. `axes` is 3 names; `max: [x, y, z]` beside it fixes the axes instead (only to compare two spaces at one scale).
 
 | Mark | Takes | Draws |
@@ -369,37 +328,6 @@ A position is a name that gives 3 numbers (a `kind: vector` symbol, a data list,
 | `text` | a label, `at:` | free text at a point |
 
 Every mark takes `step`, `color`, `label`, `id`, `says`, `when` and `dash` as on a plane. `rgb: od` on a `point` or `points` dot gives its true colour from optical density, 255·10^(−OD) per channel; `rgb: 10` reads x, y, z as red, green, blue, full at 10; `{r, g, b, max}` as on a plane. **No names on the marks**: only the axis names are drawn. A mark with `label` gets a legend entry (2 words, 5 entries at most); pointing at it or the mark lights the mark and opens its card, which shows `says` (or its vector symbol's) and its numbers now. Give each labelled mark `says:` and its linked word.
-
-### `strip`: a drawing, a window on it, and what the window holds
-One thing at three scales, joined by one pointer: the drawing (pinned at the left), a window the learner drags over it, and the window's contents as a grid of spots with a table of the shapes they fall on. The strip draws no maths of its own: it makes data names, and the other items of its step read them. A `space` on the same step stands under the window on the right; a `calc` or any line reads the names too.
-```yaml
-- say: Drag the window. Each ==spot== takes the colour drawn there.
-  add:
-    - strip: {art: tissue, window: {size: 96, start: DAB}, take: {spots: 12}, table: [h, e, drop], pick: drop}
-    - space:
-        axes: [OD red, OD green, OD blue]
-        marks:
-          - points: {from: window, at: od, rgb: od}
-          - {sheet: [H, E], max: [hw, ew], label: plane, says: every mix of H and E}   # derive: {hw: max(window_h) * 1.2, ew: max(window_e) * 1.2}
-          - {foot: {from: picked_od, onto: [H, E]}, label: drop, says: what no H and E mix explains}
-```
-| Field | What it does |
-|---|---|
-| `art` | the drawing's name: `art/<name>.svg` and `art/<name>.json` beside the lesson (the art, below) |
-| `window` | `size`: the window's side in the drawing's units; `start`: a shape id, or the start of a part name, where the window first sits |
-| `take` | `{spots: n}` (2–16 a side): a grid of n × n spots, each reading the shape drawn on top at its centre; or `shapes`: one row per shape in the window, with its `share` of the window |
-| `table` | up to 4 fields of the rows, as columns beside a swatch and the count; the picked spot's shape is always a row |
-| `pick` | a number field: the window starts on the spot with the most of it (else the middle spot) |
-| `slots` | `{name: data}`: a value for each spot, row by row (`n × n` numbers), such as a blur's weights; spots only, and not in `table` |
-
-The names it makes, kept current as the learner drags or presses: `window` (the rows: each shape's record with `row` and `col`, or `share`), `window_<f>` (field f of every row, as a list: `sum(window_weight * window_grey)`), and `picked_<f>` (field f of the picked row: `picked_od` is a position). A lesson holds one strip, and these names must not be in its data. A `space` whose `points` read `window` sizes its axes over every shape of the drawing, so no window runs off them, and frames what the window holds.
-
-**The art.** Write `make_art.py` beside the lesson: seeded, it writes `art/<name>.svg` and `art/<name>.json` (`{"about", "paint": "rgb", "unit": {"per", "name"}, "shapes": [{"id", "part", ...numbers}]}`). Every shape has a unique `id`, a `part` (what it is, in plain words) and the numbers the lesson reads; fills are flat `#rrggbb`, with no gradient, opacity, filter or image, so with `paint` the colour drawn is the colour recorded. Draw a background shape under everything, so no spot reads nothing. Then:
-```bash
-python3 C/scripts/art.py lessons/<slug>/art/<name>.svg   # checks the contract, writes <name>.hits.json (which shape is on top where)
-```
-`make_data.py` may add numbers to the records (as the H&E lesson adds each shape's `od`, `h`, `e` and `drop`); run `art.py` again after either file changes, or the build stops. Keep the drawing under 2 MB.
-The build adds `image` and `_kit` (the hit map, the records and where the window starts) to the strip; never write them.
 
 ## Controls
 `controls:` on a scene takes three kinds. Each `name` becomes a variable for expressions on that scene.
@@ -436,14 +364,7 @@ controls:
 A control sits under the figure it drives: the first figure that reads its name, otherwise the scene's last figure, otherwise the end of the lines. The check moves every slider, run and toggle to both ends. Draw what it changes on the scene (a matrix it remakes as `X = \mat{X}`, with `fmt:`).
 
 ## Series and home
-A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same home table:
-```
-lessons/
-  what-is-variance/   lesson.yaml  data.json  make_data.py  verify_data.py  lesson.html
-  computing-variance/ lesson.yaml  …          # series: spread, episode: 2
-```
-- `series` and `episode` name the lesson's place.
-- A later lesson reaches back with a think stop near its start, not with cards (`lesson.md` §7). Copy any number it needs into this lesson's data with `make_data.py`, or compute it with `{{…}}`. If `make_data.py` reads an earlier lesson's `data.json` and that lesson was tidied, run `tidy.py --restore` on it first.
+A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same home table; `series` and `episode` name the lesson's place, and a later one reaches back as `lesson.md` §7 says. If its `make_data.py` reads an earlier lesson's `data.json` and that lesson was tidied, run `tidy.py --restore` on it first.
 - `home: <name>` names the home table (`C/scripts/home.py`, written to `~/.viz-os/home/<name>.json`, or under `$VIZOS_HOME` when it is set). `make_data.py` reads that file and writes the rows it uses into `data.json`, plus `"home": {"name": …, "provenance": {…}}` copied from the file, so each lesson keeps its own copy and says where it came from. The build does not read the home file; it reads only `data.json`.
 
 ## The plan and the summary
@@ -452,11 +373,8 @@ The plan is its picture: a `plan` scene has one step, `add` with a `flow`, and n
 The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [ … ]}`. Any other deck slide type (`predict`, `table`, `bridge`, …) may sit between board scenes when it teaches better, and counts as a scene.
 
 ## YAML gotchas
-- Quote any value that starts with `{{` or holds `{{…}}` inside a `{ }` mapping: `label: 'mean {{xbar|1}}'`.
-- Quote text with `: ` in it, and any text with a `?` inside a `{ }` mapping.
+- Quote text with `: ` in it, a value that starts with `{{`, and inside a `{ }` mapping any value that holds `{{…}}` or a `?`: `label: 'mean {{xbar|1}}'`.
 - Put TeX in single quotes: `tex: '\bar{x}'`. In double quotes `\b` and `\f` become control characters.
 - Inside `[ ]`, a comma splits items: quote `'at(cd3, 2)'`, and write a list item that has a comma as a block list.
 - An apostrophe inside single quotes is doubled: `'the ringed cell''s values'`.
 - `- think:` with `q:` and `a:` indented under it; `say:` beside `think:`, not inside it.
-
-When a build or a check fails, read `lint.md`.

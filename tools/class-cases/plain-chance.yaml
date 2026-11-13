@@ -1,0 +1,21 @@
+# expect: `chance` is for adv lessons only
+# N4: chance-good with no `idea:`: an adv-only figure in a plain lesson is an error
+title: Two waters
+question: Is illness more common with well water?
+answer: In these homes, yes; whether chance could do it is the next question.
+data: {n1: 40, n0: 40, x1: 18, x0: 9}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    title: Eighty homes, two waters
+    lead: Each square is one home; a filled one had an ill child.
+    steps:
+      - say: ==well== homes {{x1}} of {{n1}} ill, ==piped== {{x0}} of {{n0}}, and their ==gap==.
+        add:
+          - chance:
+              groups:
+                - {name: well, n: n1, ill: x1, color: s4}
+                - {name: piped, n: n0, ill: x0, color: s1}
+              axis: share of homes with an ill child (%)
+      - say: That ==gap== between the two shares is what we ask about.

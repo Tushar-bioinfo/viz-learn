@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check a strip's drawing against the art contract (board.md, `strip`) and write its hit map.
+"""Check a strip's drawing against the art contract (adv.md §11, `strip`) and write its hit map.
 
 Usage: art.py lessons/<slug>/art/<name>.svg [--grid 400]
 

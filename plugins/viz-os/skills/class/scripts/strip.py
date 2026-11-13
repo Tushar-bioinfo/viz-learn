@@ -1,4 +1,4 @@
-"""The `strip` item (board.md): a drawing, a window the learner drags over it, and the window's contents as rows.
+"""The `strip` item (adv.md §11): a drawing, a window the learner drags over it, and the window's contents as rows.
 
 Runs before the lint, like hands.py. For each strip it reads the art (art/<name>.svg, .json, .hits.json, made by the
 lesson's make_art.py and checked by art.py), samples the window where it starts, and adds the window to the lesson's

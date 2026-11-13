@@ -1998,6 +1998,26 @@ def is_adv(deck):
     return any(s.get("idea") is not None for s in adv_boards(deck))
 
 
+def adv_only(deck):
+    """(where, message) for each adv-only figure or field in a plain lesson. Reads the raw deck: hunt, split, views and strip are rewritten before the lint."""
+    if is_adv(deck):
+        return []
+    fix = "is for adv lessons only (no board scene has `idea:`): add `idea:`, `see:` and `shows:` to the board scenes (adv.md §2), or draw it another way"
+    out = [("learner", f"`learner.depth` {fix}")] if "depth" in (deck.get("learner") if isinstance(deck.get("learner"), dict) else {}) else []
+    for i, s in enumerate(adv_boards(deck)):
+        for j, st in enumerate(as_list(s.get("steps"))):
+            st = st if isinstance(st, dict) else {}
+            found = ["hunt"] if "hunt" in st else []
+            for it in as_list(st.get("add")):
+                it = it if isinstance(it, dict) else {}
+                found += [k for k in ("chance", "fork", "strip") if k in it]
+                sp = it.get("space") if isinstance(it.get("space"), dict) else {}
+                found += ["views"] if "views" in sp else []
+                found += ["split"] if any(isinstance(m, dict) and "split" in m and "along" in m for m in as_list(sp.get("marks"))) else []
+            out += [(f"slide {deck['slides'].index(s) + 1} step {j + 1}", f"`{k}` {fix}") for k in found]
+    return out
+
+
 def idea_ok(v):
     """A usable idea: a table name, or the learner's own question ending in `?`."""
     return isinstance(v, str) and (v.strip() in IDEAS or v.strip().endswith("?"))

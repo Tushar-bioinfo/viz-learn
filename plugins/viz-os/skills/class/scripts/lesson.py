@@ -14,7 +14,7 @@ CLASS = Path(__file__).resolve().parent.parent
 DECK = CLASS.parent / "deck"
 KIT = CLASS / "kit"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lesson_lint import EXPRS, FMT, as_list, items_of, make_lint  # noqa: E402
+from lesson_lint import EXPRS, FMT, adv_only, as_list, items_of, make_lint  # noqa: E402
 import product  # noqa: E402
 import hands  # noqa: E402
 import strip  # noqa: E402
@@ -145,9 +145,10 @@ def ext(B):
 
     def prep(deck, d, path):
         data.update(d or {})
+        errs.extend(adv_only(deck))   # before hands and strip rewrite the adv-only figures away
         product.expand(deck, d, errs)
         hands.expand(deck, d, errs)
-        d = strip.expand(deck, d, errs, Path(path).parent)   # the window's rows become data names (board.md, `strip`)
+        d = strip.expand(deck, d, errs, Path(path).parent)   # the window's rows become data names (adv.md §11, `strip`)
         data.update(d or {})
         return prepare(deck, d, path)
     inner = make_lint(B, data)

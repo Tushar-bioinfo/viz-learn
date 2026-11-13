@@ -1,0 +1,14 @@
+# expect: `strip` is for adv lessons only
+# N4: a `strip` in a plain lesson (no `idea:`) is an error, reported before the strip is expanded
+title: plain-strip
+question: q?
+answer: a.
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    title: A drawing and a window
+    steps:
+      - say: Drag the window over the drawing.
+        add:
+          - strip: {art: tissue, window: {size: 96, start: DAB}, take: {spots: 4}, table: [part]}

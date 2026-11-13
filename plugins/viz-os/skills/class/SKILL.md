@@ -82,7 +82,7 @@ Read only the file the current step needs. Write `lesson.yaml` once and fix it w
 | `board.md` | step 4: how a scene is laid out, every board field and item, plane marks, runs and toggles |
 | `adv.md` | only when the user says "adv": the probe's depth question, the picture plan, the idea table, the storyboard |
 | `lint.md` | after a build error: what each lint and check message means, and its fix |
-| `examples/board-gallery/` | every scene kind in one full lesson (variance of six cells), with `make_data.py` and `verify_data.py` |
+| `examples/board-gallery/` | every plain board item in one full lesson (variance of six cells; adv figures: `adv.md`), with `make_data.py` and `verify_data.py` |
 | `examples/home/cells.json` | what a home table looks like |
 | `examples/pca-1-what/`, `pca-2-how/`, `pca-3-why/` | a three-part series on one home table: each part's `next` scene feeding the next part's `problem`, and a think stop that reaches back |
 | `D/spec.md` | a deck visual's fields (chart, dist, stat, parts, flow, image), the expression functions, number formats |

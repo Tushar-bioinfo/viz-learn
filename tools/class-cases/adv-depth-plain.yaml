@@ -1,6 +1,7 @@
 # expect: not: is how many scenes one idea may fill
 # expect: not: an adv scene
-# C10g fix 1: a plain lesson (no `idea`) is not checked for `learner.depth`; it lints as before C10g.
+# expect: `learner.depth` is for adv lessons only
+# C10g fix 1: a plain lesson (no `idea`) gets no range check on `learner.depth`. N4 (13 Nov): the field itself is now one adv-only error.
 title: A point and a line
 learner: {goal: find the nearest point, depth: 9}
 question: Where does a point land on a line?

@@ -17,17 +17,17 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `no lead` | one short line linking the scene to the last |
 | `N steps (≤ 10)` | split the scene |
 | `6 steps in a row with no think stop` | add a `think` step |
-| `` `say` has N words (≤ 14) ``; also `think q` and an item's `say` (≤ 14), `note` (≤ 16), `think a` (≤ 18) | cut it, or move the rest to the next step. Lift the limits only when the learner asked for the full voice |
-| `` `say` has N words (≤ 50 in the full voice) ``; also `think q` (≤ 24), `think a` (≤ 40), `note` (≤ 30) | split it over two steps |
-| `` `say` has a sentence of N words (≤ 24) `` | the full voice writes more sentences, not longer ones: split the sentence |
+| `` `say` has N words (≤ L) ``; also `think q`, an item's `say`, `note`, `think a` | cut it, or move the rest to the next step (the limits: `board.md`, Steps and `note`). Lift them only when the learner asked for the full voice |
+| `` `say` has N words (≤ L in the full voice) ``; also `think q`, `think a`, `note` | split it over two steps |
+| `` `say` has a sentence of N words (≤ L) `` | the full voice writes more sentences, not longer ones: split the sentence |
 | `` `say` joins two thoughts with “;” `` | write two sentences, joined by a word such as So, But or Because |
-| `` this step works a `calc` but never says why `` (or a `col`, an `assemble`) | add `why:` to the step: the reason we do it, or what it lets us do next, in 12 words or fewer. A `calc`'s own `why` counts |
+| `` this step works a `calc` but never says why `` (or a `col`, an `assemble`) | add `why:` to the step: the reason we do it, or what it lets us do next (`board.md`, Steps). A `calc`'s own `why` counts |
 | `` `why` is the reason at the end of the step's `say` `` | give the step a `say`; write `why` as one line of text |
-| `` `why` has N words (≤ 12) `` | cut it to the reason alone; the step's `say` holds what we do |
+| `` `why` has N words (≤ L) `` | cut it to the reason alone; the step's `say` holds what we do |
 | `` steps N, M each open extra reading `` | keep one step `more` a scene; move the rest into the scene's `more` |
 | `` `more` is `{ask, answer, sources}` `` / `` `more` has no field … `` | write the question as `ask`, the paragraphs as `answer`, any pages as `sources` |
-| `` `more` ask … ending in `?` `` / `` `more` ask has N words `` | the fold's label is the learner's question, 14 words at most |
-| `` `more` holds N words (≤ 160) `` / `` `more` has a sentence of N words `` | keep the reason that matters most, in short sentences; point to a source for the rest |
+| `` `more` ask … ending in `?` `` / `` `more` ask has N words `` | the fold's label is the learner's question, within the word count the message gives |
+| `` `more` holds N words (≤ L) `` / `` `more` has a sentence of N words `` | keep the reason that matters most, in short sentences; point to a source for the rest |
 | `` a refresher needs `ask:` `` / `` `ask` is the link line of a `refresher` scene `` | give the refresher its link line as a question ("Rusty on the mean?"); only a `beat: refresher` scene has one |
 | `` `refresh: X` names no scene `` / `` links to a `… ` scene `` / `` links back to an earlier scene `` | `refresh` names the `id` of a `beat: refresher` scene placed after `next` |
 | `` a refresher sits at the end `` | move the refresher scene after the `next` scene, so the story runs on without it |
@@ -130,6 +130,7 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` the idea `X` fills N scenes and the depth budget is D `` | merge scenes on that idea, or ask the learner for more depth and set `learner.depth` |
 | `` `depth: X` is how many scenes one idea may fill `` | a whole number from 1 to 6, or leave it out for 2 (checked only in an adv lesson) |
 | `` `idea` belong on a board scene; this is a `T` slide `` (also `see`, `shows`) | move the plan to a `type: board` scene, or delete it |
+| `` `chance` is for adv lessons only `` (also `fork`, `strip`, `views`, `hunt`, `split`, `learner.depth`) | the lesson has no `idea:`: make it adv (`idea`, `see`, `shows` on its board scenes, `adv.md` §2), or draw it with a plain item |
 | `` `chance` compares exactly two groups `` / `` a `chance` group needs `name:` / `n:` / `ill:` `` | two groups, each `{name, n, ill}` (`adv.md` §9) |
 | `` `chance` group X: `n` is … `` / `` `ill` is … at frame F while `n` is … `` | `n` is the group's units, a whole number 1–100; `ill` counts those with the outcome, 0 to `n`, checked on each state of the run or slider: fix `make_data.py` or the derive |
 | `` `chance` group X: `ill` is True `` / `` is `name`: unknown name … `` / `` is `xs`, a list in the data `` (also `n`, `step`) | a number, or a name from data, controls or derive. Arithmetic is allowed: the lint lets it through and the browser check warns if the page has to clamp it |

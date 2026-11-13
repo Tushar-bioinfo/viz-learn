@@ -1,0 +1,27 @@
+# expect: `hunt` is for adv lessons only
+# expect: `split` is for adv lessons only
+# expect: `views` is for adv lessons only
+# N4: the adv-only space figures (hunt, split, views) in a plain lesson; the gate reads them before hands.py rewrites them
+title: plain-space
+question: q?
+answer: a.
+data: {u: [1, 0, 0], v: [0, 1, 0], p: [0.3, 0.4, 0.5], f: [0.3, 0.4, 0], s0: [0.8, 0.8]}
+slides:
+  - type: title
+  - type: board
+    beat: by-hand
+    lead: The ==point== and its sheet.
+    title: A hunt or a split
+    steps:
+      - say: The point and the sheet.
+        add:
+          space:
+            axes: [x, y, z]
+            marks:
+              - {sheet: [u, v], max: [1, 1]}
+              - {point: p, label: point, says: the point}
+              - {split: f, along: [u, v], start: s0, label: your split, step: 2}
+            views: {2: edge}
+      - hunt: {from: p, on: [u, v], start: s0, label: guess}
+        q: Where is the nearest point?
+        a: 'Right under it.'
