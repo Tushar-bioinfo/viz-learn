@@ -136,6 +136,7 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` `chance` group X: `ill` is True `` / `` is `name`: unknown name … `` / `` is `xs`, a list in the data `` (also `n`, `step`) | a number, or a name from data, controls or derive. Arithmetic is allowed: the lint lets it through and the browser check warns if the page has to clamp it |
 | `` `ill` reads `at(xs, draw)`, but `xs` has N entries and the run `draw` has M frames `` | the list needs one entry per state of its control (a longer list is fine) |
 | `` the gap is N noise steps …; a ruler counts up to 12 `` | `step` is a share (0.05), not a percent (5); the ruler draws at most 12 steps |
+| `` `chance` `unit` is … `` | the shape of one unit: `house` or `square` (the default) (`adv.md` §9) |
 | `` a `chance` group is named `gap` `` / `` both `chance` groups are named X `` / `` a second `chance` figure `` | `gap` and `noise step` (any case or spacing) are the figure's own marks; two groups, two names; one `chance` per scene, a second comparison in its own scene |
 | `` `X` names 2 marks in this scene (chance mark …, plane mark …): rename one `` | a `chance` mark and another figure's mark share a name: rename the other mark, or the group |
 | `` `chance` `step` is … `` | one noise step is a share above 0; leave `step` out for no ruler |

@@ -511,7 +511,8 @@ def lint_formula(B, Lx, w, f, kind, names, symbols):
 
 
 # chance (adv.md): two groups as units, their shares on one line, the gap and, with `step`, a ruler of noise steps
-CHANCE = {"groups", "step", "tally", "axis", "gap_says", "step_says", "id", "ratio"}
+CHANCE = {"groups", "step", "tally", "axis", "gap_says", "step_says", "id", "ratio", "unit"}
+CHANCE_UNITS = ("square", "house")  # the unit shapes board.js draws (CH_SHAPE); square when left out
 CHANCE_GROUP = {"name", "n", "ill", "color", "says"}
 CHANCE_MARKS = ("gap", "noise step")
 
@@ -1104,6 +1105,8 @@ def lint_chance(B, Lx, w, ch, names, s, values):
             hit = next((q for q in sorted(known) if near(str(k), q)), None) or next(iter(difflib.get_close_matches(str(k), sorted(known), 1, .6)), None)
             Lx.err(w, f"{what} has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(known))})"))
     unknown(ch, CHANCE, "`chance`")
+    if "unit" in ch and ch["unit"] not in CHANCE_UNITS:
+        Lx.err(w, f"`chance` `unit` is {ch['unit']!r}: it names the shape of one unit, `square` (the default) or `house`")
     derive = s.get("derive") if isinstance(s.get("derive"), dict) else {}
     ctls = {c["name"]: c for c in s.get("controls") or [] if isinstance(c, dict) and isinstance(c.get("name"), str)}
     run = next((c for c in ctls.values() if isinstance(c.get("run"), int)), None)
@@ -1544,7 +1547,7 @@ def scene_marks(s, symbols, data=None):
                 continue
             if kind == "chance":   # its marks, in board.js's order: the two groups, the gap, and with `step` the noise step
                 ch, gs = it["chance"], [g for g in as_list(it["chance"].get("groups")) if isinstance(g, dict)][:2]
-                mks = [(g.get("name"), g.get("color") or c) for g, c in zip(gs, ("s4", "s1"))] + [("gap", "s3")] + ([("noise step", "s2")] if "step" in ch else [])
+                mks = [(g.get("name"), g.get("color") or c) for g, c in zip(gs, ("s1", "s2"))] + [("gap", "ink")] + ([("noise step", "s3")] if "step" in ch else [])
                 for i, (nm, c) in enumerate(mks):
                     if nm is not None and str(nm).strip():
                         out.append((f, kind, i, {"label": nm}, j + 1, [str(nm).strip()], True, c))

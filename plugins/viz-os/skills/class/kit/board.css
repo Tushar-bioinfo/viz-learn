@@ -515,6 +515,7 @@ html.ls-page .board .bi.chance { padding: 8px; box-sizing: content-box; max-widt
 .board .chance svg.pl { display: block; overflow: visible; }
 .board .chance svg.pl .chit { pointer-events: all; cursor: help; }
 .board .chance svg.pl .cwit { filter: drop-shadow(0 0 var(--glow-r) var(--hg)); }
+.board .chance svg.pl .cname { font-size: 18px; font-weight: 600; paint-order: stroke; stroke: var(--bg); stroke-width: 6px; stroke-linejoin: round; }   /* a group's name beside its dot: the ground's colour round the letters keeps the share line off them */
 .board .bi.chance.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a plane mark on a later step */
 .bi.chance.lnk-dim svg > g[data-m]:not(.lnk-on), .bi.chance.lnk-dim svg > g.ptally { opacity: .3; }
 .bi.chance svg > g[data-m].lnk-on { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }

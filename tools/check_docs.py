@@ -32,6 +32,7 @@ ADV_ONLY |= {"beads", "part", "whole", "colors"}   # beads (§9c), adv-only sinc
 ADV_ONLY |= {"group", "glyphs"}   # a slope table (§9d), adv-only since N5
 ADV_ONLY |= {"recorder", "wash"}   # recorder (§9e), adv-only since N5
 ADV_ONLY |= {"wheel"}   # wheel (§9f), adv-only since N5
+ADV_ONLY |= {"unit"}   # chance `unit: house` (§9), adv-only since N5
 JS_ONLY = {"dataset", "innerHTML", "layout", "length", "node", "style", "c", "issues", "startsWith", "steps"}
 
 

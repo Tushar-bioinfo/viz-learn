@@ -84,8 +84,9 @@ A spine of stubs fails the lint for its missing `steps`, and other lints warn ab
     step: step       # one noise step, as a share; leave out for no ruler
     tally: fr_far    # optional: exactly one 0 or 1 per frame of the scene's run, frame 0 first
     axis: share of homes with an ill child (%)
+    unit: house      # optional: each unit a small house (a counted home); squares when left out
 ```
-It draws each group as squares, 10 a row, the `ill` ones filled; one share line with a dot per group; the **gap** between the dots (the witness); with `step`, a ruler from the lower share with a tick per **noise step**; with `tally`, a square per frame, grey once the run reaches it and in the gap's colour where the list holds 1. `n`, `ill` and `step` are numbers or names, so a run's `derive` (`xw: at(fr_well, draw)`) redraws it, each change eased.
+It draws each group as squares or houses, 10 a row, the `ill` ones filled in the group's colour; one share line, ending on the next named tick past the furthest share or ruler on any frame, with a dot per group and its name beside it; the **gap** between the dots (the witness, shaded from the lower group's colour to the higher's); with `step`, a ruler from the lower share with a tick per **noise step**; with `tally`, a square per frame, grey once the run reaches it and in the gap's colour where the list holds 1. `n`, `ill` and `step` are numbers or names, so a run's `derive` (`xw: at(fr_well, draw)`) redraws it, each change eased.
 - Its marks are the two group names, `gap` and `noise step`: legend entries and linked words (`==gap==`, `==noise step:noise steps==`), so no group may take the names `gap` or `noise step`, and a scene holds one `chance`. Optional `says:` on a group, `gap_says:` and `step_says:` fill their cards.
 - The lint, on each state of a run or slider: exactly two groups with two names; `n` a whole number 1–100; `ill` 0 to that state's `n`; `step` above 0, the gap at most 12 steps; a list read with `at(list, draw)` covers every state; `tally` needs a run and one entry per frame. Arithmetic it cannot read passes; the browser check warns if the page clamps it.
 

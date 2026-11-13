@@ -1,0 +1,25 @@
+# expect: `chance` `unit` is 'hut': it names the shape of one unit
+# N5: `unit` names a shape the kit does not draw.
+title: Two waters
+question: Is illness more common with well water?
+answer: In these homes, yes; whether chance could do it is the next question.
+data: {n1: 40, n0: 40, x1: 18, x0: 9}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: amount
+    see: gap
+    shows: two grids of homes, the ill ones filled, and the two shares on one line
+    title: Eighty homes, two waters
+    lead: Each house is one home; a filled one had an ill child.
+    steps:
+      - say: ==well== homes {{x1}} of {{n1}} ill, ==piped== {{x0}} of {{n0}}, and their ==gap==.
+        add:
+          - chance:
+              unit: hut
+              groups:
+                - {name: well, n: n1, ill: x1, color: s1}
+                - {name: piped, n: n0, ill: x0, color: s2}
+              axis: share of homes with an ill child (%)
+      - say: That ==gap== between the two shares is what we ask about.
