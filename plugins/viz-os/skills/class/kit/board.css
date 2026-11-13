@@ -236,6 +236,12 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 .bi.plane.lnk-dim svg > g.pm:not(.lnk-on):is(:not([data-step]), .shown), .bvis.lnk-dim .chart > svg g.mk:not(.lnk-on):not(.off) { opacity: .3; }
 .bi.lnk-dim .plegend .pk:not(.lnk-on), .bvis.lnk-dim .legend > :not(.lnk-on) { opacity: .45; }
 .bi.plane svg > g.pm.lnk-on, .bvis .chart g.mkm.lnk-on, .bi .plegend .pk.lnk-on > *, .bvis .legend .lnk-on .mkn { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
+/* the first look: at rest the marks the reading names glow (told); the figure's other marks step back, less than a word's dim.
+   Orange (the witness) never steps back: it is what matters now */
+.bi.plane.lnk-rest svg > g.pm:not(.told):not(.wit):is(:not([data-step]), .shown), .bvis.lnk-rest .chart > svg g.mk:not(.told):not(.off) { opacity: .4; }
+.bi.chance.lnk-rest svg > g[data-m]:not(.told), .bi.chance.lnk-rest svg > g.ptally, .board .bi.beads.lnk-rest .bdr:not(.told) { opacity: .4; }
+.bi.lnk-rest .plegend .pk:not(.told):is(:not([data-step]), .shown), .bvis.lnk-rest .legend > :not(.told) { opacity: .55; }
+.bi.plane svg > g.pm.told, .bvis .chart g.mkm.told, .board .swrap svg .told, .bi .plegend .pk.told > *, .bvis .legend .told .mkn, .bi.chance svg > g[data-m].told, .board .bi.beads .bdr.told :is(.bdf, .bdp) { filter: brightness(1.2) drop-shadow(0 0 3px var(--hg, rgba(162, 159, 151, .45))) drop-shadow(0 0 8px var(--hg, rgba(162, 159, 151, .45))); }
 .board .plane svg.pl .phits > * { pointer-events: all; }
 .board .plane svg.pl .phits > [data-step]:not(.shown) { pointer-events: none; }
 /* hover: one time and one curve; a learner who asks for less motion gets none */
@@ -359,7 +365,7 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .board .plane svg > g.pm > .plab { fill: var(--hc, var(--mist)); }
 .board .plane svg > g.pm > .plab.free, .board .swrap svg .stx { fill: var(--c-axis); font-size: var(--t-axis); font-weight: 500; }
 /* the witness glows in its own colour at rest; a lit or linked mark keeps the kit's own glow */
-.board .plane svg > g.pm.wit:not(.lnk-on), .board .swrap svg [data-m][style*="var(--accent)"]:not(.shit, .lit) { filter: drop-shadow(0 0 var(--glow-r) rgba(255, 90, 54, .45)); }
+.board .plane svg > g.pm.wit:not(.lnk-on, .told), .board .swrap svg [data-m][style*="var(--accent)"]:not(.shit, .lit, .told) { filter: drop-shadow(0 0 var(--glow-r) rgba(255, 90, 54, .45)); }
 /* `quarters`: the two quarters where the product is positive washed, and a sign in each outer corner */
 .board svg .pq { pointer-events: none; }
 .board svg .pq rect { fill: var(--ink); opacity: .07; stroke: none; }

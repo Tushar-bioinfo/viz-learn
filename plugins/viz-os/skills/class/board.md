@@ -137,7 +137,7 @@ The link jumps to the refresher, and a **back to where you were** button returns
 
 ### Highlights in text
 The kit colours worked lines and their table cells for you. In your own text:
-- `==pixel==`: a **linked word**. It names the mark of this scene's `plane`, `space` or `chart` whose `label` (a chart mark's `name`), `id` or symbol is `pixel`, and takes its colour (a symbol's word is its TeX). Pointing at the word lights its mark and dims the rest; pointing at the mark lights its words. `==pixel:Your pixel==` shows other words. Every legend entry gets its word, by the step that draws the mark; give a mark whose label holds `{{…}}` or `$…$` an `id:`.
+- `==pixel==`: a **linked word**. It names the mark of this scene's `plane`, `space` or `chart` whose `label` (a chart mark's `name`), `id` or symbol is `pixel`, and takes its colour (a symbol's word is its TeX). Pointing at the word lights its mark and dims the rest; pointing at the mark lights its words. At rest the marks linked by a lead, say or question glow and the others step back. `==pixel:Your pixel==` shows other words. Every legend entry gets its word, by the step that draws the mark; give a mark whose label holds `{{…}}` or `$…$` an `id:`.
 - `==s1:CD3==`: bold words in a colour, no link (`s1` to `s5`, `good`, `bad`, `mist`, `accent`, or a hex like `#cc6600`). For a term's symbol or column colour; a few words per scene.
 - `**3.1×**`: bold, for a result.
 - `==text==` that names no mark: an orange underline. Rare: once or twice a lesson, for the line to remember.

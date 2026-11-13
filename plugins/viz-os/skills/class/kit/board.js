@@ -459,9 +459,11 @@
     const gOf = i => svg.querySelector(`:scope > g.pm[data-m="${i}"]`);
     R.wl = i => { const g = gOf(i); return { c: R.cols[i], drawn: !!g && g.childElementCount > 0 && (!g.dataset.step || +g.dataset.step <= (R.cNow ?? 1e9)) }; };   // by the stop, not a class a redraw has not set yet
     // lit: the word's mark (the others dim) or the mark pointed at (the others stay)
-    R.paintWl = () => { const on = R.wlOn ?? R.hotM; node.classList.toggle('lnk-dim', R.wlOn != null);
-      svg.querySelectorAll(':scope > g.pm').forEach(g => g.classList.toggle('lnk-on', +g.dataset.m === on)); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', e.dataset.m != null && +e.dataset.m === on)); };
+    R.paintWl = () => { const on = R.wlOn ?? R.hotM, rest = on == null ? R.rest : null; node.classList.toggle('lnk-dim', R.wlOn != null); node.classList.toggle('lnk-rest', !!rest);
+      svg.querySelectorAll(':scope > g.pm').forEach(g => { g.classList.toggle('lnk-on', +g.dataset.m === on); g.classList.toggle('told', !!rest && rest.has(+g.dataset.m)); });
+      leg.querySelectorAll('.pk').forEach(e => { e.classList.toggle('lnk-on', e.dataset.m != null && +e.dataset.m === on); e.classList.toggle('told', !!rest && e.dataset.m != null && rest.has(+e.dataset.m)); }); };
     R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.wlRest = set => { R.rest = set; R.paintWl(); };   // the first look (see the board)
     R.hover = i => { if (R.hotM === i) return; R.hotM = i; R.paintWl(); if (R.onHot) R.onHot(i); };
     return R;
   }
@@ -612,9 +614,10 @@
       R.paintWl();
       const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
     R.wl = i => ({ c: R.cols[i], drawn: i < R.keys.length && env.shown() });   // its words wait until the reading reaches the figure
-    R.paintWl = () => { const on = R.wlOn ?? R.hotM; node.classList.toggle('lnk-dim', R.wlOn != null);
-      svg.querySelectorAll(':scope > g[data-m]').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); };
+    R.paintWl = () => { const on = R.wlOn ?? R.hotM, rest = on == null ? R.rest : null, told = e => !!rest && rest.has(+e.dataset.m); node.classList.toggle('lnk-dim', R.wlOn != null); node.classList.toggle('lnk-rest', !!rest);
+      svg.querySelectorAll(':scope > g[data-m]').forEach(e => { e.classList.toggle('lnk-on', +e.dataset.m === on); e.classList.toggle('told', told(e)); }); leg.querySelectorAll('.pk').forEach(e => { e.classList.toggle('lnk-on', +e.dataset.m === on); e.classList.toggle('told', told(e)); }); };
     R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.wlRest = set => { R.rest = set; R.paintWl(); };   // the first look (see the board)
     R.hover = i => { if (R.hotM === i) return; R.hotM = i; R.paintWl(); if (R.onHot) R.onHot(i); };
     return R;
   }
@@ -754,9 +757,10 @@
       R.paintWl();
       const was = R.leg; R.leg = leg.offsetHeight + 6; return R.leg !== was; };
     R.wl = i => ({ c: R.cols[i], drawn: i < R.keys.length && env.shown() });
-    R.paintWl = () => { const on = R.wlOn ?? R.hotM; node.classList.toggle('lnk-dim', on != null);
-      svg.querySelectorAll('.bdr').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === on)); };
+    R.paintWl = () => { const on = R.wlOn ?? R.hotM, rest = on == null ? R.rest : null, told = e => !!rest && rest.has(+e.dataset.m); node.classList.toggle('lnk-dim', on != null); node.classList.toggle('lnk-rest', !!rest);
+      svg.querySelectorAll('.bdr').forEach(e => { e.classList.toggle('lnk-on', +e.dataset.m === on); e.classList.toggle('told', told(e)); }); leg.querySelectorAll('.pk').forEach(e => { e.classList.toggle('lnk-on', +e.dataset.m === on); e.classList.toggle('told', told(e)); }); };
     R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.wlRest = set => { R.rest = set; R.paintWl(); };   // the first look (see the board)
     R.hover = i => { if (R.hotM === i) return; R.hotM = i; R.paintWl(); if (R.onHot) R.onHot(i); };
     return R;
   }
@@ -1050,7 +1054,8 @@
     // a mark that arrives fades in over --m-state (450 ms) on the kit's curve; an axis's tick numbers fade over --m-hover
     const appear = {}; let tkT = 0; R.tk = [1, 1, 1];
     R.alpha = m => { const t0 = appear[m]; if (t0 == null) return 1; if (STILL()) { delete appear[m]; return 1; } const q = (performance.now() - t0) / MSTATE(); if (q >= 1) { delete appear[m]; return 1; } req(); return Math.max(0, easeK()(q)); };
-    const fadeS = (str, m) => { const a = m == null ? 1 : R.alpha(m); if (a >= 1) return str;
+    // the first look's step back multiplies a piece's own opacity (its fade in, a split's faint part), never replaces it; orange never steps back
+    const fadeS = (str, m) => { const a = m == null ? 1 : R.alpha(m) * (hot == null && R.rest && !R.rest.has(m) && !str.includes('var(--accent)') ? .4 : 1); if (a >= 1) return str;
       return str.replace(/style="([^"]*)"/, (_, css) => { const o = /(^|;)\s*opacity:([\d.]+)/.exec(css); return `style="${o ? css.replace(o[0], `${o[1]}opacity:${(+o[2] * a).toFixed(3)}`) : `${css};opacity:${a.toFixed(3)}`}"`; }); };
     // ---- drawing: every piece is [depth, svg, mark], sorted far to near; the floor first, ticks, names and hit areas on top
     const n1 = v => v.toFixed(1), lineS = (u0, u1, sty) => `<line x1="${n1(u0.x)}" y1="${n1(u0.y)}" x2="${n1(u1.x)}" y2="${n1(u1.y)}" style="${sty}"/>`;
@@ -1108,7 +1113,8 @@
           arrow3(g.A, g.T, g.cV2, W2, m); dot(g.T, 4.2, 'fill:var(--ink);stroke:none', m, .003); } });
       out.sort((a, b) => b[0] - a[0]);
       // every piece carries its mark's number, so a linked word can dim the other marks
-      const lit = (str, m) => m == null ? str : m === hot ? str.replace(/^<(\w+) /, `<$1 class="lit" data-m="${m}" `).replace('style="', `style="--hg:${G[m].hg};`) : str.replace(/^<(\w+) /, `<$1 data-m="${m}" `);
+      const told = m => hot == null && !!R.rest && R.rest.has(m); node.classList.toggle('lnk-rest', hot == null && !!R.rest); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('told', told(+e.dataset.m)));   // the first look
+      const lit = (str, m) => m == null ? str : m === hot || told(m) ? str.replace(/^<(\w+) /, `<$1 class="${m === hot ? 'lit' : 'told'}" data-m="${m}" `).replace('style="', `style="--hg:${G[m].hg};`) : str.replace(/^<(\w+) /, `<$1 data-m="${m}" `);
       // tick numbers along each axis, every `tick`, and the boxes the names must clear
       let top = ''; const o0 = proj([0, 0, 0]), placed = [], dec = box.tick < 1 ? Math.max(1, -Math.floor(Math.log10(box.tick) + 1e-9)) : 0;
       const TK = [[], [], []];   // each axis's tick numbers, shown or faded below
@@ -1286,6 +1292,7 @@
     R.wl = i => { const g = G[i]; return !g ? { drawn: false } : { c: g.lc, grad: g.k === 'sheet' && g.mk.color == null && g.cU ? [g.cV, g.cU].map(q => `rgb(${q})`) : null, drawn: g.st <= R.c && g.pts.length > 0 }; };
     // the word's mark lights as its legend entry lights it; the other marks and entries dim
     // repainted on every call: a layout rebuilds the legend, and its lit entry must come back
+    R.wlRest = set => { const k = set ? [...set].join() : ''; if (k !== R.restK) { R.restK = k; R.rest = set; req(); } };   // the first look (see the board)
     R.wlLight = i => { R.wlOn = i; node.classList.toggle('lnk-dim', i != null); leg.querySelectorAll('.pk').forEach(e => e.classList.toggle('lnk-on', +e.dataset.m === i)); setHot(i, 'word'); };
     R.layout = () => {
       leg.innerHTML = ''; R.later = []; const base = R.base = [];
@@ -1585,6 +1592,8 @@
         wl: (host, i) => { const gg = host.querySelector(`.chart > svg g.mkm[data-mi="${i}"]`); return { c: colOf(marks[i] || {}), drawn: !!gg && !gg.classList.contains('off') }; },
         wlLight: (host, i) => { host.classList.toggle('lnk-dim', i != null);
           host.querySelectorAll('.chart > svg g.mkm, .legend [data-mi]').forEach(e => e.classList.toggle('lnk-on', i != null && +e.dataset.mi === i)); },
+        wlRest: (host, set) => { host.classList.toggle('lnk-rest', !!set);   // the first look (see the board)
+          host.querySelectorAll('.chart > svg g.mkm, .legend [data-mi]').forEach(e => e.classList.toggle('told', !!set && set.has(+e.dataset.mi))); },
         legend: () => { const es = marks.filter(nameOf);
           return { n: es.length, html: es.map(mk => `<span class="mk mkx" data-mi="${mk.i}">${chip(kindOf(mk), colOf(mk))}<span class="mkn">${md(String(nameOf(mk)))}</span></span>`).join('') }; },
         // a mark the chart has just drawn
@@ -1640,7 +1649,7 @@
         return fg.w; };
       const im = pick('img'); if (im && !im.complete) im.addEventListener('load', () => ctx.refresh());
       fg.paint = c => { shown(e, c); V.show(c); };
-      if (V.hooks) { V.hooks.fg = fg; fg.linked = V.hooks.linked; fg.wl = i => V.hooks.wl(e, i); fg.wlLight = i => V.hooks.wlLight(e, i); }
+      if (V.hooks) { V.hooks.fg = fg; fg.linked = V.hooks.linked; fg.wl = i => V.hooks.wl(e, i); fg.wlLight = i => V.hooks.wlLight(e, i); fg.wlRest = set => V.hooks.wlRest(e, set); }
       return holder(fg, at, it); };
     // the plan is its picture: numbered squares on one line, a title under each and a sub-label under that
     const track = (f, at) => { const N = list(f.nodes).map(x => typeof x === 'string' ? { label: x } : x), n = N.length, e = h('div', 'bi track', `<div class="tkl" style="left:${50 / n}%;right:${50 / n}%"></div>${N.map((x, i) => `<div class="tkc"><div class="tks${i ? '' : ' on'}">${i + 1}</div><div class="tkt">${md(x.label || '')}</div>${x.sub ? `<div class="tku">${md(x.sub)}</div>` : ''}</div>`).join('')}`);
@@ -1783,8 +1792,18 @@
       el.classList.add('tc', 'lnk'); el.dataset.lnk = `${f}:${i}`; if (figs[f].linked) figs[f].linked.add(i); });
     let wOver = null, wFocus = null, wPin = null, wFig = null, wTouch = false;   // the word pointed at, focused or tapped; the mark pointed at
     const wInfo = k => { const [f, i] = k.split(':').map(Number); return figs[f] && figs[f].wl ? figs[f].wl(i) : { drawn: false }; };
+    // the first look (C10p S3, a kit default): at rest, with no word or mark pointed at, focused or tapped, the drawn marks a
+    // lead, say or think question links glow (told) and the figure's other marks step back. A think answer does not count, so
+    // it never shows early. A figure whose every linked mark is told keeps its plain look: nothing would step back
+    const restOf = () => { const by = new Map();
+      node.querySelectorAll('.lnk').forEach(el => { if (el.closest('.stopl, .ta') || !wInfo(el.dataset.lnk).drawn) return; const [f, i] = el.dataset.lnk.split(':').map(Number); (by.get(f) || by.set(f, new Set()).get(f)).add(i); });
+      by.forEach((set, f) => { const fg = figs[f]; if (!fg.wlRest) { by.delete(f); return; }
+        const N = Math.max(list((fg.spec || {}).marks).length, (fg.keys || []).length), n = fg.kind === 'chart' ? Infinity : [...Array(N).keys()].filter(i => fg.wl(i).drawn).length;
+        if (set.size >= n) by.delete(f); });   // a chart's series always step back
+      return by; };
     const wsync = () => { waitSync(); figs.forEach(fg => fg.wait && fg.wait()); if (!lkeys.size) return; let act = wOver ?? wFocus ?? wPin; if (act && !wInfo(act).drawn) act = null;
-      figs.forEach((fg, f) => { if (fg.wlLight) fg.wlLight(act && +act.split(':')[0] === f ? +act.split(':')[1] : null); });
+      const rest = act || wFig ? null : restOf();
+      figs.forEach((fg, f) => { if (fg.wlLight) fg.wlLight(act && +act.split(':')[0] === f ? +act.split(':')[1] : null); if (fg.wlRest) fg.wlRest(rest && rest.get(f) || null); });
       node.querySelectorAll('.lnk').forEach(el => { const k = el.dataset.lnk, d = wInfo(k);
         if (d.c) el.style.setProperty('--hc', d.c); el.classList.toggle('lnk-grad', !!d.grad); if (d.grad) { el.style.setProperty('--g0', d.grad[0]); el.style.setProperty('--g1', d.grad[1]); }
         el.classList.toggle('lnk-wait', !d.drawn); if (d.drawn && !el.closest('.stopl')) el.tabIndex = 0; else el.removeAttribute('tabindex');   // the copy by the buttons is no second Tab stop
