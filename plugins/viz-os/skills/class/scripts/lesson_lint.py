@@ -1231,7 +1231,7 @@ def lint_links(Lx, deck):
             if kind == "plane" and mk.get("name") and (f, i2) in linked:
                 Lx.warn(where, f"plane mark {i2 + 1}: `name: {mk['name']}` is not drawn, since a linked word names the mark: delete `name:`"
                                + ("" if mk.get("label") else "; give the mark `label:` (its legend entry) and write ==label== in the text"))
-        # colours compared as drawn: a theme name is its value (s1 is #8ec5ff), and two within a few steps of each other are one
+        # colours compared as drawn: a theme name is its value (s1 is #5bfbcb), and two within a few steps of each other are one
         lk = [(f, ks[0], c, rgb_of(c)) for f, kind, i2, mk, shows, ks, entry, c in marks if (f, i2) in linked and c is not None]
         groups = []
         for x in lk:

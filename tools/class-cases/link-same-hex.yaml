@@ -1,5 +1,5 @@
-# expect: linked words ==u==, ==other== all take colours that look the same (#8ec5ff, s1) in one figure
-# C10e review: s1 is drawn as #8ec5ff on a board, so a word in s1 and one in #8ec5ff cannot be told apart.
+# expect: linked words ==u==, ==other== all take colours that look the same (#5bfbcb, s1) in one figure
+# C10e review: s1 is drawn as #5bfbcb on a board, so a word in s1 and one in #5bfbcb cannot be told apart.
 title: A point and two directions
 question: Where does a point land on the plane of two directions?
 answer: At the foot of the drop that meets the plane at a right angle.
@@ -20,6 +20,6 @@ slides:
               axes: [x, y, z]
               marks:
                 - {vector: u, color: s1, label: u}
-                - {vector: v, color: '#8ec5ff', label: other}
+                - {vector: v, color: '#5bfbcb', label: other}
                 - {point: q, ring: true, label: point, says: the point}
       - say: The point sits above the two arrows.

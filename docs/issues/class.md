@@ -190,3 +190,9 @@ Fixed from the user's marked screenshots of `board-gallery` (the picture scene's
 - **C10l 18. The tag audit has no saved test case.** `check_class.py` runs lint cases only; the audit was proved by a one-off mutation (CSS block removed). Open: a browser case that keeps a boxed tag and expects the warning.
 - **C10l 19. The other four examples are not rebuilt.** `variance`, `perceptron-trick`, `pca-1-what` and `pca-3-why` may now show tag warnings (a `.sb`-style chip, a `lg-tag`) in the browser check. Not checked, as the try-on-two rule says.
 - **C10l 20. Plain text labels on the product plane** (`col 1`, `col 2`, `spot reading`) are SVG text, not boxes, so they pass. If the user means those too, they need the chart-mark legend route.
+
+## The mint palette in the kit (N3, 2026-11-13)
+- Mint 1, open: only `board-gallery` and `pca-2-how` were rebuilt and looked at. The other class examples, the two benches and the cold Gemini lesson still show the old colours until rebuilt; they need no YAML change (`python3 tools/block_map.py --check` lists the commands). Rebuild them when the user asks, or in the full run before a release.
+- Mint 2, open: lilac `s3` is the dimmest coloured text (4.76:1 on the card). In `pca-2-how` scene 5 the formula's `c₁₂` reads quieter than the other terms. Watch it in the next look.
+- Mint 3, open: `s1` mint and `s4` green are both green. In a 4–5 group figure, check that the teacher line or legend names them apart (all five: closest pair ΔE00 21.8, under the 31.5 bar).
+- Mint 4, open: decks keep the old colours (`deck/kit/vizos.css`). `.kc-s4` and `.kc-s5` there fall back to the old amber and violet. Not touched, so `check-all.sh` was not needed.

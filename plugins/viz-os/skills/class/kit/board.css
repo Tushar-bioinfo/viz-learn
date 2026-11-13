@@ -1,7 +1,7 @@
 /* viz-os class: one long page, a scene after a scene, in the class look: thin lines, soft frames, bright data colours.
    Nothing is scaled: every size here is a real pixel, and every figure owns its shape (board.js). Decks and sketch pages
    do not load this file. These tokens are read at boot for the drawings, so a colour changed here reaches the SVGs too. */
-:root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #8ec5ff; --s2: #6ff0d0; --s3: #f29ac8; --s4: #f2c14e; --s5: #b79cff;
+:root { --page-w: min(1400px, calc(100vw - 64px)); --bg: #0b0c0e; --ink: #f2f2f0; --mist: #a29f97; --s1: #5bfbcb; --s2: #4bbbfb; --s3: #9973a8; --s4: #6be619; --s5: #4b77fa;
   --plate-solid: #0b0c0e; --thin: #2c2d2b; --card: #121315;
   /* the figure look (design: the C10 look). Three line weights: 1 px guides, 2 px marks, 3.5 px for the witness (for now the mark
      drawn in the accent colour), which alone glows at rest. board.js reads --w-data and --w-wit and sizes arrowheads from them */

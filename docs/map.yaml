@@ -14,10 +14,9 @@ updated: 2026-11-13
 title: C10, advanced visuals for class lessons
 
 now: >-
-  13 Nov: C10l (story and context) is reviewed and committed, with boxed tags retired
-  everywhere on a board and a browser check that warns if one comes back. A cold
-  Gemini 4 Hydrogen run built a k-means lesson that passes lint, browser and numbers;
-  its smaller problems are next (N2).
+  13 Nov: N2 (cold-run fixes) is committed (cb52ae1). N3 (ship or shelve the starter look)
+  is active: two Haiku 5.5 xhigh readers wrote the piece list and kit cost to `out/c10/n3/`;
+  the user picks which pieces go into the kit.
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -46,20 +45,6 @@ waiting:
         moment, the cap of 4 mark hues, and which mark counts as the witness.
 
 next:
-  - id: N2
-    title: Fix what the cold run found, and the old-look bell curve
-    more: |
-      One block, so the full `check-all.sh` runs once for all deck-kit edits:
-      - Cold 2: worked lines double an index (`d_i^2_i`, `x_{i,2_2}`), deck kit.
-      - Cold 8: the table scrolls out of view while you read the work beside it (stacked
-        at about 980 px wide, and in the app's side pane), class kit.
-      - The board's `dist` (bell curve) still wears the deck look: boxed tags, a grey card
-        (Chance 101, Scroll 81), deck kit.
-      - Cold 5–6: a point style for a centre, a lint for names equal up to case, and a
-        neutral colour for plain `points`, class kit.
-      - Cold 3, 4, 7: three doc lines ("just build" and the storyboard, which list a `calc`
-        reads, `short` in the deck spec).
-      Lean loop: one picture of the centre style for you, then build.
   - id: N3
     title: Ship or shelve the starter look (C10n–p)
     more: |
@@ -68,6 +53,11 @@ next:
       first look. None of it is in the plugin, and its palette and rules differ from the kit's.
       A 15-minute choice: which pieces become kit items (and at what YAML cost), and which
       stay as reference. Then one build block per piece.
+      Context (13 Nov): `out/c10/n3/inventory.md` (13 kept pieces, screenshots, approvals,
+      conflicts) and `out/c10/n3/kit-cost.md` (palette, YAML sketches, suggested build order).
+      Palette picked 13 Nov: mint everywhere; s4 green `#6be619`, s5 blue `#4270fa` (option C,
+      `out/c10/n3/hues.png`). Built in the kit 13 Nov (lilac, blue lifted for text contrast;
+      before/after `out/c10/n3/before-after-pca5.png`). Still to pick: which pieces become kit items.
   - id: N4
     title: Token diet for board.md
     more: |
@@ -324,7 +314,7 @@ blocks:
     after: [C10i]
     col: 1
     edges: false
-    status: next
+    status: done
     ships: none
     line: The table that scrolls away, the doubled index, centre style, plain-point colour, three doc lines, and the old-look bell curve.
 
@@ -334,7 +324,7 @@ blocks:
     after: [C10p]
     col: 2
     edges: false
-    status: next
+    status: active
     ships: none
     you: decide
     line: Which C10n–p mock-ups go into the kit.

@@ -17,8 +17,8 @@ from lesson_lint import BOOKENDS, DEPTH, IDEAS, THEME, adv_boards, idea_key, ide
 
 # the kit's colours (board.css over the deck's vizos.css), with the class values as a fallback
 C = {k: THEME.get(k, v) for k, v in {"bg": "#0b0c0e", "ink": "#f2f2f0", "mist": "#a29f97", "thin": "#2c2d2b", "card": "#121315",
-                                      "line": "#565653", "line-dim": "#353634", "s1": "#8ec5ff", "s2": "#6ff0d0", "s3": "#f29ac8",
-                                      "s4": "#f2c14e", "s5": "#b79cff"}.items()}
+                                      "line": "#565653", "line-dim": "#353634", "s1": "#5bfbcb", "s2": "#4bbbfb", "s3": "#9973a8",
+                                      "s4": "#6be619", "s5": "#4b77fa"}.items()}
 HAZE, GREY, GUIDE, DIM = "#8a877f", C["mist"], C["line"], C["line-dim"]
 UI = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif"
 MONO = "'JetBrains Mono', ui-monospace, Menlo, monospace"
