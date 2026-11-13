@@ -164,7 +164,7 @@ def ext(B):
         "scope": board_names,
         "lint": lint,
         "prepare": prep,
-        "js": [KIT / "board.js"],
+        "js": [KIT / "parts.js", KIT / "board.js"],   # parts.js: the drawn parts a `fork` uses (adv.md)
         "css": [KIT / "board.css"],
         "tex_types": ["board"],
     }

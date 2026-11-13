@@ -431,6 +431,7 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   .s-board [data-wait], .s-board [data-wait] * { visibility: visible !important; }
   .s-board [data-step] { opacity: 1; transform: none; }
   .board .bi.chance.cwait > * { visibility: visible !important; }
+  .board .bi.fork.cwait > * { visibility: visible !important; }
 }
 /* chance: two groups as units, their shares, the gap and a ruler of noise steps (board.js chance). Hit areas take the pointer;
    a linked word lights its mark and dims the rest, the tally with them */
@@ -469,3 +470,20 @@ html.ls-page .board .bi.chance { padding: 8px; box-sizing: content-box; max-widt
 .board .ssamp .stt tr.on td { box-shadow: inset 0 -1px 0 var(--accent), inset 0 1px 0 var(--accent); }
 .board .ssamp .ssw { display: inline-block; width: 16px; height: 16px; border: 1px solid var(--thin); vertical-align: -2px; }
 .board .stripb.beside .ffig { align-self: start; }
+/* fork: one start, 2–3 ends below it, drawn with the box of parts (board.js fork, parts.js). One end is lit: its path orange and
+   heavier with the soft glow, its parts glowing; the others step back to 30% */
+html.ls-page .board .bi.fork { padding: 8px; box-sizing: content-box; max-width: none; }
+.board .fork svg.fk { display: block; overflow: hidden; }   /* nothing a part draws reaches the lines round the figure */
+.board .fork .fpl, .board .fork .fph { fill: none; stroke: var(--c-tick); stroke-width: var(--w-data); stroke-linecap: round; stroke-linejoin: round; }
+.board .fork .fp.on .fpl, .board .fork .fp.on .fph { stroke: var(--accent); stroke-width: var(--w-wit); filter: var(--fkglow); }
+.board .fork .fbase { stroke: var(--c-tick); stroke-width: var(--w-guide); stroke-opacity: .6; }
+.board .fork text { font-family: var(--f-ui); }
+.board .fork .fw { font-size: 17px; fill: var(--mist); }
+.board .fork .fc { font-size: 19px; font-weight: 650; fill: var(--ink); }
+.board .fork .fn { font: 16px var(--f-mono); fill: var(--mist); }
+.board .fork .fe.on .pt { filter: drop-shadow(0 0 6px rgba(255, 90, 54, .33)); }
+.board .fork :is(.fe, .fp, .fw) { transition: opacity var(--m-state, 180ms) var(--ease, ease); }
+.board .fork :is(.fe, .fp, .fw).off { opacity: .3; }
+.board .fork .fh { fill: transparent; cursor: pointer; outline: none; pointer-events: all; }
+.board .fork .fh:focus-visible { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 4; }
+.board .bi.fork.cwait > * { visibility: hidden; }   /* until the reading reaches it, like a chance figure */

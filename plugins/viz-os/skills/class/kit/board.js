@@ -613,6 +613,78 @@
     return R;
   }
 
+  // ---------- fork: one start and 2–3 ends side by side, drawn with the box of parts (parts.js) ----------
+  // The start sits at the top, the ends in a row below it, each reached by a curved path with its name (`via`) beside it. Under
+  // each end: its name, red when it is a bad end (`bad`), and a number line (`num`, `{{…}}` filled from the data). A line under the
+  // ends shows they are compared side by side. The end named by `see` is lit at rest (orange path, glow): the witness; pointing at
+  // an end, its words or Tab lights that one instead, a press keeps it lit, and the others step back. A cell's chromosomes come
+  // from a data list (`chroms`): one letter a kind, `*` after it for a damaged copy. Each kind keeps one colour across the figure,
+  // in order of first use. The figure is wide (the reading column) and drawn at the size it shows
+  const FK = { top: 128, endY: 430, H: 600, gap: 380, side: 400, endW: 300, startSize: 190, endSize: 128, minW: 700 };
+  const FORK_HUES = ['s5', 's4', 's2', 's1'], FORK_COL = { cell: 's5', nucleus: 's5', chromosome: 's5', droplet: 's1', tube: 's2', plate: 's2', read: 's2', tissue: 's3', lens: 'mist' };
+  let forkNo = 0;
+  function fork(p, ctx, at, env) {
+    const node = h('div', 'bi fork fr'); node.dataset.at = at; if (p.id) node.dataset.id = p.id;
+    const svg = sv('svg', { class: 'fk' }, node), uid = `fk${++forkNo}`;
+    const E = list(p.ends).filter(e => e && typeof e === 'object'), n = E.length, S0 = p.start || {};
+    const R = { node, issues: [], kind: 'fork', w: 0, h: 0, leg: 0, linked: new Set(), cols: [], wlOn: null, hotM: null, pin: null };
+    R.keys = E.map(e => String(e.via ?? e.name ?? ''));
+    R.cols = E.map(e => e.bad ? 'var(--bad)' : 'var(--accent)');
+    const seeI = E.findIndex(e => p.see != null && [e.via, e.name].map(String).includes(String(p.see)));
+    // a cell's chromosomes: the data list read at this scope, each kind its colour, `*` a damaged copy
+    const hue = new Map(), hueOf = k => { if (!hue.has(k)) hue.set(k, FORK_HUES[Math.min(hue.size, FORK_HUES.length - 1)]); return col(hue.get(k)); };
+    const chromsOf = (q, where) => { if (q == null) return null; const v = list(L.val(q, ctx.scope, `slide ${ctx.index + 1} fork ${where} chroms`));
+      return v.map(x => { const str = String(x), k = str.replace(/\*$/, ''); return { c: hueOf(k), mut: str.endsWith('*') }; }); };
+    const ink = window.VizOS.ink;
+    const parts = (D, x, y, big, where) => { const ds = list(D).filter(d => d && d.part), k = ds.length, size = Math.min(big, (big === FK.startSize ? 360 : 260) / Math.max(1, k));
+      return ds.map((d, i) => { try { return ink.part(d.part, { x: x + (i - (k - 1) / 2) * (size + 6), y, size: d.size || size, state: d.state, rot: d.turn || 0, id: `${where}${i}`,
+        color: col(d.color || FORK_COL[d.part] || 's5'), chroms: chromsOf(d.chroms, where) }); } catch (er) { R.issues.push(`the fork ${where}: ${er.message}`); return ''; } }).join(''); };
+    const say = t => md(L.plain(String(t ?? ''), ctx.scope));
+    const txt = (x, y, cls, anchor, html, style) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="${cls}" text-anchor="${anchor}"${style ? ` style="${style}"` : ''}>${html}</text>`;
+    const plainOf = html => { const q = document.createElement('span'); q.innerHTML = html; return L.esc(q.textContent); };   // SVG text holds no HTML
+    R.size = room => { R.w = Math.round(room.w - PAD); R.h = FK.H; node.style.width = R.w + 'px'; svg.setAttribute('width', R.w); svg.setAttribute('height', R.h); return R.w + PAD; };
+    R.hOf = () => FK.H;
+    R.layout = () => {
+      R.issues = []; hue.clear(); const W = R.w; if (W < FK.minW) R.issues.push(`the fork has ${W} px; it needs ${FK.minW}`);
+      svg.setAttribute('viewBox', `0 0 ${W} ${FK.H}`);
+      const sx = W / 2, sy = FK.top, ey = FK.endY, gap = Math.min(FK.gap, (W - FK.side) / Math.max(1, n - 1)), xs = E.map((_, i) => sx + (i - (n - 1) / 2) * gap);
+      let paths = '', words = '', ends = '', hits = '';
+      E.forEach((e, i) => { const side = i - (n - 1) / 2, a = [sx + side * 34, sy + 108], b = [xs[i], ey - 80], c1 = [a[0], a[1] + 70], c2 = [b[0], b[1] - 80], s = 7;
+        paths += `<g class="fp" data-i="${i}"><path class="fpl" d="M${a[0]} ${a[1]}C${c1} ${c2} ${b[0]} ${b[1]}"/><path class="fph" d="M${b[0] - s} ${b[1] - s * 1.4}L${b[0]} ${b[1]}L${b[0] + s} ${b[1] - s * 1.4}"/></g>`;
+        const out = side < 0 ? -1 : 1;
+        if (e.via != null) words += `<text class="fw" data-i="${i}" data-push="${out}" x="${b[0] + out * 16}" y="${b[1] - 22}" text-anchor="${out < 0 ? 'end' : 'start'}">${plainOf(say(e.via))}</text>`;
+        ends += `<g class="fe" data-i="${i}">${parts(e.draw, xs[i], ey, FK.endSize, `end ${i + 1}`)}` +
+          txt(xs[i], ey + 108, 'fc', 'middle', plainOf(say(e.name)), e.bad ? 'fill:var(--bad)' : '') + (e.num != null ? txt(xs[i], ey + 134, 'fn', 'middle', plainOf(say(e.num))) : '') + '</g>';
+        hits += `<rect class="fh" data-i="${i}" x="${xs[i] - FK.endW / 2}" y="${ey - 76}" width="${FK.endW}" height="${FK.H - ey + 70}" tabindex="0" role="button" aria-label="${plainOf(say(e.via ?? e.name))}"/>`; });
+      const start = `<g class="fs">${parts(S0.draw, sx, sy, FK.startSize, 'start')}${S0.name != null ? txt(sx + 139, sy + 6, 'fc', 'start', plainOf(say(S0.name))) : ''}</g>`;
+      const base = `<line class="fbase" x1="${Math.max(8, xs[0] - 170)}" x2="${Math.min(W - 8, xs[n - 1] + 170)}" y1="${ey + 82}" y2="${ey + 82}"/>`;
+      svg.innerHTML = `<defs><filter id="${uid}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${FK.H}"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>` +
+        start + paths + base + ends + words + hits;
+      svg.style.setProperty('--fkglow', `url(#${uid})`);
+      R.clear(); document.fonts && document.fonts.ready.then(() => { R.clear(); });
+      svg.querySelectorAll('.fh').forEach(q => { const i = +q.dataset.i;
+        q.addEventListener('pointerenter', () => R.hover(i)); q.addEventListener('pointerleave', () => R.hover(null)); q.addEventListener('focus', () => R.hover(i)); q.addEventListener('blur', () => R.hover(null));
+        q.addEventListener('click', () => { R.pin = R.pin === i ? null : i; R.paintWl(); });
+        q.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); q.dispatchEvent(new MouseEvent('click')); } }); });
+      R.paintWl(); return false; };
+    // a path's word steps outward, 2 px at a time, until no path comes within 8 px; the audit names one still touching, and two ends' words that meet
+    R.clear = () => { if (!svg.isConnected || !svg.getBBox) return; const pts = [...svg.querySelectorAll('.fpl')].flatMap(q => { const T = q.getTotalLength(), o = []; for (let d = 0; d <= T; d += 3) { const m = q.getPointAtLength(d); o.push([m.x, m.y]); } return o; });
+      const near = b => pts.some(([x, y]) => x > b.x - 8 && x < b.x + b.width + 8 && y > b.y - 8 && y < b.y + b.height + 8);
+      R.issues = R.issues.filter(t => !t.startsWith('the fork word'));
+      svg.querySelectorAll('.fw').forEach(t => { const dx = +t.dataset.push, x0 = +t.getAttribute('x');
+        for (let k = 0; k <= 40; k++) { t.setAttribute('x', x0 + dx * k * 2); if (!near(t.getBBox())) break; }
+        const b = t.getBBox(); if (near(b)) R.issues.push(`the fork word "${t.textContent}" sits on a path: shorten it`);
+        if (b.x < 0 || b.x + b.width > R.w) R.issues.push(`the fork word "${t.textContent}" runs off the figure: shorten it`); });
+      const boxes = [...svg.querySelectorAll('.fe')].map(g => [...g.querySelectorAll('text')].map(t => t.getBBox()));
+      boxes.forEach((bs, i) => bs.forEach(bb => (boxes[i + 1] || []).forEach(cb => { if (bb.x + bb.width + 12 > cb.x && cb.y < bb.y + bb.height && bb.y < cb.y + cb.height) R.issues.push(`the fork end ${i + 1}'s words meet end ${i + 2}'s: shorten them`); }))); };
+    R.wl = i => ({ c: R.cols[i], drawn: i < n && env.shown() });
+    R.paintWl = () => { const on = R.wlOn ?? R.hotM ?? R.pin ?? (seeI >= 0 ? seeI : null);
+      svg.querySelectorAll('[data-i]').forEach(e => { const me = +e.dataset.i === on; e.classList.toggle('on', me); e.classList.toggle('off', on != null && !me); }); };
+    R.wlLight = i => { if (R.wlOn !== i) { R.wlOn = i; R.paintWl(); } };
+    R.hover = i => { if (R.hotM === i) return; R.hotM = i; R.paintWl(); if (R.onHot) R.onHot(i); };
+    return R;
+  }
+
   // ---------- space: a 3D coordinate space the learner turns by dragging, the plane's sibling ----------
   // An orbit about the middle of the axes box (yaw free, pitch held between −10° and 80°), mild perspective and a depth fade.
   // Every piece is drawn far to near (the painter's rule): lines are cut into pieces and the sheet into cells, so a dot in front
@@ -1199,7 +1271,7 @@
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
     const SIDEVIS = ['chart', 'image', 'stat', 'units'], WIDEVIS = ['dist', 'parts', 'flow'];
     const isFig = it => it && (it.strip || it.plane || it.space || it.chance || SIDEVIS.some(k => it[k] != null));
-    const isWide = it => it && (it.assemble || it.compare || it.ops || WIDEVIS.some(k => it[k] != null));
+    const isWide = it => it && (it.assemble || it.compare || it.ops || it.fork || WIDEVIS.some(k => it[k] != null));
     const tag = (e, at, id) => { e.dataset.at = at; if (waits.has(at)) e.dataset.wait = at; if (id) e.dataset.id = id; return e; };
     // a chart mark's or an image label's `step` counts board steps, as everywhere on the board; the kit counts clicks
     const clicks = v => { const c = JSON.parse(JSON.stringify(v)), m = o => { if (o && o.step != null) o.step = clickOf(o.step); };
@@ -1332,6 +1404,9 @@
     const stripFig = (p, at) => { const fg = strip(p, ctx); fg.stops = []; return holder(fg, at, p); };
     const chanceFig = (p, at, ratio) => { const env = { frame: () => runName == null ? null : ctx.scope[runName], frames: runName == null ? 0 : runC.run, name: runName, derive: s.derive, shown: () => at <= (map[0] || {}).at || read >= at };
       const fg = chance(p, ctx, at, env, ratio); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
+    // a fork waits the same way; it is a wide figure, in the reading column
+    const forkFig = (p, at) => { const env = { shown: () => at <= (map[0] || {}).at || read >= at };
+      const fg = fork(p, ctx, at, env); fg.stops = []; fg.paint = c => shown(fg.node, c); fg.wait = () => fg.node.classList.toggle('cwait', !env.shown()); return holder(fg, at, p); };
 
     const makeStep = (st, j) => {
       const c = map[j], el = h('div', 'st'); el.dataset.at = c.at; el.dataset.q = c.q || c.at; el.stages = []; el.zone = zone;
@@ -1369,6 +1444,7 @@
       else if (it.space) { const fg = spaceFig(it.space, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (it.chance) { const fg = chanceFig({ ...it.chance, id: it.chance.id ?? it.id }, at, it.ratio ?? it.chance.ratio); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
       else if (SIDEVIS.some(k => it[k] != null)) { const fg = figure(it, at); b.fig.appendChild(fg.wrap); b.figs.push(fg); }
+      else if (it.fork) { const w = { wide: true, figs: [] }; zone = w; const fg = forkFig({ ...it.fork, id: it.fork.id ?? it.id }, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (WIDEVIS.some(k => it[k] != null)) { const w = { wide: true, figs: [] }; zone = w; const fg = it.flow && s.beat === 'plan' ? track(it.flow, at) : figure(it, at); w.figs.push(fg); slot.appendChild(fg.wrap); blocks.push(w); }
       else if (it.col) cols.push({ ...it.col, at });
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g rl'), at, pr.id);
@@ -1420,8 +1496,8 @@
     // Tab, so it never shows a think stop's answer early. A tap keeps a word lit until the next tap. It opens no card (a card
     // would cover the lines being read). Text that names no mark keeps ==text==, the orange underline
     const lkeys = new Map();
-    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance'].includes(fg.kind)) return;
-      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : fg.kind === 'chance' ? fg.keys.map(k => ({ label: k })) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
+    figs.forEach((fg, f) => { if (!['plane', 'space', 'chart', 'chance', 'fork'].includes(fg.kind)) return;
+      list(fg.kind === 'chart' ? (fg.spec.chart || {}).marks : fg.kind === 'chance' ? fg.keys.map(k => ({ label: k })) : fg.kind === 'fork' ? list(fg.spec.ends).map(e => e && typeof e === 'object' ? { label: e.via, id: e.name } : null) : fg.spec.marks).forEach((mk, i) => { if (!mk || typeof mk !== 'object') return;
         const q = fg.kind === 'chart' ? (mk.kind === 'hline' ? mk.y : mk.kind === 'vline' ? mk.x : mk.kind === 'point' ? (mk.at || [])[1] ?? mk.y : null) : mk.vector ?? mk.point;
         const sym = typeof q === 'string' && (ctx.symbols || {})[q] ? q : null;   // first mark wins a shared key (the lint stops a link to one)
         [mk.label, fg.kind === 'chart' ? mk.name : null, mk.id, sym].forEach(k => { if (k != null && String(k).trim() && !lkeys.has(String(k).trim())) lkeys.set(String(k).trim(), [f, i, String(k).trim() === sym]); }); }); });

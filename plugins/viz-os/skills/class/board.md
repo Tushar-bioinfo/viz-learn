@@ -228,6 +228,8 @@ add:
 ```
 `chance` (two `groups` as units, their shares, the gap, a ruler of noise steps and an optional `tally`; `axis`, `gap_says`, `step_says`) is a figure for adv lessons only: write it as `adv.md` §9 shows.
 
+`fork` (one `start` above 2 or 3 `ends`, each drawn with parts from the box) is a figure for adv lessons only: write it as `adv.md` §9b shows.
+
 `ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 16:9; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
 
 **A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours.

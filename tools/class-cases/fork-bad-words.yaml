@@ -1,0 +1,36 @@
+# expect: is more than 3 words
+# C10f: words.
+title: One cell, three splits
+question: Where can a cell's copied chromosomes go when it splits?
+answer: Shared evenly, one copy astray, or damage copied into both.
+data:
+  parent: [A, B, C]
+  even_a: [A, B, C]
+  even_b: [A, B, C]
+  uneven_a: [A, B, C, C]
+  uneven_b: [A, B]
+  dmg_a: [A*, B, C]
+  dmg_b: [A*, B, C]
+  n_even: 3
+  n_up: 4
+  n_down: 2
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    idea: outcomes
+    see: one copy strays
+    shows: one cell at the top and its three splits below it, the uneven one lit
+    title: Three ways one cell can split
+    lead: Every split starts the same; where the copies go decides what the two new cells carry.
+    steps:
+      - say: Three ways the copies can go. The ==one copy strays== path leaves a wrong count.
+        add:
+          - fork:
+              start: {name: "one cell, copies lined up", draw: [{part: cell, state: metaphase, chroms: parent}]}
+              ends:
+                - {via: shared evenly, name: two healthy cells, num: "{{n_even}} and {{n_even}} chromosomes", draw: [{part: cell, chroms: even_a}, {part: cell, chroms: even_b}]}
+                - {via: one copy strays, name: wrong count, bad: true, num: "{{n_up}} and {{n_down}} chromosomes", draw: [{part: cell, chroms: uneven_a}, {part: cell, chroms: uneven_b}]}
+                - {via: the damage was copied first, name: both carry the damage, bad: true, num: "{{n_even}} each, A damaged", draw: [{part: cell, chroms: dmg_a}, {part: cell, chroms: dmg_b}]}
+              see: one copy strays
+      - say: Only ==shared evenly== gives two cells like the first; ==the damage was copied first== keeps the count but passes the fault on.

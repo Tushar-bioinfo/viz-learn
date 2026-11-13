@@ -6,8 +6,9 @@ It asks the Codex CLI to use its image tool. --print only prints the filled prom
 user names. Place the file next to deck.yaml and show it with
   visual: {image: name.png, alt: ..., labels: [{text: nucleus, at: [0.42, 0.37]}], caption: ...}
 Exit 0 = image saved (prints path and size). Exit 2 = no image tool (codex missing). Exit 1 = it failed.
+Exit 3 = refused: a maths subject (a vector, plane, axis, arrow or graph) is drawn by the kit, exact and from the data.
 """
-import argparse, shutil, struct, subprocess, sys, tempfile
+import argparse, re, shutil, struct, subprocess, sys, tempfile
 from pathlib import Path
 
 # the deck's own colours: the near-black page, series blue and mint, a little of the orange accent
@@ -16,6 +17,11 @@ TEMPLATE = (
     "(#7fb0ff), mint (#5fdcc4) and a little orange (#ff5a36), generous empty space around the subject, centred. "
     "STRICT: no text, no letters, no numbers, no labels, no watermark, no faces, no emojis."
 )
+
+# maths an image model draws wrong and the kit draws from the data: refused, whole words, with plurals
+MATHS = re.compile(r"\b(vectors?|planes?|axis|axes|arrows?|graphs?)\b", re.I)
+KIT = ("a `plane` (2D: points, vectors, lines, arrows), a `space` (3D: vectors and planes you turn), or a `chart` "
+       "(a graph with axes)")
 
 
 def png_size(f):
@@ -31,6 +37,12 @@ def main():
     ap.add_argument("--timeout", type=int, default=600)
     ap.add_argument("--print", action="store_true", help="only print the filled prompt")
     a = ap.parse_args()
+    hit = MATHS.search(a.subject)
+    if hit:
+        print(f"refused: the subject names “{hit.group(0)}”. Maths is drawn by the kit, exact and from the data: use {KIT}. "
+              "A picture is for a thing you could photograph or draw by hand (a cell, a dish, a sequencer); "
+              "describe the subject without the maths word if it is one.", file=sys.stderr)
+        return 3
     prompt = TEMPLATE.format(subject=a.subject)
     if a.print:
         print(prompt)

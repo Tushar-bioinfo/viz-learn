@@ -13,7 +13,7 @@ BEATS = {"plan", "problem", "data", "by-hand", "picture", "formula", "run", "wha
 STEP = {"say", "add", "mark", "think", "frame"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
-ITEMS = {"calc", "plane", "space", "chance", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
+ITEMS = {"calc", "plane", "space", "chance", "fork", "strip", "note", "col", "params", "eqn", "assemble", "compare", "ops", "matrix", "vec"} | VIS
 # the fields each text item takes; anything else is usually a comma inside an unquoted `{ }` value that split it
 FIELDS = {"calc": {"say", "why", "row", "expr", "name", "fmt", "id"}, "col": {"key", "label", "expr", "fmt"},
           "eqn": {"say", "lhs", "expr", "tex", "id", "_uses", "_draws"}, "assemble": {"say", "lhs", "expr", "tex", "plug", "fmt", "id"},
@@ -514,6 +514,116 @@ CHANCE_MOST = 12  # the ruler counts at most this many noise steps past its 0 (b
 NUM = lambda q: isinstance(q, (int, float)) and not isinstance(q, bool)
 
 
+# fork (adv.md): one start, 2–3 ends below it, drawn with the box of parts (board.js fork, parts.js)
+FORK = {"start", "ends", "see", "id"}
+FORK_START = {"name", "draw"}
+FORK_END = {"name", "via", "num", "bad", "draw"}
+FORK_PART = {"part", "state", "chroms", "color", "size", "turn"}
+# the box of parts and the states each draws: a copy of kit/parts.js STATES, so change both together
+PARTS = {"cell": ["plain", "metaphase", "dividing", "dead"], "nucleus": ["plain"], "chromosome": ["pair", "single"], "tissue": ["plain", "regions"],
+         "tube": ["filled", "empty"], "plate": ["filled", "empty"], "read": ["full", "short"], "droplet": ["empty", "cell", "bead", "both", "two"], "lens": ["plain"]}
+FORK_HUES = 4    # chromosome kinds one fork can colour apart (board.js FORK_HUES)
+COLOR_NAMES = {"accent", "tint", "s1", "s2", "s3", "s4", "s5", "ink", "mist", "haze", "line", "good", "bad"}   # board.js COLOR
+CHROM = re.compile(r"[A-Za-z][A-Za-z0-9]{0,2}\*?")
+
+
+def lint_fork(Lx, w, fk, values):
+    """A fork's shape, words and parts. Its ends' `via` (the path's word) and `name` (under the end) are what linked words and
+    `see` name, so each is short and its own. `num` is text whose numbers come from `{{…}}`. A cell's `chroms` names a data list."""
+    if not isinstance(fk, dict):
+        Lx.err(w, "`fork` is a mapping with `start:` {name, draw} and `ends:` (2 or 3, each {via, name, num, draw})")
+        return
+    def unknown(keys, known, what):
+        for k in sorted(set(keys) - known, key=str):
+            hit = next(iter(difflib.get_close_matches(str(k), sorted(known), 1, .6)), None)
+            Lx.err(w, f"{what} has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(known))})"))
+    def words(t, most, what):
+        if t is None:
+            return
+        if not isinstance(t, str) or not t.strip():
+            Lx.err(w, f"{what} is {t!r}: write a few plain words")
+        elif len(re.sub(r"\{\{[^}]*\}\}", "x", t).split()) > most:
+            Lx.err(w, f"{what} “{t}” is more than {most} words: it sits under a drawing 300 px wide, so say it in {most} or fewer")
+    kinds = []
+    def draw(D, what):
+        if not isinstance(D, list) or not 1 <= len(D) <= 3:
+            Lx.err(w, f"{what} `draw` is a list of 1 to 3 parts, each {{part, state}}; got {D!r}")
+            return
+        for d in D:
+            if not isinstance(d, dict) or "part" not in d:
+                Lx.err(w, f"{what}: each part is a mapping with `part:` ({', '.join(PARTS)}); got {d!r}")
+                continue
+            unknown(d, FORK_PART, f"{what} part `{d.get('part')}`")
+            pt, st = d.get("part"), d.get("state")
+            if pt not in PARTS:
+                hit = next(iter(difflib.get_close_matches(str(pt), list(PARTS), 1, .6)), None)
+                Lx.err(w, f"{what}: no part named `{pt}`" + (f": did you mean `{hit}`?" if hit else f"; the box has {', '.join(PARTS)}"))
+                continue
+            if st is not None and st not in PARTS[pt]:
+                Lx.err(w, f"{what}: a {pt} has no state `{st}` (it has {', '.join(PARTS[pt])})")
+            if d.get("color") is not None and d["color"] not in COLOR_NAMES:
+                Lx.err(w, f"{what}: `color: {d['color']}` is not a kit colour ({', '.join(sorted(COLOR_NAMES))})")
+            for k, lo, hi in (("size", 40, 240), ("turn", -180, 180)):
+                if d.get(k) is not None and not (NUM(d[k]) and lo <= d[k] <= hi):
+                    Lx.err(w, f"{what}: `{k}: {d[k]!r}` must be a number from {lo} to {hi}")
+            q = d.get("chroms")
+            if q is None:
+                continue
+            if pt != "cell":
+                Lx.err(w, f"{what}: `chroms` draws chromosomes inside a cell; a {pt} has none: delete it")
+            elif not isinstance(q, str) or not isinstance(values.get(q), list):
+                Lx.err(w, f"{what}: `chroms: {q!r}` names a list in the data, one letter a chromosome kind and `*` after a damaged copy (`[A, B, C*]`), made by make_data.py")
+            else:
+                lst = values[q]
+                if not 1 <= len(lst) <= 8 or not all(isinstance(x, str) and CHROM.fullmatch(x) for x in lst):
+                    Lx.err(w, f"{what}: the data list `{q}` holds {lst!r}; it must hold 1 to 8 entries, each a letter for a chromosome kind with `*` after a damaged copy")
+                else:
+                    kinds.extend(x.rstrip("*") for x in lst)
+    unknown(fk, FORK, "`fork`")
+    st = fk.get("start")
+    if not isinstance(st, dict):
+        Lx.err(w, "`fork` needs `start:` {name, draw}: what every end begins from")
+    else:
+        unknown(st, FORK_START, "`fork` start")
+        words(st.get("name"), 5, "`fork` start `name`")
+        draw(st.get("draw"), "`fork` start")
+    ends = fk.get("ends")
+    if not isinstance(ends, list) or not 2 <= len(ends) <= 3:
+        Lx.err(w, f"`fork` compares 2 or 3 ends side by side: write `ends:` as a list of 2 or 3; got {len(ends) if isinstance(ends, list) else ends!r}")
+        ends = [e for e in ends if isinstance(e, dict)][:3] if isinstance(ends, list) else []
+    seen = {}
+    for k, e in enumerate(ends):
+        what = f"`fork` end {k + 1}"
+        if not isinstance(e, dict):
+            Lx.err(w, f"{what} is a mapping {{via, name, num, draw}}; got {e!r}")
+            continue
+        unknown(e, FORK_END, what)
+        for f, most in (("via", 3), ("name", 4)):
+            if e.get(f) is None:
+                Lx.err(w, f"{what} needs `{f}:`" + (": the path's word, how this end comes about ('shared evenly')" if f == "via" else ": what the end is, under its drawing ('two healthy cells')"))
+                continue
+            words(e[f], most, f"{what} `{f}`")
+            key = " ".join(str(e[f]).split()).lower()
+            if key in seen:
+                Lx.err(w, f"{what} `{f}` “{e[f]}” is also {seen[key]}: each end's `via` and `name` is its linked word, so give each its own")
+            seen[key] = f"end {k + 1}'s `{f}`"
+        num = e.get("num")
+        if num is not None:
+            if not isinstance(num, str):
+                Lx.err(w, f"{what} `num` is {num!r}: write it as text with the number from the data in {{{{…}}}} ('{{{{n_even}}}} chromosomes each')")
+            elif re.search(r"\d", re.sub(r"\{\{[^}]*\}\}", "", num)):
+                Lx.err(w, f"{what} `num` “{num}” has a typed number: every number comes from the data, so write it as {{{{name}}}}")
+            words(num, 6, f"{what} `num`")
+        if e.get("bad") is not None and not isinstance(e["bad"], bool):
+            Lx.err(w, f"{what} `bad: {e['bad']!r}` is true or false: true writes the end's name in red")
+        draw(e.get("draw"), what)
+    if len(set(kinds)) > FORK_HUES:
+        Lx.err(w, f"the fork's cells hold {len(set(kinds))} chromosome kinds ({', '.join(sorted(set(kinds)))}); it colours {FORK_HUES} apart: use fewer kinds")
+    see = fk.get("see")
+    if see is not None and " ".join(str(see).split()).lower() not in seen:
+        Lx.err(w, f"`fork` `see: {see}` names no end: write one end's `via` or `name`, the end lit at rest")
+
+
 def chance_name(nm):
     """A group name as the page shows it: case folded, runs of spaces as one (HTML collapses them)."""
     return " ".join(str(nm).split()).lower()
@@ -697,6 +807,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
     symbols = deck.get("symbols") or {}
     values = {**(deck.get("data") or {}), **(data or {})}
     chances = {}  # one `chance` per scene
+    forks = {}    # one `fork` per scene
     said = []   # every teacher line so far, for "say what x is"
     for i, s in enumerate(deck.get("slides") or []):
         if s.get("type") != "board":
@@ -719,7 +830,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
         if not steps:
             Lx.err(where, "a board needs `steps`: one teacher line each")
         lint_controls(Lx, where, s, steps)
-        if s.get("beat") == "what-if" and not any(k in it for _, it in items_of(s) if isinstance(it, dict) for k in ("chart", "plane", "compare", "image")):
+        if s.get("beat") == "what-if" and not any(k in it for _, it in items_of(s) if isinstance(it, dict) for k in ("chart", "plane", "compare", "image", "fork")):
             Lx.warn(where, "a what-if scene with no picture: add a `chart` or `plane` that the change moves, so the learner sees what moves")
         for j, st in enumerate(steps):
             w = f"{where} step {j + 1}"
@@ -761,6 +872,12 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                     s_ch.append(j + 1)
                     if len(s_ch) == 2:
                         Lx.err(w, f"this scene has a second `chance` figure ({'both on step ' + str(s_ch[0]) if s_ch[0] == s_ch[1] else f'steps {s_ch[0]} and {s_ch[1]}'}): one `chance` per scene, so its marks `gap` and `noise step` name one thing; put the second comparison in its own scene")
+                if "fork" in it:
+                    lint_fork(Lx, w, it["fork"], values)
+                    s_fk = forks.setdefault(id(s), [])
+                    s_fk.append(j + 1)
+                    if len(s_fk) == 2:
+                        Lx.err(w, f"this scene has a second `fork` (steps {s_fk[0]} and {s_fk[1]}): one `fork` per scene, so one end is lit at a time; put the second in its own scene")
                 if VIS & set(it):
                     vis = {x: (board_chart(y) if x == "chart" and isinstance(y, dict) else y) for x, y in it.items() if x != "id"}
                     B.lint_visual(Lx, w, vis, names, legend_marks=mark_entries(it.get("chart"), symbols))
@@ -894,8 +1011,14 @@ def scene_marks(s, symbols):
         for it in as_list(st.get("add")) if isinstance(st, dict) else []:
             if not isinstance(it, dict):
                 continue
-            kind = next((k for k in ("plane", "space", "chart", "chance") if isinstance(it.get(k), dict)), None)
+            kind = next((k for k in ("plane", "space", "chart", "chance", "fork") if isinstance(it.get(k), dict)), None)
             if kind is None:
+                continue
+            if kind == "fork":   # each end, by its path's word and its name; told apart by which path lights, not by colour
+                for i, e in enumerate(as_list(it["fork"].get("ends"))):
+                    if isinstance(e, dict):
+                        out.append((f, kind, i, {"label": e.get("via")}, j + 1, [str(x).strip() for x in (e.get("via"), e.get("name")) if x is not None and str(x).strip()], False, None))
+                f += 1
                 continue
             if kind == "chance":   # its marks, in board.js's order: the two groups, the gap, and with `step` the noise step
                 ch, gs = it["chance"], [g for g in as_list(it["chance"].get("groups")) if isinstance(g, dict)][:2]
@@ -1655,7 +1778,7 @@ IDEAS = {
     "shortcut": ("why not the easy way?", "ghost", ["plane", "space", "chart", "compare"]),
     "process": ("how does it move, step by step?", "run", ["plane", "chart", "space", "ops"]),
     "connect": ("how do the pieces feed each other?", "strip", ["flow", "ops", "product", "assemble"]),
-    "outcomes": ("what can happen?", "fork", ["compare", "parts"]),
+    "outcomes": ("what can happen?", "fork", ["fork", "compare", "parts"]),
     "chance": ("is this difference real?", "draws", ["chance", "dist", "chart"]),
     "angle": ("what does it look like from the right side?", "view", ["space", "plane"]),
     "like": ("what is it like?", "pair", ["compare"]),
@@ -1814,7 +1937,8 @@ CTL_FIELDS = {"name", "label", "says", "show", "min", "max", "step", "value", "f
 # a symbol's own fields, and `value`, which a deck equation slide merges from `symbols` into its `terms` (deck slides.js)
 SYM_FIELDS = {"tex", "says", "short", "fmt", "kind", "color", "cols", "rows", "value"}
 # text the page shows as written, never works out: a name in it reads nothing (only its {{…}}, \mat{…} and \prodpart{…} do)
-LITERAL = {"name", "label", "says", "short", "tex", "say", "id", "color", "fmt", "kind", "dash", "side", "key", "by", "cats", "family", "op"}
+LITERAL = {"name", "label", "says", "short", "tex", "say", "id", "color", "fmt", "kind", "dash", "side", "key", "by", "cats", "family", "op",
+           "via", "num", "see", "part", "state"}
 IDENT = re.compile(r"[A-Za-z_]\w*")
 
 

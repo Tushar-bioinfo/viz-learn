@@ -35,7 +35,7 @@ Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `b
 | `shortcut` | why not the easy way? | the wrong way as a ghost on the same frame | `plane`, `space`, `chart`, `compare` |
 | `process` | how does it move, step by step? | a run with stops and a trail | `plane`, `chart`, `space`, `ops` |
 | `connect` | how do the pieces feed each other? | input, operation, output, lit together | `flow`, `ops`, `product`, `assemble` |
-| `outcomes` | what can happen? | one start, 2–3 aligned ends | `compare`, `parts` |
+| `outcomes` | what can happen? | one start, 2–3 aligned ends | `fork` (§9b), `compare`, `parts` |
 | `chance` | is this difference real? | dots as draws, the gap in noise units | `chance` (§9), `dist`, `chart` |
 | `angle` | what does it look like from the right side? | a named view the camera turns to | `space`, `plane` |
 | `like` | what is it like? | two matched pictures, and where the match breaks | `compare` |
@@ -86,6 +86,19 @@ A spine of stubs fails the lint for its missing `steps`, and other lints warn ab
 It draws each group as squares, 10 a row, the `ill` ones filled; one share line with a dot per group; the **gap** between the dots (the witness); with `step`, a ruler from the lower share with a tick per **noise step**; with `tally`, a square per frame, grey once the run reaches it and in the gap's colour where the list holds 1. `n`, `ill` and `step` are numbers or names, so a run's `derive` (`xw: at(fr_well, draw)`) redraws it, each change eased.
 - Its marks are the two group names, `gap` and `noise step`: legend entries and linked words (`==gap==`, `==noise step:noise steps==`), so no group may take the names `gap` or `noise step`, and a scene holds one `chance`. Optional `says:` on a group, `gap_says:` and `step_says:` fill their cards.
 - The lint, on each state of a run or slider: exactly two groups with two names; `n` a whole number 1–100; `ill` 0 to that state's `n`; `step` above 0, the gap at most 12 steps; a list read with `at(list, draw)` covers every state; `tally` needs a run and one entry per frame. Arithmetic it cannot read passes; the browser check warns if the page clamps it.
+
+## 9b. The `fork` figure: what can happen, side by side
+```yaml
+- fork:
+    start: {name: "one cell, copies lined up", draw: [{part: cell, state: metaphase, chroms: parent}]}
+    ends:
+      - {via: shared evenly, name: two healthy cells, num: "{{n_even}} and {{n_even}} chromosomes", draw: [{part: cell, chroms: even_a}, {part: cell, chroms: even_b}]}
+      - {via: one copy strays, name: wrong count, bad: true, num: "{{n_up}} and {{n_down}} chromosomes", draw: [{part: cell, chroms: un_a}, {part: cell, chroms: un_b}]}
+    see: one copy strays    # the end lit at rest: the witness
+```
+It draws the start at the top and the 2 or 3 ends in a row below it, each reached by a curved path. Each path carries its `via` (how this end comes about, 3 words at most). Under each end are its `name` (4 words at most, in red with `bad: true`) and `num`, a line whose numbers come only from `{{…}}`. The end named by `see` is lit: an orange path, the others dimmed. Pointing at an end, pressing it or a linked word (`==shared evenly==` or `==two healthy cells==`) lights that end instead. It fills the reading column, and a scene holds one `fork`.
+- Drawn parts (`draw`, 1–3 an end): `cell` (plain, metaphase, dividing, dead), `nucleus`, `chromosome` (pair, single), `tissue` (plain, regions), `tube` (filled, empty), `plate` (filled, empty), `read` (full, short), `droplet` (empty, cell, bead, both, two), `lens`. Each takes `state`, and if you like `color` (a kit colour), `size` (40–240 px) and `turn` (degrees).
+- A cell's `chroms` names a data list from make_data.py: one letter per chromosome kind, with `*` after a damaged copy (`[A, B, C*]`). Each kind keeps one colour across the figure; a fork colours 4 kinds apart.
 
 ## 10. Space figures the learner moves: views, a hunt, a split
 The camera glides only when the learner presses something; a step never moves it.
