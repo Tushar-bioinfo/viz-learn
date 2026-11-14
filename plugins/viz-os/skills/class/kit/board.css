@@ -102,7 +102,7 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 .board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; margin-bottom: -10px; }
 .board .fb.beside .ffig { position: sticky; top: 24px; }
 .board .fb.beside .ffig.nostick { position: static; }
-.board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: center; align-self: stretch; }
+.board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 20px; align-items: flex-end; justify-content: center; align-self: stretch; }
 /* a figure, then its sliders and its Back and Next, each the figure's own width; board.js sets that width */
 .board .fg { display: flex; flex-direction: column; align-items: stretch; max-width: 100%; }
 .board .fg > .bvis, .board .fg > .bi { flex: none; }
@@ -297,6 +297,8 @@ html.ls-page .board .datatoggle { background: transparent; border: 1px solid var
 
 /* two cases side by side */
 .board .bcmp { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+/* the two sides' figures stand on one baseline, however long the words above them (N6) */
+.board .bcmp .side > .vis { margin-top: auto; }
 .board .bcmp .side { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .board .bcmp h3 { margin: 0; font-size: 22px; }
 .board .bcmp .tone { display: inline-flex; align-items: center; gap: 10px; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }

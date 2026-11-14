@@ -576,14 +576,15 @@
           const live = tweens.findIndex(w => w.el === e && w.a === k); if (live >= 0) tweens.splice(live, 1);
           if (!hard && GEO.has(k) && was != null) tweens.push({ el: e, a: k, from: +was, to: +to, t0 }); else e.setAttribute(k, to); }
         if (style != null) e.setAttribute('style', style); if (text != null && e.textContent !== String(text)) e.textContent = text; parent.appendChild(e); return e; };
-      // the units: two grids side by side, ill first in reading order
+      // the units: two grids side by side, ill first in reading order, standing on one baseline: a group with fewer rows
+      // starts lower, so both grids end level (the user, N6: "just along from bottom")
       const gw = CH.cols * g.cell, left = g.X0 + (g.X1 - g.X0 - 2 * gw - CH.gapG) / 2;
-      S.v.forEach((v, i) => { const gg = grp(`u${i}`, i), x0 = left + i * (gw + CH.gapG), c = G[i].c;
-        for (let k = 0; k < v.n; k++) { const x = x0 + (k % CH.cols) * g.cell, y = CH.top + Math.floor(k / CH.cols) * g.cell, on = k < v.x;
+      S.v.forEach((v, i) => { const gg = grp(`u${i}`, i), x0 = left + i * (gw + CH.gapG), c = G[i].c, y0 = CH.top + g.uH - Math.ceil(v.n / CH.cols) * g.cell;
+        for (let k = 0; k < v.n; k++) { const x = x0 + (k % CH.cols) * g.cell, y = y0 + Math.floor(k / CH.cols) * g.cell, on = k < v.x;
           const look = on ? `fill:${c};stroke:${c};stroke-width:var(--w-data)` : 'fill:none;stroke:var(--mist);stroke-width:var(--w-data);stroke-opacity:.7';
           if (p.unit === 'house') put(gg, 'path', `u${i}-${k}`, { d: CH_SHAPE.house(x + g.cell / 2, y + g.cell / 2, g.cell * (on ? .8 : .76)), 'stroke-linejoin': 'round' }, look);
           else put(gg, 'rect', `u${i}-${k}`, { x: x + g.cell * .1, y: y + g.cell * .1, width: g.cell * .8, height: g.cell * .8 }, look); }
-        put(gg, 'rect', `uh${i}`, { x: x0, y: CH.top, width: gw, height: Math.ceil(v.n / CH.cols) * g.cell }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); });
+        put(gg, 'rect', `uh${i}`, { x: x0, y: y0, width: gw, height: Math.ceil(v.n / CH.cols) * g.cell }, 'fill:transparent;stroke:none').setAttribute('class', 'chit'); });
       // the share line: ticks every 10, numbers every 20, its name under them at the right
       const ax = grp('axis', null, 'pax');
       put(ax, 'line', 'axl', { x1: g.X0, x2: g.X1, y1: g.ySh, y2: g.ySh }, 'stroke:var(--c-axis);stroke-width:var(--w-guide)');
@@ -1718,6 +1719,10 @@
   const aim = (room, hh) => Math.min(room.w, Math.max(room.col, hh * SHAPE));
   const ratioOf = (r, dflt) => { if (typeof r === 'number' && r > 0) return r; const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(r ?? '')); return m && +m[2] ? +m[1] / +m[2] : dflt; };
   const PAD = 16, LEG = 38;   // a figure's frame: its padding, both sides; a plane's legend row
+  // the air above and below a figure's content inside its frame: the legend never sits on the frame's top line (the user,
+  // C10h review; 20 px as in C10p). The sizing above counts 8 px a side, so the room a figure gets is LIFT shorter
+  const AIR = 18, LIFT = 2 * (AIR - PAD / 2);
+  const frOf = fg => fg.node.classList.contains('fr') ? fg.node : fg.node.querySelector(':scope > .fr');
   const STUCK = 24;           // where a sticky figure stops, as board.css has it
   const WORDS = '.say, .tqt, .ta > span:last-child, .note', same = e => e.textContent.replace(/\s+/g, ' ').trim();   // the lines the line by the buttons could repeat
   const inWindow = e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && getComputedStyle(e).visibility === 'visible'; };
@@ -2481,18 +2486,32 @@
       const own = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - side - GAP : inPair ? W : Math.min(W, UNDER);
       // beside, it may grow to its text's height with every answer open (taller would not pin; open, so an answer never resizes it),
       // up to the window less the pin's 24 px at top and foot
-      const full = () => { node.classList.add('allopen'); const hh = b.side.offsetHeight; node.classList.remove('allopen'); return hh; };
+      const full = () => fullOf(b);
       const tall = beside ? () => Math.min(pinH(), Math.max(figH(), full())) : figH;
-      const room = { w: own, col: beside || many || inPair ? own : read0, h: tall() };
+      // beside a table the figure is not pinned and its width follows its height: the frame's air is not taken from it
+      const lift = inPair ? 0 : LIFT, room = { w: own, col: beside || many || inPair ? own : read0, h: tall() - lift };
       const size = () => { const w = Math.max(...b.figs.map(fg => sized(fg, room))); b.fig.style.width = many ? '' : w + 'px'; b.node.style.setProperty('--fig', w + 'px'); if (!beside && !many && !inPair) read = Math.max(read, w); };
       // what the figure must share the window with: the line above it, and its slider and button rows, if it has any
       const shared = () => { const say = beside ? null : b.side.querySelector(':scope > .st.intro > .say'); let foot = 0;
         b.figs.forEach(fg => { if (fg.stage) fg.stage.fit(); foot = Math.max(foot, fg.wrap.offsetHeight - fg.node.offsetHeight); });
         return (say ? say.offsetHeight + 12 : 0) + foot; };
-      size(); for (let pass = 0; pass < 3; pass++) { read = read0; room.h = tall() - shared(); size(); } });
+      size(); for (let pass = 0; pass < 3; pass++) { read = read0; room.h = tall() - shared() - lift; size(); } });
       root.style.setProperty('--read', read + 'px');
       blocks.forEach(b => { if (b.wide) b.figs.forEach(fg => sized(fg, { w: read, col: read, h: figH() })); });
       node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / SHAPE) + 'px'; }); };
+    // a block's text column with every answer open: a figure beside it is sized for that, so opening an answer never resizes it
+    const fullOf = b => { node.classList.add('allopen'); const hh = b.side.offsetHeight; node.classList.remove('allopen'); return hh; };
+    // every figure frame keeps AIR above and below its content. A lone figure beside its text grows to the text's height (every
+    // answer open, within the pin) and splits what it gains evenly above and below, so its content sits in the middle of the
+    // frame: no legend on the top line and no empty band under the drawing (the user, C10h review: "pull this down a bit")
+    // The frames are reset to AIR before a layout sizes anything (a chart counts its frame's padding), and the growth stops at the
+    // room the figure has with the scene head in view, so its Back, Next and slider rows stay on screen on arrival
+    // Beside a table the frame is sized at its old 8 px and takes its air after, as its width follows its height
+    const unsettle = (all) => figs.forEach(fg => { const f = frOf(fg); if (f) f.style.paddingTop = f.style.paddingBottom = all || !f.closest('.bpair:not(.stacked)') ? AIR + 'px' : ''; });
+    const settle = () => { unsettle(true);
+      blocks.forEach(b => { if (b.wide || b.strip || b.figs.length !== 1 || !b.node.classList.contains('beside')) return; const f = frOf(b.figs[0]); if (!f) return;
+        const extra = Math.floor(Math.min(pinH(), figH(), fullOf(b)) - b.fig.offsetHeight); if (extra < 2) return;
+        f.style.paddingTop = AIR + (extra >> 1) + 'px'; f.style.paddingBottom = AIR + extra - (extra >> 1) + 'px'; }); };
     // a worked line too long to sit beside the table, even at the floor, sends the table above the work
     const widen = () => { if (!pair || pair.classList.contains('stacked')) return; const edge = pair.getBoundingClientRect().right;
       if ([...pair.querySelectorAll('.katex')].some(e => e.getBoundingClientRect().right > edge + 1)) { pair.classList.add('stacked'); place(); drawLines(); } };
@@ -2510,7 +2529,7 @@
       stick: () => { held.forEach((_, f) => { f.style.top = ''; }); held.clear(); stick(); stages.forEach(S => S.quiet()); },
       watch: () => { letGo(); stages.forEach(S => S.quiet()); },
       // a layout may move lines between columns, which drops the focus: the focused word or entry gets it back
-      layout: () => { const fa = node.contains(document.activeElement) ? document.activeElement : null; blocks.forEach(b => { b.over = false; }); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); stick(); if (fa && fa.isConnected && document.activeElement !== fa) fa.focus({ preventScroll: true }); wsync(); },
+      layout: () => { const fa = node.contains(document.activeElement) ? document.activeElement : null; blocks.forEach(b => { b.over = false; }); unsettle(); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); settle(); stick(); if (fa && fa.isConnected && document.activeElement !== fa) fa.focus({ preventScroll: true }); wsync(); },
       // what the page shows now, after a redraw or a move
       repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); wsync(); },
       // everything up to click k, as the check and the printer see it

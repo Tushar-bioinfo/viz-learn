@@ -311,6 +311,9 @@ PINS = """async () => { const out = [], rc = e => e.getBoundingClientRect(), wai
   return out; }"""
 
 
+ROOM_TO_PIN = """() => [...document.querySelectorAll('.fb.beside')].filter(b => { const f = b.querySelector(':scope > .ffig'); return f && b.offsetHeight - f.offsetHeight >= 60; }).length"""
+
+
 def pins(page, tag):
     q = page.evaluate(PINS)
     return [f"{tag}: scene {x[0]} pinned at {x[1]} px, foot {x[2]} of {x[3]}" for x in q if abs(x[1] - 24) > 2 or x[2] > x[3]], len(q)
@@ -343,7 +346,8 @@ def shorter_window(page):
             bad.append(f"{a}->{b}: " + " ".join(f"{x} (fresh {y})" for x, y in zip(moved.split(), fresh.split()) if x != y or "!" in x)[:200])
         page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
         sized(page, *a); sized(page, *b); page.wait_for_timeout(300)   # resized again, then scrolled: each figure must really pin
-        b2, k = pins(page, f"{a}->{b}"); bad += b2 + ([f"{a}->{b}: no figure has room to pin"] if not k else [])
+        # a figure that grew to its text's height (N6) has nothing to pin against; one with room that does not pin fails
+        b2, k = pins(page, f"{a}->{b}"); room = page.evaluate(ROOM_TO_PIN); bad += b2 + ([f"{a}->{b}: no figure has room to pin"] if not k and room else [])
     sized(page, 1440, 900); page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
     return not bad, "; ".join(bad) or "2 height changes"
 
