@@ -10,6 +10,7 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `a formula scene before any problem scene` | show the problem first |
 | `no limits scene` / `limits comes after next` | add one, before `next` |
 | `` `by-hand` scene “…” has no picture `` (any beat) | give it a `picture:` that draws this scene's move on its data (`board.md`, `picture`), or a figure item. An error in a lesson of 8 scenes or more; a warning in a shorter fragment |
+| `` no drawn picture: a whole lesson draws at least one with `picture:` `` | charts alone do not meet it: add a `picture:` to the scene it fits, often the formula scene (`machine`, chain or `terms`) or a by-hand scene (`grid`, `ruler`, `cast`) |
 | `` `picture` holds one kind `` / `` `ruler` has no field … `` / `` `ruler` needs `pin` `` | one of ruler, cast, machine, grid, pair, ghost, with the fields the message lists (`alt:` beside it is allowed) |
 | `` `from: …` names a list of rows `` / `` `label: …` is not a column `` | point `from` at a list of records in `data.json` (`make_data.py` writes it), and `label` at one of its columns |
 | `` the stations run … `` / `` `op: minus` needs `of` `` / `` `op: share` needs `by` `` / `` has `stations` … or `terms`, not both `` | a chain starts at `values` and keeps values → minus → square → sum → share, each once; a sum form lists 2–5 `{w, of}` and an `out` |

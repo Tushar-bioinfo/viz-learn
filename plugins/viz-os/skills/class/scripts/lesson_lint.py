@@ -3141,6 +3141,11 @@ def lint_scene_pictures(Lx, deck):
         msg = (f"`{s.get('beat')}` scene “{str(s.get('title') or '')[:38]}” has no picture: every scene after the opening has one; "
                f"add `picture:` ({', '.join(PICTURE)}) reading this scene's data, or a figure")
         (Lx.err if whole else Lx.warn)(slide_where(i, s), msg)
+    # CS1 (cold start, 15 Nov): charts alone met the rule above, so a fresh lesson drew no picture at all
+    if whole and not any(s.get("picture") is not None for _, s in boards):
+        Lx.err("lesson", f"no drawn picture: a whole lesson draws at least one with `picture:` ({', '.join(PICTURE)}), "
+                         f"beside the scene's chart or in place of it; most fit the formula scene (`machine`) or a by-hand scene "
+                         f"(`grid` for a dot product, `ruler` for a middle, `cast` for squares)")
 
 
 def make_lint(B, data):

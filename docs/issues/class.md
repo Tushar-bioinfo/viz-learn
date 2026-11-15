@@ -361,3 +361,13 @@ The user picked `A1 · Inks on black` (`out/n11/report.md`). Built into the clas
 - **The ruler's row labels default to `id`.** A table whose name column is `cell` must set `label: cell`; the lint checks the column exists, but a missing `label` with no `id` column draws empty names silently.
 - **A picture is not tied to a step.** It draws once, full width, above the steps; it does not light with the reading line or a `mark`. A later block could let `lit` follow the step being read.
 - **Ghost with no `foil.x`/`foil.y`** draws its ghost rings on the points themselves, so only the second line differs. Fine for "a worse line"; a foil that moves the points needs its own columns. Only `picture-kinds.yaml` exercises it; no shipped lesson uses `ghost` yet.
+
+## Cold start after the second round: contrastive learning (2026-11-15)
+Opus 5.5 medium (claude CLI), fresh workspace `~/viz-os-cold/contrastive-learning`, request "advanced level, verbose". 12 scenes, 21 min. Repo rebuild: 0 errors 0 warnings, check 0 warnings, `verify_data.py` agrees, and an independent InfoNCE recompute gives L 1.2100, Z1 26.7893, l1 1.2884 (view A anchors against view B candidates).
+- **CS1. No `picture:` at all.** Fixed 15 Nov (not committed): a whole lesson must draw at least one `picture:` (lint error, case `picture-none`); the cold lesson passes again with one `machine` in sum form on its dot-product scene (`out/cs1/`). Every scene has a chart, so the N12c "a picture on every scene" lint passes, yet the lesson has none of the look-B drawn pictures. The rule counts any figure. Open: should the skill steer a lesson to at least one or two `picture:` scenes (e.g. the problem scene), and should a lint say so?
+- **CS2. Linked word on a chart series prints raw** (`==own view:orange bar==` showed literally, scene 9). Lint and check both passed it.
+- **CS3. Lint and browser disagree on table columns** that read an earlier column (`unknown name "s1k"` in the browser only).
+- **CS4. Ops `vec` with a data list spreads the whole list into every row** with no error; `calc mean(...)` then drew `[...]`.
+- **CS5. Worked `sum`/`mean` lines print the index as `i` and the count as `n`**, not the symbol's own TeX or `N`.
+- **CS6. Doc gaps the agent named:** whether "advanced level" triggers adv mode (`SKILL.md` step 1, `adv.md`); `adv.md` §7 asks to show `storyboard.svg` in a terminal; `board.md` does not say a column cannot read an earlier column, or that a lollipop centres while dots sit at a band's left edge; `deck/spec.md` does not say matrix `rows`/`map` read the latest matrix; `SKILL.md` step 8 hard-codes `~/.viz-os` instead of `$VIZOS_HOME`; `lesson.md` §5 "Cut 'Here is'" has no lint.
+- Not checked: whether the agent read files outside its workspace.

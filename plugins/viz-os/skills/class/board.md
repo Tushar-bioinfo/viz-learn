@@ -81,7 +81,7 @@ table:
 `from` names a list of rows in the data, never `rows:` (that crashes in the browser; the lint stops it). A column is a `key` read from each row, or an `expr` worked on each row; `label` is its header and `fmt` its number format. A plain string (`cols: [id, cd3]`) is a column with its key as its label. Keep 3–8 rows, in the source's layout: a row per cell, or a row per gene.
 
 ### `picture`: the scene's drawing
-Every board scene after the title has a picture (a lint error in a whole lesson): a figure item, or `picture:` beside `lead`, drawn full width above the steps. One kind; the kit computes every number in it from the names you give:
+Every board scene after the title has a picture (a lint error in a whole lesson): a figure item, or `picture:` beside `lead`, drawn full width above the steps; a whole lesson draws at least one `picture:`. One kind; the kit computes every number in it from the names you give:
 ```yaml
 picture: {ruler: {from: cells, x: cd3, pin: xbar, lit: 0}}          # a middle: each row a weight at x, the ruler balanced at pin; lit rings row 0
 picture: {cast: {from: cells, square: cd3 - xbar, lit: top_ids}}    # squared distances: each row's square, its area the value; lit: ids
