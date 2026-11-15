@@ -31,7 +31,7 @@ The lint checks the ends: `problem` first, `limits` before `next`, and `next` la
 | `next` | The last scene. Its first line answers the opening question in its words; the next says what that answer does not tell (how large, how sure); then the next lesson's question, on one picture from this lesson's data. | the answer, a `plane` or chart, 3–4 steps |
 | `analogy` | Maps the idea onto something the learner already knows. Optional. | a `compare` or note |
 | `compare` | Puts two cases side by side so one difference stands out. Optional. | `compare` |
-| `misconception` | Names a wrong idea a learner is likely to hold, shows why it fails, gives the right one. Optional. | `compare` (bad, good), a think stop |
+| `misconception` | Names a wrong idea a learner is likely to hold, shows why it fails, gives the right one. Optional. | `compare` (one side `bad`), a think stop |
 | `aside` | One short detour the learner will want: a name's history, a common variant. Optional; keep it to 2–3 steps. | `note` |
 | `refresher` | An earlier idea the lesson leans on, taught again for a learner who has lost it. It sits after `next`, and the step that needs it links to it with `refresh` (`board.md`, Refreshers). Optional; not counted in the scenes. | the figure of the idea |
 

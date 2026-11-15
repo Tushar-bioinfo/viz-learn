@@ -70,7 +70,7 @@ cv1 = mv(C3, vecs[0])                                              # C times PC1
 lost = [z[1] ** 2 + z[2] ** 2 for z in Z]
 
 cells = [{"id": c, "type": types[c], "cd3": x[0], "cd19": x[1], "cd14": x[2], "d1": d[0], "d2": d[1], "d3": d[2],
-          "z1": z[0], "z2": z[1], "z3": z[2], "lost": l}
+          "z1": z[0], "z2": z[1], "z3": z[2], "lost": l, "z1f": -z[0]}   # z1f: the PC1 score with PC1 flipped
          for c, x, d, z, l in zip(PICK, X, Dm, Z, lost)]
 data = {
     "home": {"name": HOME["name"], "provenance": HOME["provenance"]},

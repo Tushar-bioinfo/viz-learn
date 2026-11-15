@@ -128,6 +128,7 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` `see: X` names nothing this scene draws `` | `see` is a mark's `label` or `id`, a chart series name, a symbol the scene shows, or a table column: fix the spelling, or name the mark that carries the point |
 | `` `see: X` is the mark that carries the point, but no teacher line links its word `` | write `==X==` (or `==X:your words==`) in the scene's `lead`, a `say` or a think question; a think answer does not count. A column or series with the same name does not stand in for the mark |
 | `` a `shortcut` scene (or `misconception`, `limits`) … holds one state `` | put the wrong way beside the right way on one frame: a `compare`; a toggle or slider that the figure reads (in a mark, a series or through `derive`); or the other way as a mark with `step:` (a later step) or `when:` |
+| `` `tone:` / `verdict:` / `visual:` is retired: a `compare` side draws no … `` / `` `text:` holds a number `` | delete it; mark the failing side `bad: true`; put the two cases' numbers on one `chart` or `plane` and say each in its side's colour (`board.md`, `compare`) |
 | `` the idea `X` fills N scenes and the depth budget is D `` | merge scenes on that idea, or ask the learner for more depth and set `learner.depth` |
 | `` `depth: X` is how many scenes one idea may fill `` | a whole number from 1 to 6, or leave it out for 2 (checked only in an adv lesson) |
 | `` `idea` belong on a board scene; this is a `T` slide `` (also `see`, `shows`) | move it to a `type: board` scene, or delete it |

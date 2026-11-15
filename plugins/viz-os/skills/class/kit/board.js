@@ -2025,10 +2025,11 @@
       else if (it.params) { const pr = it.params, e = tag(h('div', 'bi params g rl'), at, pr.id);
         e.innerHTML = (pr.say ? `<div class="ph">${md(pr.say)}</div>` : '') + list(pr.names).map(q => `<div class="pr" data-n="${L.esc(q)}"><span class="ps"></span><b class="pv"></b><span class="pn">${md(shortOf(ctx, q))}</span></div>`).join('');
         lines.push({ params: e, at, el: e }); (pr.side && zl ? zl : slot).appendChild(e); }
+      // two cases as a plain pair (N13): no box, tick, verdict word or big number; each title takes its side's colour, red when `bad`
       else if (it.compare) { const cp = it.compare, e = tag(h('div', 'bcmp bi'), at, cp.id);
-        ['a', 'b'].forEach(k => { const x = cp[k] || {}, side = h('div', 'side g');
-          side.innerHTML = `${x.tone ? `<div class="tone ${x.tone}"><i>${x.tone === 'good' ? '✓' : '✗'}</i>${md(x.verdict || (x.tone === 'good' ? 'works' : 'fails'))}</div>` : ''}<h3>${md(x.title || '')}</h3>${x.text ? `<div class="p">${md(x.text)}</div>` : ''}`;
-          if (x.visual) side.appendChild(visual(x.visual).node);
+        ['a', 'b'].forEach(k => { const x = cp[k] || {}, side = h('div', 'side');
+          side.style.setProperty('--sc', col(x.bad ? 'bad' : x.color || (k === 'a' ? 's1' : 's2')));
+          side.innerHTML = `<h3>${md(x.title || '')}</h3>${x.text ? `<div class="p">${md(x.text)}</div>` : ''}`;
           e.appendChild(side); });
         lines.push({ el: e, at }); slot.appendChild(e); }
       // a matrix step from the deck's ops renderer: its steps land on this step and the next ones, with its own Back and Next
@@ -2543,8 +2544,7 @@
       if (S != null) { b.node.style.setProperty('--fig', (typeof S === 'number' ? fw : def) + 'px'); if (S === 'fig') b.fig.style.width = ''; }
       if (b.split) b.split.style.left = (S === 'text' ? 0 : S === 'fig' ? W - GAP : typeof S === 'number' ? fw : parseFloat(b.node.style.getPropertyValue('--fig')) || def) + 'px'; });
       root.style.setProperty('--read', read + 'px');
-      blocks.forEach(b => { if (b.wide) b.figs.forEach(fg => sized(fg, { w: read, col: read, h: figH() })); });
-      node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / SHAPE) + 'px'; }); };
+      blocks.forEach(b => { if (b.wide) b.figs.forEach(fg => sized(fg, { w: read, col: read, h: figH() })); }); };
     // a block's text column with every answer open: a figure beside it is sized for that, so opening an answer never resizes it
     const fullOf = b => { node.classList.add('allopen'); const hh = b.side.offsetHeight; node.classList.remove('allopen'); return hh; };
     // every figure frame keeps AIR above and below its content. A lone figure beside its text grows to the text's height (every

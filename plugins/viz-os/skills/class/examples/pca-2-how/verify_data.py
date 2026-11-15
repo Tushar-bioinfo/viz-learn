@@ -25,7 +25,7 @@ ok("m1 m2", [D["m1"], D["m2"]], X.mean(axis=0)); ok("d1", D["d1"], Z[:, 0]); ok(
 ok("prod", D["prod"], Z[:, 0] * Z[:, 1]); ok("n_neg", D["n_neg"], int((Z[:, 0] * Z[:, 1] < 0).sum()))
 for k, c in enumerate(D["cells"]):
     assert c["id"] == D["ids"][k] and c["type"] == H["row_info"]["type"][H["row_ids"].index(c["id"])]
-    ok(f"cells[{k}]", [c["cd3"], c["cd19"], c["d1"], c["d2"], c["prod"]], [*X[k], *Z[k], Z[k, 0] * Z[k, 1]])
+    ok(f"cells[{k}]", [c["cd3"], c["cd19"], c["d1"], c["d2"], c["prod"], c["d1g"]], [*X[k], *Z[k], Z[k, 0] * Z[k, 1], D["gain"] * Z[k, 0]])
 
 C = np.cov(X, rowvar=False)
 ok("v_cd3", D["v_cd3"], C[0, 0]); ok("v_cd19", D["v_cd19"], C[1, 1]); ok("c12", D["c12"], C[0, 1])
@@ -63,6 +63,7 @@ assert abs(D["pth"][-1] - D["th_star"]) < 1e-2, "the repeats do not reach PC1"
 # limits: CD3 scaled, then both standardised
 S = np.diag([D["gain"], 1.0]); wg, Vg = np.linalg.eigh(S @ C @ S)
 ok("th_g", D["th_g"], math.degrees(math.atan2(Vg[1, 1], Vg[0, 1])) % 180, 1e-6)
+ok("g1 g2", np.abs([D["g1"], D["g2"]]), np.abs(Vg[:, 1]), 1e-6)   # PC1 on the wider scale, up to sign
 R = np.corrcoef(X, rowvar=False); wr, Vr = np.linalg.eigh(R)
 ok("r12", D["r12"], R[0, 1]); ok("th_r", D["th_r"], math.degrees(math.atan2(Vr[1, 1], Vr[0, 1])) % 180, 1e-6)
 

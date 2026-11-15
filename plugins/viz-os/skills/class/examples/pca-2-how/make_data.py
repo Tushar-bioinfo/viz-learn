@@ -75,7 +75,7 @@ th_g = math.degrees(math.atan2(lam1_g - g11, g12)) % 180
 r12 = s12 / math.sqrt(s11 * s22)
 th_r = math.degrees(math.atan2(abs(r12), r12)) % 180      # for a 2 x 2 correlation matrix PC1 is the 45 or 135 degree line
 
-cells = [{"id": c, "type": types[c], "cd3": x, "cd19": y, "d1": a, "d2": b, "prod": q}
+cells = [{"id": c, "type": types[c], "cd3": x, "cd19": y, "d1": a, "d2": b, "prod": q, "d1g": GAIN * a}   # d1g: CD3 read on the wider scale
          for c, x, y, a, b, q in zip(PICK, cd3, cd19, d1, d2, prod)]
 data = {
     "home": {"name": HOME["name"], "provenance": HOME["provenance"]},
@@ -90,7 +90,7 @@ data = {
     "a1": START[0], "a2": START[1], "reps": REPS, "steps_t": list(range(REPS + 1)),
     "pu1": [u[0] for u in pu], "pu2": [u[1] for u in pu], "pcu1": [v[0] for v in pcu], "pcu2": [v[1] for v in pcu],
     "plen": plen, "pth": pth, "pq": pq, "perr": perr,
-    "gain": GAIN, "th_g": th_g, "r12": r12, "th_r": th_r,
+    "gain": GAIN, "th_g": th_g, "g1": math.cos(math.radians(th_g)), "g2": math.sin(math.radians(th_g)), "r12": r12, "th_r": th_r,
 }
 (HERE / "data.json").write_text(json.dumps(data, indent=1) + "\n")
 print(f"data.json: covariance {s12:.3f}, hand {quad(HAND):.4f}, C u = ({hu[0]:.3f}, {hu[1]:.3f}) at {deg(*hu):.1f} deg; "
