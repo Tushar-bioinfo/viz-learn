@@ -155,6 +155,10 @@ def source_clone(sha, log):
 
 
 def apply_target(label, clone, log):
+    # Only Muse, Agy and T3 read the shared clone; Claude, Codex and Grok run while it is still None.
+    if clone is None and label in ('Muse', 'Agy', 'T3'):
+        raise RuntimeError('shared release clone not prepared for ' + label)
+    clone = clone or Path('/nonexistent-release-clone')
     commands = {
         'Claude': [['claude', 'plugin', 'marketplace', 'update', 'viz-learn'],
                    ['claude', 'plugin', 'update', 'viz-os@viz-learn', '--scope', 'user']],
