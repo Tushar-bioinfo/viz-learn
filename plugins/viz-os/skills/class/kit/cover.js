@@ -151,7 +151,7 @@
     if (mk != null && isFinite(mk)) { const x = sc(mk); S.line([[x, top || 16], [x, H - 16]], { closed: false, ink: C('accent') || '#ff5a36', wk: 1.5 }); if (cv.mark.label) S.text(x, 24, cv.mark.label, { weight: 650, anchor: 'middle', ink: C('accent') || '#ff5a36' }); }
     return S.svg(cv.line);
   }
-  L.cover = { scene, PARTS, rng };
+  L.cover = { scene, PARTS, rng, C, mix };   // pictures.js draws the scene pictures with the same engine
 
   // ---- the title slide: the deck's, plus a kicker line and the cover. The title stays the lesson's question
   const deckTitle = L.types.title;

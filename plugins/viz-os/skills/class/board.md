@@ -1,6 +1,6 @@
 # lesson.yaml: the board reference
 
-Read this when you write scenes (loop step 4). `lesson.md` says what each scene is for; this file says how to write it. A lesson is a deck file (the sibling deck's `spec.md`) with `board` scenes in it, so every deck field, visual, expression and number format works here too. This file covers what the board adds. Copy patterns from `examples/board-gallery/lesson.yaml`, which shows every plain board item below (of the deck visuals, not `units` or `dist`).
+Read this when you write scenes (loop step 4). `lesson.md` says what each scene is for; this file says how to write it. A lesson is a deck file (the sibling deck's `spec.md`) with `board` scenes in it, so every deck field, visual, expression and number format works here too. This file covers what the board adds; the top-level `recall` is an error here. Copy patterns from `examples/board-gallery/lesson.yaml`, which shows every plain board item below (of the deck visuals, not `units` or `dist`).
 
 ## Top level
 ```yaml
@@ -20,7 +20,6 @@ symbols:
   i: {tex: 'i', says: which cell, kind: index}
 slides: [ … ]
 ```
-`series`, `episode` and `home` are the board's own top-level keys; the rest are the deck's. `recall` is an error in a lesson.
 
 ### Symbols
 Every name that appears in a formula, a worked line or a parameter card gets a symbol.
@@ -81,6 +80,18 @@ table:
 ```
 `from` names a list of rows in the data, never `rows:` (that crashes in the browser; the lint stops it). A column is a `key` read from each row, or an `expr` worked on each row; `label` is its header and `fmt` its number format. A plain string (`cols: [id, cd3]`) is a column with its key as its label. Keep 3–8 rows, in the source's layout: a row per cell, or a row per gene.
 
+### `picture`: the scene's drawing
+Every board scene after the title has a picture (a lint error in a whole lesson): a figure item, or `picture:` beside `lead`, drawn full width above the steps. One kind; the kit computes every number in it from the names you give:
+```yaml
+picture: {ruler: {from: cells, x: cd3, pin: xbar, lit: 0}}          # a middle: each row a weight at x, the ruler balanced at pin; lit rings row 0
+picture: {cast: {from: cells, square: cd3 - xbar, lit: top_ids}}    # squared distances: each row's square, its area the value; lit: ids
+picture: {machine: {from: cells, x: cd3, stations: [{op: values, say: six levels}, {op: minus, of: xbar}, {op: square}, {op: sum, out: ss}, {op: share, by: n - 1, out: s2}]}}   # a formula's steps; or {terms: [{w: u1^2, of: v1}, …], out: s2u}
+picture: {pair: {a: {name: Donor A, values: donor_a, value: sA}, b: {…}, axis: CD3 level}}             # two cases on one scale
+picture: {grid: {from: cells, row: 0, x: d1, y: d2, arrow: [u1, u2], sum: [[v1, c12], [c12, v2]]}}   # one row's shadow, (a + b)² as tiles, the 2 × 2 sum
+picture: {ghost: {from: cells, x: d1, y: d2, line: th, name: best line, foil: {line: tg, name: worse line}}}   # a wrong reading; angles in degrees
+```
+A picture is drawn once, so it reads data only, no control or derive. `from` is a list of rows; `x`, `y` and `square` are worked on each row, and `label` names a row by a column (default `id`). Stations run values → minus → square → sum → share, each once, `say` ≤ 5 words; `out` must match what the station makes. The lint lists each kind's fields.
+
 ## Steps
 ```yaml
 steps:
@@ -108,7 +119,6 @@ A think step's `say` is optional; its question is the line. A think question has
 A fold (the gallery's by-hand scene has one) starts closed and opens with a click on its own `+`. Put in a fold what a curious learner asks next: why this choice, where a rule comes from, what the field calls it. The page must teach without it. One step fold a scene (the lint warns past one); the scene's own `more` holds the rest.
 - **Give every term its meaning in the fold too**, the first time it appears there: plain words then the term, or the term then its meaning in brackets ("unweighted (every pixel counts the same)"). A fold is read on its own, so a term defined higher up the page is defined again.
 - **List only pages you opened** while writing, with `why` saying what the reader gets there. `url` is a full `https://` link.
-- At most 160 words a fold, each sentence at most 24; its `ask` at most 14.
 
 ### Refreshers
 A refresher is an earlier idea the lesson leans on, such as the cosine before a projection. It is a whole board scene with `beat: refresher`, placed after the `next` scene, so the story runs on without it. The step that first needs it links to it:
@@ -127,14 +137,7 @@ A refresher is an earlier idea the lesson leans on, such as the cosine before a 
 The link jumps to the refresher, and a **back to where you were** button returns the reader to the line they left. A refresher teaches like any scene: worked numbers, a figure, a think stop. It is not counted in the lesson's 8–14 scenes. Link one only where a learner may have lost the idea; the lint warns on a refresher no step links to.
 
 ### Marks
-| Target | Lights |
-|---|---|
-| `row:4` | the table's fifth row (rows count from 0, as in `at()`) |
-| `col:cd3` | a table column, by its `key` |
-| `cell:4:cd3` | one cell |
-| `#total` | an item with `id: total` |
-
-`mark` takes one target or a list. It lights for one step; a think step's mark lights on its question and its answer. A target not yet on the board is ignored, and the check warns `mark target not found`. A `calc` with `row:` lights its row, and the cells it reads, by itself.
+`mark` lights, for one step, a table row `row:4` (from 0, as in `at()`), a column `col:cd3`, a cell `cell:4:cd3` or an item `#total` (its `id`); one target or a list. A think step's mark lights on its question and its answer; a target not yet on the board warns `mark target not found`. A `calc` with `row:` lights its row, and the cells it reads, by itself.
 
 ### Highlights in text
 The kit colours worked lines and their table cells for you. In your own text:
@@ -232,7 +235,7 @@ add:
     a: {title: Supervised, bad: true, text: 'A person writes each answer. No answers, no learning.'}
     b: {title: Self-supervised, text: The data writes the answer, from a question we make up.}
 ```
-`a` and `b` each take a `title`, and optionally `text` (one line), `bad: true` (the title turns red) and `color` (default `s1`, `s2`). No box, tick or figure. Two cases with numbers go on one `chart` instead: both sides' data on one axis, or the two values with the lines that give them meaning (an `hline` for "best possible", one for "blind guess"); say each value in its side's colour (`==s1:{{sA|3}}==`).
+`a` and `b` each take a `title`, and optionally `text` (one line), `bad: true` (the title turns red) and `color` (default `s1`, `s2`). No box, tick or figure. Two cases with numbers are a `pair` picture, or one `chart` with both sides' data on one axis; say each value in its side's colour (`==s1:{{sA|3}}==`).
 
 ### `ops`: a matrix step
 ```yaml
@@ -245,7 +248,7 @@ add:
 The deck's matrix steps (`spec.md`, Matrix steps), drawn at full width with their own Back and Next. Its first step lands on this step and each further one on the next board step, so add one board step after it per matrix step. `notation: false` on the `ops` item hides the deck's notation chip (`x_ij` = …); use it when the card is narrow, since the chip can spill out of it, and say what the row and column are in `says:` instead.
 
 ### Deck visuals
-`chart`, `stat`, `units` and `image` are figures, and `dist`, `parts` and `flow` are wide items, all written as on a deck slide (`spec.md`, Visuals and Charts), with `caption`, `alt` and `labels` beside them:
+`chart`, `stat`, `units` and `image` are figures, and `dist`, `parts` and `flow` are wide items, all written as on a deck slide (`spec.md`, Visuals and Charts), with `caption`, `alt` and `labels` beside them (`chance`, `fork`, `strip` and a space's `views` are adv only, `adv.md`):
 ```yaml
 add:
   chart:
@@ -255,8 +258,6 @@ add:
     marks: [{kind: hline, y: xbar, step: 2}, {kind: band, y: [lo, hi], name: usual range, says: where most cells sit}]
   caption: The tallest stick sits farthest above the line.
 ```
-**Adv lessons only** (a lint error in a plain lesson): `chance`, `fork`, `strip`, and a `space`'s `views`, `hunt` and `split`. Write them as `adv.md` §9–11 shows.
-
 `ratio` beside a `chart`, `dist` or `units` sets its shape, width to height (`ratio: 2:1`; default 16:9; a chart must stay between 1:1 and 2.2:1). An image keeps its own shape.
 
 **A chart mark has no tag on a board.** A named mark gets a legend entry, and pointing at it (or the entry) opens its card with its value now. When an `hline`'s `y`, a `vline`'s `x` or a `point`'s `y` is a symbol, its `short` is the name, its card the symbol's and its colour the symbol's: add only `name:` to rename the entry. Otherwise give `name:` (2 words) and `says:`. No `label:`, `text:` or `kind: label`. An unnamed line, band or area is a plain reference. Give named marks of one kind their own colours. A chart mark's (or an image label's) `step` counts board steps: `step: 2` shows on the scene's second step. Dots on a category axis sit at the left edge of their band: add 0.5 to `x` to centre them.
@@ -365,8 +366,7 @@ controls:
 A control sits under the figure it drives: the first figure that reads its name, otherwise the scene's last figure, otherwise the end of the lines. The check moves every slider, run and toggle to both ends. Draw what it changes on the scene (a matrix it remakes as `X = \mat{X}`, with `fmt:`).
 
 ## Series and home
-A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same home table; `series` and `episode` name the lesson's place, and a later one reaches back as `lesson.md` §7 says. If its `make_data.py` reads an earlier lesson's `data.json` and that lesson was tidied, run `tidy.py --restore` on it first.
-- `home: <name>` names the home table (`C/scripts/home.py`, written to `~/.viz-os/home/<name>.json`, or under `$VIZOS_HOME` when it is set). `make_data.py` reads that file and writes the rows it uses into `data.json`, plus `"home": {"name": …, "provenance": {…}}` copied from the file, so each lesson keeps its own copy and says where it came from. The build does not read the home file; it reads only `data.json`.
+A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same home table; `series` and `episode` name the lesson's place, and a later one reaches back as `lesson.md` §7 says. If its `make_data.py` reads an earlier lesson's `data.json` and that lesson was tidied, run `tidy.py --restore` on it first. `home: <name>` names the home table (`C/scripts/home.py`, written to `~/.viz-os/home/<name>.json`, or under `$VIZOS_HOME` when it is set). `make_data.py` reads that file and writes the rows it uses into `data.json`, plus `"home": {"name": …, "provenance": {…}}` copied from the file, so each lesson keeps its own copy and says where it came from. The build does not read the home file; it reads only `data.json`.
 
 ## The opening and the end
 The title asks the question; the board opens on the `problem` and ends on `next`, whose first line answers it (`lesson.md` §1). A deck slide type (`predict`, `table`, `bridge`, …) may sit between board scenes when it teaches better, and counts as a scene. An older lesson's `plan` scene still draws its `flow` as numbered squares, each `title` and `sub` under its square.

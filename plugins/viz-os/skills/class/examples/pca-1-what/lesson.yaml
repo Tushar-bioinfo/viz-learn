@@ -196,6 +196,14 @@ slides:
     beat: formula
     title: The shadow spread, written as a formula
     lead: Every symbol is a number we worked by hand.
+    picture:
+      machine:
+        x: p
+        stations:
+          - {op: values, say: six shadows}
+          - {op: square, say: each one squared}
+          - {op: sum, say: added up}
+          - {op: share, by: n - 1, out: s2u, say: one share}
     steps:
       - say: Our numbers, in the shape of the formula.
         why: The same recipe then works for any arrow.
@@ -316,6 +324,7 @@ slides:
     beat: by-hand
     title: Each cell's PC1 score
     lead: The shadow on PC1 is the one number each cell keeps.
+    picture: {ruler: {from: cells, x: v1 * d1 + v2 * d2, pin: 0, axis: PC1 score}}
     table:
       from: cells
       cols: [{key: id, label: cell}, {key: type, label: type}]
@@ -367,6 +376,13 @@ slides:
     beat: next
     title: Next, a shortcut to PC1
     lead: Which direction spreads your cells the most?
+    picture:
+      machine:
+        terms:
+          - {w: u1^2, of: v_cd3}
+          - {w: 2 * u1 * u2, of: c12}
+          - {w: u2^2, of: v_cd19}
+        out: s2u
     steps:
       - say: 'PC1: the line through the middle where the cells'' shadows spread most.'
         why: Each shadow is a dot product with a length-1 arrow.

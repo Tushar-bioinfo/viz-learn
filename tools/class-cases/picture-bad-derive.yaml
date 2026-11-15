@@ -1,0 +1,30 @@
+# expect: `mid` moves with a control or derive, but a picture is drawn once
+# N12c review: a picture is drawn once, so it reads data only, not a control or derive.
+title: Where the mean sits
+question: Where does the mean sit among these cells?
+answer: Add the levels and divide by the number of cells.
+data:
+  rows:
+    - {cell: c1, cd3: 2}
+    - {cell: c2, cd3: 4}
+    - {cell: c3, cd3: 6}
+  cd3: [2, 4, 6]
+  n: 3
+  tot: 12
+  xbar: 4
+abbr: {CD3: a T-cell surface marker}
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean}
+  tot: {tex: 'T', says: the sum of the levels, short: sum}
+  n: {tex: 'n', says: the number of cells, short: cells}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: The mean on a ruler
+    lead: The levels sit on one line.
+    derive: {mid: tot / n}
+    picture: {ruler: {from: rows, x: cd3, pin: mid}}
+    steps:
+      - say: The ruler balances at the mean.
+        add: {note: The pulls on each side cancel.}

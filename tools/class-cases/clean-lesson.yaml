@@ -1,5 +1,5 @@
 # expect: clean
-# A full small lesson on the mean that passes every rule: it opens on the problem and ends on `next`, with no plan or recap (N7), including the browser check (with C10l's step reasons and transfer stop).
+# A full small lesson on the mean that passes every rule, a picture on every scene (N12c): it opens on the problem and ends on `next`, with no plan or recap (N7), including the browser check (with C10l's step reasons and transfer stop).
 title: Where the mean sits
 subtitle: Three cells, one middle
 question: Where does the mean sit among these cells?
@@ -26,6 +26,7 @@ slides:
     beat: problem
     title: The mean has a job
     lead: The job comes before any formula.
+    picture: {ruler: {from: rows, x: cd3, pin: xbar, label: cell, fmt: 0, lit: 2}}
     steps:
       - say: Three cells, one marker. We want their middle.
         add: {note: One number has to stand for all three levels.}
@@ -37,6 +38,7 @@ slides:
     beat: data
     title: Three cells, one marker
     lead: These are the three levels we add.
+    picture: {ruler: {from: rows, x: cd3, pin: xbar, label: cell, fmt: 0}}
     table:
       from: rows
       cols: [{key: cell, label: cell}, {key: cd3, label: CD3}]
@@ -51,6 +53,7 @@ slides:
     beat: by-hand
     title: Work the mean by hand
     lead: Add them, then share the sum.
+    picture: {ruler: {from: rows, x: cd3, pin: xbar, label: cell, fmt: 0, lit: 0}}
     table:
       from: rows
       cols: [{key: cell, label: cell}, {key: cd3, label: CD3}]
@@ -69,6 +72,15 @@ slides:
     beat: formula
     title: The same steps, as a formula
     lead: Each symbol is a number we made.
+    picture:
+      machine:
+        from: rows
+        x: cd3
+        fmt: 0
+        stations:
+          - {op: values, say: three CD3 levels}
+          - {op: sum, out: tot, say: added up}
+          - {op: share, by: n, out: xbar, say: one share each}
     steps:
       - say: Our numbers, in the shape of the formula.
         why: Each symbol then points at a number we made.
@@ -88,6 +100,7 @@ slides:
     beat: misconception
     title: The mean need not be a cell
     lead: The middle we computed may match no cell at all.
+    picture: {ruler: {from: rows, x: cd3, pin: xbar, label: cell, fmt: 0, lit: 1}}
     steps:
       - say: The mean need not match any one cell's level.
         add: {note: Raise c3 and the mean moves off c2.}
@@ -99,6 +112,7 @@ slides:
     beat: analogy
     title: The mean is a balance point
     lead: Picture the levels as weights on a ruler.
+    picture: {ruler: {from: rows, x: cd3, pin: xbar, label: cell, fmt: 0, axis: CD3 level}}
     steps:
       - say: Put each cell as a weight on a ruler, at its level.
         add: {note: The ruler balances at the mean.}
@@ -110,6 +124,7 @@ slides:
     beat: limits
     title: Where the mean misleads
     lead: One odd cell can move the middle.
+    picture: {ruler: {from: rows, x: cd3, pin: xbar, label: cell, fmt: 0, lit: 2}}
     steps:
       - say: A far cell pulls the mean up with it.
         add: {note: The mean assumes one group around one middle.}
@@ -125,6 +140,7 @@ slides:
     beat: next
     title: Next, how far cells sit
     lead: Where does the mean sit among these cells?
+    picture: {cast: {from: rows, square: cd3 - xbar, label: cell, lit: 2, fmt: 0}}
     steps:
       - say: 'At {{xbar}}: the sum of the levels over the number of cells.'
       - say: It does not say how far the cells sit from it.

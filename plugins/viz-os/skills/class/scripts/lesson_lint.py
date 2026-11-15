@@ -1393,6 +1393,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
             Lx.warn(where, "a what-if scene with no picture: add a `chart` or `plane` that the change moves, so the learner sees what moves")
         lint_sources(Lx, where, s.get("sources"), "scene `sources`")
         lint_refresher(B, Lx, deck, i, s, where)
+        lint_picture(B, Lx, where, s, set(glob), values, names - set(glob))
         folds = [j + 1 for j, st in enumerate(steps) if isinstance(st, dict) and st.get("more") is not None]
         if len(folds) > 1:
             Lx.warn(where, f"steps {', '.join(map(str, folds))} each open extra reading: keep one `more` a scene, on the step that most needs it; put the rest in the scene's `more` (Context and limits)")
@@ -2983,6 +2984,165 @@ def lint_cover(Lx, deck, values, glob):
         short(cv.get("line"), 14, "`cover` `line`")
 
 
+# a scene's picture (pictures.js, board.md "Scene pictures"): one kind, its fields, and the names it reads. `row` fields are
+# worked on each row of `from` (its columns are names there); the rest read the lesson's data, derive and controls
+PICTURE = {
+    "ruler": {"need": ("from", "x", "pin"), "opt": ("label", "lit", "axis", "fmt"), "row": ("x",), "name": ("pin", "lit")},
+    "cast": {"need": ("from", "square"), "opt": ("label", "lit", "fmt"), "row": ("square",), "name": ("lit",)},
+    "machine": {"need": (), "opt": ("from", "x", "stations", "terms", "out", "fmt"), "row": ("x",), "name": ("out",)},
+    "grid": {"need": ("from", "x", "y", "arrow", "sum"), "opt": ("row", "label", "fmt"), "row": ("x", "y"), "name": ()},
+    "pair": {"need": ("a", "b"), "opt": ("axis", "square"), "row": (), "name": ()},
+    "ghost": {"need": ("from", "x", "y", "line", "foil"), "opt": ("name",), "row": ("x", "y"), "name": ("line",)},
+}
+MACHINE_OPS = ("values", "minus", "square", "sum", "share")   # a chain's stations, in this order (each at most once)
+# what counts as a scene's picture: its `picture:`, or a figure item that draws the scene's numbers
+PICTURE_ITEMS = {"plane", "space", "chart", "dist", "units", "parts", "ops", "fork", "chance", "beads", "recorder", "wheel", "pileup", "strip", "image", "flow", "stat"}
+
+
+def lint_picture(B, Lx, where, s, names, values, live=()):
+    """A board scene's `picture:`: one kind with its fields; every name it reads is in the data, derive, controls or its rows."""
+    pic = s.get("picture")
+    if pic is None:
+        return
+    w = f"{where} picture"
+    kinds = [k for k in PICTURE if isinstance(pic, dict) and k in pic]
+    if not isinstance(pic, dict) or len(kinds) != 1 or set(pic) - set(PICTURE) - {"alt"}:
+        Lx.err(w, f"`picture` holds one kind: {', '.join(PICTURE)} (and `alt:` if you like); got {', '.join(map(str, pic)) if isinstance(pic, dict) else repr(pic)}")
+        return
+    k = kinds[0]; p = pic[k]; spec = PICTURE[k]; w = f"{w} {k}"
+    if not isinstance(p, dict):
+        Lx.err(w, f"`{k}` is a mapping of its fields: {', '.join(spec['need'] + spec['opt'])}")
+        return
+    for f in sorted(set(p) - set(spec["need"]) - set(spec["opt"]), key=str):
+        hit = next(iter(difflib.get_close_matches(str(f), spec["need"] + spec["opt"], 1, .6)), None)
+        Lx.err(w, f"`{k}` has no field `{f}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(spec['need'] + spec['opt'])})"))
+    for f in spec["need"]:
+        if p.get(f) is None:
+            Lx.err(w, f"`{k}` needs `{f}`")
+    rowkeys = set()
+    if "from" in p:
+        rows = values.get(p["from"]) if isinstance(p["from"], str) else None
+        if not (isinstance(rows, list) and rows and all(isinstance(r, dict) for r in rows)):
+            Lx.err(w, f"`from: {p['from']!r}` names a list of rows (records) in the data, made by make_data.py")
+        else:
+            rowkeys = set().union(*(r.keys() for r in rows))
+    def expr(f, x, row=False):
+        moving = sorted({m for m in re.findall(r"[A-Za-z_]\w*", str(x)) if m in live and not (row and m in rowkeys)}) if x is not None else []
+        if moving:   # a picture is drawn once, at the page's width: a slider or derive would leave it stale
+            Lx.err(f"{w} {f}", f"`{', '.join(moving)}` moves with a control or derive, but a picture is drawn once: read data only (make the value in make_data.py)")
+            return
+        if x is not None:
+            B.check_expr(Lx, f"{w} {f}", x, names | (rowkeys if row else set()))
+    for f in spec["row"]:
+        expr(f, p.get(f), True)
+    for f in spec["name"]:
+        expr(f, p.get(f))
+    for f in ("label",):
+        if p.get(f) is not None and rowkeys and p[f] not in rowkeys:
+            Lx.err(w, f"`label: {p[f]}` is not a column of `{p.get('from')}` (it has {', '.join(sorted(rowkeys))})")
+    def short(t, most, what):
+        if t is not None and (not isinstance(t, str) or not t.strip() or B.words(t) > most):
+            Lx.err(w, f"{what} is {t!r}: {most} plain words or fewer")
+    if k == "ruler":
+        short(p.get("axis"), 3, "`axis`")
+    elif k == "machine":
+        st, tm = p.get("stations"), p.get("terms")
+        if (st is None) == (tm is None):
+            Lx.err(w, "a `machine` has `stations` (the steps a list passes through, with `x`) or `terms` (the parts added up, with `out`), not both")
+        if st is not None:
+            if p.get("x") is None:
+                Lx.err(w, "a `machine` with `stations` needs `x`: the column (with `from`) or data list the stations work on")
+            ops = []
+            if not as_list(st):
+                Lx.err(w, "`stations` lists the steps, from `{op: values}` on: it is empty")
+            for j, q in enumerate(as_list(st)):
+                ww = f"{w} station {j + 1}"
+                if not isinstance(q, dict):
+                    Lx.err(ww, "a station is {op, say} (plus `of`, `by`, `out`, `fmt`)"); continue
+                for f in sorted(set(q) - {"op", "say", "of", "by", "out", "fmt"}, key=str):
+                    Lx.err(ww, f"a station has no field `{f}` (it takes op, say, of, by, out, fmt)")
+                op = q.get("op")
+                if op not in MACHINE_OPS:
+                    Lx.err(ww, f"`op: {op}` is one of {', '.join(MACHINE_OPS)}"); continue
+                ops.append(op)
+                if q.get("out") is not None and op not in ("sum", "share"):
+                    Lx.err(ww, f"`out` names what a `sum` or `share` station makes; `op: {op}` makes a list, so leave `out` off")
+                if op == "minus" and q.get("of") is None:
+                    Lx.err(ww, "`op: minus` needs `of`: the name taken from each value (the mean)")
+                if op == "share" and q.get("by") is None:
+                    Lx.err(ww, "`op: share` needs `by`: how many equal shares the sum is cut into (n - 1)")
+                for f in ("of", "by", "out"):
+                    expr(f"station {j + 1} {f}", q.get(f))
+                short(q.get("say"), 5, f"station {j + 1} `say`")
+            if ops and (ops[0] != "values" or ops != sorted(set(ops), key=MACHINE_OPS.index)):
+                Lx.err(w, f"the stations run {' → '.join(ops)}: start at `values` and keep the order {' → '.join(MACHINE_OPS)}, each once")
+        if tm is not None:
+            T = as_list(tm)
+            if not 2 <= len(T) <= 5:
+                Lx.err(w, f"`terms` lists 2 to 5 parts, each {{w, of}}; got {len(T)}")
+            for j, q in enumerate(T):
+                if not isinstance(q, dict) or set(q) != {"w", "of"}:
+                    Lx.err(f"{w} term {j + 1}", "a term is {w, of}: its weight and the number it weighs"); continue
+                expr(f"term {j + 1} w", q["w"]); expr(f"term {j + 1} of", q["of"])
+    elif k == "grid":
+        ar, sm = p.get("arrow"), p.get("sum")
+        if ar is not None and not (isinstance(ar, list) and len(ar) == 2):
+            Lx.err(w, f"`arrow` is two names, [u1, u2]: the arrow's two parts; got {ar!r}")
+        for x in as_list(ar):
+            expr("arrow", x)
+        if sm is not None and not (isinstance(sm, list) and len(sm) == 2 and all(isinstance(r, list) and len(r) == 2 for r in sm)):
+            Lx.err(w, f"`sum` is a 2 × 2 list of names, [[a, b], [c, d]]; got {sm!r}")
+        for r in as_list(sm):
+            for x in as_list(r):
+                expr("sum", x)
+    elif k == "pair":
+        short(p.get("axis"), 3, "`axis`")
+        for side in ("a", "b"):
+            q = p.get(side)
+            if not isinstance(q, dict):
+                if q is not None:
+                    Lx.err(w, f"`{side}` is {{name, values, value}}: a side's name, its data list and its one number; got {q!r}")
+                continue
+            for f in sorted(set(q) - {"name", "values", "value", "color"}, key=str):
+                Lx.err(w, f"`{side}` has no field `{f}` (it takes name, values, value, color)")
+            short(q.get("name"), 3, f"`{side}` `name`")
+            v = values.get(q.get("values")) if isinstance(q.get("values"), str) else None
+            if not (isinstance(v, list) and 2 <= len(v) <= 40 and all(NUM(x) for x in v)):
+                Lx.err(w, f"`{side}` `values: {q.get('values')!r}` names a list of 2 to 40 numbers in the data")
+            expr(f"{side} value", q.get("value"))
+            if q.get("color") is not None and q["color"] not in ("s1", "s2", "s3", "s4", "s5"):
+                Lx.err(w, f"`{side}` `color: {q['color']}` is s1 to s5")
+    elif k == "ghost":
+        fo = p.get("foil")
+        short(p.get("name"), 4, "`name`")
+        if isinstance(fo, dict):
+            for f in sorted(set(fo) - {"x", "y", "line", "name"}, key=str):
+                Lx.err(w, f"`foil` has no field `{f}` (it takes x, y, line, name)")
+            if fo.get("line") is None:
+                Lx.err(w, "`foil` needs `line`: the angle of the other reading's line, in degrees")
+            expr("foil x", fo.get("x"), True); expr("foil y", fo.get("y"), True); expr("foil line", fo.get("line"))
+            short(fo.get("name"), 4, "`foil` `name`")
+        elif fo is not None:
+            Lx.err(w, "`foil` is {x, y, line, name}: the same rows read another way")
+    tb = s.get("table")
+    if s.get("beat") == "by-hand" and isinstance(tb, dict) and p.get("from") is not None and p.get("from") != tb.get("from"):
+        Lx.warn(w, f"a by-hand picture reads `{p.get('from')}`, but the scene's table is `{tb.get('from')}`: point it at the table's rows, so it shows the step being worked")
+
+
+def lint_scene_pictures(Lx, deck):
+    """The user's Review 11 (N12c): every board scene after the opening has a picture. An error in a whole lesson (8 scenes or
+    more); a warning in a shorter fragment, such as a test case."""
+    slides = deck.get("slides") or []
+    boards = [(i, s) for i, s in enumerate(slides) if isinstance(s, dict) and s.get("type") == "board" and s.get("beat") != "refresher"]
+    whole = len(boards) >= SCENES[0]
+    for i, s in boards:
+        if s.get("picture") is not None or any(k in it for _, it in items_of(s) for k in PICTURE_ITEMS):
+            continue
+        msg = (f"`{s.get('beat')}` scene “{str(s.get('title') or '')[:38]}” has no picture: every scene after the opening has one; "
+               f"add `picture:` ({', '.join(PICTURE)}) reading this scene's data, or a figure")
+        (Lx.err if whole else Lx.warn)(slide_where(i, s), msg)
+
+
 def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
         values = {**(deck.get("data") or {}), **(data or {})}   # what a `beads` figure's rings are named from
@@ -2993,4 +3153,5 @@ def make_lint(B, data):
         lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck, values); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_case(Lx, deck, data); lint_story(Lx, deck)
         lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck, values); lint_adv(Lx, deck, values); lint_cover(Lx, deck, values, glob)
+        lint_scene_pictures(Lx, deck)
     return lesson_lint

@@ -9,6 +9,15 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `a lesson has no plan scene` | delete it: the title asks the question, and the problem opens the board |
 | `a formula scene before any problem scene` | show the problem first |
 | `no limits scene` / `limits comes after next` | add one, before `next` |
+| `` `by-hand` scene “…” has no picture `` (any beat) | give it a `picture:` that draws this scene's move on its data (`board.md`, `picture`), or a figure item. An error in a lesson of 8 scenes or more; a warning in a shorter fragment |
+| `` `picture` holds one kind `` / `` `ruler` has no field … `` / `` `ruler` needs `pin` `` | one of ruler, cast, machine, grid, pair, ghost, with the fields the message lists (`alt:` beside it is allowed) |
+| `` `from: …` names a list of rows `` / `` `label: …` is not a column `` | point `from` at a list of records in `data.json` (`make_data.py` writes it), and `label` at one of its columns |
+| `` the stations run … `` / `` `op: minus` needs `of` `` / `` `op: share` needs `by` `` / `` has `stations` … or `terms`, not both `` | a chain starts at `values` and keeps values → minus → square → sum → share, each once; a sum form lists 2–5 `{w, of}` and an `out` |
+| `` `x` moves with a control or derive, but a picture is drawn once `` / `` `out` names what a `sum` or `share` station makes `` / `` `stations` … is empty `` / `` `a` is {name, values, value} `` | make the value in `make_data.py` and name it; put `out` on the sum and share only; list the stations; write each pair side as a mapping |
+| `` the grid's `arrow` has length L `` (browser check) | give a unit arrow, length 1 (divide each part by the length in `make_data.py`) |
+| `` a by-hand picture reads `X`, but the scene's table is `Y` `` | draw the rows the scene works on: the same `from` as its table |
+| `` the ruler picture's words … overlap `` / `` … run off it `` / `` formula heads 1 and 2 overlap `` (browser check) | shorter names or `label`, fewer rows, or a smaller `fmt` |
+| `` the machine's sum gives …, but `ss` is … `` / `` the machine's terms add to … `` | the station's `out` and what it makes disagree: fix the `out`, the stations, or `make_data.py` |
 | `a what-if scene with no picture` | add a `chart` or `plane` whose marks read the slider |
 | `a lesson has no summary slide` | delete the `recap`; the `next` scene's first line answers the opening question, in its words |
 | `no next scene` / `the next tease is the last scene` | one `next` scene, at the end: the answer, what it does not say, the next question |

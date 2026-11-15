@@ -103,6 +103,16 @@ slides:
       - say: PC2's the same way, with PC2's arrow.
         why: Then both stretches are ready to mix.
         add: {calc: {say: PC2's stretch, expr: (v_cd3 * w1 + c12 * w2) / w1, name: lam2, fmt: 3}}
+      - say: 'The ==arrow 1:PC1 arrow== and ==arrow 2:PC2 arrow== keep their direction under $C$: ==Cv1== and ==Cv2==.'
+        add:
+          plane:
+            x: {label: CD3 part, min: -5.5, max: 1.5}
+            y: {label: CD19 part, min: -0.5, max: 4}
+            marks:
+              - {vector: [v1, v2], color: s1, label: arrow 1, says: "PC1's arrow, length 1"}
+              - {vector: ['lam1 * v1', 'lam1 * v2'], color: accent, dash: true, label: Cv1, says: C times PC1's arrow}
+              - {vector: [w1, w2], color: s2, label: arrow 2, says: "PC2's arrow, length 1"}
+              - {vector: ['lam2 * w1', 'lam2 * w2'], color: s3, dash: true, label: Cv2, says: C times PC2's arrow}
       - say: '$u$''s two parts stretch by $\lambda_1$ and $\lambda_2$, each weighed by its square.'
         add: {calc: {say: The spread along u from its two parts, why: 'The same as CD3''s spread, {{v_cd3|3}}.', expr: a^2 * lam1 + b^2 * lam2, name: s2u, fmt: 3}}
       - think:
@@ -113,6 +123,12 @@ slides:
     beat: formula
     title: The spread is a mix of the two stretches
     lead: Our numbers, in the shape of the formula.
+    picture:
+      machine:
+        terms:
+          - {w: a^2, of: lam1}
+          - {w: b^2, of: lam2}
+        out: s2u
     steps:
       - say: The numbers for the flat arrow $u$.
         why: The same mix then holds for any arrow.
@@ -165,6 +181,15 @@ slides:
         mark: col:d3
       - say: Monocytes c4 and c10 sit far above the middle. The other four sit below.
         mark: [row:3, row:5]
+        add:
+          plane:
+            x: {label: centred CD3, min: -2.5, max: 3.5}
+            y: {label: centred CD14, min: -2, max: 3}
+            marks:
+              - {line: [0, 1, 0], color: mist}
+              - {line: [0, 0, 1], color: mist}
+              - {quarters: [0, 0]}
+              - points: {from: cells, x: d1, y: d3, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
       - say: Multiply each cell's CD3 and CD14 distances, as in part 2.
         why: Their average is the covariance.
         add: {col: {key: prod13, label: d₁ × d₃, expr: d1 * d3, fmt: 2}}
