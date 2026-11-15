@@ -10,16 +10,16 @@
 # ships:  plugin (in plugins/viz-os) | mockup (only in out/) | none
 
 artifact: https://claude.ai/artifact/2r7angg1HBwSeyk2UQMDpV
-updated: 2026-11-13
+updated: 2026-11-15
 title: C10, advanced visuals for class lessons
 
 now: >-
-  15 Nov: your review of the C10h cold lessons became N6–N9. Merged into this branch: N6 (even
-  frame air with a gate, a draggable figure/text split), N7b (lessons open on the problem, limits
-  count every shuffle, the answer opens `next`) and N9b (the colour-edge pop-up card). N8 showed
-  your full voice. After the merge, the full run: 3 decks and 6 lessons 0 errors, check 0 warnings;
-  353/353 class cases; board UI 274/277 (the 3 failed before this work). Four old examples now warn
-  for their plan and recap scenes. Not pushed.
+  15 Nov, second round done: the five problems you marked in a 5.0 lesson are fixed and merged
+  into feat/draw-math-objects. N10 removed the study toggle, N14 packs sources into a hidden
+  `.lesson/`, N13 dropped the verdict cards, N11 gave the opening page a drawn cover, and N12a–c
+  put a look-B picture on every scene (a scene with none is now a lint error). After the last
+  merge: 6 lessons 0 errors and 0 warnings, 370/370 class cases, 22/22 tidy tests. Next: you
+  study a lesson for words and story. The full run and a cold start have not been run. Not pushed.
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -29,6 +29,11 @@ budget:            # lines a lesson agent reads on every run, against the branch
     plugins/viz-os/skills/class/SKILL.md: 3
 
 waiting:
+  - title: Study a 5.0 lesson for words and story
+    more: |
+      You like the 5.0 outputs so far and want to check the text and the storytelling by
+      studying one lesson. Tell the findings in a chat; they become Review 14 onward in
+      `docs/issues/class.md`.
   - title: Review rounds not yet run for N7b and N9b
     more: |
       Both were built, approved by you and merged (15 Nov) without the one-reviewer round
@@ -47,7 +52,8 @@ waiting:
     more: |
       - 9 Nov: a block for illustrated objects the learner can move (art from kit parts,
         agent-written SVG or an image model), with a gallery of ready interactive scenes.
-        Proposed to sit after C10c; not agreed.
+        Proposed to sit after C10c; not agreed. N12a–c (a figure in every scene) now take up
+        the drawn half of it.
       - 9 Nov (C10i): three look rulings were never made: a plane that looks empty at one
         moment, the cap of 4 mark hues, and which mark counts as the witness.
 
@@ -80,6 +86,7 @@ lanes:
   - Story and starter look
   - Exam and after
   - Next phase
+  - Figures and opening
 
 blocks:
   - id: C10a
@@ -414,6 +421,100 @@ blocks:
     ships: plugin
     you: approve
     line: "The B colour-edge card, a `term:` key and a card-contrast check. Merged."
+
+  - id: N10
+    name: Drop study toggle
+    lane: Figures and opening
+    col: 8
+    edges: false
+    status: approved
+    commit: e0787d7
+    ships: plugin
+    you: review
+    line: "Switch removed; check and print open every fold. Merged."
+    more: |
+      Your study of a 5.0 lesson, 15 Nov (Review 9, `out/n10/feedback/1-opening-and-study-toggle.webp`).
+      Small kit change; own worktree; quick check plus the board UI test.
+
+  - id: N11
+    name: Opening page
+    lane: Figures and opening
+    col: 8
+    edges: false
+    status: approved
+    commit: e791753
+    ships: mockup
+    you: pick
+    line: "You picked A1, inks on black: a drawn cover (`cover.js`) on the opening page. Merged."
+    more: |
+      Review 10. Today: a huge orange title and a grey `//` line on an empty black page.
+      Mock-up first in `out/n11/`; builds into the kit only after your pick.
+
+  - id: N12a
+    name: Drawn look
+    lane: Figures and opening
+    col: 8
+    edges: false
+    status: done
+    ships: mockup
+    you: pick
+    line: "You picked B, inks on black: board colours on black, felt key line, offset fill, halftone blooms."
+    more: |
+      Review 11, the look half: how a scene picture is drawn. Builds on the C10f ink parts and
+      the sketch skill's parts box. Mock-up in `out/n12a/`.
+
+  - id: N12b
+    name: Picture kinds
+    lane: Figures and opening
+    col: 8
+    edges: false
+    status: done
+    ships: mockup
+    you: pick
+    line: "You picked 7 picture kinds for N12c and dropped the lesson map and its lint."
+    more: |
+      Review 11, the content half: which scenes lack a figure today, the kinds of context
+      picture (`3-ref-gfg-ssl-pipeline.webp`, `4-ref-hf-comic-strip.webp`), their YAML and token
+      cost, and a lint that each scene after the opening has a figure. Mock-up in `out/n12b/`.
+
+  - id: N12c
+    name: Build scene pictures
+    lane: Figures and opening
+    after: [N12a, N12b]
+    col: 9
+    status: approved
+    ships: plugin
+    commit: ecd74d1
+    line: "`picture:` in six kinds, look B; a scene with no picture is a lint error. Merged; all six example lessons have pictures and pass."
+
+  - id: N13
+    name: Drop verdict cards
+    lane: Figures and opening
+    col: 8
+    edges: false
+    status: approved
+    commit: 68ec0f9
+    ships: mockup
+    you: pick
+    line: "You picked combine all three: `compare` is a plain pair or a picture; the cards are gone. Merged."
+    more: |
+      Review 12, "this slop": badge, caps tag, name, claim, huge orange number, the name again,
+      a grey footnote. Options in `out/n13/`; you picked "combine all three" (15 Nov). The kit
+      change waits until N10 is merged.
+
+  - id: N14
+    name: Tidy after build
+    lane: Figures and opening
+    col: 8
+    edges: false
+    status: approved
+    commit: eaf1109
+    ships: plugin
+    you: pick, review
+    line: "You picked B: only lesson.html in view, sources packed in a hidden .lesson/. Merged."
+    more: |
+      Your ask, 15 Nov (Review 13). First a list of what a run leaves behind and what a later
+      run still needs (series, `next lesson`, a rebuild), then you pick delete or pack away.
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}
