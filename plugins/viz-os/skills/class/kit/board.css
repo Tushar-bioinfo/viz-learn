@@ -18,8 +18,17 @@ html.ls-page .slide { position: static; inset: auto; display: flex; flex-directi
 html.ls-page .slide + .slide { border-top: 3px solid var(--line-dim); }
 html.ls-page .enter { animation: none; }
 html.ls-page .s-title { min-height: calc(100vh - 24px); justify-content: center; }   /* the title fills the first screen; the problem starts after a scroll (the user, 15 Nov) */
-html.ls-page .s-title .display { font-size: 64px; }
-html.ls-page .s-title .subtitle { font-size: 26px; }
+html.ls-page .s-title .display { font-size: 52px; line-height: 1.06; font-weight: 850; text-transform: none; letter-spacing: -.025em; max-width: 1150px; }   /* sentence case: the title is the lesson's question (N11, 15 Nov) */
+html.ls-page .s-title .subtitle { font-size: 22px; max-width: 1100px; }
+html.ls-page .s-title .kicker.lkick { border: 0; box-shadow: none; padding: 0; font: 600 15px/1 var(--f-mono); letter-spacing: .14em; color: var(--mist); }   /* series · lesson n · your home, made by cover.js */
+html.ls-page .s-title .kicker.lkick b { color: var(--accent); font-weight: 700; }
+/* the cover: the title's picture fills the rest of the first screen, one line under it (cover.js) */
+html.ls-page .s-title.has-cover { justify-content: flex-start; gap: 0; padding-top: 28px; }
+html.ls-page .s-title.has-cover .display { margin-top: 16px; }
+html.ls-page .s-title.has-cover .subtitle { margin-top: 12px; }
+html.ls-page .s-title .cover { margin-top: 26px; border: 3px solid var(--c-frame); flex: 1 1 auto; min-height: 360px; display: flex; overflow: hidden; }
+html.ls-page .s-title .cover svg { width: 100%; height: 100%; display: block; }
+html.ls-page .s-title .cover-line { margin-top: 14px; font: 500 18px/1.4 var(--f-ui); color: var(--ink); }
 html.ls-page .s-title .question { display: none; }   /* the title asks the question; the board opens on the problem (N7) */
 html.ls-page .s-recap .recap { flex: none; }
 /* a deck slide between scenes expects a tall box */

@@ -339,3 +339,10 @@ A plain lesson built cold from `plugins/viz-os/` at `b5afc2e` (`out/update/5.0.0
 - **Cold 32. The contact sheet shows only a toggle's first state**, so the eyes gate misses the second (like Cold 16). Open.
 - **Cold 33. The examples' `verify_data.py` read `../home/cells.json`, not `$VIZOS_HOME/home/cells.json`**, so copying them breaks with a real home. Open.
 - **Cold 34. Agent-reported kit bugs, not confirmed:** a `calc` `sum(list) / n` draws `a+…+e/5` with no brackets; raw data names (`own_r1`, `len(…)`) show in worked lines when a list has no symbol; a centre on top of c1 puts c1's label beside c3 (scene 5); card measuring stops at 80 a slide (N9b 3).
+
+## N11: the opening page with a drawn cover (2026-11-15)
+The user picked `A1 · Inks on black` (`out/n11/report.md`). Built into the class kit: `class/kit/cover.js` (N12a look B engine, parts `tcell` and `flowtube`, a wrapper round the deck's `T.title`), the `.s-title` restyle in `board.css`, `lint_cover` with cases `cover-clean` and `cover-bad`. Tried on variance (cover added, donor B s2 → s5) and pca-2-how (head only). `deck/kit/slides.js` is untouched.
+- **N11 1. The other lessons have no cover**: pca-1-what, pca-2-how, pca-3-why, perceptron-trick and board-gallery open on the restyled head alone, centred on an empty first screen. Each needs a `cover:` whose parts fit its topic; the cover has only `flowtube` and `tcell` today, so PCA and perceptron need new parts first. Open.
+- **N11 2. No lint asks for a cover.** A lesson without one builds with no warning. Decide whether to warn once the parts box covers more topics. Open.
+- **N11 3. In variance, donor B now shares s5 with the variance symbol `s2`** (before, it shared s2 with the mean `xbar`). The lint does not check a group colour against symbol colours. Open.
+- **N11 4. N12c (build N12a's looks) should reuse `cover.js`'s `scene()`** rather than port the engine a second time. `VizOS.cover.scene(W, H, seed)` gives fill, line, shade, dot, text and part; only look B is in it. Open.
