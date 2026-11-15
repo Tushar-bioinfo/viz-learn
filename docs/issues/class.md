@@ -346,3 +346,14 @@ The user picked `A1 · Inks on black` (`out/n11/report.md`). Built into the clas
 - **N11 2. No lint asks for a cover.** A lesson without one builds with no warning. Decide whether to warn once the parts box covers more topics. Open.
 - **N11 3. In variance, donor B now shares s5 with the variance symbol `s2`** (before, it shared s2 with the mean `xbar`). The lint does not check a group colour against symbol colours. Open.
 - **N11 4. N12c (build N12a's looks) should reuse `cover.js`'s `scene()`** rather than port the engine a second time. `VizOS.cover.scene(W, H, seed)` gives fill, line, shade, dot, text and part; only look B is in it. Open.
+
+## N12c: a picture in every scene (2026-11-15)
+- **Three examples fail the new no-picture error** (built with the N12c kit; only variance, pca-2-how and board-gallery were fixed, per the "one or two lessons" rule). Each needs a `picture:` on these scenes; the kind in brackets is a suggestion:
+  - pca-1-what: slide 7 `formula` (machine, sum form, or the chain for a variance), slide 11 `by-hand` (cast or ruler on the scores' table), slide 13 `next` (pair: before and after).
+  - pca-3-why: slide 4 `by-hand` (grid on one cell, as pca-2-how's), slide 5 `formula` (machine, sum form over the 3 × 3 terms: 6 terms is over the 5-term limit, so group the off-diagonal pairs), slide 7 `data` (ruler on the third marker).
+  - perceptron-trick: slides 8 and 10 `formula` (machine, sum form: w·x as weighted terms with `out` the score; ghost for the line before and after an update).
+  `home/` holds only `cells.json`, no lesson.
+- **No kind draws a 3-term or wider matrix** (`grid` is 2 × 2). pca-3-why's 3-marker covariance needs a 3 × 3 grid or a `space`.
+- **The ruler's row labels default to `id`.** A table whose name column is `cell` must set `label: cell`; the lint checks the column exists, but a missing `label` with no `id` column draws empty names silently.
+- **A picture is not tied to a step.** It draws once, full width, above the steps; it does not light with the reading line or a `mark`. A later block could let `lit` follow the step being read.
+- **Ghost with no `foil.x`/`foil.y`** draws its ghost rings on the points themselves, so only the second line differs. Fine for "a worse line"; a foil that moves the points needs its own columns. Only `picture-kinds.yaml` exercises it; no shipped lesson uses `ghost` yet.

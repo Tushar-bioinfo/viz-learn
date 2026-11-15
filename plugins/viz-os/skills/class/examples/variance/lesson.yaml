@@ -102,6 +102,8 @@ slides:
     beat: by-hand
     title: First the middle, then each distance
     lead: Spread is about distance from the middle, so find the middle.
+    picture:
+      ruler: {from: tcells, x: cd3, pin: xbar, lit: 0}
     table:
       from: tcells
       cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}]
@@ -127,6 +129,8 @@ slides:
     beat: by-hand
     title: Square, add, divide
     lead: Squaring stops the cancelling and makes far cells count most.
+    picture:
+      cast: {from: tcells, square: cd3 - xbar, lit: top_ids, fmt: 4}
     derive: {sq: (cd3 - xbar)^2}
     table:
       from: tcells
@@ -182,6 +186,16 @@ slides:
     beat: formula
     title: The same steps, written as a formula
     lead: Every symbol in the formula is a number we already worked.
+    picture:
+      machine:
+        from: tcells
+        x: cd3
+        stations:
+          - {op: values, say: six CD3 levels}
+          - {op: minus, of: xbar, say: distance from the mean}
+          - {op: square, say: each one squared}
+          - {op: sum, out: ss, say: added up}
+          - {op: share, by: n - 1, out: s2, say: one share}
     steps:
       - say: Our numbers, in the shape of the formula.
         why: The same recipe then works for any set of cells.

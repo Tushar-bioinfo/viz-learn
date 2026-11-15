@@ -1,0 +1,45 @@
+# expect: the grid's `arrow` has length 1.709
+# N12c review: the grid's shadow is a dot product with a unit arrow; a longer arrow would put the shadow in the wrong place (browser check).
+title: One direction through three cells
+question: How much spread lies along one arrow?
+answer: Weigh the two spreads and the covariance by the arrow's parts.
+data:
+  cells:
+    - {id: c1, d1: -2, d2: -1}
+    - {id: c2, d1: 0, d2: 0.5}
+    - {id: c3, d1: 2, d2: 0.5}
+  da: [3, 4, 5]
+  db: [1, 4, 7]
+  u1: 1.6
+  u2: 0.6
+  v1: 4
+  v2: 0.75
+  c12: 1.5
+  s2u: 4.27
+  va: 1
+  vb: 9
+  th: 20
+  tg: 60
+symbols:
+  d1: {tex: 'd_1', says: a cell's distance from the CD3 mean, short: CD3 distance, color: s1, fmt: 1}
+  d2: {tex: 'd_2', says: a cell's distance from the CD19 mean, short: CD19 distance, color: s2, fmt: 1}
+  u1: {tex: 'u_1', says: the arrow's CD3 part, short: arrow's CD3, color: s1, fmt: 1}
+  u2: {tex: 'u_2', says: the arrow's CD19 part, short: arrow's CD19, color: s2, fmt: 1}
+  v1: {tex: 's_1^2', says: how far CD3 levels scatter around their mean, short: CD3 spread, color: s1, fmt: 2}
+  v2: {tex: 's_2^2', says: how far CD19 levels scatter around their mean, short: CD19 spread, color: s2, fmt: 2}
+  c12: {tex: 'c_{12}', says: the covariance of CD3 and CD19, short: covariance, color: s3, fmt: 2}
+  s2u: {tex: 's_u^2', says: the spread along the arrow, short: arrow spread, fmt: 2}
+  va: {tex: 's_A^2', says: donor A's variance, short: A variance, color: s1, fmt: 1}
+  vb: {tex: 's_B^2', says: donor B's variance, short: B variance, color: s2, fmt: 1}
+abbr: {CD3: a T-cell surface marker, CD19: a B-cell surface marker}
+slides:
+  - type: title
+
+  - type: board
+    beat: picture
+    title: One cell's shadow on the arrow
+    lead: The square of a sum splits into four tiles.
+    picture: {grid: {from: cells, row: 0, x: d1, y: d2, arrow: [u1, u2], sum: [[v1, c12], [c12, v2]]}}
+    steps:
+      - say: The cell's shadow on the arrow, squared, is four tiles.
+        add: {note: Two tiles are the same size.}

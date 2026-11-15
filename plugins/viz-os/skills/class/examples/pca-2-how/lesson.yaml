@@ -124,6 +124,8 @@ slides:
     beat: by-hand
     title: Three numbers give every line's spread
     lead: Square one cell's shadow and open it up.
+    picture:
+      grid: {from: cells, row: 0, x: d1, y: d2, arrow: [u1, u2], sum: [[v_cd3, c12], [c12, v_cd19]]}
     table:
       from: cells
       cols: [{key: id, label: cell}, {key: d1, label: d₁, fmt: 2}, {key: d2, label: d₂, fmt: 2}]
@@ -146,6 +148,13 @@ slides:
     beat: formula
     title: The spread along any arrow
     lead: Our three numbers, in the shape of the formula.
+    picture:
+      machine:
+        terms:
+          - {w: u1^2, of: v_cd3}
+          - {w: 2 * u1 * u2, of: c12}
+          - {w: u2^2, of: v_cd19}
+        out: s2u
     steps:
       - say: Our numbers for part 1's arrow.
         why: Each symbol then holds a number we already worked.

@@ -7,6 +7,8 @@ abbr: {SD: standard deviation, CD3: a T-cell surface marker, CD19: a B-cell surf
 symbols:
   cd3: {tex: 'x_i', says: CD3 level of cell i, short: CD3 level, color: s1}
   xbar: {tex: '\bar{x}', says: the mean CD3 level, short: mean, color: s2, fmt: 2}
+  sA: {tex: 's_A^2', says: donor A's variance, short: A variance, color: s1, fmt: 3}
+  sB: {tex: 's_B^2', says: donor B's variance, short: B variance, color: s2, fmt: 3}
   n: {tex: 'n', says: the number of cells, short: cells}
   i: {tex: 'i', says: which cell, short: cell number, color: s4, kind: index}
   j: {tex: 'j', says: which marker, color: s5, kind: index}
@@ -83,6 +85,8 @@ slides:
     beat: by-hand
     title: Work it out by hand
     lead: Distance from the mean, for every cell, then one number.
+    picture:
+      cast: {from: cells, square: cd3 - xbar, lit: far_id, fmt: 2}
     derive: {sq: (cd3 - xbar)^2}
     table:
       from: cells
@@ -144,6 +148,16 @@ slides:
     beat: formula
     title: The same steps, written as a formula
     lead: Every symbol in the formula is a number we already worked.
+    picture:
+      machine:
+        from: cells
+        x: cd3
+        stations:
+          - {op: values, say: six CD3 levels}
+          - {op: minus, of: xbar, say: distance from the mean}
+          - {op: square, say: each one squared}
+          - {op: sum, out: ss, say: added up}
+          - {op: share, by: n - 1, out: s2, say: one share}
     steps:
       - say: Our numbers, in the shape of the formula.
         why: Each symbol then holds a number we already worked.
@@ -164,6 +178,11 @@ slides:
     beat: compare
     title: Same middle, different spread
     lead: Two donors, the same mean CD3, but one is far more spread out.
+    picture:
+      pair:
+        a: {name: Donor A, values: donor_a, value: sA}
+        b: {name: Donor B, values: donor_b, value: sB}
+        axis: CD3 level
     steps:
       - say: Donor A's cells huddle together. Donor B's spread wide.
         add:
@@ -280,6 +299,8 @@ slides:
     beat: aside
     title: The same cells, as a matrix
     lead: A table of numbers is a matrix; one row or column is a vector.
+    picture:
+      ruler: {from: cells, x: cd3, pin: xbar, lit: far_i - 1}
     steps:
       - say: 'Three cells, two markers: a row per cell, a column per marker.'
         add: {matrix: cellmat}
