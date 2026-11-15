@@ -142,6 +142,24 @@ def sheet(page, shots, path, cols, w, h, tall=False):
 
 
 ZOOM = "(VizOS.slides[VizOS.i].zoom || 1)"
+# a board figure's frame (class lessons): the content's box (its legend and drawing) against the frame. The top needs AIR_TOP px
+# under the frame's line; the air under the content, counting the empty band under a lone figure beside a taller text column
+# (within the pin), may exceed the air above by at most BAND px. Measured on the page, so it judges any kit
+AIR_TOP, BAND = 16, 24
+FRAME_AIR = """([top, band]) => { const n = VizOS.slides[VizOS.i].r.node, out = [], b0 = n.querySelector('.body.board'), pin = Math.min(820, innerHeight - 49, b0 ? innerHeight - (b0.getBoundingClientRect().top - n.getBoundingClientRect().top) - 12 : 1e9);   // as the kit sizes: the pin, and the room with the scene head in view
+  n.querySelectorAll('.board .fg .fr').forEach(f => { if (!f.offsetHeight) return; const F = f.getBoundingClientRect(), kids = [...f.children].filter(e => e.getBoundingClientRect().height > 0 && getComputedStyle(e).position !== 'absolute');   // an svg has no offsetHeight
+    if (!kids.length) return; const c0 = Math.min(...kids.map(e => e.getBoundingClientRect().top)), c1 = Math.max(...kids.map(e => e.getBoundingClientRect().bottom));
+    const fb = f.closest('.fb.beside'), ff = f.closest('.ffig'), side = fb && fb.querySelector(':scope > .fside'), lone = side && ff && ff.querySelectorAll('.fr').length === 1;
+    const under = lone ? Math.max(0, Math.min(side.offsetHeight, pin) - ff.offsetHeight) : 0, up = Math.round(c0 - F.top), down = Math.round(F.bottom - c1 + under);
+    const kind = (f.className.match(/\\b(plane|space|chance|beads|fork|recorder|wheel|pileup|chart|units|image|dist|parts|ops)\\b/) || ['figure'])[0];
+    if (up < top) out.push(`a ${kind} frame is cramped at the top: its content starts ${up} px under the frame's line (needs ${top})`);
+    if (down - up > band) out.push(`a ${kind} frame has an empty band: ${down} px under its content against ${up} px above (at most ${band} px more)`); });
+  // parts that stand side by side end on one baseline: a chance figure's groups, figures in a row, the two sides of a compare
+  const bot = e => Math.round(e.getBoundingClientRect().bottom), uneven = (es, what) => { const b = es.filter(e => e.getBoundingClientRect().height > 0).map(bot); if (b.length > 1 && Math.max(...b) - Math.min(...b) > 2) out.push(`${what} do not end on one baseline: bottoms ${b.join(', ')} px`); };
+  n.querySelectorAll('.bi.chance svg').forEach(s => uneven([...s.querySelectorAll('rect.chit')].filter(r => r.parentNode.querySelectorAll(':scope > :is(rect, path):not(.chit)').length >= 4), "a chance figure's groups"));
+  n.querySelectorAll('.fb.many > .ffig').forEach(r => uneven([...r.children].filter(e => e.matches('.fg')), 'figures in one row'));
+  n.querySelectorAll('.bcmp').forEach(c => uneven([...c.querySelectorAll(':scope > .side > .vis')], "the two sides' figures"));
+  return out; }"""
 PAGE_MAX = 1_000_000
 
 
@@ -174,6 +192,9 @@ def check_deck(br, deck, out, args, report):
             settle(page)
             for w in page.evaluate("VizOS.audit()"):
                 report.append((i + 1, w if k == s["steps"] or s["steps"] <= 1 else f"step {k}: {w}"))
+        if info.get("page"):   # every step shown, every answer open: the frames as the figure was sized for them
+            for w in page.evaluate(FRAME_AIR, [AIR_TOP, BAND]):
+                report.append((i + 1, w))
         for c in s["controls"]:
             if c["min"] is None or c["max"] is None:   # a control with no range is a lint error already
                 continue

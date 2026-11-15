@@ -311,6 +311,9 @@ PINS = """async () => { const out = [], rc = e => e.getBoundingClientRect(), wai
   return out; }"""
 
 
+ROOM_TO_PIN = """() => [...document.querySelectorAll('.fb.beside')].filter(b => { const f = b.querySelector(':scope > .ffig'); return f && b.offsetHeight - f.offsetHeight >= 60; }).length"""
+
+
 def pins(page, tag):
     q = page.evaluate(PINS)
     return [f"{tag}: scene {x[0]} pinned at {x[1]} px, foot {x[2]} of {x[3]}" for x in q if abs(x[1] - 24) > 2 or x[2] > x[3]], len(q)
@@ -343,7 +346,8 @@ def shorter_window(page):
             bad.append(f"{a}->{b}: " + " ".join(f"{x} (fresh {y})" for x, y in zip(moved.split(), fresh.split()) if x != y or "!" in x)[:200])
         page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
         sized(page, *a); sized(page, *b); page.wait_for_timeout(300)   # resized again, then scrolled: each figure must really pin
-        b2, k = pins(page, f"{a}->{b}"); bad += b2 + ([f"{a}->{b}: no figure has room to pin"] if not k else [])
+        # a figure that grew to its text's height (N6) has nothing to pin against; one with room that does not pin fails
+        b2, k = pins(page, f"{a}->{b}"); room = page.evaluate(ROOM_TO_PIN); bad += b2 + ([f"{a}->{b}: no figure has room to pin"] if not k and room else [])
     sized(page, 1440, 900); page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000); page.wait_for_timeout(300)
     return not bad, "; ".join(bad) or "2 height changes"
 
@@ -665,6 +669,67 @@ def hover_pause(page):
     want = (hover_on, closed, state == ["true", "Resume hover pop-ups"], not paused_hover, paused_click, kept and kept[0] == "true", back == ["false", "Pause hover pop-ups"])
     ok = all(want) and not bad
     return ok, f"{n} names; hover, closes, pressed, quiet, click, kept, resumed: {want}" + (f"; {bad}" if bad else "")
+
+
+# the figure / text split (N6): its handle, the dragged block's columns, and what the page keeps
+SPLIT_GEO = """() => { const s = document.querySelector('.fb.beside > .fsplit[data-t]') || [...document.querySelectorAll('.fb.beside > .fsplit')].find(e => getComputedStyle(e).display !== 'none'); if (!s) return null; s.dataset.t = 1;
+  const b = s.parentElement, r = e => e.getBoundingClientRect(), f = b.querySelector(':scope > .ffig'), d = b.querySelector(':scope > .fside');
+  let kept; try { kept = localStorage.getItem('vizos-split:' + location.pathname); } catch (e) { kept = 'blocked'; }
+  return { now: +s.getAttribute('aria-valuenow'), role: s.getAttribute('role'), tab: s.tabIndex, x: r(s).left + 10, y: Math.max(r(s).top, 0) + 120, left: r(b).left, sideL: r(d).left - r(b).left, W: r(b).width,
+    cls: b.className, inertF: f.inert, inertS: d.inert, sticky: getComputedStyle(f).position, anim: getComputedStyle(b.classList.contains('cover-fig') ? f : d).animationName, kept }; }"""
+
+
+def split_drag(page):
+    """The split between a figure and its text: a separator with aria-valuenow; a drag moves the line with at most one
+    layout per animation frame and keeps the figure sticky; the split is kept over a reload; arrows, Home and End move it,
+    past either end one side covers the other (no sheet motion with reduced motion); a double-click resets; narrow has none."""
+    def geo():
+        page.wait_for_timeout(150); return page.evaluate(SPLIT_GEO)
+    page.evaluate("document.querySelectorAll('.fsplit[data-t]').forEach(e => delete e.dataset.t); try { localStorage.removeItem('vizos-split:' + location.pathname); } catch (e) {}")
+    g = page.evaluate(SPLIT_GEO)
+    if g is None:
+        return True, "no figure beside its text"
+    page.evaluate("document.querySelector('.fsplit[data-t]').parentElement.scrollIntoView()"); g = geo()
+    bad = []
+    if g["role"] != "separator" or g["tab"] != 0 or not 50 <= g["now"] <= 85:
+        bad.append(f"handle {g['role']}, tabindex {g['tab']}, now {g['now']}")
+    # count the layouts: each one reads the dragged block's box once
+    page.evaluate("""() => { const b = document.querySelector('.fsplit[data-t]').parentElement, f = b.getBoundingClientRect.bind(b); window._lay = 0; window._fr = 0;
+      b.getBoundingClientRect = () => { window._lay++; return f(); }; const t = () => { window._fr++; requestAnimationFrame(t); }; requestAnimationFrame(t); }""")
+    x, y = g["x"], g["y"]; page.mouse.move(x, y); page.mouse.down()
+    l0, f0 = page.evaluate("[window._lay, window._fr]")
+    for k in range(1, 21):
+        page.mouse.move(x - 8 * k, y)
+    page.wait_for_timeout(120); l1, f1 = page.evaluate("[window._lay, window._fr]")
+    page.mouse.up(); g2 = geo()
+    lays, frs = l1 - l0, f1 - f0
+    if not 0 < lays <= frs + 1:
+        bad.append(f"{lays} layouts in {frs} frames")
+    if abs(g2["x"] - (x - 160)) > 6 or g2["sideL"] >= g["sideL"] or g2["sticky"] != "sticky" or not g2["kept"]:
+        bad.append(f"after the drag: handle at {g2['x']:.0f} for the pointer at {x - 160:.0f}, text from {g2['sideL']:.0f} (was {g['sideL']:.0f}), {g2['sticky']}, kept {g2['kept']}")
+    page.reload(); page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000)
+    page.evaluate("document.querySelector('.fsplit[data-t]')?.removeAttribute('data-t')"); g3 = page.evaluate(SPLIT_GEO)
+    page.evaluate("document.querySelector('.fsplit[data-t]').parentElement.scrollIntoView()"); g3 = geo()
+    if g3["now"] != g2["now"]:
+        bad.append(f"after a reload the split is {g3['now']}%, not {g2['now']}%")
+    page.focus(".fsplit[data-t]"); page.keyboard.press("ArrowRight"); g4 = geo()
+    page.emulate_media(reduced_motion="reduce"); page.keyboard.press("End"); g5 = geo()
+    page.emulate_media(reduced_motion="no-preference"); page.keyboard.press("Home"); g6 = geo()
+    if not g4["now"] > g3["now"]:
+        bad.append(f"ArrowRight: {g3['now']} -> {g4['now']}")
+    if not (g5["now"] == 100 and "cover-fig" in g5["cls"] and g5["inertS"] and g5["anim"] == "none"):
+        bad.append(f"End: {g5['now']}, {g5['cls']}, text inert {g5['inertS']}, sheet motion {g5['anim']}")
+    if not (g6["now"] == 0 and "cover-text" in g6["cls"] and g6["inertF"]):
+        bad.append(f"Home: {g6['now']}, {g6['cls']}, figure inert {g6['inertF']}")
+    page.dblclick(".fsplit[data-t] .fgrip"); g7 = geo()
+    if g7["kept"] is not None or " split" in g7["cls"]:
+        bad.append(f"double-click left {g7['cls']}, kept {g7['kept']}")
+    page.set_viewport_size({"width": 700, "height": 900}); page.wait_for_timeout(400)
+    shown = page.evaluate("[...document.querySelectorAll('.fsplit')].filter(e => getComputedStyle(e).display !== 'none').length")
+    if shown:
+        bad.append(f"{shown} handles at 700 px")
+    page.set_viewport_size({"width": 1440, "height": 900}); page.wait_for_timeout(300)
+    return not bad, f"drag {lays} layouts in {frs} frames, {g['now']}% -> {g2['now']}%" + (f"; {bad}" if bad else "")
 
 
 def case_page(ctx, case):
@@ -1023,7 +1088,7 @@ TESTS = [("Next changes a figure, Back undoes it", next_back), ("a click on a li
          ("the text sits 20 px from its figure", side_gap), ("figures fill their room at 1480 x 800", fills_room), ("equal planes keep one scale", equal_units),
          ("all text starts at the page's left edge", edges), ("figures and equations centre on the page", centres), ("a symbol has one colour", one_colour), ("cards wear the figure's frame", frames),
          ("callouts and thinks have no lines and no indent", no_lines), ("a line stands 18 px from its card", card_gap), ("a lit callout shows its mark, its text stays", lit_mark), ("legends have room above them", legend_room),
-         ("pause hover pop-ups: hover quiet, click opens, kept", hover_pause),
+         ("pause hover pop-ups: hover quiet, click opens, kept", hover_pause), ("the figure / text split drags, keys, keeps, resets", split_drag),
          ("a pop-up card fits its text, wears its term's colour, fades the rest", pop_cards), ("brackets open their symbol's card with its shape", mat_card),
          ("a term glows on hover and on keyboard focus, with a focus ring", glow_focus), ("controls share one grid; a run reads its value bare", ctl_grid),
          ("chart marks draw no tag; named marks have legend entries", chart_tags)]

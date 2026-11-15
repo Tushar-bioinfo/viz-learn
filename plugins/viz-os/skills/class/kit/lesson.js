@@ -138,6 +138,7 @@
     const redraw = () => { onScroll(); L.slides.forEach(sl => sl.r.stick && sl.r.stick());
       if (innerWidth === wide && (innerHeight === high || innerWidth < 760 || CHECK)) return; wide = innerWidth; high = innerHeight; clearTimeout(t); t = setTimeout(drawAll, 120); };
     addEventListener('resize', redraw);
+    document.addEventListener('vizos-split', drawAll);   // a new figure / text split (board.js): every scene takes it
     addEventListener('beforeprint', () => L.slides.forEach(sl => sl.r.show && sl.r.show(sl.steps)));
     addEventListener('afterprint', () => L.slides.forEach(sl => sl.r.reset && sl.r.reset()));
   }

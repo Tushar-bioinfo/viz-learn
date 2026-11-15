@@ -1,0 +1,37 @@
+# expect: builds
+# expect: not: frame is cramped
+# expect: not: frame has an empty band
+# expect: not: baseline
+# expect: not: `chance`
+# expect: not: chance mark
+# expect: not: linked word
+# expect: not: names nothing
+# N6: a lone figure beside a text column taller than it (the C10h prop scene 3): the frame keeps 16 px or more above its content,
+# and grows to the text's height with the air split evenly. The kit before N6 fails both (8 px on top, 24 px band).
+# The groups (4 and 5 rows) end on one baseline; before N6 the shorter one hung from the top.
+title: Two waters
+question: Is illness more common with well water?
+answer: In these homes, yes; whether chance could do it is the next question.
+data: {n1: 40, n0: 50, x1: 18, x0: 9}
+slides:
+  - type: title
+  - type: board
+    beat: data
+    idea: amount
+    see: gap
+    shows: two grids of homes, the ill ones filled, and the two shares on one line
+    title: Eighty homes, two waters
+    lead: Each house is one home; a filled one had an ill child.
+    steps:
+      - say: ==well== homes {{x1}} of {{n1}} ill, ==piped== {{x0}} of {{n0}}, and their ==gap==.
+        add:
+          - chance:
+              unit: house
+              groups:
+                - {name: well, n: n1, ill: x1, color: s1}
+                - {name: piped, n: n0, ill: x0, color: s2}
+              axis: share of homes with an ill child (%)
+      - say: That ==gap== between the two shares is what we ask about.
+      - think:
+          q: Two villages can differ by luck alone. How could we tell?
+          a: Find how big a gap luck makes with this many homes, then compare ours to it.
