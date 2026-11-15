@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.0.0 (2026-11-15)
+
+Some 4.x lessons no longer build. A `think` step takes only `q`, `a`, `set` and `transfer`; `learner.depth` belongs to adv lessons only (board scenes with `idea:`); and a `==word==` link must name a mark in its own scene, and only one. In decks and lessons, a chart series `name` cannot be true or false: quote a name such as `yes` or `no`. The 4.0 example decks and sketch page still build with 0 errors.
+
+- A lesson opens on the problem and ends on the answer: no `plan` scene and no recap slide (both now warn). The `next` scene opens with the answer in the question's words, and the limits scene counts every shuffle on a small pilot.
+- Every figure gets even air above and below, side-by-side figures share one bottom line, and the learner can drag the split between figure and text.
+- Pop-up cards take a clearer glass look with a colour edge, a big value line and a new `term:` key; `check.py` measures each card's text contrast.
+- New figures for adv lessons: `chance` (with `unit: house`), `fork`, `beads`, `recorder`, `wheel`, `pileup`, `strip`, `views`, `split`, `hunt`, a 3D `space` figure the learner turns, and `style: slope` on scene tables.
+- `==word==` links a word to a drawn mark in the same scene, and at rest the linked marks glow while the rest steps back.
+- Story lints catch made-up shorthand, shared names, press-only lines and boxed tags on boards; `image.py` refuses to draw maths.
+- A new mint palette for s1-s5, and short chart legends in decks and lessons.
+
 ## 4.0.0 (2026-11-07)
 
 Some 3.x lessons no longer build: symbols used in pop-up cards need a short name, controls need a symbol or one-word label, and chart labels must use the new names and cards. Boxed answers are also rejected in deck, lesson and page maths.
