@@ -25,6 +25,12 @@ symbols:
   s2w: {tex: 's^2', says: the variance with c3 moved, short: variance now, fmt: 3}
 slides:
   - type: title
+    cover:
+      rows:
+        - {part: flowtube, color: s1, label: Donor A, pour: {part: tcell, along: donor_a}}
+        - {part: flowtube, color: s5, label: Donor B, pour: {part: tcell, along: donor_b}}
+      mark: {at: mA, label: same mean, reach: true}
+      line: Same middle. One donor's cells reach much further from it.
 
   - type: board
     beat: problem
@@ -38,11 +44,11 @@ slides:
             y: {label: CD3 level, min: 2.5, max: 6.5}
             series:
               - {name: Donor A, kind: dots, x: 'donor_a * 0 + 0.5', y: donor_a, color: s1}
-              - {name: Donor B, kind: dots, x: 'donor_b * 0 + 1.5', y: donor_b, color: s2}
+              - {name: Donor B, kind: dots, x: 'donor_b * 0 + 1.5', y: donor_b, color: s5}
             marks:
               - {kind: hline, y: mA, name: mean, says: "both donors' mean CD3 level: the same for the two", step: 2}
           caption: Same middle, but look how far the dots reach.
-      - say: 'Their means match exactly: ==s1:{{mA|2}}== and ==s2:{{mB|2}}==.'
+      - say: 'Their means match exactly: ==s1:{{mA|2}}== and ==s5:{{mB|2}}==.'
       - think:
           q: Same mean. Are the two donors' T cells alike?
           a: The mean cannot say. We need a second number, for how far the cells sit from it.

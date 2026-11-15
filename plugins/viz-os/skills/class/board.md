@@ -370,6 +370,8 @@ A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same ho
 
 ## The opening and the end
 The title asks the question; the board opens on the `problem` and ends on `next`, whose first line answers it (`lesson.md` §1). A deck slide type (`predict`, `table`, `bridge`, …) may sit between board scenes when it teaches better, and counts as a scene. An older lesson's `plan` scene still draws its `flow` as numbered squares, each `title` and `sub` under its square.
+The kicker above the title is made from `series`, `episode` and `home`. Give the title slide a drawn picture, `cover:`, when the problem can be seen as groups of things: 1 to 3 `rows`, each a source part (`flowtube`) in its group's board colour (`s1`–`s5`) with a `label` of 3 words at most, pouring copies of an item part (`tcell`) placed along a data list; an optional `mark` {`at`: a data name, `label`, `reach`: true draws a line from the mark to each copy}; one `line` of 14 words at most under it. The `problem` scene then shows the numbers behind the picture (an axis, the means), not the picture again.
+`- type: title` · `cover: {rows: [{part: flowtube, color: s1, label: Donor A, pour: {part: tcell, along: donor_a}}, …], mark: {at: mA, label: same mean, reach: true}, line: Same middle. One donor's cells reach much further from it.}`
 
 ## YAML gotchas
 - Quote text with `: ` in it, a value that starts with `{{`, and inside a `{ }` mapping any value that holds `{{…}}` or a `?`: `label: 'mean {{xbar|1}}'`.

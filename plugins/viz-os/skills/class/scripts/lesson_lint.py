@@ -2894,6 +2894,77 @@ def lint_recall(Lx, deck, state):
         Lx.warn("recall", f"episode {ep} has no `recall:`: name the earlier lesson, so this one opens with its review cards")
 
 
+COVER_PARTS = {"source": {"flowtube"}, "item": {"tcell"}}   # cover.js PARTS: a row's part is a source, the copies it pours are items
+COVER, COVER_ROW, COVER_POUR, COVER_MARK = {"rows", "mark", "line"}, {"part", "color", "label", "pour"}, {"part", "along"}, {"at", "label", "reach"}
+
+
+def lint_cover(Lx, deck, values, glob):
+    """The title slide's `cover:` picture (cover.js): 1 to 3 rows, each a source part in one series colour pouring copies of an
+    item part placed along a data list; one optional `mark` line at a value, one short `line` under the frame."""
+    for i, s in enumerate(deck.get("slides") or []):
+        if not isinstance(s, dict) or "cover" not in s:
+            continue
+        w, cv = f"slide {i + 1} cover", s["cover"]
+        def unknown(d, known, what):
+            for k in sorted(set(d) - known, key=str):
+                hit = next(iter(difflib.get_close_matches(str(k), sorted(known), 1, .6)), None)
+                Lx.err(w, f"{what} has no field `{k}`" + (f": did you mean `{hit}`?" if hit else f" (it takes {', '.join(sorted(known))})"))
+        def part(name, kind, what):
+            if name not in COVER_PARTS[kind]:
+                hit = next(iter(difflib.get_close_matches(str(name), sorted(COVER_PARTS[kind]), 1, .5)), None)
+                Lx.err(w, f"{what}: no {kind} part named `{name}`" + (f": did you mean `{hit}`?" if hit else f"; the cover has {', '.join(sorted(COVER_PARTS[kind]))}"))
+        def short(t, most, what):
+            if t is not None and (not isinstance(t, str) or not t.strip() or len(t.split()) > most):
+                Lx.err(w, f"{what} is {t!r}: write {most} plain words or fewer")
+        if s.get("type", "idea") != "title":
+            Lx.err(w, "`cover` belongs on the title slide only: move it there")
+        if not isinstance(cv, dict):
+            Lx.err(w, "`cover` is a mapping: `rows:` (1 to 3), `mark:` {at, label, reach} and `line:`")
+            continue
+        unknown(cv, COVER, "`cover`")
+        rows = cv.get("rows")
+        if not isinstance(rows, list) or not 1 <= len(rows) <= 3:
+            Lx.err(w, f"`cover` `rows` is a list of 1 to 3 rows, each {{part, color, label, pour: {{part, along}}}}; got {rows!r}")
+            rows = []
+        cols = []
+        for j, r in enumerate(rows):
+            what = f"`cover` row {j + 1}"
+            if not isinstance(r, dict):
+                Lx.err(w, f"{what} is a mapping {{part, color, label, pour}}; got {r!r}")
+                continue
+            unknown(r, COVER_ROW, what)
+            part(r.get("part"), "source", what)
+            c = r.get("color")
+            if c not in ("s1", "s2", "s3", "s4", "s5"):
+                Lx.err(w, f"{what}: `color: {c}` must be a series colour, s1 to s5 (orange is the mark's)")
+            cols.append(c)
+            short(r.get("label"), 3, f"{what} `label`")
+            pr = r.get("pour")
+            if not isinstance(pr, dict):
+                Lx.err(w, f"{what} needs `pour:` {{part, along}}: the copies placed along a data list")
+                continue
+            unknown(pr, COVER_POUR, f"{what} `pour`")
+            part(pr.get("part"), "item", f"{what} `pour`")
+            a, v = pr.get("along"), values.get(pr.get("along")) if isinstance(pr.get("along"), str) else None
+            if not (isinstance(v, list) and 1 <= len(v) <= 40 and all(NUM(x) for x in v)):
+                Lx.err(w, f"{what} `pour` `along: {a!r}` names a list of 1 to 40 numbers in the data, made by make_data.py")
+        if len(set(cols)) < len(cols):
+            Lx.err(w, f"`cover` rows share a colour ({', '.join(map(str, cols))}): give each row its own, the colour its group has on the board")
+        mk = cv.get("mark")
+        if mk is not None:
+            if not isinstance(mk, dict):
+                Lx.err(w, f"`cover` `mark` is a mapping {{at, label, reach}}; got {mk!r}")
+            else:
+                unknown(mk, COVER_MARK, "`cover` `mark`")
+                at = mk.get("at")
+                if not (NUM(at) or (isinstance(at, str) and (NUM(values.get(at)) or at in glob))):
+                    Lx.err(w, f"`cover` `mark` `at: {at!r}` names a number in the data (or a derived name): where the orange line stands")
+                short(mk.get("label"), 3, "`cover` `mark` `label`")
+                if mk.get("reach") is not None and not isinstance(mk.get("reach"), bool):
+                    Lx.err(w, f"`cover` `mark` `reach: {mk['reach']!r}` is true or false: a thin line from the mark to each copy")
+        short(cv.get("line"), 14, "`cover` `line`")
+
+
 def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
         values = {**(deck.get("data") or {}), **(data or {})}   # what a `beads` figure's rings are named from
@@ -2903,5 +2974,5 @@ def make_lint(B, data):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck, values); lint_order(B, Lx, deck)
         lint_typed(Lx, deck, data); lint_known(B, Lx, deck, glob); lint_objects(Lx, deck, data, glob); lint_names(B, Lx, deck); lint_case(Lx, deck, data); lint_story(Lx, deck)
-        lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck, values); lint_adv(Lx, deck, values)
+        lint_fields(Lx, deck); lint_ctl_labels(B, Lx, deck, glob, data); lint_links(Lx, deck, values); lint_adv(Lx, deck, values); lint_cover(Lx, deck, values, glob)
     return lesson_lint

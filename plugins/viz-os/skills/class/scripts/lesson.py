@@ -158,14 +158,14 @@ def ext(B):
             Lx.err(where, msg)
         inner(Lx, deck, glob)
     return {
-        "fields": {"board": BOARD},
+        "fields": {"board": BOARD, "title": {"kicker", "subtitle", "question", "chips", "cover"}},   # cover: the opening picture (cover.js)
         "required": {"board": ["steps"]},
         "top": TOP_EXTRA,
         "not_prose": NOT_PROSE_EXTRA,
         "scope": board_names,
         "lint": lint,
         "prepare": prep,
-        "js": [KIT / "parts.js", KIT / "board.js"],   # parts.js: the drawn parts a `fork` uses (adv.md)
+        "js": [KIT / "parts.js", KIT / "board.js", KIT / "cover.js"],   # parts.js: the drawn parts a `fork` uses (adv.md)
         "css": [KIT / "board.css"],
         "tex_types": ["board"],
     }
