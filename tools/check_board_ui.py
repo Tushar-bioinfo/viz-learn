@@ -177,7 +177,9 @@ def narrow_formula(page):
 
 def plan_words(page):
     r = page.evaluate("""() => VizOS.slides.filter(sl => sl.s.beat === 'plan').map(sl => [sl.r.node.querySelectorAll('.board .say').length, sl.r.node.querySelectorAll('.track').length, sl.r.node.querySelectorAll('.tks.on').length, sl.r.node.querySelectorAll('.verb').length])""")
-    return bool(r) and all(x == [0, 1, 1, 0] for x in r), f"say, track, first filled, verbs: {r}"
+    if not r:   # N7b: lessons open on the problem, so most have no plan scene to check
+        return True, "no plan scene"
+    return all(x == [0, 1, 1, 0] for x in r), f"say, track, first filled, verbs: {r}"
 
 
 def rail_margin(page):

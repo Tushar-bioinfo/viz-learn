@@ -14,10 +14,12 @@ updated: 2026-11-13
 title: C10, advanced visuals for class lessons
 
 now: >-
-  13 Nov: N5 is built: all seven picked pieces are committed on this branch (bead rings, slope
-  lines, recorder, colour wheel, houses, guided first look, CRISPR read pileup). The last four ran
-  in parallel, three in their own sessions, and were merged here: 348/348 class cases, 20/20 doc
-  tests. Not pushed. Next proposed: C10h, the cold-start exam.
+  15 Nov: your review of the C10h cold lessons became N6–N9. Merged into this branch: N6 (even
+  frame air with a gate, a draggable figure/text split), N7b (lessons open on the problem, limits
+  count every shuffle, the answer opens `next`) and N9b (the colour-edge pop-up card). N8 showed
+  your full voice. After the merge, the full run: 3 decks and 6 lessons 0 errors, check 0 warnings;
+  353/353 class cases; board UI 274/277 (the 3 failed before this work). Four old examples now warn
+  for their plan and recap scenes. Not pushed.
 
 budget:            # lines a lesson agent reads on every run, against the branch's start
   base: ab9918b
@@ -27,6 +29,10 @@ budget:            # lines a lesson agent reads on every run, against the branch
     plugins/viz-os/skills/class/SKILL.md: 3
 
 waiting:
+  - title: Review rounds not yet run for N7b and N9b
+    more: |
+      Both were built, approved by you and merged (15 Nov) without the one-reviewer round
+      `c10-visuals.md` asks for; N6's report did not say. Say if you want the reviews now.
   - title: Look at the cold Gemini lesson
     more: |
       `out/cold-hydrogen/k-means-clustering/lesson.html`: k-means on your six cells, 13 slides,
@@ -46,12 +52,6 @@ waiting:
         moment, the cap of 4 mark hues, and which mark counts as the witness.
 
 next:
-  - id: C10h
-    title: Cold-start exam on two adv lessons
-    more: |
-      As planned, after N4 so the exam measures the leaner skill. Today's Gemini lesson is the
-      first cold data point since 7 Nov: it passed lint, browser and numbers on its own, so the
-      exam can focus on what the gates miss (figure clarity, names, colours).
   - id: "11"
     title: Prove it is general
     more: |
@@ -265,13 +265,17 @@ blocks:
     lane: Exam and after
     after: [C10k, C10c, C10j]
     optional_after: [C10f]
-    status: todo
+    status: done
     ships: none
     you: study, judge
-    line: A cold agent builds two adv lessons from the plugin alone.
+    line: Two cold Opus lessons pass all five gates; the eyes found 15 things the gates miss; you reviewed them.
     more: |
       First data point, 13 Nov: Gemini 4 Hydrogen high built k-means cold in 546 s and passed
       lint, browser and numbers (`out/cold-hydrogen/`). Findings: `docs/issues/class.md`, Cold 1–7.
+      The exam, 13 Nov: H&E (792 s, 68k tokens out) and proportions (585 s, 53k out), each built
+      and judged in its own session. H&E is `adv.md`'s own example topic, so its pass is weak
+      evidence. Findings: Cold 11–25.
+    where: [out/c10/c10h/he/report.md, out/c10/c10h/prop/report.md]
 
   - id: "11"
     name: Prove it general
@@ -330,6 +334,86 @@ blocks:
     ships: plugin
     you: pick, review
     line: "All seven picks are in the class kit: beads, slope, recorder, wheel, houses, first look, pileup."
+
+  - id: N6
+    name: Frame and split
+    lane: Next phase
+    after: [C10h]
+    col: 5
+    edges: false
+    status: approved
+    commit: 3581f85
+    ships: plugin
+    you: approve each part
+    line: "Even air above and below every figure, with a gate; a draggable figure/text split. Merged."
+    more: |
+      Your review, 13 Nov (Review 1–2 in `docs/issues/class.md`). Own worktree; part 1 first.
+
+  - id: N7
+    name: Lesson ends
+    lane: Next phase
+    after: [C10h]
+    col: 5
+    edges: false
+    status: done
+    ships: mockup
+    you: pick
+    line: "You picked: open on the problem (no plan scene), count every shuffle for limits, answer merged into next."
+    more: |
+      Your review, 13 Nov (Review 3–5). Playground at `out/c10/n7/play.html` when built.
+
+  - id: N8
+    name: Full voice
+    lane: Next phase
+    after: [C10h]
+    col: 6
+    edges: false
+    status: done
+    ships: none
+    you: look
+    line: The cold agent took `full` from your profile; 1.67× the words, passes all gates; side by side.
+    more: |
+      Your profile had no `voice:`; it now says `full` (Review 6). Output `out/c10/c10h/prop-full/`:
+      `compare.html` puts 4 matched scenes side by side. Findings: Voice 1–3, Memory 1, Cold 26–27.
+    where: [out/c10/c10h/prop-full/compare.html, out/c10/c10h/prop-full/two-proportions/lesson.html]
+
+  - id: N9
+    name: Pop-up card
+    lane: Next phase
+    after: [C10h]
+    col: 6
+    edges: false
+    status: done
+    ships: mockup
+    you: pick
+    line: "You picked B, colour edge: hairline edge in the series colour, big value, 8 px blur."
+    more: |
+      Your ask, 13 Nov (`out/c10/c10h/feedback/8-popup-card.png`): keep the glassy look, implement
+      it better. Plan and playground in `out/c10/n9/`.
+
+  - id: N7b
+    name: Build lesson ends
+    lane: Next phase
+    after: [N7]
+    col: 7
+    edges: false
+    status: approved
+    commit: d8a5d75
+    ships: plugin
+    you: approve
+    line: "Problem-first opening, counted-shuffle limits, answer opens `next`. Merged."
+
+  - id: N9b
+    name: Build pop-up card
+    lane: Next phase
+    after: [N9]
+    col: 7
+    edges: false
+    status: approved
+    commit: 67b9910
+    ships: plugin
+    you: approve
+    line: "The B colour-edge card, a `term:` key and a card-contrast check. Merged."
 
 pages:   # what to open; `kit: true` pages are built by lesson.py and go stale when the kit changes
   - {path: plugins/viz-os/skills/class/examples/board-gallery/lesson.html, yaml: plugins/viz-os/skills/class/examples/board-gallery/lesson.yaml, kit: true, role: every board item}
