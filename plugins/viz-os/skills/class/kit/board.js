@@ -2574,8 +2574,10 @@
       node, steps: n, stages,
       stick: () => { held.forEach((_, f) => { f.style.top = ''; }); held.clear(); stick(); stages.forEach(S => S.quiet()); },
       watch: () => { letGo(); stages.forEach(S => S.quiet()); },
-      // a layout may move lines between columns, which drops the focus: the focused word or entry gets it back
-      layout: () => { const fa = node.contains(document.activeElement) ? document.activeElement : null; blocks.forEach(b => { b.over = false; }); unsettle(); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); settle(); stick(); splitAria(); if (fa && fa.isConnected && document.activeElement !== fa) fa.focus({ preventScroll: true }); wsync(); },
+      // a layout may move lines between columns, which drops the focus: the focused word or entry gets it back.
+      // Each layout starts from a fresh load's widths (the CSS 70 %): a beside figure's height follows its text's height, and that
+      // follows the figure's last width, so a redraw that kept the old width settled on another size (N6 3)
+      layout: () => { const fa = node.contains(document.activeElement) ? document.activeElement : null; blocks.forEach(b => { b.over = false; if (b.wide) return; b.node.style.removeProperty('--fig'); b.fig.style.width = ''; }); unsettle(); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); settle(); stick(); splitAria(); if (fa && fa.isConnected && document.activeElement !== fa) fa.focus({ preventScroll: true }); wsync(); },
       // what the page shows now, after a redraw or a move
       repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); wsync(); },
       // everything up to click k, as the check and the printer see it
