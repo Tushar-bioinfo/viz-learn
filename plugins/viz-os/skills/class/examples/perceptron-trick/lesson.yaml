@@ -218,6 +218,13 @@ slides:
     beat: formula
     title: The score, written as a formula
     lead: Every symbol is a number we already plugged in.
+    picture:
+      machine:
+        terms:
+          - {w: w0, of: x0}
+          - {w: w1, of: 'at(cd3, 0)'}
+          - {w: w2, of: 'at(cd19, 0)'}
+        out: sc1
     steps:
       - say: Our numbers, in the shape of the formula.
         why: The same sum then scores any cell on any line.
@@ -298,6 +305,17 @@ slides:
             tex: '[w2] + [eta] ([y] - [call]) [cd19]'
             plug: '[w2n:{{ws2|2}}] = [w2:{{w2}}] + [eta:{{eta}}] ([y:{{c5_y}}] - [call:{{c5_call}}]) \cdot [cd19:{{c5_cd19}}]'
       - say: In symbols. The bracket, true type minus the call, picks the direction.
+      - say: 'c7, a T cell called B, is added. The line moves: ==before==, ==after==.'
+        add:
+          plane:
+            fill: true
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+              - {line: ['at(w0_trace, plus_frame)', 'at(w1_trace, plus_frame)', 'at(w2_trace, plus_frame)'], color: mist, dash: true, label: before, says: the line one step before c7 is added}
+              - {line: ['at(w0_trace, plus_frame + 1)', 'at(w1_trace, plus_frame + 1)', 'at(w2_trace, plus_frame + 1)'], color: accent, label: after, says: the line after one small step that adds c7}
+              - {ring: ['at(next_x, plus_frame)', 'at(next_y, plus_frame)']}
       - say: Work that bracket for all four cases.
         why: The bracket's sign says add, subtract or stay.
         add: {col: {key: diff, label: y − ŷ, expr: y - call}}

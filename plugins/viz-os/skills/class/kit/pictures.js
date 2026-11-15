@@ -77,7 +77,8 @@
     T.out.forEach(t => { seg(S, [X(t), beam], [X(t), beam + 7], { wk: .4 }); if (Math.abs(X(t) - X(pin)) > 34) S.text(X(t), beam + 25, L.fmt(t, T.dec), { size: 14, anchor: 'middle', weight: 500, ink: mute }); });
     const tri = [[X(pin), beam + 3], [X(pin) + 15, beam + 30], [X(pin) - 15, beam + 30]];
     S.fill(tri, cp, { smooth: false }); S.line(tri, { smooth: false, wk: .7 });
-    S.text(X(pin), beam + 54, `${E.short(p.pin)} ${E.fmt(pin, p.pin)}`, { size: 15, anchor: 'middle', weight: 650, ink: cp });
+    S.text(X(pin), beam + 54, typeof p.pin === 'number' ? E.fmt(pin, null, p.fmt ?? 2) : `${E.short(p.pin)} ${E.fmt(pin, p.pin)}`,   // a bare number has no name to show
+      { size: 15, anchor: 'middle', weight: 650, ink: cp });
     S.text(X(hi), beam + 54, p.axis != null ? E.words(p.axis) : E.short(p.x), { size: 14, anchor: 'end', weight: 500, ink: mute });
     return S;
   }
