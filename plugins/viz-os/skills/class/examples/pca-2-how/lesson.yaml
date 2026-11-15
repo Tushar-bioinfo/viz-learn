@@ -43,12 +43,6 @@ slides:
   - type: title
 
   - type: board
-    beat: plan
-    title: The plan for today
-    steps:
-      - add: {flow: {nodes: [{label: a new number, sub: covariance}, {label: three numbers, sub: every line}, {label: a matrix, sub: C}, {label: C times u, sub: a new arrow}, {label: repeat, sub: PC1}], verbs: [add, pack, multiply, repeat]}}
-
-  - type: board
     beat: problem
     title: Trying lines does not scale
     lead: We found the ==PC1:peak== by brute force.
@@ -323,18 +317,13 @@ slides:
           q: Web pages link to each other in a matrix. What does multiply-and-shrink find?
           a: 'Its top direction: each page''s rank. It crawls when the top two stretches are close.'
 
-  - type: recap
-    answer: PC1 is the arrow the covariance matrix C only stretches. Its stretch is PC1's spread.
-    points:
-      - Two spreads and one covariance give every line's spread.
-      - Repeat "multiply by C, shrink to length 1" and any start turns to PC1.
-      - Standardise when markers sit on different scales.
-
   - type: board
     beat: next
     title: Next, why this arrow is the best
-    lead: Every arrow is a mix of PC1 and PC2.
+    lead: Can we go straight to PC1, without trying lines?
     steps:
+      - say: 'Yes: multiply by $C$ again and again, and any start turns to PC1.'
+      - say: It does not say why PC1 wins. Every arrow mixes PC1 and PC2.
       - say: '$C$ stretches PC1 by ==lam1:{{lam1|2}}==, PC2 by ==lam2:{{lam2|2}}==. Every line''s spread sits between.'
         add:
           chart:

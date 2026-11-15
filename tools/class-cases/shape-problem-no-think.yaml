@@ -1,0 +1,13 @@
+# expect: the opening `problem` has no `think` stop
+# expect: not: the first scene after the title is the `problem`
+# The board opens on the problem, but never asks the question the lesson answers.
+title: A problem with no question
+question: What if the opening problem asks nothing?
+answer: The lint asks for a think stop.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: Two groups look different, and we leave it there.

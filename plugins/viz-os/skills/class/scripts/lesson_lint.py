@@ -11,7 +11,8 @@ import re
 # beats a scene can carry (lesson.md); the last four are optional moves
 BEATS = {"plan", "problem", "data", "by-hand", "picture", "formula", "run", "what-if", "limits", "summary", "next",
          "analogy", "compare", "misconception", "aside"}
-LESSON_BEATS = BEATS | {"refresher"}   # a refresher is a class lesson's end scene; a sketch page has none
+LESSON_BEATS = (BEATS - {"plan", "summary"}) | {"refresher"}   # a refresher is a class lesson's end scene; a sketch page has none
+OLD_ENDS = {"plan", "summary"}   # a lesson opens on its problem and its `next` scene answers (N7): these only warn now
 STEP = {"say", "why", "add", "mark", "think", "frame", "more", "refresh"}
 # deck visuals placed in the picture column as they are
 VIS = {"chart", "image", "dist", "stat", "units", "parts", "flow"}
@@ -1352,7 +1353,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
             continue
         named = []   # (where, mark, the step that draws it, from 1)
         where = f"slide {i + 1} (board “{str(s.get('title') or '')[:38]}”)"
-        if s.get("beat") not in LESSON_BEATS:
+        if s.get("beat") not in LESSON_BEATS | OLD_ENDS:
             Lx.err(where, f"`beat` is {s.get('beat')!r}; use one of {', '.join(sorted(LESSON_BEATS))}")
         names = set(glob) | {c.get("name") for c in s.get("controls") or [] if isinstance(c, dict)}
         names |= set(s.get("derive") or {}) if isinstance(s.get("derive"), dict) else set()
@@ -1396,9 +1397,7 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                     Lx.warn(w, f"`transfer` is {B.words(tr)} words (≤ {TRANSFER_WORDS}): name the field, and put the case in the question")
             for k in set(st) - STEP:
                 Lx.err(w, f"unknown step field `{k}` (use {', '.join(sorted(STEP))})")
-            if s.get("beat") == "plan" and st.get("say"):
-                Lx.err(w, "the plan is its picture, so it has no lines of text: delete this `say` and keep the `flow`")
-            elif not st.get("say") and not st.get("think") and not (s.get("beat") == "plan" and st.get("add")):
+            if not st.get("say") and not st.get("think") and not (s.get("beat") == "plan" and st.get("add")):
                 Lx.err(w, "a step needs `say`: the teacher's one line for this step")
             if st.get("why") is not None and not (isinstance(st.get("why"), str) and st.get("say")):
                 Lx.err(w, "`why` is the reason at the end of the step's `say`: give the step a `say`, and write `why` as one line of text")
@@ -1922,11 +1921,19 @@ def lint_shape(B, Lx, slides, voice="short"):
     lo, hi = SCENES
     if not lo <= len(scenes) <= hi:
         Lx.warn("lesson", f"{len(scenes)} scenes; a lesson is {lo}–{hi}, not counting the title: "
-                + ("split it into a What / How / Why series" if len(scenes) > hi else "add the beats it is missing (plan, problem, by-hand, formula, limits, summary, next)"))
+                + ("split it into a What / How / Why series" if len(scenes) > hi else "add the beats it is missing (problem, by-hand, formula, limits, next)"))
+    for i, s, b in scenes:
+        if b == "plan":
+            Lx.warn(slide_where(i, s), "a lesson has no `plan` scene: delete it, and open on the `problem` (the title already asks the question)")
+        elif b == "summary":
+            Lx.warn(slide_where(i, s), "a lesson has no summary slide: the `next` scene opens with the answer, in the question's words; move it there and delete this slide")
+    scenes = [x for x in scenes if x[2] not in OLD_ENDS] or scenes
     beats = [b for _, _, b in scenes]
     i0, s0, b0 = scenes[0]
-    if b0 != "plan":
-        Lx.warn(slide_where(i0, s0), "the first scene after the title is a `plan` scene: say what we will do, in order")
+    if b0 != "problem":
+        Lx.warn(slide_where(i0, s0), "the first scene after the title is the `problem`: on the learner's own data, show what the obvious way cannot answer, and stop on a `think`")
+    elif not any(isinstance(st, dict) and st.get("think") for st in as_list(s0.get("steps"))):
+        Lx.warn(slide_where(i0, s0), "the opening `problem` has no `think` stop: end it on the question the lesson answers")
     first = lambda b: next((k for k, x in enumerate(beats) if x == b), None)
     fo, pr, nx = first("formula"), first("problem"), first("next")
     if fo is not None and (pr is None or pr > fo):
@@ -1936,10 +1943,8 @@ def lint_shape(B, Lx, slides, voice="short"):
         Lx.warn("lesson", "no `limits` scene: before the next-lesson tease, show where the method breaks or what it assumes")
     elif nx is not None and lim[-1] > nx:
         Lx.warn(slide_where(*scenes[lim[-1]][:2]), "the `limits` scene comes after `next`: limits go before the tease")
-    if "summary" not in beats:
-        Lx.warn("lesson", "no `summary` scene: before the tease, answer the opening question on a `recap` slide")
     if nx is None:
-        Lx.warn("lesson", "no `next` scene: after the summary, tease the next lesson's question in one scene")
+        Lx.warn("lesson", "no `next` scene: end on one scene that answers the opening question, then asks the next lesson's")
     else:
         i = scenes[nx][0]
         for k, s in enumerate(slides[i + 1:], i + 1):
@@ -1958,14 +1963,14 @@ def lint_shape(B, Lx, slides, voice="short"):
     for k, s in enumerate(slides[:last]):
         if s.get("beat") == "refresher":
             Lx.warn(slide_where(k, s), "a refresher sits at the end, after the `next` tease, so the story runs on: move this scene there")
-    gap, planned = 0, False
+    gap, opened = 0, False
     for i, s in enumerate(slides):
         if (s.get("type") or "idea") != "board":
             continue
         w = slide_where(i, s)
-        if planned and not s.get("lead"):
+        if opened and not s.get("lead"):
             Lx.warn(w, "no `lead`: one short line that links this scene to the last")
-        planned = planned or s.get("beat") == "plan"
+        opened = opened or s.get("beat") != "plan"   # every board scene after the first has a lead (an old plan scene does not count)
         steps = as_list(s.get("steps"))
         if len(steps) > STEP_CAP:
             Lx.warn(w, f"{len(steps)} steps (≤ {STEP_CAP}): a scene that long is hard to hold in mind, so split it in two")
@@ -2872,6 +2877,7 @@ def make_lint(B, data):
     def lesson_lint(Lx, deck, glob):
         values = {**(deck.get("data") or {}), **(data or {})}   # what a `beads` figure's rings are named from
         _DECK.clear(); _DECK.update(deck)   # slope_groups reads the colours other scenes give a group
+        Lx.out[:] = [x for x in Lx.out if "no `recap` near the end" not in x[2]]   # the `next` scene answers the question (lesson.md §1)
         if deck.get("recall"):
             Lx.err("lesson", "a class lesson has no recall cards: delete `recall:`, and reach back to the last lesson with a `think` stop near the start")
         lint_scenes(B, Lx, deck, glob, data); lint_shape(B, Lx, deck.get("slides") or [], voice_of(Lx, deck)); lint_bare(Lx, deck, values); lint_order(B, Lx, deck)

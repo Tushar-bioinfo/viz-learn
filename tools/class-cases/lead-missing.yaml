@@ -1,17 +1,21 @@
-# expect: no `lead`: one short line
-# The scene after the plan has no lead line back to the plan.
+# expect: (board “The data”): no `lead`
+# expect: not: (board “The problem”): no `lead`
+# The opening problem needs no lead (the title leads into it); the scene after it has none, so it never links back.
 title: A missing lead
 question: What if a later scene has no lead?
 answer: The lint asks for one short line.
 slides:
   - type: title
   - type: board
-    beat: plan
-    title: The plan
-    steps:
-      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
-  - type: board
     beat: problem
     title: The problem
+    steps:
+      - say: Two groups look different.
+      - think:
+          q: Is the difference real?
+          a: We cannot tell yet.
+  - type: board
+    beat: data
+    title: The data
     steps:
       - say: This scene never links back.

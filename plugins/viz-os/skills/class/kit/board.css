@@ -17,10 +17,10 @@ html.ls-page #lesson { width: var(--page-w); margin: 0 auto; padding: 24px 0 120
 html.ls-page .slide { position: static; inset: auto; display: flex; flex-direction: column; flex: none; width: 100%; padding: 44px 0; gap: 22px; }
 html.ls-page .slide + .slide { border-top: 3px solid var(--line-dim); }
 html.ls-page .enter { animation: none; }
-html.ls-page .s-title { min-height: 560px; justify-content: center; }
+html.ls-page .s-title { min-height: calc(100vh - 24px); justify-content: center; }   /* the title fills the first screen; the problem starts after a scroll (the user, 15 Nov) */
 html.ls-page .s-title .display { font-size: 64px; }
 html.ls-page .s-title .subtitle { font-size: 26px; }
-html.ls-page .s-title .question .qt { font-size: 26px; }
+html.ls-page .s-title .question { display: none; }   /* the title asks the question; the board opens on the problem (N7) */
 html.ls-page .s-recap .recap { flex: none; }
 /* a deck slide between scenes expects a tall box */
 html.ls-page .slide:not(.s-board, .s-title, .s-recap) { height: 720px; }
@@ -241,7 +241,7 @@ html.ls-page .board .think.g { display: flex; flex-direction: column; gap: 8px; 
 /* the first look: at rest the marks the reading names glow (told); the figure's other marks step back, less than a word's dim.
    Orange (the witness) never steps back: it is what matters now */
 .bi.plane.lnk-rest svg > g.pm:not(.told):not(.wit):is(:not([data-step]), .shown), .bvis.lnk-rest .chart > svg g.mk:not(.told):not(.off) { opacity: .4; }
-.bi.chance.lnk-rest svg > g[data-m]:not(.told), .bi.chance.lnk-rest svg > g.ptally, .board .bi.beads.lnk-rest .bdr:not(.told) { opacity: .4; }
+.bi.chance.lnk-rest svg > g[data-m]:not(.told), .board .bi.beads.lnk-rest .bdr:not(.told) { opacity: .4; }
 .bi.lnk-rest .plegend .pk:not(.told):is(:not([data-step]), .shown), .bvis.lnk-rest .legend > :not(.told) { opacity: .55; }
 .bi.plane svg > g.pm.told, .bvis .chart g.mkm.told, .board .swrap svg .told, .bi .plegend .pk.told > *, .bvis .legend .told .mkn, .bi.chance svg > g[data-m].told, .board .bi.beads .bdr.told :is(.bdf, .bdp) { filter: brightness(1.2) drop-shadow(0 0 3px var(--hg, rgba(162, 159, 151, .45))) drop-shadow(0 0 8px var(--hg, rgba(162, 159, 151, .45))); }
 .board .plane svg.pl .phits > * { pointer-events: all; }

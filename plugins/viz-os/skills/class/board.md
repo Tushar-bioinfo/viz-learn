@@ -6,10 +6,10 @@ Read this when you write scenes (loop step 4). `lesson.md` says what each scene 
 ```yaml
 title: How spread out are six cells?
 subtitle: Variance, built on the board one line at a time
-question: How do we put one number on how spread out a set of measurements is?   # asked on the title slide
+question: How do we put one number on how spread out a set of measurements is?   # in full; the title slide shows only `title`
 answer: Take each value's distance from the mean, square it, add the squares, and divide by n − 1.
 learner: {goal: intuition+hand, knows: [mean], anchors: [flow cytometry], voice: short}   # from the probe and the profile
-# beats: plan · problem · data · by-hand · picture · formula · run · limits · summary · next   (the spine, one line per scene)
+# beats: problem · data · by-hand · picture · formula · run · limits · next   (the spine, one line per scene)
 series: spread        # the series this lesson belongs to (memory.py's name for it)
 episode: 2            # its place in the series, from 1
 home: cells           # the learner's home table this lesson reads (its rows and provenance are in data.json)
@@ -37,7 +37,7 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 ## A board scene
 ```yaml
 - type: board
-  beat: by-hand            # one of: plan problem data by-hand picture formula run what-if limits summary next
+  beat: by-hand            # one of: problem data by-hand picture formula run what-if limits next
                            #         analogy compare misconception aside, and refresher (at the end, below)
   title: Work it out by hand
   lead: Distance from the mean, for every cell, then one number.
@@ -50,7 +50,7 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 |---|---|
 | `beat` | what the scene is for; drawn as the small label above the title ("By hand", "What if", "A common mix-up") |
 | `title` | the claim, 4–8 words |
-| `lead` | one short line that links this scene to the last; every scene after the plan has one |
+| `lead` | one short line that links this scene to the last; every scene after the first has one |
 | `table` | the pinned table on the left (30% of the width). Leave it out and the scene takes the full width |
 | `derive`, `controls` | as on a deck slide, plus the run and the toggle |
 | `steps` | 1–10 steps. Split a scene that needs more |
@@ -367,10 +367,8 @@ A control sits under the figure it drives: the first figure that reads its name,
 A series is 2–3 lessons, each its own folder and `lesson.yaml`, on the same home table; `series` and `episode` name the lesson's place, and a later one reaches back as `lesson.md` §7 says. If its `make_data.py` reads an earlier lesson's `data.json` and that lesson was tidied, run `tidy.py --restore` on it first.
 - `home: <name>` names the home table (`C/scripts/home.py`, written to `~/.viz-os/home/<name>.json`, or under `$VIZOS_HOME` when it is set). `make_data.py` reads that file and writes the rows it uses into `data.json`, plus `"home": {"name": …, "provenance": {…}}` copied from the file, so each lesson keeps its own copy and says where it came from. The build does not read the home file; it reads only `data.json`.
 
-## The plan and the summary
-The plan is its picture: a `plan` scene has one step, `add` with a `flow`, and no `say`. The `flow` draws as a row of numbered squares, the first one filled, with each `title` under its square and any `sub` under that.
-
-The summary scene is a deck `recap` slide: `{type: recap, answer: …, points: [ … ]}`. Any other deck slide type (`predict`, `table`, `bridge`, …) may sit between board scenes when it teaches better, and counts as a scene.
+## The opening and the end
+The title asks the question; the board opens on the `problem` and ends on `next`, whose first line answers it (`lesson.md` §1). A deck slide type (`predict`, `table`, `bridge`, …) may sit between board scenes when it teaches better, and counts as a scene. An older lesson's `plan` scene still draws its `flow` as numbered squares, each `title` and `sub` under its square.
 
 ## YAML gotchas
 - Quote text with `: ` in it, a value that starts with `{{`, and inside a `{ }` mapping any value that holds `{{…}}` or a `?`: `label: 'mean {{xbar|1}}'`.

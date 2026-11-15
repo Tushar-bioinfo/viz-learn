@@ -23,7 +23,7 @@ After the spine's top, write every scene as a stub, in reading order. Write bloc
 - `idea`: what the learner is stuck on, from the table below (or your own, §4).
 - `see`: the one mark that must carry the point (the witness, §6). Use the label or `id` you will give that mark.
 - `shows`: the picture in words, in one line.
-Scenes with beat `plan`, `summary` or `next` carry no idea: give them `type`, `beat` and `title` only. The stubs later become the scenes: add `steps` under each, and keep the three fields.
+The `next` scene carries no idea: give it `type`, `beat` and `title` only. The stubs later become the scenes: add `steps` under each, and keep the three fields.
 
 ## 3. The idea table
 | `idea` | The learner asks | The picture | Draw it today with |
@@ -63,7 +63,7 @@ It prints the path and one line (`10 scenes, 8 ideas, depth 2`). Show `storyboar
 
 ## 8. What the lint checks
 A lesson is adv once any board scene has `idea`.
-- Every scene but `plan`, `summary` and `next` has `idea`, `see` and `shows` (error).
+- Every scene but `next` has `idea`, `see` and `shows` (error).
 - `idea` is a table name or a question ending in `?`; a near miss gets "did you mean" (error).
 - Once a scene has steps: a table idea draws with one of its items (error).
 - `see` names something the scene draws: a mark's label or `id`, a chart series, a symbol it shows, or a table column. If it names a mark, a `lead`, `say` or think question links its word; a think answer does not count (error).
@@ -86,8 +86,9 @@ A spine of stubs fails the lint for its missing `steps`, and other lints warn ab
     axis: share of homes with an ill child (%)
     unit: house      # optional: each unit a small house (a counted home); squares when left out
 ```
-It draws each group as squares or houses, 10 a row, the `ill` ones filled in the group's colour; one share line, ending on the next named tick past the furthest share or ruler on any frame, with a dot per group and its name beside it; the **gap** between the dots (the witness, shaded from the lower group's colour to the higher's); with `step`, a ruler from the lower share with a tick per **noise step**; with `tally`, a square per frame, grey once the run reaches it and in the gap's colour where the list holds 1. `n`, `ill` and `step` are numbers or names, so a run's `derive` (`xw: at(fr_well, draw)`) redraws it, each change eased.
+It draws each group as squares or houses, 10 a row, the `ill` ones filled in the group's colour; one share line, ending on the next named tick past the furthest share or ruler on any frame, with a dot per group and its name beside it; the **gap** between the dots (the witness, shaded from the lower group's colour to the higher's); with `step`, a ruler from the lower share with a tick per **noise step**; with `tally`, a square per frame, grey once the run reaches it and orange where the list holds 1. `n`, `ill` and `step` are numbers or names, so a run's `derive` (`xw: at(fr_well, draw)`) redraws it, each change eased.
 - Its marks are the two group names, `gap` and `noise step`: legend entries and linked words (`==gap==`, `==noise step:noise steps==`), so no group may take the names `gap` or `noise step`, and a scene holds one `chance`. Optional `says:` on a group, `gap_says:` and `step_says:` fill their cards.
+- **Its limits scene counts every shuffle.** Shrink the lesson's own houses to a small pilot from the same data (about 5 a group, at most about 250 ways). A run puts the `ill` labels every way they can go, one way a frame after the real pilot on frame 0; `tally` lights each way whose gap is as wide as ours, so the exact p is lit ways / all ways. Say the bell curve's p as a count of ways too ("about 12 of 210"). The scene's other caveats (homes not independent, a link and not a cause) go in its `more`.
 - The lint, on each state of a run or slider: exactly two groups with two names; `n` a whole number 1–100; `ill` 0 to that state's `n`; `step` above 0, the gap at most 12 steps; a list read with `at(list, draw)` covers every state; `tally` needs a run and one entry per frame. Arithmetic it cannot read passes; the browser check warns if the page clamps it.
 
 ## 9b. The `fork` figure: what can happen, side by side

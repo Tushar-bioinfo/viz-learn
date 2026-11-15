@@ -9,20 +9,18 @@ A lesson has 8–14 scenes (not counting the title), each with at most 10 steps.
 
 ```
 title (asks the question)
-plan
-problem → data → by-hand → picture → formula → run → what-if    (the middle: any order the topic needs)
+problem (on the learner's own data, ending on a think stop)
+data → by-hand → picture → formula → run → what-if    (the middle: any order the topic needs)
 limits
-summary (a `recap` slide that answers the question)
-next (the tease, the last scene)
+next (answers the question, says what the answer leaves open, asks the next one)
 ```
 
-The lint checks the ends: `plan` first, a `problem` before any `formula`, `limits` before `next`, and `next` last. It also checks the size of the lesson and of each scene.
+The lint checks the ends: `problem` first, `limits` before `next`, and `next` last. A lesson has no plan scene and no summary slide (a sketch page keeps both: its `page.md`). It also checks the size of the lesson and of each scene.
 
 ## 2. The beats
 | Beat | What the scene does | Usually holds |
 |---|---|---|
-| `plan` | Says the one question and the path in 3–4 stops. The learner knows where the board is going. | a `flow` of the stops |
-| `problem` | Shows the need before the method: two things the obvious number cannot tell apart, a guess that fails, a question nobody can answer yet. | a chart, a compare, a think stop |
+| `problem` | Shows the need before the method: two things the obvious number cannot tell apart, a guess that fails, a question nobody can answer yet. The first opens the lesson on the learner's own data. | a chart, a compare, a think stop |
 | `data` | Puts the learner's toy table on the board and points at what matters in it. | a `table`, a chart of it, a mark on a row or column |
 | `by-hand` | Works the method on the table, one operation per step, and names each new number. The core of every lesson. | `table`, `calc` lines, new `col`s, `mark` |
 | `picture` | Shows what the numbers look like: a distance as a drop, a square as an area, a weight as a slope. | `plane` (equal scales), chart, image |
@@ -30,8 +28,7 @@ The lint checks the ends: `plan` first, a `problem` before any `formula`, `limit
 | `run` | Runs an iterative method frame by frame, or the same rule across a whole table. | a run control, `plane`, `params`, `ops` |
 | `what-if` | Changes one input and shows what moves: a slider, a flipped count, one cell removed. The change moves a picture, not only numbers. | a slider or toggle with a `chart` or `plane`, a `compare` |
 | `limits` | Shows where the method breaks or what it assumes, on the same data where possible. | `parts`, a chart, a think stop |
-| `summary` | Answers the opening question in one line, plus 2–3 points. Use a `recap` slide. | `answer:`, `points:` |
-| `next` | Teases the next lesson's question with one picture from this lesson's data. | a `plane` or chart, 2 steps |
+| `next` | The last scene. Its first line answers the opening question in its words; the next says what that answer does not tell (how large, how sure); then the next lesson's question, on one picture from this lesson's data. | the answer, a `plane` or chart, 3–4 steps |
 | `analogy` | Maps the idea onto something the learner already knows. Optional. | a `compare` or note |
 | `compare` | Puts two cases side by side so one difference stands out. Optional. | `compare` |
 | `misconception` | Names a wrong idea a learner is likely to hold, shows why it fails, gives the right one. Optional. | `compare` (bad, good), a think stop |
@@ -54,7 +51,7 @@ The table keeps its source's shape through all of this. A cells × markers table
 ## 4. The teaching moves
 Pick the moves the topic needs; this is a menu, not a template. Each line says when to reach for it.
 
-1. **Bookends.** Always: the plan at the start; limits and next at the end.
+1. **Bookends.** Always: the problem at the start; limits and next at the end.
 2. **What / How / Why split.** The topic is too big for one lesson (§7).
 3. **Problem-first ladder.** The method has parts that each fix the last one's problem. Show the problem, add the part, show the next problem (distances cancel → square them → units are squared → take the root).
 4. **Think like the algorithm.** The method works from local information (a gradient, a nearest neighbour, one misclassified point). Say what it can see from where it stands, and what it cannot: "it has no eyes for the whole curve, only the slope under its feet".
@@ -100,7 +97,7 @@ You are a teacher at a whiteboard talking to one student. Each step's `say:` is 
 - **One new thing per step.** A step adds one item, or marks one part, or asks one question.
 - **Two to four steps per idea.** Show it, name it, check it with a think stop.
 - **A scene is one idea.** If the lead line needs "and", split the scene.
-- **Leads link scenes.** Each scene after the plan has a `lead:`: one short line that ties it to the last. Read the leads in order; they should tell the story alone.
+- **Leads link scenes.** Each scene after the first has a `lead:`: one short line that ties it to the last. Read the leads in order; they should tell the story alone.
 - **Hard steps get a think stop before them.** Where the learner is most likely to get lost (a sign that flips, a division that seems arbitrary), ask first.
 
 Expect `by-hand` to be the longest scene, or two scenes.
@@ -125,11 +122,11 @@ Open `snaps/desktop.png` (one photo per scene, each at its last step) and `snaps
 4. Do the numbers in `numbers.txt` match `verify_data.py`'s output?
 
 **Pedagogy**
-5. Read only the scene titles and leads, in order. Do they tell the story: question, plan, problem, work, formula, picture, limits, answer, next?
+5. Read only the scene titles and leads, in order. Do they tell the story: question, problem, work, formula, picture, limits, answer and next?
 6. Pick the formula scene. For each term, can you find the by-hand scene and step where that number was worked?
 7. Is there a think stop before the hardest step? Does each think answer give a reason?
 8. Does the limits scene use the lesson's own data?
-9. Does the summary answer the opening question in the opening question's words?
+9. Do the `next` scene's first lines answer the opening question in its words, and say what the answer leaves open?
 10. Does at least one question come from an angle the lesson did not take: an interview question, a reversed question? Does the transfer stop name a real field, and does its answer say what carries over and where it breaks?
 11. Could a learner redo the by-hand scene on a new table of 3 rows, from the page alone?
 

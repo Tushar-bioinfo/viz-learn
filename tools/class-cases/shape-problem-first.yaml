@@ -1,0 +1,12 @@
+# expect: the first scene after the title is the `problem`
+# The board opens on the data, so the learner never sees what the method is needed for (N7: a lesson opens on its problem).
+title: Data first
+question: What if the lesson opens on the data?
+answer: The lint asks for the problem first.
+slides:
+  - type: title
+  - type: board
+    beat: data
+    title: The data
+    steps:
+      - say: We start on the table and skip the problem.
