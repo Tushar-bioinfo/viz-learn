@@ -327,9 +327,11 @@ def rows_on_screen(page):
         sized(page, w, h)
         q = page.evaluate(FEET); n += len(q)
         bad += [f"{w}: scene {x[0]} row foot {x[1]} of {x[2]}" for x in q if x[1] > x[2]]
-        b2, k = pins(page, w); bad += b2; m += k
+        # a figure taller than its text (it is never sized under the room it has with the scene head in view) has nothing to pin
+        # against: a lesson with no such room passes; one with room where no figure pins fails, as in shorter_window
+        b2, k = pins(page, w); bad += b2 + ([f"{w}: no figure has room to pin"] if not k and page.evaluate(ROOM_TO_PIN) else []); m += k
     sized(page, 1440, 900)
-    return n > 0 and m > 0 and not bad, "; ".join(bad[:4]) or f"{n} rows, {m} pinned figures"
+    return n > 0 and not bad, "; ".join(bad[:4]) or f"{n} rows, {m} pinned figures"
 
 
 SIZES = """() => [...document.querySelectorAll('.fb.beside > .ffig, .tcol, .bi')].map(e => e.offsetWidth + 'x' + e.offsetHeight + (e.classList.contains('nostick') ? '!' : '')).join(' ')"""
