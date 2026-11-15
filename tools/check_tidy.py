@@ -42,29 +42,38 @@ def attic():
     return sorted((WORK / "home/attic").glob("*"))
 
 
+def pack(f):
+    return f / ".lesson"
+
+
 def tests():
     f = fresh()
+    (f / "make_home.py").write_text("# a helper the agent wrote\n")
     before = listing(f)
+    sources = sorted(n for n in before if not n.startswith(("snaps/", "__pycache__/", "lesson.html", "my-notes")))
     code, out = run(f, "--dry-run")
-    yield "--dry-run prints the moves and changes nothing", code == 0 and "would move data.json" in out and listing(f) == before and not attic()
+    yield "--dry-run prints the moves and changes nothing", code == 0 and "would pack data.json" in out and "would delete snaps/" in out and listing(f) == before
 
     code, out = run(f)
-    yield "tidy keeps the page, the yaml and the unknown file", code == 0 and listing(f) == ["lesson.html", "lesson.yaml", "my-notes.txt"]
+    yield "tidy leaves only the page and the unknown file in view", code == 0 and sorted(p.name for p in f.iterdir() if p.name != ".lesson") == ["lesson.html", "my-notes.txt"]
     yield "tidy lists what it left alone", "left alone: my-notes.txt" in out
-    box = attic()[0] if attic() else WORK
-    yield "tidy moves every known file to attic/<slug>-<date>", re.fullmatch(r"gallery-\d{4}-\d\d-\d\d", box.name) is not None and all((box / n).is_file() for n in [*THERE, "snaps/desktop.png", "__pycache__/x.pyc"])
+    yield "tidy packs the yaml, data, scripts and image into .lesson/", sorted(listing(pack(f))) == sources and "make_home.py" in sources
+    yield "tidy deletes snaps/ and __pycache__", not (f / "snaps").exists() and not (f / "__pycache__").exists() and "snaps/desktop.png" not in listing(f)
+    yield "tidy writes nothing to the viz-os home", not attic()
+    code, out = run(f)
+    yield "a second tidy refuses while .lesson/ is there", code != 0 and "--restore" in out
 
     code, out = run(f / "lesson.yaml", script=LESSON)
-    yield "a build with the data gone names --restore", code != 0 and "--restore" in out and "data.json" in out
+    yield "a build of a tidied lesson names --restore", code != 0 and "--restore" in out and ".lesson" in out
 
     (f / "make_data.py").write_text("# a new one\n")
     code, out = run(f, "--restore")
-    yield "--restore never overwrites a file", code != 0 and "make_data.py" in out and (f / "make_data.py").read_text() == "# a new one\n" and (box / "data.json").is_file()
+    yield "--restore never overwrites a file", code != 0 and "make_data.py" in out and (f / "make_data.py").read_text() == "# a new one\n" and (pack(f) / "data.json").is_file()
     (f / "make_data.py").unlink()
     code, out = run(f, "--restore", "--dry-run")
     yield "--restore --dry-run changes nothing", code == 0 and not (f / "data.json").exists()
     code, out = run(f, "--restore")
-    yield "--restore brings every file back", code == 0 and listing(f) == before and not attic()
+    yield "--restore brings every source back", code == 0 and sorted(set(listing(f)) - {"lesson.html", "my-notes.txt"}) == sources and not pack(f).exists()
     code, out = run(f / "lesson.yaml", "--quiet", script=LESSON)
     yield "the lesson builds again after --restore", code == 0
 
@@ -72,14 +81,13 @@ def tests():
     yield "--keep spares a file", (f / "make_data.py").is_file() and not (f / "data.json").exists()
     run(f, "--restore")
 
-    run(f)
-    first = attic()[0]
-    run(f, "--restore")
-    first.mkdir(parents=True); (first / "stale.txt").write_text("an earlier tidy\n")
-    run(f)
-    yield "a second tidy the same day keeps both", (first / "stale.txt").is_file() and first.with_name(first.name + "-2").is_dir()
-    run(f, "--restore")
-    yield "--restore takes the newest", listing(f) == before and (first / "stale.txt").is_file()
+    box = WORK / "home/attic" / "gallery-2026-01-02"
+    box.mkdir(parents=True)
+    for n in ["data.json", "make_data.py"]:
+        (f / n).rename(box / n)
+    (box / "tidied-from.txt").write_text(str(f.resolve()) + "\n")
+    code, out = run(f, "--restore")
+    yield "--restore still brings back an older version's attic copy", code == 0 and (f / "data.json").is_file() and not box.exists()
 
     f = fresh()
     (f / "lesson.html").write_text("")

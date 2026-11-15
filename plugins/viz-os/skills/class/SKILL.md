@@ -41,7 +41,7 @@ You are the teacher. The learner should leave able to do the method by hand on a
    ```bash
    python3 C/scripts/tidy.py lessons/<slug>             # --dry-run prints the moves; --keep <name> spares a file
    ```
-   It keeps `lesson.html` and `lesson.yaml`, and moves the working files (`snaps/`, the data file, `make_data.py`, `verify_data.py`, images) to `~/.viz-os/attic/<slug>-<date>/`. It leaves files it does not know, and lists them. It refuses unless `lesson.html` is built, up to date and holds its data. To change a tidied lesson, or to read its `data.json` from a later lesson, first run `tidy.py lessons/<slug> --restore`.
+   It leaves only `lesson.html` in view: it packs `lesson.yaml`, the data, the scripts and images into the hidden `.lesson/` beside it, and deletes `snaps/`. It refuses unless `lesson.html` is built, up to date and holds its data. To change a tidied lesson, or to read its `data.json` from a later lesson, first run `tidy.py lessons/<slug> --restore`.
 
 ## Gates: a lesson is done only when all five pass
 | Gate | Pass when |
