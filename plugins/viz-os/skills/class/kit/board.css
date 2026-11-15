@@ -380,19 +380,29 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .vring { position: absolute; z-index: 59; display: none; box-sizing: border-box; border: 2px solid var(--accent); border-radius: 6px; pointer-events: none; }
 .vring.on { display: block; }   /* the keyboard-focus ring, drawn by board.js round the whole term */
 .board .math .dm { opacity: .28; transition: opacity .12s; }
-/* the card: .55 see-through over a 4 px blur (the user's pick "A"): colour shows through, text behind it does not read. Framed in
-   the term's colour, 14 px, as wide as its widest line, a pointer in the frame's colour */
-.vpop { position: absolute; z-index: 60; display: none; box-sizing: border-box; width: max-content; max-width: 230px; padding: 5px 8px; background: rgba(11, 12, 14, .55);
-  -webkit-backdrop-filter: blur(4px) saturate(1.2); backdrop-filter: blur(4px) saturate(1.2);
-  border: 1px solid var(--bc, var(--mist)); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .55); font: 400 14px/1.4 var(--f-ui); color: var(--ink); pointer-events: none; text-align: left; }
-.vpop.on { display: block; }
-.vpop .ttl { display: flex; gap: 9px; align-items: baseline; margin-bottom: 4px; }
-.vpop .ttl .katex { font-size: 1.45em; }
-.vpop .ttl > svg { flex: none; align-self: center; }
-.vpop .vv { opacity: .7; white-space: nowrap; }
-.vpop .chip { display: inline-block; margin-top: 5px; padding: 1px 6px; border: 1px solid rgba(255, 255, 255, .18); font: 600 .85em var(--f-mono); }
-.vpop .caret { position: absolute; top: -6px; width: 12px; height: 6px; background: var(--bc, var(--mist)); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
-.vpop.up .caret { top: auto; bottom: -6px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+/* the card (N9, the user's pick B "colour edge"): glass .65 over an 8 px blur with saturate 1.2, so colour shows through and text
+   behind it does not read; a white 14% hairline; the term's colour only as a 3 px left edge; 2 px corners; a contact and an ambient
+   shadow. Head: the notation and the bold `short` name; then the value now, big; then `says`; then a foot with the field's term
+   (`term:`) and the shape chip. 14 px text (the chip 13), at most 260 px, shrunk to its widest line, a 120 ms fade in */
+.vpop { position: absolute; z-index: 60; display: none; box-sizing: border-box; width: max-content; max-width: 260px; padding: 8px 12px 9px; background: rgba(11, 12, 14, .65);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2); backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, .14); border-left: 3px solid var(--bc, var(--mist)); border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .5); font: 400 14px/1.45 var(--f-ui); color: var(--ink); pointer-events: none; text-align: left; }
+.vpop.on { display: block; animation: vpop-in 120ms cubic-bezier(.2, .7, .2, 1); }
+@keyframes vpop-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .vpop.on { animation: none; } }
+.vpop .ttl { display: flex; gap: 8px; align-items: baseline; margin-bottom: 3px; }
+.vpop .ttl .katex { font-size: 1.4em; }
+.vpop .ttl > svg, .vpop .ttl > .nt { flex: none; align-self: center; }
+.vpop .ttl b { font-weight: 650; letter-spacing: .005em; }
+/* the value now: its own line, big, in the term's colour mixed 52% toward white so a dark colour still reads */
+.vpop .vv { margin: 1px 0 4px; font: 650 20px/1.2 var(--f-ui); font-variant-numeric: tabular-nums; color: color-mix(in oklab, var(--bc, var(--mist)) 48%, white); }
+.vpop .ds { color: #dcdad4; }
+.vpop .ft { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, .1); color: #b9b6ae; }
+.vpop .ft b { font-weight: 600; color: #e6e4de; }
+.vpop .chip { display: inline-block; padding: 0 6px; border: 1px solid rgba(255, 255, 255, .2); border-radius: 3px; font: 600 13px/1.5 var(--f-mono); color: #dcdad4; }
+.vpop .caret { position: absolute; top: -5px; width: 10px; height: 5px; background: rgba(255, 255, 255, .28); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.vpop.up .caret { top: auto; bottom: -5px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 /* a chart's marks on a board: no tag; a wide see-through hit area opens the card and lifts the mark; its legend entry too.
    A mark not shown yet takes no pointer. The chart's data pop-up wears the card's glass look */
 .board .chart g.mk:has(> .vt:hover), .board .chart g.mk:has(> .vt.act), .board .chart g.mk:has(> .vt:focus-visible) { filter: brightness(1.35) drop-shadow(0 0 6px var(--hg, rgba(162, 159, 151, .45))); }
@@ -407,8 +417,8 @@ html.ls-page .board .bi.plane { box-sizing: content-box; max-width: none; }
 .board .legend i.blk { width: 18px; height: 12px; opacity: .45; }
 .board .legend i.arw { width: auto; height: auto; background: none; font: 700 20px/1 var(--f-ui); font-style: normal; }
 .board .legend .vt { pointer-events: auto; }
-.board .chart .tip { padding: 5px 8px; font: 400 14px/1.4 var(--f-ui); background: rgba(11, 12, 14, .55); -webkit-backdrop-filter: blur(4px) saturate(1.2); backdrop-filter: blur(4px) saturate(1.2);
-  border: 1px solid var(--mist); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .55); }
+.board .chart .tip { padding: 8px 12px 9px; font: 400 14px/1.45 var(--f-ui); background: rgba(11, 12, 14, .65); -webkit-backdrop-filter: blur(8px) saturate(1.2); backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, .14); border-radius: 2px; box-shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 12px 32px rgba(0, 0, 0, .5); }
 /* the marks never take the pointer, so a shape drawn in a later step cannot cover a name; only names with `says` take it */
 .board .plane svg.pl * { pointer-events: none; }
 .board .plane svg.pl .says { pointer-events: auto; }

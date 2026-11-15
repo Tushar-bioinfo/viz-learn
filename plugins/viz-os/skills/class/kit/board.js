@@ -150,7 +150,7 @@
     let shape = null, value = null;
     if (S.kind === 'matrix' || S.kind === 'vector') { if (Array.isArray(v)) shape = Array.isArray(v[0]) ? `${v.length} × ${v[0].length}` : el.closest('.mrow') ? `1 × ${v.length}` : `${v.length} × 1`; }
     else if (S.kind !== 'index' && S.kind !== 'operator' && typeof v === 'number') { value = L.fmt(v, S.fmt ?? 's4'); shape = 'one number'; }
-    return { tex: S.tex || L.autoSym(q), c: hue(S.color), ink: !S.color || S.color === 'ink', name: S.short, says: S.says, value, shape, scope }; };
+    return { tex: S.tex || L.autoSym(q), c: hue(S.color), ink: !S.color || S.color === 'ink', name: S.short, says: S.says, term: S.term, value, shape, scope }; };
   // the card as wide as its widest line, so its left and right padding match
   const fitCard = k => { k.style.width = ''; const r = k.getBoundingClientRect(), rg = document.createRange(), wk = document.createTreeWalker(k, NodeFilter.SHOW_TEXT); let max = r.left;
     while (wk.nextNode()) { if (wk.currentNode.parentElement.closest('.katex-mathml')) continue; rg.selectNodeContents(wk.currentNode); for (const q of rg.getClientRects()) if (q.width) max = Math.max(max, q.right); }
@@ -163,10 +163,10 @@
     return { ...r, width: r.right - r.left, height: r.bottom - r.top }; };
   // under the term, its pointer at the term's middle; above it when there is more room there; always inside the window
   const place = (k, el) => { k.style.left = '0px'; k.style.top = '0px'; fitCard(k);
-    const r = termBox(el), w = k.offsetWidth, hh = k.offsetHeight, gap = 9, vw = document.documentElement.clientWidth, mid = r.left + r.width / 2;
+    const r = termBox(el), w = k.offsetWidth, hh = k.offsetHeight, gap = 10, vw = document.documentElement.clientWidth, mid = r.left + r.width / 2;
     const below = innerHeight - r.bottom - gap, above = r.top - gap, up = below < hh && (above >= hh || above > below), x = Math.max(6, Math.min(vw - 6 - w, mid - 22));
     const y = Math.max(6, Math.min(innerHeight - 6 - hh, up ? r.top - gap - hh : r.bottom + gap));
-    k.classList.toggle('up', up); k.querySelector('.caret').style.left = Math.max(6, Math.min(w - 18, mid - x - 6)) + 'px';
+    k.classList.toggle('up', up); k.querySelector('.caret').style.left = Math.max(8, Math.min(w - 18, mid - x - 5)) + 'px';
     k.style.left = x + scrollX + 'px'; k.style.top = y + scrollY + 'px'; at = [r.left, r.top, r.right, r.bottom].map(Math.round).join();
     // keyboard focus: one ring round the whole term (an outline on a KaTeX span breaks into a box per piece)
     if (!ring) { ring = h('div', 'vring'); document.body.appendChild(ring); }
@@ -182,7 +182,7 @@
   const keyOf = el => el.dataset && el.dataset.vk ? `vk:${el.dataset.vk}` : termOf(el) ? [...el.classList].find(k => /^(lt|mt)-/.test(k)) : `mk:${el.textContent}`;
   const sameAs = key => [...document.querySelectorAll('.vt')].filter(x => keyOf(x) === key);
   let where = null, sig = '', at = '', ticker = 0, focused = false, ring = null;
-  const sigOf = d => JSON.stringify([d.tex, d.name, d.value, d.shape, d.c, L.plain(String(d.says || ''), d.scope || {})]);
+  const sigOf = d => JSON.stringify([d.tex, d.name, d.value, d.shape, d.c, d.term, L.plain(String(d.says || ''), d.scope || {})]);
   const tick = () => { if (!cur) { clearInterval(ticker); ticker = 0; return; }
     const was = pinned, wasF = focused;
     if (!cur.isConnected) { const el = where && sameAs(where.key)[where.i]; if (!el) { popHide(); return; }
@@ -198,8 +198,10 @@
     if (!ticker) ticker = setInterval(tick, 150);
     if (!card) { card = h('div', 'vpop'); card.setAttribute('role', 'tooltip'); document.body.appendChild(card); }
     cur = el; el.classList.add('act'); dim(el); card.style.setProperty('--bc', d.c);
-    card.innerHTML = `<div class="ttl">${d.swatch || (d.tex != null ? '<span class="nt"></span>' : '')}${d.name ? `<b>${md(d.name)}</b>` : ''}${d.value != null ? `<span class="vv">= ${L.esc(d.value)}</span>` : ''}</div>` +
-      `${d.says ? `<div class="ds">${md(d.says)}</div>` : ''}${d.shape ? `<span class="chip">${L.esc(d.shape)}</span>` : ''}<i class="caret"></i>`;
+    // head (notation, name), the value now on its own big line, `says`, then a foot: the field's own term and the shape chip
+    card.innerHTML = `<div class="ttl">${d.swatch || (d.tex != null ? '<span class="nt"></span>' : '')}${d.name ? `<b>${md(d.name)}</b>` : ''}</div>` +
+      `${d.value != null ? `<div class="vv">${L.esc(d.value)}</div>` : ''}${d.says ? `<div class="ds">${md(d.says)}</div>` : ''}` +
+      `${d.term || d.shape ? `<div class="ft">${d.term ? `<span class="tm">field term: <b>${md(d.term)}</b></span>` : ''}${d.shape ? `<span class="chip">${L.esc(d.shape)}</span>` : ''}</div>` : ''}<i class="caret"></i>`;
     const nt = card.querySelector('.nt'); if (nt) { renderTex(nt, d.tex, false); nt.style.color = d.ink ? 'var(--ink)' : d.c; }
     L.fill(card, d.scope || {}); card.classList.add('on'); place(card, el); };
   const vt = e => e && e.closest ? e.closest('.vt') : null;
@@ -269,7 +271,7 @@
     const SW = SWATCH;
     const tipOn = (el, mk, c, kind) => {
       el.classList.add('says', 'vt'); el.setAttribute('tabindex', '0'); glow(el, c === 'var(--ink)' ? 'var(--mist)' : c); el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope)); pauseButton();
-      el._pd = () => ({ swatch: `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg>`, c: c === 'var(--ink)' ? 'var(--mist)' : c, name: mk.name ?? mk.label, says: mk.says, shape: kind === 'dot' || kind === 'centre' ? 'one point' : null, scope: ctx.scope }); };
+      el._pd = () => ({ swatch: `<svg width="24" height="12" viewBox="0 0 24 12">${(SW[kind] || SW.line).replace(/C/g, c)}</svg>`, c: c === 'var(--ink)' ? 'var(--mist)' : c, name: mk.name ?? mk.label, says: mk.says, term: mk.term, shape: kind === 'dot' || kind === 'centre' ? 'one point' : null, scope: ctx.scope }); };
     const m = { l: 62, r: 18, t: 14, b: 60 }, boxOf = () => { const X = p.x || {}, Y = p.y || {}; return [num(X.min ?? 0), num(X.max ?? 10), num(Y.min ?? 0), num(Y.max ?? 10)]; };
     // the picture takes its room. An equal plane keeps one scale on both axes and shows more of the plane on both sides, so the
     // data stay at true scale in any shape. With `fill` the plot holds 16:9, going to 2:1 if the window is short, each axis at its own scale
@@ -528,16 +530,16 @@
     const axisOf = T => { const ns = Math.ceil(T / .1 - 1e-9) <= 6 ? .1 : .2; return { ns, top: Math.min(1, Math.max(1, Math.ceil(T / ns - 1e-9)) * ns) }; };
     const gradOf = S => { const lo = S.s[0] < S.s[1] ? 0 : 1; return [G[lo].c, G[1 - lo].c]; };   // the gap's colours, lower share first
     const MK = [
-      ...G.map((g, i) => ({ kind: 'dot', says: say(g.says, `Each ${p.unit === 'house' ? 'house' : 'square'} is one member of the ${g.name} group, filled when it has the outcome. The dot on the line is the share filled.`),
+      ...G.map((g, i) => ({ kind: 'dot', says: say(g.says, `Each ${p.unit === 'house' ? 'house' : 'square'} is one member of the ${g.name} group, filled when it has the outcome. The dot on the line is the share filled.`), term: g.term,
         value: S => `${L.fmt(S.v[i].x)} of ${L.fmt(S.v[i].n)} (${pts(S.s[i])}%)` })),
-      { kind: 'line', says: say(p.gap_says, 'The distance between the two shares: the difference the data show.'), value: S => `${pts(Math.abs(S.gap))} points` },
-      { kind: 'ruler', says: say(p.step_says, 'How far apart the two shares land by chance alone, as a rule, when both groups share one rate. Each tick is one more step.'),
+      { kind: 'line', says: say(p.gap_says, 'The distance between the two shares: the difference the data show.'), term: 'difference in proportions', value: S => `${pts(Math.abs(S.gap))} points` },
+      { kind: 'ruler', says: say(p.step_says, 'How far apart the two shares land by chance alone, as a rule, when both groups share one rate. Each tick is one more step.'), term: 'standard error',
         value: S => S.step == null ? null : `${pts(S.step)} points` },
     ];
     const gapSwatch = ([a, b]) => `<svg width="24" height="12" viewBox="0 0 24 12"><defs><linearGradient id="${gid}s" gradientUnits="userSpaceOnUse" x1="1" x2="23" y1="0" y2="0"><stop offset="0" style="stop-color:${a}"/><stop offset="1" style="stop-color:${b}"/></linearGradient></defs><line x1="1" y1="6" x2="23" y2="6" style="stroke:url(#${gid}s);stroke-width:3;stroke-opacity:.75"/></svg>`;
     const tipOn = (el, m) => { const mk = MK[m], c = R.cols[m];
       el.classList.add('says', 'vt'); el.setAttribute('tabindex', '0'); glow(el, c); el.setAttribute('aria-description', mk.says); pauseButton();
-      el._pd = () => ({ swatch: m === 2 ? gapSwatch(gradOf(now())) : swatch(mk.kind, c), c, name: R.keys[m], says: mk.says, value: mk.value(now()), shape: null, scope: ctx.scope }); };
+      el._pd = () => ({ swatch: m === 2 ? gapSwatch(gradOf(now())) : swatch(mk.kind, c), c, name: R.keys[m], says: mk.says, term: mk.term, value: mk.value(now()), shape: null, scope: ctx.scope }); };
     // the drawing: every piece keyed, so a new frame moves what changed and leaves the rest
     const els = new Map(), tweens = []; let raf = 0, drawnW = 0;
     const tick = t => { const { ms, ease } = R.mo; for (let q = tweens.length - 1; q >= 0; q--) { const w = tweens[q], k = Math.min(1, (t - w.t0) / ms);
@@ -740,7 +742,7 @@
     const says = r => `${L.fmt(r.part)} of ${L.fmt(r.whole)} ${p.whole} are ${p.part}.`;
     const tipOn = (el, i) => { const c = R.cols[i];
       el.classList.add('says', 'vt'); glow(el, c); el.setAttribute('aria-description', says(B0[i])); pauseButton();
-      el._pd = () => { const r = rows()[i] || B0[i]; return { swatch: swatch('dot', c), c, name: r.name, says: says(r), value: `${L.fmt(r.part)} of ${L.fmt(r.whole)}`, shape: null, scope: ctx.scope }; }; };
+      el._pd = () => { const r = rows()[i] || B0[i]; return { swatch: swatch('dot', c), c, name: r.name, says: says(r), term: p.term, value: `${L.fmt(r.part)} of ${L.fmt(r.whole)}`, shape: null, scope: ctx.scope }; }; };
     // one ring size for all: as large as a slot allows, beads about BD.pitch apart round the largest whole
     const geo = W => { const B = rows(), n = Math.max(1, B.length), most = Math.max(4, ...B.map(r => r.whole || 0)), slot = W / n;
       const r = Math.max(BD.rMin, Math.min(BD.rMax, slot / 2 - BD.side, most * BD.pitch / (2 * Math.PI))), rb = Math.min(BD.beadMax, Math.PI * r / most * .62);
@@ -1572,7 +1574,7 @@
         g.says = mk.says ?? (sym && sym.says); g.card = !!(mk.label || g.says);
         const f2 = xs => `(${xs.map(v => L.fmt(v, 2)).join(', ')})`;
         g.pd = () => { const q = G[i] || g, val = q.k === 'point' || q.k === 'ring' ? q.p && f2(q.p) : q.k === 'vector' ? q.e && f2(vsub(q.e, q.o)) : q.k === 'foot' && q.f ? L.fmt(vlen(vsub(q.P, q.f)), 's3') : q.k === 'guess' && q.p ? L.fmt(vlen(vsub(q.P, q.p)), 's3') : null;
-          return { swatch: swatch(g.lk, g.lc), c: cc, name: mk.label ?? null, says: g.says, value: val ?? null, shape: q.k === 'point' || q.k === 'ring' ? 'one point' : q.k === 'foot' ? 'its length' : null, scope: ctx.scope }; };
+          return { swatch: swatch(g.lk, g.lc), c: cc, name: mk.label ?? null, says: g.says, term: mk.term ?? (sym && sym.term), value: val ?? null, shape: q.k === 'point' || q.k === 'ring' ? 'one point' : q.k === 'foot' ? 'its length' : null, scope: ctx.scope }; };
         return g; });
       // the legend: one entry per mark with a `label`; pointing at it (or the mark) lights the mark and opens its card
       G.forEach(g => { if (!g || g.mk.label == null) return; const ent = h('span', 'pk ' + g.lk), lab = h('span', '', md(String(g.mk.label))); ent.style.setProperty('--c', g.lc); ent.dataset.m = g.i; glow(ent, g.lc === 'var(--ink)' ? 'var(--mist)' : g.lc); ent.append(h('i'), lab);
@@ -1822,7 +1824,7 @@
         if (!hasCard(mk)) return false;
         el.classList.add('vt', 'says'); el.setAttribute('tabindex', '0'); el.dataset.vk = `${ctx.index}-${no}-${mk.i}-${el.tagName === 'SPAN' ? 'k' : 'm'}`;
         glow(el, c); if (gg) glow(gg, c); pauseButton();
-        if (!q) { el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope)); el._pd = () => ({ swatch: swatch(kindOf(mk), c), c, name: nameOf(mk), says: mk.says, value: valueOf(mk, ctx.scope), shape: null, scope: ctx.scope }); }
+        if (!q) { el.setAttribute('aria-description', L.plain(String(mk.says), ctx.scope)); el._pd = () => ({ swatch: swatch(kindOf(mk), c), c, name: nameOf(mk), says: mk.says, term: mk.term, value: valueOf(mk, ctx.scope), shape: null, scope: ctx.scope }); }
         else { el.dataset.sym = q; el.setAttribute('aria-description', L.plain(String(S[q].says), ctx.scope));   // the symbol's card, without its class: one colour per symbol stays true
           el._pd = () => mk.kind === 'point' ? { ...symCard(el, q), value: valueOf(mk, ctx.scope), shape: 'one point' } : symCard(el, q); }
         return true; };
@@ -2162,7 +2164,7 @@
         glow(el, hue(S.color)); el.tabIndex = 0; if (S.says) el.setAttribute('aria-description', L.plain(String(S.says))); pauseButton(); return [el, S.short || q]; }
       const word = c.label ?? c.name; el.innerHTML = md(String(word));
       if (c.says) { el.classList.add('vt', 'says'); el.tabIndex = 0; glow(el, 'var(--mist)'); el.setAttribute('aria-description', L.plain(String(c.says))); pauseButton();
-        el._pd = () => ({ tex: null, c: 'var(--mist)', ink: true, name: String(word), says: c.says, value: now(), shape: null, scope: ctx.scope }); }
+        el._pd = () => ({ tex: null, c: 'var(--mist)', ink: true, name: String(word), says: c.says, term: c.term, value: now(), shape: null, scope: ctx.scope }); }
       return [el, L.plain(String(word))]; };
     (s.controls || []).forEach(c => {
       const id = `ctl-${ctx.index}-${c.name}`, v0 = c.value ?? c.min, fg = driverOf(c.name), k = c.run || 0;

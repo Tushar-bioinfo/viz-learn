@@ -15,7 +15,7 @@ Next stays under the pointer through a scene; the line by the buttons never repe
 text not side by side starts at the page's left edge while figures and equations centre on it; callouts and thinks have
 no lines and no indent, stand 18 px from their line, and show a bar when lit without moving their text. The pause button
 shows only with a pop-up, keeps clear of the rail, quiets pointing but not a click, and survives a reload. Formulas carry
-no names under them: a term's name is on its pop-up card, which is as wide as its text, framed in the term's colour, fades
+no names under them: a term's name is on its pop-up card, which is as wide as its text, edged in the term's colour, fades
 the rest of its formula, gives a matrix its shape, and follows a slider. Controls share one grid per box, read their value
 bare, and a control's label opens its card, which blurs what is behind it.
 """
@@ -667,6 +667,19 @@ def hover_pause(page):
     return ok, f"{n} names; hover, closes, pressed, quiet, click, kept, resumed: {want}" + (f"; {bad}" if bad else "")
 
 
+def term_card(ctx):
+    """N9b: a card reads head, big value, says, then a foot with the field's term, for a symbol, a plane mark and a control."""
+    page = case_page(ctx, "card-term")
+    out = []
+    for sel in (".lt-y", ".plane .vt", ".ctl .vt"):
+        page.evaluate(f"() => {{ const e = document.querySelector('{sel}'); e.scrollIntoView({{block: 'center'}}); e.dispatchEvent(new MouseEvent('click', {{bubbles: true}})); }}"); page.wait_for_timeout(200)
+        out.append(page.evaluate("() => { const k = document.querySelector('.vpop.on'); return k && [[...k.children].map(e => e.className).filter(c => c !== 'caret').join(' '), (k.querySelector('.ft .tm') || {}).textContent]; }"))
+        page.evaluate("document.body.click()"); page.wait_for_timeout(100)
+    page.close()
+    want = [["ttl vv ds ft", "field term: linear scaling"], ["ttl ds ft", "field term: image point"], ["ttl vv ds ft", "field term: scale factor"]]
+    return out == want, f"cards: {out}"
+
+
 def case_page(ctx, case):
     """Build a class case into out/board-ui and open it."""
     html = ROOT / f"out/board-ui/{case}.html"
@@ -691,7 +704,7 @@ def slider_card(ctx):
     page.evaluate("() => { const e = document.querySelector('input[type=range]'); e.value = 3; e.dispatchEvent(new Event('input', {bubbles: true})); }"); page.wait_for_timeout(300)
     b = page.evaluate("(document.querySelector('.vpop.on .vv') || {}).textContent")
     page.close()
-    return (a, b) == ("= 4", "= 6"), f"value before, after: {a!r}, {b!r}"
+    return (a, b) == ("4", "6"), f"value before, after: {a!r}, {b!r}"
 
 
 SET_K = "v => { const e = document.querySelector('input[type=range]'); e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); }"
@@ -776,7 +789,8 @@ CARD = """t => { const k = document.querySelector('.vpop.on'); if (!k) return nu
   k.querySelectorAll('.katex-html, svg, .chip').forEach(q => { const b = q.getBoundingClientRect(); if (b.width) { lo = Math.min(lo, b.left); hi = Math.max(hi, b.right); } });
   const probe = document.createElement('span'); probe.style.color = 'var(--hc)'; t.appendChild(probe); const hc = getComputedStyle(probe).color; probe.remove();
   const chip = k.querySelector('.chip'), vv = k.querySelector('.vv');
-  return { l: lo - r.left, r: r.right - hi, border: getComputedStyle(k).borderTopColor, hc, dm: document.querySelectorAll('.dm').length, self: !!t.closest('.dm'), chip: chip && chip.textContent, vv: vv && vv.textContent, w: r.width }; }"""
+  const ks = getComputedStyle(k);   // the card's colour is its left edge; its padding is measured inside the borders
+  return { l: lo - r.left - parseFloat(ks.borderLeftWidth), r: r.right - hi - parseFloat(ks.borderRightWidth), border: ks.borderLeftColor, hc, dm: document.querySelectorAll('.dm').length, self: !!t.closest('.dm'), chip: chip && chip.textContent, vv: vv && vv.textContent, w: r.width }; }"""
 MARK_T = "e => { e.setAttribute('data-ui-t', '1'); }"
 
 
@@ -820,7 +834,7 @@ def expected_kinds(Y):
 
 def pop_cards(page):
     """Every kind of target on the page (a formula term, a matrix's brackets, a plane name or legend entry): its card is as wide as
-    its text (left and right gaps within 1 px), framed in the term's colour; a formula term fades the rest of its formula, not
+    its text (left and right gaps within 1 px), its left edge in the term's colour; a formula term fades the rest of its formula, not
     itself, and nothing stays faded once the pointer leaves."""
     page.evaluate("VizOS.slides.forEach(sl => (sl.r.stages || []).forEach(S => { for (let k = 0; k < 40 && S.move(1); k++); }))")
     kinds = {"formula term": "'.cline .vt, .fline .lt.vt, .asm .vt'", "brackets": "'.mt.vt'", "plane name": "'.plane .vt'"}
@@ -922,7 +936,7 @@ def ctl_case(ctx):
     page.hover(".ctl.tog .clab"); page.wait_for_timeout(250)
     word = page.evaluate("() => { const k = document.querySelector('.vpop.on'); return k && [k.querySelector('.ttl b').textContent, (k.querySelector('.ds') || {}).textContent]; }")
     page.close()
-    ok = out[:2] == ["0.50", "1.0"] and not grid and card and card[:2] == ["leak", "= 0.50"] and "blur" in (card[2] or "") and word and word[0] == "before" and "scanner" in (word[1] or "")
+    ok = out[:2] == ["0.50", "1.0"] and not grid and card and card[:2] == ["leak", "0.50"] and "blur" in (card[2] or "") and word and word[0] == "before" and "scanner" in (word[1] or "")
     return ok, f"readouts {out}, grid {grid}, s card {card}, word card {word}"
 
 
@@ -964,7 +978,7 @@ def chart_case(ctx):
     b = card()
     page.close()
     want = (not tags[1], legend == ["mean", "usual range", "top cell"], tip[0] and "blur" in (tip[1] or ""), not tip_after,
-            a == ["mean", f"= {m0:.2f}"], b == ["mean", f"= {m2:.2f}"])
+            a == ["mean", f"{m0:.2f}"], b == ["mean", f"{m2:.2f}"])
     return all(want), f"no tags, legend, glass tip, tip hides, card, follows: {want}; legend {legend}, tip {tip}, card {a} -> {b}"
 
 
@@ -1005,7 +1019,7 @@ def chart_fixes(ctx):
     page.mouse.move(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2); page.wait_for_timeout(250)
     on_dot = page.evaluate("[document.querySelector('.bvis.chart svg').classList.contains('ondot'), !!document.querySelector('.vpop.on')]")
     page.close()
-    want = (before == ["hidden", False], after == "visible", no_hit >= 1, pair == f"= (1.5, {max(cd3):.1f})", lit_mark == 1,
+    want = (before == ["hidden", False], after == "visible", no_hit >= 1, pair == f"(1.5, {max(cd3):.1f})", lit_mark == 1,
             col[0] == col[1], lit_entry == ["mean"], all(g == "none" for g in guide), on_dot == [True, False])
     return all(want), f"hidden before step, shown after, unnamed has no hit, pair, legend lights mark, symbol colour, mark lights legend, guide, dot wins: {want}; {before} {after} {no_hit} {pair} {col} {lit_entry} {guide} {on_dot}"
 
@@ -1091,7 +1105,8 @@ def main(names):
                           ("product cases: lines follow the slider in their own format", prod_live), ("product cases: pairs, arrows and answer share one colour rule", prod_colours),
                           ("ctl-good case: bare readouts, one grid, a label opens its card, the card blurs", ctl_case),
                           ("chart-marks-good case: no tags, legend, mark card follows the slider and wins over the glass data pop-up", chart_case),
-                          ("chart-marks-ui case: entry hides before its step, no hit on unnamed marks, pair, symbol colour, legend and mark light, dot wins", chart_fixes)):
+                          ("chart-marks-ui case: entry hides before its step, no hit on unnamed marks, pair, symbol colour, legend and mark light, dot wins", chart_fixes),
+                          ("card-term case: head, value, says, then the field term at the foot", term_card)):
             try:
                 ok, why = fn(ctx)
             except Exception as e:

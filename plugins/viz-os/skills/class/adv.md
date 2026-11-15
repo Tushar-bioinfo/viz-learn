@@ -87,7 +87,7 @@ A spine of stubs fails the lint for its missing `steps`, and other lints warn ab
     unit: house      # optional: each unit a small house (a counted home); squares when left out
 ```
 It draws each group as squares or houses, 10 a row, the `ill` ones filled in the group's colour; one share line, ending on the next named tick past the furthest share or ruler on any frame, with a dot per group and its name beside it; the **gap** between the dots (the witness, shaded from the lower group's colour to the higher's); with `step`, a ruler from the lower share with a tick per **noise step**; with `tally`, a square per frame, grey once the run reaches it and in the gap's colour where the list holds 1. `n`, `ill` and `step` are numbers or names, so a run's `derive` (`xw: at(fr_well, draw)`) redraws it, each change eased.
-- Its marks are the two group names, `gap` and `noise step`: legend entries and linked words (`==gap==`, `==noise step:noise steps==`), so no group may take the names `gap` or `noise step`, and a scene holds one `chance`. Optional `says:` on a group, `gap_says:` and `step_says:` fill their cards.
+- Its marks are the two group names, `gap` and `noise step`: legend entries and linked words (`==gap==`, `==noise step:noise steps==`), so no group may take the names `gap` or `noise step`, and a scene holds one `chance`. Optional `says:` on a group, `gap_says:` and `step_says:` fill their cards; `term:` on a group gives its card's field term (`gap` and `noise step` carry theirs: difference in proportions, standard error).
 - The lint, on each state of a run or slider: exactly two groups with two names; `n` a whole number 1–100; `ill` 0 to that state's `n`; `step` above 0, the gap at most 12 steps; a list read with `at(list, draw)` covers every state; `tally` needs a run and one entry per frame. Arithmetic it cannot read passes; the browser check warns if the page clamps it.
 
 ## 9b. The `fork` figure: what can happen, side by side
@@ -108,7 +108,7 @@ It draws the start at the top and the 2 or 3 ends in a row below it, each reache
 - beads: {from: homes, name: water, part: ill, whole: homes, key: "One bead, one home."}   # homes: [{water: well, ill: 18, homes: 40}, …]
 ```
 It draws one ring per record of `from` (1–4 records, from make_data.py), side by side and one size: a bead per unit of `whole`, the `part` beads filled clockwise from the top in the ring's colour (`colors: [s4, s1]`, one kit colour per record; else s1, s2, s3, s4 in order). Give a ring the colour its group has in the lesson's other figures. The record's `name` sits above its ring; the middle stacks the part, a rule and the whole, each under or over its column's key. The `key` words sit at the bottom right beside one open bead. Quote `key` when it holds a comma.
-- Each ring is a mark named by its `name` (text, never a bare `true` or number): a legend entry and a linked word (`==well==` lights that ring and dims the rest). Pointing at a ring opens its card ("18 of 40 homes are ill"). A scene holds one `beads`.
+- Each ring is a mark named by its `name` (text, never a bare `true` or number): a legend entry and a linked word (`==well==` lights that ring and dims the rest). Pointing at a ring opens its card ("18 of 40 homes are ill"); `term:` (`sample proportion`) gives the card's field term. A scene holds one `beads`.
 - The `part` and `whole` keys show as one word each, so a key with a space is an error; the lint's other limits are in `lint.md`.
 
 ## 9d. A slope table: each row a line across its number columns

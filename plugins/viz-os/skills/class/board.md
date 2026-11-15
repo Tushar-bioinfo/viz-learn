@@ -29,6 +29,7 @@ Every name that appears in a formula, a worked line or a parameter card gets a s
 | `tex` | how the symbol is written, in single quotes: `'\bar{x}'` |
 | `says` | its meaning in plain words (about 6 words) |
 | `short` | ≤ 2 words, the bold name on the symbol's pop-up card and on a parameter card |
+| `term` | the field's own name for it, ≤ 4 words (`standard error`), at the foot of its pop-up card; a mark, a control, a `chance` group and `beads` take it too |
 | `fmt` | how its number is shown in working (`2`, `s3`, `,`); for a matrix or vector, decimals only (`fmt: 1`) |
 | `color` | a fixed colour for the symbol, its number, its table column and every place it shows in math: `s1` to `s5`, `good`, `bad`. A symbol keeps one colour across the page, and across every lesson of a series: set `color` by hand when it returns, since the automatic pick depends on what else the lesson lists. Without `color` it takes the next unused colour at the start, in the order listed, and `ink` once they run out; a `kind: operator` symbol takes none. Set it to pair symbols that belong together, like `w_1` and `x_1` |
 | `kind` | `index` (i, j) or `operator` (Σ): no number to show first, so the symbol ledger skips it. `matrix` or `vector`: its numbers come from the data under the symbol's name (a list of rows, or a flat list), and it is drawn in brackets (see `matrix` and `vec`) |

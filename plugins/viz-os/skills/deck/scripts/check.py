@@ -7,7 +7,8 @@ For every slide and every build step it reports text that overlaps, leaves the s
 navigation, renders too small, or overflows its box; content shrunk below 80%; formula and expression errors;
 charts that did not draw; worked lines that read ≈ (their rounded numbers do not give the result shown).
 It moves every slider to both ends, opens every predict answer and audits the slide again ("after the answer"),
-and measures text contrast on the real pixels (labels over chart marks are where legibility fails). The check
+and measures text contrast on the real pixels (labels over chart marks are where legibility fails). On a lesson it opens
+each pop-up card (up to 80 a slide) and checks its text against the lightest pixel behind it (4.5 : 1). The check
 runs with animations off; it then re-fits every slide with them on and reports any slide a viewer would see
 shrunk differently.
 Contact sheet: <out>/desktop.png. Every visible line that holds a digit, per slide (all steps
@@ -126,6 +127,84 @@ def contrast_issues(png, bgpng, boxes, dpr):
     return out
 
 
+# a board's pop-up cards (class kit, `.vt` terms): every card's text against the lightest pixel behind it. The card hangs off <body>,
+# so the slide pass above never sees it. Colours go through a canvas, since a colour-mix computes to oklab(), not rgb()
+CARD_MAX = 80   # cards measured per slide, in page order (a cap against a runaway page)
+CARD_TERMS = """(i) => { const n = VizOS.slides[i].r.node;
+  return [...n.querySelectorAll('.vt')].filter(e => !e.closest('[data-step]:not(.shown)') && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').length; }"""
+CARD_OPEN = """([i, j]) => { const n = VizOS.slides[i].r.node, e = [...n.querySelectorAll('.vt')].filter(e => !e.closest('[data-step]:not(.shown)') && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden')[j];
+  if (!e) return false; const k0 = document.querySelector('.vpop.on'); if (k0) document.body.click();
+  e.scrollIntoView({ block: 'center' }); e.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window })); return true; }"""
+CARD_PARTS = """() => { const k = document.querySelector('.vpop.on'); if (!k) return null;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1; const g = cv.getContext('2d', { willReadFrequently: true });
+  const rgb = c => { g.fillStyle = '#010203'; g.fillStyle = c; if (g.fillStyle === '#010203') return null; g.clearRect(0, 0, 1, 1); g.fillRect(0, 0, 1, 1); return [...g.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+  const r = k.getBoundingClientRect(), rg = document.createRange(), w = document.createTreeWalker(k, NodeFilter.SHOW_TEXT), out = [];
+  while (w.nextNode()) { const t = w.currentNode, p = t.parentElement; if (!t.textContent.trim() || p.closest('.katex-mathml, .nt, svg')) continue;
+    rg.selectNodeContents(t); const c = getComputedStyle(p).color;
+    out.push({ text: t.textContent.trim(), color: c, rgb: rgb(c), rects: [...rg.getClientRects()].filter(q => q.width && q.height).map(q => [q.x, q.y, q.width, q.height]) }); }
+  const nm = k.querySelector('.ttl b'); return { name: nm ? nm.textContent.trim() : '', card: [r.x, r.y, r.width, r.height], parts: out }; }"""
+CARD_BARE = "/*card-bare*/ .vpop.on, .vpop.on * { color: transparent !important; -webkit-text-fill-color: transparent !important; } .vpop.on svg, .vpop.on .katex { visibility: hidden !important; }"
+
+
+def wcag(rgb_a, rgb_b):
+    def lum(c):
+        def ch(v):
+            v /= 255
+            return v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4
+        r, g, b = c
+        return .2126 * ch(r) + .7152 * ch(g) + .0722 * ch(b)
+    a, b = lum(rgb_a), lum(rgb_b)
+    return (max(a, b) + .05) / (min(a, b) + .05)
+
+
+def card_contrast(page, i, need=4.5, cap=CARD_MAX, shot=None):
+    """Open each pop-up card on slide i in turn and hide only its text: every text line must reach `need` against the
+    lightest pixel behind it (the busiest background the glass lets through). Returns (cards measured, problems, worst),
+    worst = (ratio, card name, text). `shot(j, parts)` is called with each card open, for pictures."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return 0, [], None
+    import io
+    n, done, bad, worst = page.evaluate(CARD_TERMS, i), 0, [], None
+    for j in range(min(n, cap)):
+        if not page.evaluate(CARD_OPEN, [i, j]):
+            continue
+        page.wait_for_timeout(60)
+        pr = page.evaluate(CARD_PARTS)
+        if not pr or not pr["parts"]:
+            continue
+        if shot:
+            shot(j, pr)
+        page.add_style_tag(content=CARD_BARE)
+        page.wait_for_timeout(30)
+        x, y, w, h = pr["card"]
+        X, Y = max(0, int(x)), max(0, int(y))
+        clip = {"x": X, "y": Y, "width": max(1, min(int(x + w + 1), page.viewport_size["width"]) - X), "height": max(1, min(int(y + h + 1), page.viewport_size["height"]) - Y)}
+        bg = Image.open(io.BytesIO(page.screenshot(clip=clip))).convert("RGB")
+        s = bg.width / clip["width"]   # device pixels per CSS pixel
+        page.evaluate("document.querySelectorAll('style').forEach(s => { if (s.textContent.startsWith('/*card-bare*/')) s.remove(); })")
+        done += 1
+        for part in pr["parts"]:
+            if part["rgb"] is None:
+                bad.append((0, pr["name"], part["text"], f'colour {part["color"]} could not be read'))
+                continue
+            for rx, ry, rw, rh in part["rects"]:
+                x0, y0 = max(0, int((rx - X) * s)), max(0, int((ry - Y) * s))
+                x1, y1 = min(bg.width, int((rx + rw - X) * s + .999)), min(bg.height, int((ry + rh - Y) * s + .999))
+                if x1 - x0 < 2 or y1 - y0 < 2:
+                    continue
+                cols = set(bg.crop((x0, y0, x1, y1)).getdata())
+                r = min(wcag(part["rgb"], c) for c in cols)
+                if worst is None or r < worst[0]:
+                    worst = (r, pr["name"], part["text"])
+                if r < need:
+                    bad.append((r, pr["name"], part["text"], None))
+    if page.evaluate("!!document.querySelector('.vpop.on')"):
+        page.evaluate("document.body.click()")
+    return done, bad, worst
+
+
 def sheet(page, shots, path, cols, w, h, tall=False):
     rows = (len(shots) + cols - 1) // cols
     top, high = (";vertical-align:top", "auto") if tall else ("", f"{h}px")   # a sketch page's sheets keep their own height
@@ -164,7 +243,7 @@ def check_deck(br, deck, out, args, report):
     if not page.evaluate("!!window.katex") and page.evaluate("document.querySelectorAll('.tex-fallback').length"):
         report.append((0, "KaTeX did not load: formulas show as plain text (offline? use --vendor or --katex-dir)"))
     info = page.evaluate("VizOS.info()")
-    shots, zooms, nums = [], {}, []
+    shots, zooms, nums, cards, cards_found = [], {}, [], [0], [0]
     for i in parse_slides(args.slides, info["n"]):
         s = info["slides"][i]
         lo = 1 if s["steps"] > 0 else 0
@@ -216,6 +295,17 @@ def check_deck(br, deck, out, args, report):
         for ratio, need, text in sorted(bad or [])[:3]:
             report.append((i + 1, f'low contrast {ratio:.1f}:1 (needs {need:g}) on "{text}"'))
         shots.append((f, f"{i + 1}"))
+        if page.evaluate(CARD_TERMS, i):   # a board's pop-up cards (decks and sketch pages have none)
+            done, cbad, cw = card_contrast(page, i)
+            found = page.evaluate(CARD_TERMS, i)
+            cards[0] += done
+            cards_found[0] += found
+            if cw and (len(cards) < 2 or cw[0] < cards[1][0]):
+                cards[1:] = [cw]
+            for ratio, name, text, why in sorted(cbad, key=lambda b: b[0])[:3]:
+                report.append((i + 1, f'pop-up card "{name}": {why} on "{text}"' if why else f'pop-up card "{name}": low contrast {ratio:.1f}:1 (needs 4.5) on "{text}" over the lightest pixel behind it'))
+            if done < min(found, CARD_MAX):
+                report.append((i + 1, f"pop-up cards: {found - done if found <= CARD_MAX else min(found, CARD_MAX) - done} of the slide's terms opened no card to measure"))
     # a viewer has animations on: each slide must fit the same way it did here
     live = ctx.new_page()
     live.goto(deck.as_uri())
@@ -238,6 +328,10 @@ def check_deck(br, deck, out, args, report):
     for c in console[:5]:
         if "favicon" not in c and "net::ERR" not in c:
             report.append((0, "console: " + c[:160]))
+    if cards[0]:
+        w = cards[1] if len(cards) > 1 else None
+        print(f"cards: {cards[0]} of {cards_found[0]} pop-up cards measured (at most {CARD_MAX} a slide), every text line against the lightest pixel behind it"
+              + (f"; lowest {w[0]:.2f}:1 on \"{w[2]}\" (card \"{w[1]}\")" if w else ""))
     if nums:
         (out / "numbers.txt").write_text("\n".join(nums) + "\n")
     if shots:

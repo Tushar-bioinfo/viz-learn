@@ -104,7 +104,7 @@ PLANE = {"points": "{from, x, y, by, label, colors}", "shade": "[w0, w1, w2]", "
          "square": "[[x1, y1], [x2, y2]]", "text": "a label (and at: [x, y])", "ring": "[x, y]", "quarters": "[cx, cy]"}
 
 
-MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "dash", "when", "side", "from", "at", "id", "centre"}   # what every mark may also take (board.md)
+MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "term", "dash", "when", "side", "from", "at", "id", "centre"}   # what every mark may also take (board.md)
 # legend limits and word counts (a {{number}}, $maths$ or `code` is one word) come from the deck: B.LEGEND_WORDS,
 # B.LEGEND_MAX, B.name_words
 
@@ -212,7 +212,7 @@ SPACE = {"points": "{from, at}", "point": "a position", "ring": "a position", "v
          "segment": "[P, Q]", "text": "a label (and at:)",
          "guess": "[a, b] on: [U, V] from: P (a hunt makes it)", "split": "[U, V] by: [a, b] (or the short {split: P, along: [U, V]})"}
 NUMBER = re.compile(r"[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?")   # a bare number, where a position is needed
-SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "dash", "when", "from", "at", "min", "max", "ring", "centre", "id", "on", "was", "by", "to"}
+SPACE_FIELDS = {"step", "color", "rgb", "label", "says", "term", "dash", "when", "from", "at", "min", "max", "ring", "centre", "id", "on", "was", "by", "to"}
 ON_SPACE = "a space draws no names on its marks: give the mark `label:` (its legend entry) and `says:` (its card)"
 
 
@@ -514,7 +514,7 @@ def lint_formula(B, Lx, w, f, kind, names, symbols):
 # chance (adv.md): two groups as units, their shares on one line, the gap and, with `step`, a ruler of noise steps
 CHANCE = {"groups", "step", "tally", "axis", "gap_says", "step_says", "id", "ratio", "unit"}
 CHANCE_UNITS = ("square", "house")  # the unit shapes board.js draws (CH_SHAPE); square when left out
-CHANCE_GROUP = {"name", "n", "ill", "color", "says"}
+CHANCE_GROUP = {"name", "n", "ill", "color", "says", "term"}
 CHANCE_MARKS = ("gap", "noise step")
 
 
@@ -633,7 +633,7 @@ def lint_fork(Lx, w, fk, values):
 
 
 # beads (adv.md): one ring of beads per row of a data list, one bead per unit of the whole, the part's beads filled (board.js beads)
-BEADS = {"from", "name", "part", "whole", "key", "colors", "id"}
+BEADS = {"from", "name", "part", "whole", "key", "colors", "id", "term"}
 BEADS_ROWS, BEADS_WHOLE = (1, 4), (4, 120)   # rows a figure holds; beads a ring may hold at most
 # the ring's size, as board.js BD draws it in the reading column (1084 px wide at any desktop width): change both together
 BEADS_ROOM, BEADS_SIDE, BEADS_RMIN, BEADS_RMAX, BEADS_BEAD = 1084, 40, 110, 230, 3.5
@@ -1557,7 +1557,7 @@ STEP_CAP, THINK_GAP = 10, 6      # steps in one scene; steps in a row with no th
 SCENES = (8, 14)
 CARDS = (5, 8)
 # keys whose text the learner reads; a number typed here goes stale when the data changes
-PROSE = {"say", "q", "a", "text", "note", "title", "lead", "subtitle", "question", "answer", "caption", "label", "sub", "says",
+PROSE = {"say", "q", "a", "text", "note", "title", "lead", "subtitle", "question", "answer", "caption", "label", "sub", "says", "term",
          "value", "alt", "points", "breaks", "why", "read", "more", "verdict", "next", "ask"}
 TYPED = re.compile(r"(?<![\w.])([-−]?)(\d+\.\d+|\d{2,})(?![\w]|\.\d)")
 HIDE = re.compile(r"\{\{[\s\S]*?\}\}|\$[^$]*\$|`[^`]*`")
@@ -2414,10 +2414,31 @@ def card_symbols(B, deck):
     return out
 
 
+TERM_WORDS = 4   # a card's foot: the field's own name for a thing (`standard error`), not a sentence
+
+
 def lint_names(B, Lx, deck):
-    """A symbol that opens a card has a `short` name of at most 2 words, and its `says` adds words beyond that name."""
+    """A symbol that opens a card has a `short` name of at most 2 words, and its `says` adds words beyond that name.
+    A `term` (the card's foot) is the field's own name: plain text of at most TERM_WORDS words, not the `short` again."""
     words_of = lambda t: re.findall(r"[a-z0-9]+", L_plain(t).lower())
     symbols = deck.get("symbols") or {}
+    def terms(node, where):
+        if isinstance(node, dict):
+            if "term" in node:
+                yield where, node
+            for k, v in node.items():
+                yield from terms(v, f"{where}.{k}")
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                yield from terms(v, f"{where}[{i + 1}]")
+    for where, node in [*terms(symbols, "symbols"), *terms(deck.get("slides") or [], "slides")]:
+        t = node["term"]
+        if not isinstance(t, str) or not t.strip():
+            Lx.err(where, "`term` is the field's own name for this thing, as plain text (`term: standard error`)")
+        elif len(t.split()) > TERM_WORDS:
+            Lx.warn(where, f"`term` “{t}” has {len(t.split())} words: it is the field's name ({TERM_WORDS} words at most); the meaning goes in `says`")
+        elif str(node.get("short") or node.get("name") or node.get("label") or "").strip().lower() == t.strip().lower():
+            Lx.warn(where, f"`term` “{t}” only repeats the card's name: give the field's own word for it, or leave `term` out")
     used = card_symbols(B, deck)
     for n, v in symbols.items():
         if not isinstance(v, dict):
@@ -2730,11 +2751,11 @@ def lint_adv(Lx, deck, data=None):
 
 
 # what a board control and a symbol may carry; anything else is usually a comma inside an unquoted `{ }` value that split it
-CTL_FIELDS = {"name", "label", "says", "show", "min", "max", "step", "value", "fmt", "run", "stops", "every", "toggle", "drag"}
+CTL_FIELDS = {"name", "label", "says", "term", "show", "min", "max", "step", "value", "fmt", "run", "stops", "every", "toggle", "drag"}
 # a symbol's own fields, and `value`, which a deck equation slide merges from `symbols` into its `terms` (deck slides.js)
-SYM_FIELDS = {"tex", "says", "short", "fmt", "kind", "color", "cols", "rows", "value"}
+SYM_FIELDS = {"tex", "says", "short", "term", "fmt", "kind", "color", "cols", "rows", "value"}
 # text the page shows as written, never works out: a name in it reads nothing (only its {{…}}, \mat{…} and \prodpart{…} do)
-LITERAL = {"name", "label", "says", "short", "tex", "say", "id", "color", "fmt", "kind", "dash", "side", "key", "by", "cats", "family", "op",
+LITERAL = {"name", "label", "says", "short", "term", "tex", "say", "id", "color", "fmt", "kind", "dash", "side", "key", "by", "cats", "family", "op",
            "via", "num", "see", "part", "state"}
 IDENT = re.compile(r"[A-Za-z_]\w*")
 
