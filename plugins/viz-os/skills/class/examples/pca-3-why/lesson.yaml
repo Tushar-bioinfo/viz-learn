@@ -46,12 +46,6 @@ slides:
   - type: title
 
   - type: board
-    beat: plan
-    title: The plan for today
-    steps:
-      - add: {flow: {nodes: [{label: split an arrow, sub: PC1 + PC2}, {label: its spread, sub: a mix}, {label: a third marker, sub: CD14}, {label: three PCs, sub: 3 × 3 C}, {label: how many, sub: to keep}], verbs: [square, add, rebuild, count]}}
-
-  - type: board
     beat: problem
     title: Why is PC1 the top of the curve?
     lead: Part 2 found it. It never said why.
@@ -287,18 +281,16 @@ slides:
           q: Face photos, one column per pixel. What does keeping a few PCs do?
           a: A few PCs rebuild each face, losing the dropped stretches. One odd photo can drag PC1.
 
-  - type: recap
-    answer: Any arrow splits into PC parts whose squares add to 1, and its spread mixes their stretches. All on PC1 wins.
-    points:
-      - An arrow's spread is a²λ₁ + b²λ₂, with a² + b² = 1.
-      - More markers give a bigger C. The arrows it only stretches are the PCs.
-      - Keeping k PCs loses (n − 1) times the stretches you drop.
-
   - type: board
     beat: next
     title: Next, when the cells lie on a curve
-    lead: PCA draws straight axes.
+    lead: Why is PC1 the best line, and how many PCs do you keep?
     steps:
+      - say: Any arrow mixes PC parts ($a^2 + b^2 = 1$), so its spread $a^2\lambda_1 + b^2\lambda_2$ peaks on PC1.
+      - say: With more markers, $C$ grows. The arrows it only stretches are still the PCs.
+      - say: 'Keep the PCs with real shares: here two, as PC3 holds only {{100 * at(shares, 2)|1}}%.'
+        why: Keeping $k$ PCs loses $(n - 1)$ times the dropped stretches.
+      - say: It does not say what to do when cells lie on a curve.
       - say: Our cells form three clumps, and two straight axes separate them.
         add:
           plane:

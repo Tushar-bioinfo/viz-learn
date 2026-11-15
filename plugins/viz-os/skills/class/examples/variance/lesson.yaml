@@ -27,12 +27,6 @@ slides:
   - type: title
 
   - type: board
-    beat: plan
-    title: The plan for today
-    steps:
-      - add: {flow: {nodes: [{label: two donors, sub: same mean}, {label: six T cells, sub: by hand}, a picture, a formula, its limits], verbs: [ask, work, see, test]}}
-
-  - type: board
     beat: problem
     title: Two donors, the same mean
     lead: The ==mean== alone cannot tell these two apart.
@@ -298,19 +292,16 @@ slides:
           q: Bolt lengths from one machine. What does variance tell the factory?
           a: How evenly the machine cuts, in squared units. One jammed bolt would dominate it, as here.
 
-  - type: recap
-    answer: Variance is the average squared distance from the mean, with n − 1 at the bottom.
-    points:
-      - Distances from the mean cancel; squares do not.
-      - Divide by n − 1 because the mean was fitted to the same cells.
-      - It is in squared units, and one far cell can own it.
-
   - type: board
     beat: next
     title: Next, back to CD3 units
-    lead: The square root undoes the squaring. The ==xbar:line== is the mean.
+    lead: How spread out are your T cells?
     steps:
-      - say: 'The variance''s square root is the ==band:standard deviation==, in CD3 units: {{sd|2}}.'
+      - say: 'Variance: the average squared distance from the mean, with $n - 1$ at the bottom.'
+        why: Distances from the mean cancel, but squares do not.
+      - say: We divide by $n - 1$ because the mean was fitted to the same cells.
+      - say: But it is in squared units, and one far cell can own it.
+      - say: 'The square root gives the ==band:standard deviation== around the ==xbar:mean==: {{sd|2}} CD3 units.'
         add:
           - {eqn: {say: The standard deviation, lhs: sd, expr: sqrt(s2)}}
           - chart:

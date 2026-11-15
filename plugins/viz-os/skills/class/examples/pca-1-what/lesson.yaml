@@ -40,12 +40,6 @@ slides:
   - type: title
 
   - type: board
-    beat: plan
-    title: The plan for today
-    steps:
-      - add: {flow: {nodes: [{label: six cells, sub: two markers}, {label: the middle, sub: centre}, {label: a shadow, sub: one cell}, {label: turn the line, sub: find the peak}, its limits], verbs: [centre, drop, sweep, test]}}
-
-  - type: board
     beat: problem
     title: Too many markers for one picture
     lead: A screen shows two markers. A panel has dozens.
@@ -369,18 +363,15 @@ slides:
           q: Daily returns of many stocks, one column each. What would PC1 find?
           a: The direction most stocks move together, the market. As here, one wild day can turn it.
 
-  - type: recap
-    answer: PC1 is the line through the middle along which the cells' shadows spread out most.
-    points:
-      - A shadow is a dot product with an arrow of length 1.
-      - Turn the line. The spread peaks at PC1 and bottoms out square to it.
-      - 'Here PC1 keeps {{100 * share1|0}}% of the spread in one number per cell.'
-
   - type: board
     beat: next
     title: Next, a shortcut to PC1
-    lead: Three numbers hold the whole curve.
+    lead: Which direction spreads your cells the most?
     steps:
+      - say: 'PC1: the line through the middle where the cells'' shadows spread most.'
+        why: Each shadow is a dot product with a length-1 arrow.
+      - say: 'Turn the line: the spread peaks at PC1, and bottoms out square to it.'
+      - say: 'One number per cell keeps {{100 * share1|0}}% of the spread, but we tried every angle.'
       - say: 'Our hand tilt''s spread, {{s2u|3}}, comes back from three numbers.'
         why: Three numbers then replace trying every angle.
         add: {calc: {say: The hand tilt's spread from three numbers, expr: u1^2 * v_cd3 + 2 * u1 * u2 * c12 + u2^2 * v_cd19, name: chk, fmt: 3}}

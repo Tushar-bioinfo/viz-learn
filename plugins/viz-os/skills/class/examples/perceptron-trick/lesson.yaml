@@ -33,38 +33,9 @@ slides:
   - type: title
 
   - type: board
-    beat: plan
-    title: The plan for today
-    steps:
-      - add: {flow: {nodes: [{label: a bad line, sub: to start}, {label: one wrong cell, sub: nudges it}, {label: one rule, sub: every case}, {label: many epochs, sub: until none wrong}, its limits], verbs: [pick, write, run, test]}}
-
-  - type: board
-    beat: data
-    title: Eight cells a line could gate
-    lead: Two kinds of cell, two markers, one flow plot.
-    table:
-      from: pcells
-      cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}, {key: y, label: y}]
-    steps:
-      - say: 'Eight cells from your panel: four T, four B, by CD3 and CD19.'
-        add:
-          plane:
-            fill: true
-            x: {label: CD3, min: -0.5, max: 5.5}
-            y: {label: CD19, min: 0, max: 5}
-            marks:
-              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
-      - say: You would draw this gate by eye. Today the data places it.
-      - say: Write T as 1, B as 0. That number is the label, $y$.
-        mark: col:y
-      - think:
-          q: Can one straight line split every T cell from every B cell?
-          a: 'Yes: T cells sit low and right, B cells high and left. Cells like this are linearly separable.'
-
-  - type: board
     beat: problem
     title: Start from a bad line
-    lead: Any line will do as a start. Then the cells complain.
+    lead: Eight of your cells, four T and four B, and any starting line.
     steps:
       - say: A ==bad line:bad first line==. It calls the ==called T:shaded side== T.
         add:
@@ -79,10 +50,33 @@ slides:
               - {ring: [c5_cd3, c5_cd19], step: 3}
       - say: '{{n_wrong0}} of {{n}} cells sit wrong: every B cell and two T cells.'
       - say: 'Each wrong cell objects. c5 says: “I am B. Move past me!”'
+      - say: You would fix this gate by eye. Today the data moves it.
       - say: Pick a random cell. If it objects, nudge the line. Repeat until none do.
       - think:
           q: c5 wants to be on the B side. Which way should the line move?
           a: Toward c5 and past it, so c5 ends up unshaded. How far, and how, is the trick.
+
+  - type: board
+    beat: data
+    title: Eight cells a line could gate
+    lead: Two kinds of cell, two markers, one flow plot.
+    table:
+      from: pcells
+      cols: [{key: id, label: cell}, {key: cd3, label: CD3, fmt: 1}, {key: cd19, label: CD19, fmt: 1}, {key: y, label: y}]
+    steps:
+      - say: 'The same eight cells, by CD3 and CD19, without the line.'
+        add:
+          plane:
+            fill: true
+            x: {label: CD3, min: -0.5, max: 5.5}
+            y: {label: CD19, min: 0, max: 5}
+            marks:
+              - points: {from: pcells, x: cd3, y: cd19, by: kind, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}}}
+      - say: Write T as 1, B as 0. That number is the label, $y$.
+        mark: col:y
+      - think:
+          q: Can one straight line split every T cell from every B cell?
+          a: 'Yes: T cells sit low and right, B cells high and left. Cells like this are linearly separable.'
 
   - type: board
     beat: by-hand
@@ -380,18 +374,16 @@ slides:
           q: Emails as word counts, labelled spam or not. What does the trick do?
           a: Each misread email nudges the word weights. If no line splits spam, it never stops.
 
-  - type: recap
-    answer: Each wrong cell nudges the weights by η (y − ŷ) times its values, until none is wrong.
-    points:
-      - w0 slides the line; w1 and w2 turn it.
-      - Subtract a B cell called T; add a T cell called B.
-      - It stops at the first line that works, if one exists.
-
   - type: board
     beat: next
     title: Next, cells no single line can split
-    lead: Thymocytes break the one-line idea.
+    lead: How does a line learn to gate your cells?
     steps:
+      - say: Start with any line. Each wrong cell nudges the weights, until none is wrong.
+      - say: 'The nudge is $\eta\,(y - \hat{y})$ times the cell''s values.'
+        why: Subtract a B cell called T. Add a T cell called B.
+      - say: $w_0$ slides the line, and $w_1$ and $w_2$ turn it.
+      - say: It stops at the first working line, if one exists. What if none does?
       - say: 'Next: thymocytes, T cells still maturing in the thymus, on CD4 against CD8.'
         add:
           plane:
