@@ -16,3 +16,6 @@ Open drawn-page issues. Shared number-audit and renderer issues live in [deck.md
 - Sketch 62: **Open: Run B round 3 doc notes.** `page.md` does not say `row.<r>` sits at the table's right edge; the `read` part's anchors have no positions; a colon in a note needs quotes in YAML; `SKILL.md` step 8 shows `~/.viz-os/home/cells.json` where `$VIZOS_HOME` may be set; a `red` table mark on cream reads 1.8:1, and only the check says so.
 
 Unconfirmed reports (Moran 7 animation-fit; Sketch 63 table-anchor offset) remain in the original backlog snapshot. They were not reproduced and are not claimed fixed.
+
+## A finished page leaves only the HTML (N14, 2026-11-15)
+- **Open: the sketch has no tidy step.** The class skill's `tidy.py` (step 9) now leaves only `lesson.html` in view and packs the sources into a hidden `.lesson/` beside it; `snaps/` is deleted. A sketch run leaves `page.yaml`, `data.json`, `make_data.py`, `verify_data.py` and `snaps/` beside `page.html`. To match: let `tidy.py` take the page and source names (`page.html`, `page.yaml`, `.page/`), add a Tidy step to the sketch `SKILL.md`, have `sketch.py` name `--restore` when `page.yaml` sits in `.page/` (as `lesson.py` does now), and add a sketch case to `tools/check_tidy.py`.

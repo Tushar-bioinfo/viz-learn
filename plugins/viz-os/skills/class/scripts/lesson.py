@@ -178,7 +178,10 @@ def adopt(B):
 
 
 def data_there(path):
-    """tidy.py moves data.json to the attic: say how to get it back, before the deck's build trips on the missing file."""
+    """tidy.py packs the sources away: say how to get them back, before the deck's build trips on a missing file."""
+    if not path.exists() and (path.parent / ".lesson" / path.name).exists():
+        sys.exit(f"lesson: {path.name} was tidied into .lesson/. Bring it back with "
+                 f"`python3 {Path(__file__).with_name('tidy.py')} {path.parent} --restore`")
     m = re.search(r"^data_file:\s*(\S+)", path.read_text(encoding="utf-8"), re.M)
     name = m.group(1).strip("'\"") if m else None
     if name and not (path.parent / name).exists():

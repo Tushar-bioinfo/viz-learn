@@ -55,7 +55,7 @@ lesson.yaml ──lesson.py──> deck build.py (ext: board fields, lesson lint
 | Build glue: runs and toggles become sliders, the page runtime takes `deck.js`'s place | `scripts/lesson.py` | `prepare()`, `adopt()`; never writes to the viz-os home. `recall()` stays here for sketch |
 | The scrolling page: reading line, keys, scene rail, the page's audit | `kit/lesson.js` | answers to the same `VizOS` API as `deck.js`, so `check.py` walks it |
 | The board: layout, worked lines, plane, controls, highlights, Next and Back, its audit | `kit/board.js`, `kit/board.css` | reuses the deck's chart, table, ops, compare, stat renderers |
-| Clean-up after a lesson: working files to the attic and back | `scripts/tidy.py` | writes only to `attic/` in the viz-os home; tested by `tools/check_tidy.py` |
+| Clean-up after a lesson: sources packed into `.lesson/` beside `lesson.html`, and back | `scripts/tidy.py` | writes only inside the lesson folder; reads an older `attic/` copy on `--restore`; tested by `tools/check_tidy.py` |
 | Series memory, seeded home tables | `scripts/memory.py`, `scripts/home.py` | `$VIZOS_HOME` or `~/.viz-os` |
 | The deck seam | `deck/scripts/build.py` (`ext`) | with no `ext` the deck builds exactly as before |
 

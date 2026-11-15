@@ -49,3 +49,7 @@ Open deck renderer, expression engine and browser-check issues, including shared
 - A small Python port of the expression language, so the lint can evaluate values (today it checks names and functions only; values are checked in the browser).
 - A script that compares `numbers.txt` with `data.json` directly, instead of by eye.
 - Phone (portrait) layout is unchecked since 2.0.0. If phones matter again, restore a portrait pass in `check.py`.
+
+## A finished deck leaves only the HTML (N14, 2026-11-15)
+- **Open: the deck has no tidy step.** The class skill's `tidy.py` (step 9) now leaves only `lesson.html` in view and packs the sources into a hidden `.lesson/` beside it; `snaps/` is deleted. A deck run leaves `deck.yaml`, `data.json`, `make_data.py`, `verify_data.py` and `snaps/` beside `deck.html`. To match: let `tidy.py` take the page and source names (`deck.html`, `deck.yaml`, `.deck/`) instead of the fixed `lesson.*`, add a step 9 to the deck `SKILL.md`, and add a deck case to `tools/check_tidy.py`. The refusal checks (`VIZOS_DATA`, `VIZOS_ASSETS`) already fit a deck page.
+- **Open: a lone page still fetches fonts and KaTeX from a CDN.** Found while testing N14: the tidied k-means `lesson.html`, alone in a folder and opened with the network off, draws every board, but asks for Google Fonts and KaTeX 0.16.11 three times and fails. Formulas then do not typeset. `--katex-dir` inlines KaTeX but is not the default. Not caused by tidy; the same page fails the same way with the folder full.
