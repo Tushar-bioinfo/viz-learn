@@ -64,6 +64,17 @@
     pauseBtn.addEventListener('click', () => { hoverOff = !hoverOff; try { localStorage.setItem(PAUSE_KEY, hoverOff ? '1' : '0'); } catch (e) { /* not kept */ }
       pauseShow(); document.dispatchEvent(new CustomEvent('vizos-hoverpause')); });
     pausePlace(); requestAnimationFrame(pausePlace); addEventListener('resize', pausePlace); addEventListener('load', pausePlace); };
+  // the split between a figure and its text (N6): the learner drags the line between them, or moves it with the arrow keys, to
+  // give either side more room; past either end the wider side covers the other as a sheet. One split for the whole lesson,
+  // kept per viewer and page (storage may be blocked: the page works without it); a double-click or Enter puts it back.
+  // A stacked or narrow block has no split. The check never reads a kept split, so it always sees the kit's 70 / 30
+  const SPLIT_KEY = 'vizos-split:' + location.pathname, SPLIT_FIG = 300, SPLIT_SIDE = 240, SPLIT_STEP = .05;
+  const SPLIT_OFF = /[?&]check\b/.test(location.search);   // the check neither reads nor writes a kept split
+  let SPLIT = null;   // null: the kit's 70 / 30; a number: the figure's share of the block; 'fig' or 'text': that side covers the other
+  try { const v = SPLIT_OFF ? null : localStorage.getItem(SPLIT_KEY); SPLIT = v === 'fig' || v === 'text' ? v : v && +v > 0 && +v < 1 ? +v : null; } catch (e) { /* storage blocked: the kit's split */ }
+  const splitKeep = () => { if (SPLIT_OFF) return; try { if (SPLIT == null) localStorage.removeItem(SPLIT_KEY); else localStorage.setItem(SPLIT_KEY, String(SPLIT)); } catch (e) { /* not kept */ } };
+  // a figure width in a block W wide: under 300 px the text covers the figure; under 240 px of text the figure covers the text
+  const splitOf = (W, fw) => fw < SPLIT_FIG ? 'text' : W - fw - GAP < SPLIT_SIDE ? 'fig' : +(fw / W).toFixed(4);
   const COLOR = { accent: 1, tint: 1, s1: 1, s2: 1, s3: 1, s4: 1, s5: 1, ink: 1, mist: 1, haze: 1, line: 1, good: 1, bad: 1 };
   const col = c => COLOR[c] ? `var(--${c})` : c || 'var(--mist)';
   // line weights (board.css --w-data, --w-wit): every mark draws at the data weight; the witness, for now the mark drawn in the
@@ -1775,7 +1786,32 @@
     let seg = null, cur = null, pending = null, zone = null, pair = null; const blocks = [];
     const column = () => { if (seg) return seg; seg = h('div', 'lines');
       if (zl && !pair) { pair = h('div', 'bpair'); pair.append(zl, seg); root.appendChild(pair); } else root.appendChild(seg); return seg; };
-    const block = () => { const b = { node: h('div', 'fb'), fig: h('div', 'ffig'), side: h('div', 'fside'), figs: [] }; b.node.append(b.fig, b.side); column().appendChild(b.node); blocks.push(b); return b; };
+    // the split's handle: a separator in the gap between figure and text (role, arrow keys, aria-valuenow: the figure's share in %).
+    // A drag lays the scene out at most once per animation frame; letting go redraws every scene, so all take the new split
+    let dragB = null, dragX = 0, dragRaf = 0;
+    const splitAria = () => blocks.forEach(b => { if (!b.split) return; const W = b.node.clientWidth || 1;
+      const v = SPLIT === 'text' ? 0 : SPLIT === 'fig' ? 100 : Math.round((b.fw || W - sideOf(W) - GAP) / W * 100);   // the line where it is now, after place() clamps it
+      b.split.setAttribute('aria-valuenow', v); b.split.setAttribute('aria-valuetext', SPLIT === 'text' ? 'text covers the figure' : SPLIT === 'fig' ? 'figure covers the text' : `figure ${v}%`); });
+    const resplit = v => { if (v === SPLIT) return; SPLIT = v; place(); settle(); splitAria(); };
+    const splitDone = () => { splitKeep(); document.dispatchEvent(new CustomEvent('vizos-split')); };
+    const splitter = b => { const e = h('div', 'fsplit', '<span class="fgrip"></span>'); b.split = e;
+      Object.entries({ role: 'separator', tabindex: '0', 'aria-orientation': 'vertical', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-label': 'Split between figure and text', title: 'Drag to resize; double-click to reset' }).forEach(([k, v]) => e.setAttribute(k, v));
+      const fwNow = () => { const W = b.node.clientWidth; return SPLIT === 'text' ? SPLIT_FIG - 1 : SPLIT === 'fig' ? W - GAP - SPLIT_SIDE + 1 : b.fw || W - sideOf(W) - GAP; };
+      e.addEventListener('pointerdown', ev => { if (ev.button !== 0) return; ev.preventDefault(); e.setPointerCapture(ev.pointerId); dragB = b; dragX = ev.clientX; e.classList.add('on'); document.documentElement.classList.add('splitting'); });
+      e.addEventListener('pointermove', ev => { if (dragB !== b) return; dragX = ev.clientX;
+        if (!dragRaf) dragRaf = requestAnimationFrame(follow); });
+      const follow = () => { dragRaf = 0; if (dragB) { const r = dragB.node.getBoundingClientRect(); resplit(splitOf(r.width, dragX - r.left - GAP / 2)); } };
+      // a move still waiting for its frame is laid out now, so letting go keeps where the pointer was
+      const up = () => { if (dragB !== b) return; if (dragRaf) { cancelAnimationFrame(dragRaf); follow(); } dragB = null; dragRaf = 0; e.classList.remove('on'); document.documentElement.classList.remove('splitting'); splitDone(); };
+      e.addEventListener('pointerup', up); e.addEventListener('pointercancel', up); e.addEventListener('lostpointercapture', up);
+      e.addEventListener('dblclick', () => { resplit(null); splitDone(); });
+      // a key the split uses stops here: the page's own arrow keys (next scene) must not see it
+      e.addEventListener('keydown', ev => { const W = b.node.clientWidth, k = ev.key; let v;
+        if (k === 'ArrowLeft' || k === 'ArrowRight') v = splitOf(W, fwNow() + (k === 'ArrowLeft' ? -1 : 1) * Math.max(1, Math.round(W * SPLIT_STEP)));
+        else if (k === 'Home') v = 'text'; else if (k === 'End') v = 'fig'; else if (k === 'Enter') v = null; else return;
+        ev.preventDefault(); ev.stopPropagation(); resplit(v); splitDone(); e.focus({ preventScroll: true }); });
+      return e; };
+    const block = () => { const b = { node: h('div', 'fb'), fig: h('div', 'ffig'), side: h('div', 'fside'), figs: [] }; b.node.append(b.fig, b.side, splitter(b)); column().appendChild(b.node); blocks.push(b); return b; };
 
     const lines = [], cols = [], vis = [], asm = [], thinks = [], stepEls = [], figs = [];
     const symColor = q => { const c = ((ctx.symbols || {})[q] || {}).color; return c ? col(c) : null; };
@@ -2483,7 +2519,11 @@
       const W = b.node.parentElement.clientWidth, side = sideOf(W), many = b.figs.length > 1, inPair = b.node.closest('.bpair:not(.stacked)');
       const beside = !b.over && !inPair && !many && b.side.children.length > 0 && W - side - GAP >= FIG;
       b.node.classList.toggle('beside', beside); b.node.classList.toggle('many', many);
-      const own = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? W - side - GAP : inPair ? W : Math.min(W, UNDER);
+      // the learner's split (SPLIT_KEY): a share moves the line; 'fig' lets the figure take the whole width over its text, 'text' the reverse
+      const S = beside ? SPLIT : null, def = W - side - GAP, fw = typeof S === 'number' ? Math.max(SPLIT_FIG, Math.min(W - GAP - SPLIT_SIDE, Math.round(W * S))) : S === 'fig' ? W : def;
+      b.node.classList.toggle('split', S != null); b.node.classList.toggle('cover-fig', S === 'fig'); b.node.classList.toggle('cover-text', S === 'text');
+      b.fig.inert = S === 'text'; b.side.inert = S === 'fig';
+      const own = many ? (W - GAP * (b.figs.length - 1)) / b.figs.length : beside ? fw : inPair ? W : Math.min(W, UNDER);
       // beside, it may grow to its text's height with every answer open (taller would not pin; open, so an answer never resizes it),
       // up to the window less the pin's 24 px at top and foot
       const full = () => fullOf(b);
@@ -2495,7 +2535,11 @@
       const shared = () => { const say = beside ? null : b.side.querySelector(':scope > .st.intro > .say'); let foot = 0;
         b.figs.forEach(fg => { if (fg.stage) fg.stage.fit(); foot = Math.max(foot, fg.wrap.offsetHeight - fg.node.offsetHeight); });
         return (say ? say.offsetHeight + 12 : 0) + foot; };
-      size(); for (let pass = 0; pass < 3; pass++) { read = read0; room.h = tall() - shared() - lift; size(); } });
+      size(); for (let pass = 0; pass < 3; pass++) { read = read0; room.h = tall() - shared() - lift; size(); }
+      // with a split the columns follow it, not the figure's own width; the handle sits in the gap, or at the edge of a cover
+      b.fw = beside && typeof S === 'number' ? fw : beside && S == null ? parseFloat(b.node.style.getPropertyValue('--fig')) || def : null;
+      if (S != null) { b.node.style.setProperty('--fig', (typeof S === 'number' ? fw : def) + 'px'); if (S === 'fig') b.fig.style.width = ''; }
+      if (b.split) b.split.style.left = (S === 'text' ? 0 : S === 'fig' ? W - GAP : typeof S === 'number' ? fw : parseFloat(b.node.style.getPropertyValue('--fig')) || def) + 'px'; });
       root.style.setProperty('--read', read + 'px');
       blocks.forEach(b => { if (b.wide) b.figs.forEach(fg => sized(fg, { w: read, col: read, h: figH() })); });
       node.querySelectorAll('.bcmp .chart').forEach(c => { c.style.height = Math.round(c.clientWidth / SHAPE) + 'px'; }); };
@@ -2529,7 +2573,7 @@
       stick: () => { held.forEach((_, f) => { f.style.top = ''; }); held.clear(); stick(); stages.forEach(S => S.quiet()); },
       watch: () => { letGo(); stages.forEach(S => S.quiet()); },
       // a layout may move lines between columns, which drops the focus: the focused word or entry gets it back
-      layout: () => { const fa = node.contains(document.activeElement) ? document.activeElement : null; blocks.forEach(b => { b.over = false; }); unsettle(); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); settle(); stick(); if (fa && fa.isConnected && document.activeElement !== fa) fa.focus({ preventScroll: true }); wsync(); },
+      layout: () => { const fa = node.contains(document.activeElement) ? document.activeElement : null; blocks.forEach(b => { b.over = false; }); unsettle(); drawTable(); place(); drawLines(); widen(); overrun(); drawAsm(); drawParams(); drawCtl(); if (figs.map(fg => fg.layout && fg.layout()).some(Boolean)) { place(); figs.forEach(fg => fg.layout && fg.layout()); } vis.forEach(V => V.layout()); figs.forEach(fg => fg.O && fg.O.layout()); settle(); stick(); splitAria(); if (fa && fa.isConnected && document.activeElement !== fa) fa.focus({ preventScroll: true }); wsync(); },
       // what the page shows now, after a redraw or a move
       repaint: () => { fill(read); thinks.forEach(e => setThink(e, e.classList.contains('open'))); figs.forEach(fg => { if (!fg.stage) fg.paint(1e9); }); vis.forEach(V => { if (!figs.some(fg => fg.V === V)) V.show(1e9); }); stages.forEach(S => S.show()); light(lit); mark(lit); wsync(); },
       // everything up to click k, as the check and the printer see it

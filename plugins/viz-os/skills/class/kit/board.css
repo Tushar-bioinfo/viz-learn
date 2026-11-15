@@ -102,6 +102,26 @@ html.ls-page .board .tcard.g { padding: 12px 8px 8px; flex: none; background: va
 .board .fb:not(.beside) > .fside > .st.intro > .say { order: -1; margin-bottom: -10px; }
 .board .fb.beside .ffig { position: sticky; top: 24px; }
 .board .fb.beside .ffig.nostick { position: static; }
+/* the split (N6): a handle in the 20 px gap between figure and text, its grip held mid-window; past either end the wider side
+   covers the other as a sheet (board.js SPLIT). Stacked, narrow, strip and table blocks have none */
+.board .fb.beside { position: relative; }
+.board .fsplit { display: none; }
+.board .fb.beside:not(.stripb) > .fsplit { display: block; position: absolute; top: 0; bottom: 0; width: 20px; z-index: 3; cursor: col-resize; touch-action: none; }
+.board .fsplit::before { content: ""; position: absolute; left: 9px; top: 0; bottom: 0; width: 2px; background: var(--accent); opacity: 0; transition: opacity var(--m-hover) var(--ease); }
+.board .fsplit .fgrip { position: sticky; top: calc(50vh - 22px); display: block; margin: 0 auto; width: 6px; height: 44px; border-radius: 3px; background: var(--line); transition: background var(--m-hover) var(--ease); }
+.board .fsplit:hover::before, .board .fsplit.on::before, .board .fsplit:focus-visible::before { opacity: .45; }
+.board .fsplit:hover .fgrip, .board .fsplit.on .fgrip, .board .fsplit:focus-visible .fgrip { background: var(--accent); }
+.board .fsplit:focus { outline: none; }
+html.splitting, html.splitting * { cursor: col-resize !important; user-select: none !important; }
+.board .fb.beside.split > .ffig { justify-self: center; }
+.board .fb.beside.cover-fig > .ffig { grid-column: 1 / -1; grid-row: 1; justify-self: stretch; align-items: center; z-index: 2; background: var(--bg); }
+.board .fb.beside.cover-fig > .fside, .board .fb.beside.cover-text > .ffig { grid-row: 1; grid-column: 2; }
+.board .fb.beside.cover-text > .ffig { grid-column: 1; }
+.board .fb.beside.cover-text > .fside { grid-row: 1; }
+.board .fb.beside.cover-text > .fside { grid-column: 1 / -1; z-index: 2; background: var(--bg); padding-left: 28px; }
+.board .fb.beside.cover-fig > .fside, .board .fb.beside.cover-text > .ffig { visibility: hidden; }   /* the covered side keeps its place (the reading line still runs down it) but shows nothing past the sheet */
+@media (prefers-reduced-motion: no-preference) { .board .fb.beside.cover-fig > .ffig, .board .fb.beside.cover-text > .fside { animation: fsheet var(--m-hover) var(--ease) both; } }
+@keyframes fsheet { from { opacity: .6; } to { opacity: 1; } }
 .board .fb.many .ffig { flex-direction: row; flex-wrap: wrap; gap: 20px; align-items: flex-end; justify-content: center; align-self: stretch; }
 /* a figure, then its sliders and its Back and Next, each the figure's own width; board.js sets that width */
 .board .fg { display: flex; flex-direction: column; align-items: stretch; max-width: 100%; }
@@ -474,6 +494,7 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   :root { --page-w: calc(100vw - 28px); }
   .board .bpair, .board .fb.beside { display: flex; flex-direction: column; }
   .board .tcol, .board .fb.beside .ffig { position: static; }
+  .board .fb > .fsplit { display: none !important; }
   .board .arow { grid-template-columns: minmax(0, 1fr); }
   .board .bcmp { grid-template-columns: minmax(0, 1fr); }
   .board .bops > .body { flex-direction: column; height: auto !important; }
@@ -503,6 +524,11 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
 @media (prefers-reduced-motion: reduce) { .board .hdl.pulse::after { animation: none; } .board .hdl svg, .board .vword { transition: none; } }
 @media print {
   html.ls-page, html.ls-page body { background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* print drops a kept split: no handle, and a covered side shows again in the kit's own place */
+  .board .fsplit { display: none !important; }
+  .board .fb.beside.cover-fig > .fside, .board .fb.beside.cover-text > .ffig { visibility: visible; }
+  .board .fb.beside.cover-fig > .ffig { grid-column: 1; }
+  .board .fb.beside.cover-text > .fside { grid-column: 2; padding-left: 0; }
   #lsbar, #lsrail, #lspause, .board .stage, .board .stopl, .board .tb, .board .controls { display: none; }
   .board .tcol, .board .fb.beside .ffig { position: static; }
   html.ls-page .slide { break-inside: avoid-page; }
