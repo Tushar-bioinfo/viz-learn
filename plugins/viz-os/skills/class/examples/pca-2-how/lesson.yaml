@@ -301,11 +301,18 @@ slides:
     title: PC1 follows the units
     lead: C holds raw spreads, so units matter.
     steps:
-      - say: 'Read CD3 on a scale {{gain}} times as wide. Same cells, same biology.'
+      - say: 'As measured, ==PC1== runs at {{th_star|0}} degrees through the cells.'
         add:
-          compare:
-            a: {title: CD3 as measured, tone: good, verdict: as before, text: 'PC1 at {{th_star|0}} degrees.'}
-            b: {title: 'CD3 read ×{{gain}}', tone: bad, verdict: turned, text: 'PC1 turns to {{th_g|0}} degrees, toward CD3.'}
+          plane:
+            x: {label: CD3 from the middle, min: -4.5, max: 6.5}
+            y: {label: CD19 from the middle, min: -3, max: 3.2}
+            marks:
+              - points: {from: cells, x: d1, y: d2, label: id}
+              - {line: [0, v2, '-v1'], color: accent, label: PC1}
+              - {points: {from: cells, x: d1g, y: d2}, color: bad, label: CD3 ×2, step: 2}
+              - {line: [0, g2, '-g1'], color: bad, label: PC1 turned, step: 3}
+      - say: 'Read ==CD3 ×2:CD3 on a scale {{gain}} times as wide==. Same cells, same biology.'
+      - say: 'The cells stretch sideways, so ==PC1 turned:PC1 turns== to {{th_g|0}} degrees.'
       - think:
           q: Why does PC1 turn when nothing about the cells changed?
           a: 'CD3''s spread grew {{gain^2}}-fold, and PC1 chases the biggest spread.'

@@ -230,11 +230,20 @@ slides:
     title: Back to the two donors
     lead: Now the second number can tell them apart.
     steps:
-      - say: The same recipe on both donors. The means match. The variances do not.
+      - say: 'One ==mean==. Variance: A ==A spread:huddles== at ==s1:{{sA|3}}==, B ==B spread:reaches far== at ==s2:{{sB|3}}==.'
         add:
-          compare:
-            a: {title: Donor A, tone: good, text: Cells close to the mean., visual: {stat: {value: '{{sA|3}}', label: variance of CD3, sub: 'mean {{mA|2}}'}}}
-            b: {title: Donor B, tone: bad, text: Cells far from the mean., visual: {stat: {value: '{{sB|3}}', label: variance of CD3, sub: 'mean {{mB|2}}'}}}
+          chart:
+            x: {label: CD3 level, min: 2.5, max: 6.5}
+            y: {label: donor, min: 0, max: 1, ticks: []}
+            series:
+              - {name: Donor A, kind: dots, x: donor_a, y: 'donor_a * 0 + 0.7', color: s1}
+              - {name: Donor B, kind: dots, x: donor_b, y: 'donor_b * 0 + 0.3', color: s2}
+            marks:
+              - {kind: vline, x: mA, name: mean, says: the same mean for both donors}
+              - {kind: span, x: ['mA - sqrt(sA)', 'mA + sqrt(sA)'], y: 0.82, color: s1, name: A spread, says: one SD either side of the mean for donor A}
+              - {kind: span, x: ['mB - sqrt(sB)', 'mB + sqrt(sB)'], y: 0.42, color: s2, name: B spread, says: one SD either side of the mean for donor B}
+          ratio: '2.2:1'
+          caption: 'Same middle. B''s bar is {{sqrt(ratio)|0}}× as wide.'
       - say: 'Each of B''s cells sits {{sqrt(ratio)|0}}× as far from the mean as A''s.'
         add: {note: 'Distances **{{sqrt(ratio)|0}}×** as far give squares, and a variance, **{{ratio|0}}×** as big.'}
       - think:

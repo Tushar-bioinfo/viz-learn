@@ -266,9 +266,16 @@ slides:
     steps:
       - say: 'PC1''s line is fixed, its direction is not. Flip it: every score flips sign.'
         add:
-          compare:
-            a: {title: PC1 as we chose it, tone: good, verdict: right, text: 'c1 scores {{at(z1, 0)|2}}.'}
-            b: {title: PC1 flipped, tone: good, verdict: also right, text: 'c1 scores {{-at(z1, 0)|2}}. The picture mirrors.'}
+          plane:
+            x: {label: PC1 score, min: -4, max: 4}
+            y: {label: PC2 score, min: -3, max: 3.8}
+            marks:
+              - points: {from: cells, x: z1, y: z2, by: type, label: id, colors: {T: {color: s1, label: T cell}, B: {color: s2, label: B cell}, mono: {color: s3, label: monocyte}}}
+              - {line: [0, 1, 0], color: mist}
+              - {points: {from: cells, x: z1f, y: z2, label: id}, color: haze, label: flipped, step: 2}
+      - think:
+          q: 'The ==flipped== scores mirror the picture. Did any cell change its clump?'
+          a: 'No. c1 goes from {{at(z1, 0)|2}} to {{-at(z1, 0)|2}}, and every distance stays. Either sign is PC1.'
       - say: PCA finds straight directions only. Cells along a curve need a method that bends.
       - say: Spread squares each distance, so one extreme cell can drag PC1 toward itself.
       - say: Real software skips $C$ and works on the centred table. Same answer.

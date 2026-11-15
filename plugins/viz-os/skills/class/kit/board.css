@@ -309,20 +309,13 @@ html.ls-page .board .datatoggle { background: transparent; border: 1px solid var
 .board .stat .lab { font-size: 22px; }
 .board .stat .sub { font-size: 19px; }
 
-/* two cases side by side */
-.board .bcmp { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-/* the two sides' figures stand on one baseline, however long the words above them (N6) */
-.board .bcmp .side > .vis { margin-top: auto; }
-.board .bcmp .side { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.board .bcmp h3 { margin: 0; font-size: 22px; }
-.board .bcmp .tone { display: inline-flex; align-items: center; gap: 10px; font: 700 15px var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
-.board .bcmp .tone i { width: 26px; height: 26px; display: grid; place-items: center; font-style: normal; font-size: 16px; font-weight: 900; color: var(--on); }
-.board .bcmp .tone.good i { background: var(--good); }
-.board .bcmp .tone.bad i { background: var(--bad); }
+/* two cases side by side, as a plain pair (N13): no box; a thin rule between; each title in its side's colour */
+.board .bcmp { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.board .bcmp .side { padding: 2px 32px 4px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.board .bcmp .side:first-child { padding-left: 0; }
+.board .bcmp .side + .side { border-left: 2px solid var(--line); }
+.board .bcmp h3 { margin: 0; font-size: 22px; color: var(--sc); }
 .board .bcmp .p { font-size: 20px; line-height: 1.38; }
-.board .bcmp .vis { flex: none; }
-.board .bcmp .chart { flex: none; }
-.board .bcmp .stat { flex: none; padding: 8px 0; gap: 6px; }
 
 /* a matrix step: the grid and its card, at a height board.js sets */
 .board .bops { width: 100%; }
@@ -500,7 +493,9 @@ html.ls-page .board .ctl .play { flex: none; width: 28px; height: 24px; display:
   .board .tcol, .board .fb.beside .ffig { position: static; }
   .board .fb > .fsplit { display: none !important; }
   .board .arow { grid-template-columns: minmax(0, 1fr); }
-  .board .bcmp { grid-template-columns: minmax(0, 1fr); }
+  .board .bcmp { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .board .bcmp .side { padding: 0; }
+  .board .bcmp .side + .side { border-left: 0; border-top: 2px solid var(--line); padding-top: 14px; }
   .board .bops > .body { flex-direction: column; height: auto !important; }
   .board .bops .opsw { min-height: 340px; }
 }

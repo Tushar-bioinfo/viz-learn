@@ -1,0 +1,22 @@
+# expect: builds
+# expect: not: is retired
+# expect: not: is not a `compare` side key
+# N13: the plain pair builds and checks clean: titles in their colours, one red with `bad: true`, no box.
+title: Can a model learn from patches nobody labelled?
+question: How can a model learn without labels?
+answer: It makes up a question whose answer the data already holds.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: Four patches, and not one label
+    lead: Nobody has told us which patches are nucleus and which are stroma.
+    steps:
+      - say: With no labels, a supervised model has nothing to check its guesses against.
+        add:
+          compare:
+            a: {title: Supervised, bad: true, text: 'A person writes each answer. No answers, no learning.'}
+            b: {title: Self-supervised, color: s4, text: 'The data writes the answer, from a question we make up.'}
+      - think:
+          q: With no labels at all, what fact about a patch do we still know for certain?
+          a: Which patch a recoloured copy came from.

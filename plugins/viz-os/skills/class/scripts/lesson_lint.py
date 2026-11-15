@@ -368,14 +368,33 @@ def mark_symbol(mk, symbols):
 
 
 def charts_of(it):
-    """Every chart an item draws on a board: its own, and one in each side of a `compare`. Yields (where, chart)."""
+    """Every chart an item draws on a board (a `compare` side holds none). Yields (where, chart)."""
     if isinstance(it.get("chart"), dict):
         yield "", it["chart"]
-    cp = it.get("compare")
-    for k in "ab":
-        v = cp.get(k) if isinstance(cp, dict) else None
-        if isinstance(v, dict) and isinstance(v.get("visual"), dict) and isinstance(v["visual"].get("chart"), dict):
-            yield f" compare {k}", v["visual"]["chart"]
+
+
+COMPARE_SIDE = {"title", "text", "bad", "color"}
+COMPARE_GONE = {"tone": "tick or cross", "verdict": "verdict word", "visual": "figure or big number"}
+
+
+def lint_compare_side(Lx, w, x):
+    """A `compare` side is a plain pair half: a title in its colour and a line (N13). The boxed verdict card is retired:
+    no tick or cross, no caps verdict word, no figure or stat inside a side."""
+    for key in sorted(set(x) - COMPARE_SIDE):
+        if key in COMPARE_GONE:
+            Lx.err(w, f"`{key}:` is retired: a `compare` side draws no {COMPARE_GONE[key]}. Mark the failing side with `bad: true` "
+                      "(its title turns red); draw the two cases' numbers on one `chart` in the scene (both sides' data, or the "
+                      "two values on one axis with the lines that give them meaning) and say them in each side's colour (`==s1:{{a|2}}==`)")
+        else:
+            Lx.err(w, f"`{key}:` is not a `compare` side key: write `title`, and if you like `text`, `bad: true` and `color`")
+    for key in ("title", "text"):
+        if isinstance(x.get(key), str) and "{{" in x[key]:
+            Lx.err(w, f"`{key}:` holds a number (`{{{{…}}}}`): a `compare` is words only. Draw the two cases' numbers on one "
+                      "`chart` or `plane` in the scene and say each in its side's colour in a teacher line (`==s1:{{a|2}}==`)")
+    if "bad" in x and not isinstance(x["bad"], bool):
+        Lx.err(w, f"`bad:` is `true` or left out; got {x['bad']!r}")
+    if "color" in x and x["color"] not in COLOR_NAMES:
+        Lx.err(w, f"`color: {x['color']}` is not a kit colour ({', '.join(sorted(COLOR_NAMES))})")
 
 
 def mark_color(mk, symbols, q):
@@ -1481,11 +1500,10 @@ def lint_scenes(B, Lx, deck, glob, data=None):
                 cp = it.get("compare")
                 if cp is not None:
                     if not isinstance(cp, dict) or not all(isinstance(cp.get(k), dict) and cp[k].get("title") for k in "ab"):
-                        Lx.err(w, "`compare` needs `a:` and `b:`, each with a `title` (and `text`, `tone`, `visual` as on a deck compare slide)")
+                        Lx.err(w, "`compare` needs `a:` and `b:`, each with a `title` (and if you like `text`, `bad: true`, `color`)")
                     else:
                         for k in "ab":
-                            if isinstance(cp[k].get("visual"), dict):
-                                B.lint_visual(Lx, f"{w} compare {k}", cp[k]["visual"], names, legend_marks=mark_entries(cp[k]["visual"].get("chart"), symbols))
+                            lint_compare_side(Lx, f"{w} compare {k}", cp[k])
                 op = it.get("ops")
                 if op is not None:
                     if not isinstance(op, dict):

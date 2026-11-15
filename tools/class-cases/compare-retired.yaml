@@ -1,0 +1,28 @@
+# expect: compare a: `tone:` is retired
+# expect: compare a: `verdict:` is retired
+# expect: compare b: `visual:` is retired
+# expect: compare b: `bad:` is `true` or left out
+# expect: compare b: `color: orange` is not a kit colour
+# expect: compare a: `text:` holds a number
+# N13: the boxed verdict card (tick or cross, caps verdict word, big stat) is retired; a compare side is a title and a line.
+# Replaces chart-mark-compare (change 5 part 2), which tested a chart inside a compare side.
+title: Six cells and their mean
+question: Where do six cells sit around their mean?
+answer: Around the mean, some far.
+data: {cd3: [4.3, 4.9, 4.6, 4.0, 4.5, 4.4]}
+symbols:
+  xbar: {tex: '\bar{x}', says: the mean CD3 level of the six cells, short: mean, fmt: 2}
+slides:
+  - type: title
+  - type: board
+    beat: compare
+    title: Two donors
+    lead: The same mean, a different spread.
+    steps:
+      - say: Six cells from each donor.
+        add:
+          compare:
+            a: {title: Donor A, tone: good, verdict: tight, text: 'the six cells, mean {{xbar|2}}'}
+            b: {title: Donor B, bad: yes, color: orange, text: the same cells, visual: {stat: {value: '{{xbar|2}}', label: mean}}}
+  - type: recap
+    answer: Around the mean, some far.

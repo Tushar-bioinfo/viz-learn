@@ -225,14 +225,14 @@ add: {note: {text: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$', side
 ```
 A string, or `{text, side, id}`. At most 16 words (full voice: 30); the board is not for paragraphs.
 
-### `compare`: two cases side by side
+### `compare`: two cases side by side, in words
 ```yaml
 add:
   compare:
-    a: {title: Donor A, tone: good, verdict: tight, text: 'Cells close to the mean.', visual: {stat: {value: '{{sA|2}}', label: variance}}}
-    b: {title: Donor B, tone: bad, text: 'Cells far from the mean.', visual: {stat: {value: '{{sB|2}}', label: variance}}}
+    a: {title: Supervised, bad: true, text: 'A person writes each answer. No answers, no learning.'}
+    b: {title: Self-supervised, text: The data writes the answer, from a question we make up.}
 ```
-`a` and `b` each take a `title`, and optionally `text`, `tone` (`good` ✓ or `bad` ✗), `verdict` (the word beside the tick; default "works" / "fails") and a small `visual`. A chart inside a side gets little room; prefer a `stat`.
+`a` and `b` each take a `title`, and optionally `text` (one line), `bad: true` (the title turns red) and `color` (default `s1`, `s2`). No box, tick or figure. Two cases with numbers go on one `chart` instead: both sides' data on one axis, or the two values with the lines that give them meaning (an `hline` for "best possible", one for "blind guess"); say each value in its side's colour (`==s1:{{sA|3}}==`).
 
 ### `ops`: a matrix step
 ```yaml

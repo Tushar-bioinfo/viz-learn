@@ -168,8 +168,8 @@ slides:
       - say: Donor A's cells huddle together. Donor B's spread wide.
         add:
           compare:
-            a: {title: Donor A, tone: good, text: 'Cells close to the mean.', visual: {stat: {value: '{{sA|2}}', label: variance of CD3, sub: 'mean {{mA|1}}'}}}
-            b: {title: Donor B, tone: bad, text: 'Cells far from the mean.', visual: {stat: {value: '{{sB|2}}', label: variance of CD3, sub: 'mean {{mB|1}}'}}}
+            a: {title: Donor A, text: Cells huddle close to the mean.}
+            b: {title: Donor B, text: Cells reach far from the mean.}
       - say: The means match. Only the spread tells them apart.
         add: {note: 'The means are ==s1:{{mA|1}}== and ==s2:{{mB|1}}==, but B is **{{ratio|1}}×** as variable as A.'}
       - think:

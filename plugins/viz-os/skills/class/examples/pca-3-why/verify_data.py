@@ -59,8 +59,8 @@ ok("lost_one", D["lost_one"], loss[k]); ok("lost_all", D["lost_all"], loss.sum()
 ok("shares", D["shares"], w3 / w3.sum()); ok("share1", D["share1"], w3[0] / w3.sum()); ok("share12", D["share12"], w3[:2].sum() / w3.sum())
 for i, c in enumerate(D["cells"]):
     assert c["id"] == D["ids"][i] and c["type"] == H["row_info"]["type"][H["row_ids"].index(c["id"])]
-    ok(f"cells[{i}]", [c["cd3"], c["cd19"], c["cd14"], c["d1"], c["d2"], c["d3"], c["z1"], c["z2"], c["z3"], c["lost"]],
-       [*X[i], *Z[i], *S[i], loss[i]])
+    ok(f"cells[{i}]", [c["cd3"], c["cd19"], c["cd14"], c["d1"], c["d2"], c["d3"], c["z1"], c["z2"], c["z3"], c["lost"], c["z1f"]],
+       [*X[i], *Z[i], *S[i], loss[i], -S[i][0]])
 # the reason PC1 wins: every unit arrow's spread is a mix of the three stretches, so it never beats L1
 rng = np.random.default_rng(0); A = rng.normal(size=(2000, 3)); A /= np.linalg.norm(A, axis=1, keepdims=True)
 assert np.all(np.einsum("ij,jk,ik->i", A, C, A) <= w3[0] + 1e-12)
