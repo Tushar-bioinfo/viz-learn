@@ -5,13 +5,13 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | Message (shortened) | Fix |
 |---|---|
 | `N scenes; a lesson is 8–14` | add the missing beats, or split into a series |
-| `the first scene after the title … is a plan scene` | start with `beat: plan` |
-| `the plan is its picture, so it has no lines of text` | delete the `say` and keep the `flow` |
+| `the first scene after the title is the problem` / `the opening problem has no think stop` | open on `beat: problem`, on the learner's own data, and end it on a `think` |
+| `a lesson has no plan scene` | delete it: the title asks the question, and the problem opens the board |
 | `a formula scene before any problem scene` | show the problem first |
 | `no limits scene` / `limits comes after next` | add one, before `next` |
 | `a what-if scene with no picture` | add a `chart` or `plane` whose marks read the slider |
-| `no summary scene` | a `recap` slide that answers the opening question, before `next` |
-| `no next scene` / `the next tease is the last scene` | one `next` scene, at the end |
+| `a lesson has no summary slide` | delete the `recap`; the `next` scene's first line answers the opening question, in its words |
+| `no next scene` / `the next tease is the last scene` | one `next` scene, at the end: the answer, what it does not say, the next question |
 | `a class lesson has no quiz cards` | delete the slide; keep any good question as a `think` stop |
 | `a class lesson has no recall cards` | delete `recall:`; reach back with a `think` stop near the start |
 | `no lead` | one short line linking the scene to the last |
@@ -121,7 +121,7 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` `calc say` “Red steps: red part” reads as made-up shorthand `` (also `eqn`, `assemble`, a `col`'s `label`) | two short phrases joined by a colon read as code names: say it as one plain phrase (‘red light that lands in red’). A digit, `$…$` or `{{…}}` on either side, or a lead word on the left (`Note:`, `Why:`, `Step:` …), is fine |
 | `` X ($a$), Y ($b$) all have `short` “…” `` | two symbols with different TeX share a name, so the legend and the cards cannot tell them apart: give each its own 2-word `short` (`CD3–CD19 covariance`). One quantity under two data names may share it when the TeX is the same |
 | `` `say` “…” only says what to do on the page `` | every sentence was only press, click, tap, drag, scroll, hover, watch, look, or move / slide / try / use the slider (or toggle, dial, button, play): say what changes, with its number (‘the area falls to {{area|2}}’). A clause that says what happens (‘Move the slider and the mean rises.’), or another sentence that says what is shown, is fine |
-| `an adv scene names its idea, the one mark that carries it and the picture: add …` | an adv lesson (any scene has `idea`): give every scene but `plan`, `summary` and `next` its `idea`, `see` and `shows` (`adv.md` §2) |
+| `an adv scene names its idea, the one mark that carries it and the picture: add …` | an adv lesson (any scene has `idea`): give every scene but `next` its `idea`, `see` and `shows` (`adv.md` §2) |
 | `` `idea: X` is not in the idea table `` (maybe `did you mean …?`) | use a table name (`adv.md` §3), or write the learner's own question ending in `?` |
 | `` `idea: X` is drawn with …, and this scene has none of them `` | draw the scene with one of the listed items, pick the idea that fits the picture, or write the learner's own question ending in `?` |
 | `` `see: X` names nothing this scene draws `` | `see` is a mark's `label` or `id`, a chart series name, a symbol the scene shows, or a table column: fix the spelling, or name the mark that carries the point |
@@ -129,7 +129,7 @@ Read this after a build or a check fails. `lesson.py` prints the deck's messages
 | `` a `shortcut` scene (or `misconception`, `limits`) … holds one state `` | put the wrong way beside the right way on one frame: a `compare`; a toggle or slider that the figure reads (in a mark, a series or through `derive`); or the other way as a mark with `step:` (a later step) or `when:` |
 | `` the idea `X` fills N scenes and the depth budget is D `` | merge scenes on that idea, or ask the learner for more depth and set `learner.depth` |
 | `` `depth: X` is how many scenes one idea may fill `` | a whole number from 1 to 6, or leave it out for 2 (checked only in an adv lesson) |
-| `` `idea` belong on a board scene; this is a `T` slide `` (also `see`, `shows`) | move the plan to a `type: board` scene, or delete it |
+| `` `idea` belong on a board scene; this is a `T` slide `` (also `see`, `shows`) | move it to a `type: board` scene, or delete it |
 | `` `chance` is for adv lessons only `` (also `fork`, `beads`, `recorder`, `pileup`, `style: slope`, `strip`, `views`, `hunt`, `split`, `learner.depth`) | the lesson has no `idea:`: make it adv (`idea`, `see`, `shows` on its board scenes, `adv.md` §2), or draw it with a plain item |
 | `` `chance` compares exactly two groups `` / `` a `chance` group needs `name:` / `n:` / `ill:` `` | two groups, each `{name, n, ill}` (`adv.md` §9) |
 | `` `chance` group X: `n` is … `` / `` `ill` is … at frame F while `n` is … `` | `n` is the group's units, a whole number 1–100; `ill` counts those with the outcome, 0 to `n`, checked on each state of the run or slider: fix `make_data.py` or the derive |

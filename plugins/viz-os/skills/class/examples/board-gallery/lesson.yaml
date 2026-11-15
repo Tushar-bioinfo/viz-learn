@@ -33,12 +33,6 @@ slides:
   - type: title
 
   - type: board
-    beat: plan
-    title: The plan for today
-    steps:
-      - add: {flow: {nodes: [{label: six cells, sub: one marker}, by hand, a formula, its limits], verbs: [look, write, test]}}
-
-  - type: board
     beat: problem
     title: Two donors, the same mean
     lead: The mean alone cannot tell these two apart.
@@ -320,17 +314,13 @@ slides:
           q: One sample sits in six wells. What does their variance measure?
           a: How much the method wobbles on one sample. One bad well would dominate it, as here.
 
-  - type: recap
-    answer: Variance is the average squared distance from the mean, with n − 1 at the bottom.
-    points:
-      - Distances cancel; squares do not.
-      - The SD is the square root, back in the data's units.
-
   - type: board
     beat: next
     title: Next, two markers at once
-    lead: Spread for one marker. What about two together?
+    lead: How do we put one number on how spread out cells are?
     steps:
+      - say: 'Square each distance from the mean, add them, divide by $n - 1$.'
+      - say: It says how one marker spreads, not whether two move together.
       - say: Next time we ask whether CD3 and CD19 rise and fall together.
         add:
           plane:

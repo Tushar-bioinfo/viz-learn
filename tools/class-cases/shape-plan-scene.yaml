@@ -1,0 +1,22 @@
+# expect: a lesson has no `plan` scene
+# expect: not: the first scene after the title is the `problem`
+# expect: not: no `lead`
+# An old-style plan before the problem: it only warns, so an older lesson still builds; the problem after it counts as the opening.
+title: An old plan
+question: What if a lesson still opens on a plan?
+answer: The lint asks to delete it.
+slides:
+  - type: title
+  - type: board
+    beat: plan
+    title: The plan
+    steps:
+      - add: {flow: {nodes: [one thing, the next], verbs: [then]}}
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: Two groups look different.
+      - think:
+          q: Is the difference real?
+          a: We cannot tell yet. This lesson finds out.

@@ -1,0 +1,25 @@
+# expect: a lesson has no summary slide
+# expect: not: no `recap` near the end
+# An old-style recap slide before the tease: the `next` scene now answers the question.
+title: An old recap
+question: What if a lesson still has a recap slide?
+answer: The lint asks to move the answer into the next scene.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: Two groups look different.
+      - think:
+          q: Is the difference real?
+          a: We cannot tell yet. This lesson finds out.
+  - type: recap
+    answer: Count the gap in noise steps.
+    points: [The noise step comes from the pooled share.]
+  - type: board
+    beat: next
+    title: Next, how big
+    lead: Is the difference real?
+    steps:
+      - say: Very likely, but not how large.

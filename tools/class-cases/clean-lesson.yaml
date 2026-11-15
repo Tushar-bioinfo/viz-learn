@@ -1,5 +1,5 @@
 # expect: clean
-# A full small lesson on the mean that passes every rule, including the browser check (with C10l's step reasons and transfer stop).
+# A full small lesson on the mean that passes every rule: it opens on the problem and ends on `next`, with no plan or recap (N7), including the browser check (with C10l's step reasons and transfer stop).
 title: Where the mean sits
 subtitle: Three cells, one middle
 question: Where does the mean sit among these cells?
@@ -21,18 +21,6 @@ symbols:
   tot: {tex: 'T', says: the sum of the levels, short: sum}
 slides:
   - type: title
-
-  - type: board
-    beat: plan
-    title: The plan for today
-    steps:
-      - add:
-          flow:
-            nodes: [three cells, by hand, a formula, its limits]
-            verbs: [see, add, test]
-      - think:
-          q: What should that one number do?
-          a: Sit in the middle of the three levels.
 
   - type: board
     beat: problem
@@ -97,6 +85,28 @@ slides:
           a: Every cell CD3 level, once.
 
   - type: board
+    beat: misconception
+    title: The mean need not be a cell
+    lead: The middle we computed may match no cell at all.
+    steps:
+      - say: The mean need not match any one cell's level.
+        add: {note: Raise c3 and the mean moves off c2.}
+      - think:
+          q: Must one cell sit exactly at the mean?
+          a: No. The mean is a balance point, not a chosen cell.
+
+  - type: board
+    beat: analogy
+    title: The mean is a balance point
+    lead: Picture the levels as weights on a ruler.
+    steps:
+      - say: Put each cell as a weight on a ruler, at its level.
+        add: {note: The ruler balances at the mean.}
+      - think:
+          q: Where does the ruler balance for our three cells?
+          a: 'At {{xbar}}, the mean: the pulls on each side cancel.'
+
+  - type: board
     beat: limits
     title: Where the mean misleads
     lead: One odd cell can move the middle.
@@ -111,17 +121,13 @@ slides:
           q: One sample sits in three wells. What does their mean give?
           a: One reading for the sample. A bad well still pulls it, as here.
 
-  - type: recap
-    answer: The mean is the sum of the levels divided by the number of cells.
-    points:
-      - Add every level, then divide by how many cells.
-      - One far cell pulls the middle toward itself.
-
   - type: board
     beat: next
     title: Next, how far cells sit
-    lead: The middle is set. Spread is next.
+    lead: Where does the mean sit among these cells?
     steps:
+      - say: 'At {{xbar}}: the sum of the levels over the number of cells.'
+      - say: It does not say how far the cells sit from it.
       - say: Next we ask how far each cell sits from the mean.
         add: {note: Distance from this middle is the next question.}
       - say: Square those distances and average them.

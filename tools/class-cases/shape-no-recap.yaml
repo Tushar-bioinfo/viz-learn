@@ -1,0 +1,23 @@
+# expect: not: no `recap` near the end
+# expect: not: summary
+# expect: not: no `lead`
+# A lesson that ends on `next` with no recap slide: neither the deck's recap rule nor the old summary rule fires.
+title: No recap
+question: Is the difference real?
+answer: Very likely.
+slides:
+  - type: title
+  - type: board
+    beat: problem
+    title: The problem
+    steps:
+      - say: Two groups look different.
+      - think:
+          q: Is the difference real?
+          a: We cannot tell yet. This lesson finds out.
+  - type: board
+    beat: next
+    title: Real, but how big?
+    lead: Is the difference real?
+    steps:
+      - say: Very likely yes. It does not say how large.

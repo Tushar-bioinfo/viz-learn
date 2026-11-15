@@ -25,10 +25,10 @@ slides:
           a: No.
           hint: none
   - type: board
-    beat: summary
-    title: The answer
+    beat: limits
+    title: Where it breaks
     steps:
-      - say: Spread is one number.
+      - say: One far value pulls the spread up.
   - type: board
     beat: next
     title: Next

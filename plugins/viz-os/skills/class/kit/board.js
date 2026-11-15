@@ -633,7 +633,7 @@
       if (g.F) { const tg = grp('tally', null, 'ptally'), far = list(num(p.tally, 'tally')), f = frameOf();
         for (let k = 1; k <= g.F; k++) { const x = g.X0 + ((k - 1) % g.per) * g.pitch, y = g.yT + Math.floor((k - 1) / g.per) * g.pitch, hit = +far[k] === 1;
           put(tg, 'rect', `ty${k}`, { x: x + .5, y: y + .5, width: g.s - 1, height: g.s - 1 }, f == null || k > f ? 'fill:none;stroke:var(--mist);stroke-width:var(--w-guide);stroke-opacity:.35'
-            : `fill:${hit ? gapC : 'var(--mist)'};fill-opacity:${hit ? 1 : .55};stroke:none`); }
+            : `fill:${hit ? 'var(--accent)' : 'var(--mist)'};fill-opacity:${hit ? 1 : .55};stroke:none`); }
         if (f > 0 && f <= g.F) { const x = g.X0 + ((f - 1) % g.per) * g.pitch, y = g.yT + Math.floor((f - 1) / g.per) * g.pitch;
           put(tg, 'rect', 'tycur', { x: x - 1.25, y: y - 1.25, width: g.s + 2.5, height: g.s + 2.5 }, 'fill:none;stroke:var(--ink);stroke-width:1.5'); } }
       [...els.keys()].forEach(k => { if (!seen.has(k)) { els.get(k).remove(); els.delete(k); } });
