@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.1.0 (2026-11-15)
+
+Some 5.0 lessons no longer build. A lesson of 8 scenes or more needs a picture or figure on every scene after the opening, and at least one drawn `picture:`. A `compare` is a plain pair: `tone`, `verdict` and `visual` are rejected. The example decks, lessons and sketch page build with 0 errors.
+
+- Every scene carries a picture. `picture:` draws one of six kinds (`ruler`, `cast`, `machine` as a chain or a sum of terms, `grid`, `pair`, `ghost`) in a felt-tip look on black, with offset fill and a halftone shade, every number computed from the lesson's data.
+- The opening page has a drawn cover in the same look.
+- The twin verdict cards are gone: `compare` shows two cases side by side, with no badges or big numbers.
+- The Study switch ("open all") is gone. Each fold opens on its own, and printing opens them all.
+- A finished lesson leaves only `lesson.html`; its YAML, data and scripts are packed in a hidden `.lesson/` folder for later rebuilds and the series.
+
 ## 5.0.0 (2026-11-15)
 
 Some 4.x lessons no longer build. A `think` step takes only `q`, `a`, `set` and `transfer`; `learner.depth` belongs to adv lessons only (board scenes with `idea:`); and a `==word==` link must name a mark in its own scene, and only one. In decks and lessons, a chart series `name` cannot be true or false: quote a name such as `yes` or `no`. The 4.0 example decks and sketch page still build with 0 errors.
