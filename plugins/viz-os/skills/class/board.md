@@ -105,7 +105,7 @@ steps:
 
 A think step's `say` is optional; its question is the line. A think question has one short answer the learner can reach from the board. On a figure with Next, a stop on a think step takes two presses: the first asks and leaves the figure alone, the second answers and moves it.
 ### Extra reading
-A fold (the gallery's by-hand scene has one) opens with a click and starts closed; the **Study** switch at the lower left opens or closes every fold on the page. Put in a fold what a curious learner asks next: why this choice, where a rule comes from, what the field calls it. The page must teach without it. One step fold a scene (the lint warns past one); the scene's own `more` holds the rest.
+A fold (the gallery's by-hand scene has one) starts closed and opens with a click on its own `+`. Put in a fold what a curious learner asks next: why this choice, where a rule comes from, what the field calls it. The page must teach without it. One step fold a scene (the lint warns past one); the scene's own `more` holds the rest.
 - **Give every term its meaning in the fold too**, the first time it appears there: plain words then the term, or the term then its meaning in brackets ("unweighted (every pixel counts the same)"). A fold is read on its own, so a term defined higher up the page is defined again.
 - **List only pages you opened** while writing, with `why` saying what the reader gets there. `url` is a full `https://` link.
 - At most 160 words a fold, each sentence at most 24; its `ask` at most 14.

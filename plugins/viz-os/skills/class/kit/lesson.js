@@ -13,23 +13,7 @@
   // extra reading: a closed fold with a question, paragraphs of HTML and the sources read for it ("Read: title. why")
   L.sources = list => (list || []).map(s => `<p class="lsrc"><span class="lread">Read:</span> <a href="${L.esc(s.url || '')}" target="_blank" rel="noopener">${L.esc(s.title || s.url || '')}</a>${s.why ? '. ' + L.md(s.why) : ''}</p>`).join('');
   L.fold = (ask, html, cls) => { const d = h('details', 'lfold' + (cls ? ' ' + cls : ''), `<summary><span class="lbox" aria-hidden="true"></span><span class="lask">${ask}</span></summary><div class="lfb">${html}</div>`);
-    d.addEventListener('toggle', () => { paintStudy(); requestAnimationFrame(onScroll); }); return d; };
-  // Study: one switch opens or closes every fold on the page
-  let study = null;
-  function paintStudy() {
-    if (!study) return;
-    const f = [...document.querySelectorAll('details.lfold')], n = f.filter(d => d.open).length, all = n === f.length;
-    study.querySelector('button').textContent = all ? 'close all' : 'open all';
-    study.querySelector('.sst').textContent = n === 0 ? 'all closed' : all ? 'all open' : `${n} of ${f.length} open`;
-  }
-  function studyBuild() {
-    const f = [...document.querySelectorAll('details.lfold')]; if (!f.length) return;
-    study = h('div', '', '<span class="sl">Study</span><button type="button"></button><span class="sst"></span>'); study.id = 'lsstudy';
-    study.querySelector('button').onclick = () => { const open = study.querySelector('button').textContent === 'open all'; document.querySelectorAll('details.lfold').forEach(d => { d.open = open; }); paintStudy(); };
-    document.body.appendChild(study);
-    if (CHECK) f.forEach(d => { d.open = true; });   // the check reads every fold's text
-    paintStudy();
-  }
+    d.addEventListener('toggle', () => requestAnimationFrame(onScroll)); return d; };
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue('--' + n).trim();
@@ -139,7 +123,7 @@
       if (innerWidth === wide && (innerHeight === high || innerWidth < 760 || CHECK)) return; wide = innerWidth; high = innerHeight; clearTimeout(t); t = setTimeout(drawAll, 120); };
     addEventListener('resize', redraw);
     document.addEventListener('vizos-split', drawAll);   // a new figure / text split (board.js): every scene takes it
-    addEventListener('beforeprint', () => L.slides.forEach(sl => sl.r.show && sl.r.show(sl.steps)));
+    addEventListener('beforeprint', () => { document.querySelectorAll('details.lfold').forEach(d => { d.open = true; }); L.slides.forEach(sl => sl.r.show && sl.r.show(sl.steps)); });
     addEventListener('afterprint', () => L.slides.forEach(sl => sl.r.reset && sl.r.reset()));
   }
 
@@ -231,7 +215,8 @@
     readColors();
     page = h('main'); page.id = 'lesson'; document.body.appendChild(page);
     document.title = deck.title || 'viz-os lesson';
-    build(deck); chromeBuild(); studyBuild(); bindInput();
+    build(deck); chromeBuild(); bindInput();
+    if (CHECK) document.querySelectorAll('details.lfold').forEach(d => { d.open = true; });   // the check reads every fold's text
     L.slides.forEach(draw);
     L.slides[0] && L.slides[0].r.node.classList.add('on');
     L.ready = true;
