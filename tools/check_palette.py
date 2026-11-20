@@ -13,10 +13,13 @@ Bars (the dark look's numbers, design.md):
   gold vs red                                the same three bars: they carry method against break
 Prints a table per paper and OK, or names the failing pair and exits 1.
 """
-import argparse, itertools, math, re, sys
+import argparse, importlib.util, itertools, math, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+_spec = importlib.util.spec_from_file_location("vizos_check", ROOT / "plugins/viz-os/skills/deck/scripts/check.py")
+_vizos_check = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_vizos_check)
 CSS = ROOT / "plugins/viz-os/skills/sketch/kit/sketch.css"
 PAPERS = ("cream", "graph", "navy")
 TEXT = ("ink", "soft", "accent", "s1", "s2", "s3")
@@ -136,7 +139,7 @@ def grain():
       return out; }""" % list(PAPERS)
     try:
         with sync_playwright() as p:
-            b = p.chromium.launch()
+            b = _vizos_check.launch(p)
             pg = b.new_page()
             pg.set_content("<!doctype html><body></body>")
             for f in ("paper.js", "pens.js"):

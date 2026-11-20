@@ -31,10 +31,32 @@ NUMBERS = """(i) => { const n = VizOS.slides[i].r.node, st = document.createElem
 
 
 def launch(p):
+    sandbox_args = ["--no-sandbox", "--disable-dev-shm-usage"]
+    attempts = [
+        {},
+        {"args": sandbox_args},
+        {"channel": "chrome"},
+        {"channel": "chrome", "args": sandbox_args},
+    ]
+    seen = set()
+    for raw in (
+        os.environ.get("VIZOS_CHROMIUM"),
+        os.environ.get("CHROME_PATH"),
+        os.environ.get("INKPRESS_CHROME"),
+        "/opt/pw-browsers/chromium",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/snap/bin/chromium",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    ):
+        if raw and raw not in seen and Path(raw).exists():
+            seen.add(raw)
+            attempts.append({"executable_path": raw})
+            attempts.append({"executable_path": raw, "args": sandbox_args})
     errs = []
-    for kw in ({}, {"channel": "chrome"}, {"executable_path": os.environ.get("VIZOS_CHROMIUM") or "/opt/pw-browsers/chromium"}):
-        if "executable_path" in kw and not Path(kw["executable_path"]).exists():
-            continue
+    for kw in attempts:
         try:
             return p.chromium.launch(**kw)
         except Exception as e:  # try the next way to find a browser
