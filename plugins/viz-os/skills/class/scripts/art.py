@@ -15,7 +15,7 @@ point of a grid (`grid` × `grid` over the viewBox). It writes <name>.hits.json,
 window's spots are the same in the build, the lint, the page and the check. Run it again after the drawing changes.
 Exit 1 on a broken contract; WARN lines are judgement calls.
 """
-import argparse, json, re, sys
+import argparse, json, os, re, sys
 from pathlib import Path
 
 SHAPES = ("path", "circle", "ellipse", "rect", "polygon", "polyline", "line")
@@ -99,6 +99,41 @@ def check(svg_path):
     return {"recs": recs, "ids": [r["id"] for r in shapes], "vb": vb}, errs[:20], warns
 
 
+def _launch_chromium(p):
+    """Launch Playwright Chromium, falling back across sandbox args, system Chrome, and Linux Chromium paths."""
+    sandbox_args = ["--no-sandbox", "--disable-dev-shm-usage"]
+    attempts = [
+        {},
+        {"args": sandbox_args},
+        {"channel": "chrome"},
+        {"channel": "chrome", "args": sandbox_args},
+    ]
+    seen = set()
+    for raw in (
+        os.environ.get("VIZOS_CHROMIUM"),
+        os.environ.get("CHROME_PATH"),
+        os.environ.get("INKPRESS_CHROME"),
+        "/opt/pw-browsers/chromium",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/snap/bin/chromium",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    ):
+        if raw and raw not in seen and Path(raw).exists():
+            seen.add(raw)
+            attempts.append({"executable_path": raw})
+            attempts.append({"executable_path": raw, "args": sandbox_args})
+    errs = []
+    for kw in attempts:
+        try:
+            return p.chromium.launch(**kw)
+        except Exception as e:
+            errs.append(str(e).splitlines()[0])
+    raise RuntimeError("no Chromium found (" + " | ".join(errs) + ")")
+
+
 def hits(svg_path, info, grid):
     """Which shape is on top at the centre of each grid cell, as runs per row: [index, count, ...]; -1 is no shape."""
     try:
@@ -108,7 +143,7 @@ def hits(svg_path, info, grid):
     x0, y0, w, h = info["vb"]
     index = {sid: i for i, sid in enumerate(info["ids"])}
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        b = _launch_chromium(p)
         pg = b.new_page(viewport={"width": 1000, "height": 1000})
         pg.set_content('<!doctype html><body style="margin:0">' + svg_path.read_text(encoding="utf-8") + "</body>")
         rows = pg.evaluate("""([g, x0, y0, w, h, index]) => {

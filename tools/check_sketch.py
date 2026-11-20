@@ -22,6 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "plugins/viz-os/skills/deck/scripts"))
 import build as B
+import check as _vizos_check
 import yaml
 CASES = ROOT / "tools" / "sketch-cases"
 PLUGIN = ROOT / "plugins/viz-os"
@@ -83,7 +84,7 @@ def in_browser(case, read):
     """What `read(page)` returns on a case's built page."""
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        b = _vizos_check.launch(p)
         pg = b.new_page(viewport={"width": 1240, "height": 900})
         pg.goto((OUT / f"{case}.html").as_uri() + "?check")
         pg.wait_for_function("window.VizOS && VizOS.ready", timeout=30000)

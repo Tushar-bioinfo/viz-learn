@@ -8,12 +8,16 @@ Prints one line per test, then "rgb tests: X/Y ok"; exits 1 if any fails, 2 if t
 could start ("not checked"). It covers `rgb: 10` on a point (and its legend dot), `rgb: {r, g, max}` on a points mark
 with per-row channels that change under a slider, a value past `max` (clipped), and rounding.
 """
-import math, subprocess, sys
+import importlib.util, math, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LESSON = ROOT / "plugins/viz-os/skills/class/scripts/lesson.py"
 OUT = ROOT / "out" / "rgb-check"
+
+_spec = importlib.util.spec_from_file_location("vizos_check", ROOT / "plugins/viz-os/skills/deck/scripts/check.py")
+_vizos_check = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_vizos_check)
 
 ROWS = [{"id": "p1", "red": 10, "green": 0, "gain": 0},     # pure red, does not move
         {"id": "p2", "red": 3, "green": 7, "gain": 4},      # green passes max at s = 1: clips
@@ -90,7 +94,7 @@ def main():
     results = []
     try:
         with sync_playwright() as pw:
-            b = pw.chromium.launch()
+            b = _vizos_check.launch(pw)
             page = b.new_page(viewport={"width": 1280, "height": 800})
             page.goto(html.as_uri() + "?check")
             page.wait_for_function("window.VizOS && VizOS.ready === true", timeout=20000)
