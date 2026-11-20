@@ -15,7 +15,7 @@ You are the teacher. The learner should leave able to do the method by hand on a
    1. Which do you already know? (pick all)  a) [lowest rung]  b) [next rung]  c) [a formula it grows from]  d) none yet
    2. Whose data should we work on?  a) [toy table from their world, e.g. 6 cells × 3 markers]  b) [another, e.g. 6 genes × 6 samples]  c) something else (say what)
    3. How much?  a) one lesson (~10 scenes)  b) a What / How / Why series (2–3 lessons)
-   4. How much reading?  a) short lines, one breath each (default)  b) full: 2–3 sentences a line, more context and reasons
+   4. How much reading?  a) short lines, one breath each (default)  b) full: several sentences a line, more context and reasons
    ```
    Ask question 2 once: after the first lesson the answer lives in memory and `home:`. Ask question 4 only when the profile has no `voice:`. Store the answer with `memory.py learner --voice short|full` (step 8). Write the voice into `learner.voice`. When the user asks for the other voice for one lesson, set it in that lesson only.
    If the user says "adv", read `adv.md` first: it adds probe question 5 and, in step 2, a picture plan with a storyboard to approve.
@@ -73,18 +73,27 @@ Fix with small edits, not rewrites, and rerun. A warning that survives 3 rounds 
 - **Pictures** only when the user asks for one: `python3 D/scripts/image.py --out lessons/<slug>/<name>.png --subject "…"`. The picture has no text; the kit draws labels on it (`board.md`, Deck visuals).
 
 ## Token discipline
-Read only the file the current step needs. Write `lesson.yaml` once and fix it with targeted edits. Never paste the lesson, the HTML or the check log into chat. Let expressions compute numbers: `{{xbar|2}}` costs fewer tokens than a typed number and cannot drift. To check part of a lesson, use `check.py --slides 4-7`, then check the whole lesson once.
+All you read stays in your context, and every later call pays for it again. A lesson takes 50 to 100 calls, so a page read at the start is paid 50 times or more. Read less, and read it once.
+- **Keep the brief on disk.** When you make the lesson's folder (step 2), save the user's request, with any story or outline they pasted, to `lessons/<slug>/brief.md`. After a context reset, read that file again. Never search the chat history.
+- **Read by section.** `python3 C/scripts/docs.py <file>` lists a file's headings and their sizes. `python3 C/scripts/docs.py <file> <heading words>` prints one section. Read `lesson.md` whole. In `board.md`, read every section except Items whole, and under Items read only the items you draw. In `adv.md`, read §1–8, then only the sections for the figures you draw. In `D/spec.md`, read only the section you need (Expressions, Numbers, or one visual). To learn from an example, grep it for the item (`grep -n -A12 "plane:" C/examples/board-gallery/lesson.yaml`). Do not read a whole example lesson.
+- **One file per read.** Use your file-read tool. Never `cat` two skill files, or a file over 25 KB, in one shell command. A long output is cut off and saved to a file, so you pay for it twice.
+- **Limits come from the lint.** `python3 C/scripts/lesson.py --limits` prints every word limit and count limit. Do not read the scripts or the kit to find a rule. If a message is unclear, grep `lint.md` for its words.
+- **Write once, edit small.** Write `lesson.yaml` and `make_data.py` once. Fix them with edits that change only the lines at fault. Never rewrite a scene or a file through a script. Never re-read your own `lesson.yaml` whole: grep for the scene you need.
+- **Check in parts.** Check the scenes you changed with `check.py --slides 4-7`. Check the whole lesson once, at the end.
+- **Look at every scene, once per change.** In the first review round, open the contact sheet, then each scene's still (`snaps/desktop-NN.png`). After a fix, open only the stills of the scenes you changed. Never reopen a still that has not changed. Some faults show only when you look, so do not skip this to save tokens.
+- Let expressions compute numbers: `{{xbar|2}}` costs fewer tokens than a typed number, and it cannot drift. Never paste the lesson, the HTML or the check log into chat.
+- **One lesson per chat in a series.** After the Remember step, end your reply with: "Start the next lesson in a new chat with: next lesson." `memory.py show` gives the new chat what it needs.
 
 ## Files
 | File | Read it when |
 |---|---|
-| `lesson.md` | steps 2 and 6: the beats, the teaching moves, voice, pacing, series, the review |
-| `board.md` | step 4: how a scene is laid out, every board field and item, plane marks, runs and toggles |
-| `adv.md` | only when the user says "adv": the probe's depth question, the picture plan, the idea table, the storyboard |
-| `lint.md` | after a build error: what each lint and check message means, and its fix |
+| `lesson.md` | steps 2 and 6, whole: the beats, the teaching moves, voice, pacing, series, the review |
+| `board.md` | step 4: how a scene is laid out, steps, controls, YAML gotchas; under Items, only the items you draw (`docs.py board.md <item>`) |
+| `adv.md` | only when the user says "adv": §1–8 (the probe's depth question, the picture plan, the idea table, the storyboard), then one figure's section when you draw it |
+| `lint.md` | after a build error, by grep for the message's words: what each lint and check message means, and its fix |
 | `examples/board-gallery/` | every plain board item in one full lesson (variance of six cells; adv figures: `adv.md`), with `make_data.py` and `verify_data.py` |
 | `examples/home/cells.json` | what a home table looks like |
 | `examples/pca-1-what/`, `pca-2-how/`, `pca-3-why/` | a three-part series on one home table: each part's `next` scene feeding the next part's `problem`, and a think stop that reaches back |
-| `D/spec.md` | a deck visual's fields (chart, dist, stat, parts, flow, image), the expression functions, number formats |
+| `D/spec.md` | by section (`docs.py ../deck/spec.md expressions`): a deck visual's fields (chart, dist, stat, parts, flow, image), the expression functions, number formats |
 Read the examples for patterns. If the user asks for an example's topic, build it fresh on the learner's own table: never copy an example's beats, scenes or numbers.
 For one long illustrated page the learner scrolls, use the sibling `sketch` skill (`C/../sketch`).

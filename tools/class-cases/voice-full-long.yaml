@@ -1,6 +1,6 @@
 # expect: has a sentence of 27 words (≤ 24)
 # expect: joins two thoughts with “;”
-# expect: has 54 words (≤ 50 in the full voice)
+# expect: has 111 words (≤ 100 in the full voice)
 # C10l voice: the full voice writes more sentences, not longer ones, and never joins them with ";".
 title: Full voice limits
 question: What does the full voice still forbid?
@@ -14,4 +14,4 @@ slides:
     steps:
       - say: We add every cell's level and then we divide the total by the number of cells in the column so that one number can stand for all.
       - say: The sum grows with every cell; the mean does not.
-      - say: We add each level. We count the cells. We divide the sum by the count. That is the mean. It is one number. It stands for the column. A big cell pulls it up. A small cell pulls it down. So the mean moves toward outliers. The median does not move much at all.
+      - say: We add each level. We count the cells. We divide the sum by the count. That is the mean. It is one number. It stands for the column. A big cell pulls it up. A small cell pulls it down. So the mean moves toward outliers. The median does not move much at all. We call that pull the mean's sensitivity to outliers. A single far cell can drag it a long way. The median only looks at the middle cell. So one far cell barely moves it. That is why people report both. Each one tells a different part of the story. Together they show the centre and the pull.

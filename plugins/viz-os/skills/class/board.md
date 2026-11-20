@@ -105,11 +105,11 @@ steps:
 ```
 | Field | What it does |
 |---|---|
-| `say` | one teacher line for this step, at most 14 words. In the full voice (`learner.voice: full`), 2 or 3 sentences, at most 50 words, each sentence at most 24 |
-| `why` | the reason for this step, drawn in grey at the end of its `say`, at most 12 words (full voice: one sentence, 24). Say why we do it or what it lets us do next, not what it does. A step that adds a `calc`, `col` or `assemble` needs one (a `calc`'s own `why` counts) |
+| `say` | one teacher line for this step, at most 14 words. In the full voice (`learner.voice: full`), several sentences, at most 100 words, each sentence at most 24 |
+| `why` | the reason for this step, drawn in grey at the end of its `say`, at most 12 words (full voice: 48, each sentence at most 24). Say why we do it or what it lets us do next, not what it does. A step that adds a `calc`, `col` or `assemble` needs one (a `calc`'s own `why` counts) |
 | `add` | one item, or a list of items, written with this step |
 | `mark` | lights a table row, column, cell or item while this step is lit (see Marks) |
-| `think` | a pause-and-think stop: `{q, a}`, the question at most 14 words, the answer at most 18 (full voice: 24 and 40). The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer. Add `transfer: <field>` (at most 6 words) to make it the lesson's transfer stop, tagged **Elsewhere** with the field named before the question: one a lesson, in its last third (`lesson.md`, move 21) |
+| `think` | a pause-and-think stop: `{q, a}`, the question at most 14 words, the answer at most 18 (full voice: 48 and 80). The question shows with a Show answer button, after `say` if there is one. The answer takes no room until pressed. What the step adds, even to a figure or a table, waits behind the answer. Add `transfer: <field>` (at most 6 words) to make it the lesson's transfer stop, tagged **Elsewhere** with the field named before the question: one a lesson, in its last third (`lesson.md`, move 21) |
 | `frame` | the run frame this step shows (see Controls) |
 | `more` | extra reading for this step: `{ask, answer, sources}`, a closed fold after what the step writes (see Extra reading) |
 | `refresh` | the `id` of a refresher scene at the end; the step shows that scene's `ask` and a **Refresher ▸** link under its line (see Refreshers) |
@@ -226,7 +226,7 @@ Each name shows its symbol in its colour, its value now and its `short` name; it
 add: {note: 'The means are ==s1:{{mA|1}}== and ==s2:{{mB|1}}==, but B is **{{ratio|1}}×** as variable as A.'}
 add: {note: {text: '**The update:** $w_j \leftarrow w_j + \eta\, y\, x_j$', side: true, id: rule}}
 ```
-A string, or `{text, side, id}`. At most 16 words (full voice: 30); the board is not for paragraphs.
+A string, or `{text, side, id}`. At most 16 words (full voice: 60); the board is not for paragraphs.
 
 ### `compare`: two cases side by side, in words
 ```yaml

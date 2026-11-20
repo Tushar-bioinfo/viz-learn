@@ -1,0 +1,26 @@
+# expect: `==T cell:T cells==`: a link key has no spaces
+# expect: not: `==ratio: 3 to 1==`: a link key has no spaces
+# Token study (17 Nov): a link key with a space before the colon printed as raw text, and only a look at the boards caught it.
+title: A point and two directions, linked by a spaced key
+question: Where does a point land on the plane of two directions?
+answer: At the foot of the drop that meets the plane at a right angle.
+data: {u: [1, 0, 0.2], v: [0.2, 1, 0], q: [0.5, 0.6, 0.9]}
+symbols:
+  u: {tex: '\vec{u}', says: the first direction, short: direction u, kind: vector, color: s1, fmt: 1}
+  v: {tex: '\vec{v}', says: the second direction, short: direction v, kind: vector, color: s2, fmt: 1}
+slides:
+  - type: title
+  - type: board
+    beat: picture
+    title: A drop onto a plane
+    lead: Two directions span a plane; a point drops onto it.
+    steps:
+      - say: 'The ==T cell:T cells== sit above ==u==, at a ==ratio: 3 to 1==.'
+        add:
+          - space:
+              axes: [x, y, z]
+              marks:
+                - {vector: u, label: u}
+                - {point: q, ring: true, label: point, says: the point}
+                - {foot: {from: q, onto: u}, label: drop, says: the shortest way to the line}
+      - say: The ==point== and its ==drop==.

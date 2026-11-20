@@ -136,7 +136,7 @@
     return out; };
   // all math on the page comes through here, the deck's matrix cards too
   const renderTex = L.renderTex;
-  L.renderTex = (el, tex, display) => { const ok = renderTex(el, paint(tex), display); const B = bookOf();
+  L.renderTex = (el, tex, display) => { el.dataset.tex = tex; const ok = renderTex(el, paint(tex), display); const B = bookOf();
     if (B) el.querySelectorAll('.sy').forEach(e => { const x = B.S[[...e.classList].find(c => c.startsWith('sy-')).slice(3)]; if (x) e.style.color = col(x.color); });
     if (B) el.querySelectorAll('.lt, .mt').forEach(tg => { const sym = B.S[termOf(tg)]; if (!sym || !sym.says) return;   // a formula's term, or \mat's brackets: one term with its card
       tg.classList.add('vt', 'says'); tg.tabIndex = 0; glow(tg, hue(sym.color)); tg.setAttribute('aria-description', L.plain(String(sym.says))); pauseButton(); });
@@ -241,6 +241,8 @@
     const c = colorOf([...sp.classList].find(x => x.startsWith('lt-')).slice(3)); if (c) { sp.classList.add('tc'); sp.style.setProperty('--tc', c); } });
   // a worked line takes its full size if it fits, else it drops until it does, down to the floor. Every part keeps one size, so the line stays even
   const FLOOR = 20, wideOf = m => Math.max(0, ...[...m.querySelectorAll('.katex')].filter(k => !k.closest('.wkey')).map(k => k.getBoundingClientRect().width));
+  // the box a formula must fit: its step, or the nearest box above it when the step is `display: contents` (a figure's first step, see board.css)
+  const formulaBox = m => { let e = m.closest('.st, .asm'); while (e && getComputedStyle(e).display === 'contents') e = e.parentElement; return e; };
   const fitMath = ms => { ms.forEach(m => { m.style.fontSize = ''; }); const k = Math.min(1, ...ms.map(m => { const w = wideOf(m); return w && m.clientWidth ? m.clientWidth / w : 1; }));
     if (k < 1) ms.forEach(m => { m.style.fontSize = Math.max(FLOOR, Math.floor(parseFloat(getComputedStyle(m).fontSize) * k * 2) / 2) + 'px'; }); };
   // ---------- plane: one scale for both axes, so a slope and a right angle look like what they are ----------
@@ -2601,7 +2603,11 @@
         node.querySelectorAll('table.t td').forEach(c => { if (parseFloat(getComputedStyle(c).fontSize) < 18) out.push('a table cell renders under 18px'); });
         vis.forEach(V => out.push(...V.audit())); figs.forEach(fg => fg.O && out.push(...fg.O.audit()));
         root.querySelectorAll('.approx').length && out.push('a worked line does not add up by hand at the rounding shown (it reads ≈): give its inputs a finer fmt');
-        root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = m.closest('.st, .asm'); if (kx && box && kx.getBoundingClientRect().right > box.getBoundingClientRect().right + 2) out.push(`a formula is wider than its box at ${FLOOR}px: shorten it or split the line`); });
+        // a formula too wide for its box: name its TeX (renderTex keeps it on the element) and how far it sticks out
+        root.querySelectorAll('.fline .math, .asm .math, .cline .part').forEach(m => { const kx = m.querySelector('.katex'), box = formulaBox(m); if (!kx || !box) return;
+          const over = kx.getBoundingClientRect().right - box.getBoundingClientRect().right; if (over <= 2) return;
+          const tex = (m.dataset.tex || kx.textContent || '').replace(/\\htmlClass\{[^{}]*\}/g, '').replace(/\s+/g, ' ').trim();   // the term colour markup (\htmlClass) goes, so the snippet reads as the source
+          out.push(`a formula is wider than its box at ${FLOOR}px by ${Math.round(over)}px: “${tex.slice(0, 60)}${tex.length > 60 ? '…' : ''}”: shorten it or split the line`); });
         out.push(...clash, ...pclash, ...ctlBad);
         return out;
       },

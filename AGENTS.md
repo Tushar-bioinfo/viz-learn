@@ -18,6 +18,7 @@ Read the learner profile once; then only the task-specific row. `plugins/viz-os/
 | `docs/map.yaml` | where we stand: each block's status; `python3 tools/block_map.py --check` draws it as `out/map/index.html` |
 | `docs/todo-draw-math.md` | the user says "work on our to-do list": do the first change not `done`, one per session, following its "How we work" |
 | `docs/c10-visuals.md` | the user says "work on C10…": an advanced-visuals block, with its state and who does what |
+| `docs/inefficiencies.md` | you change what a building agent reads, checks or looks at, or a build costs too much |
 | `docs/release.md` | you bump the version, add an agent harness, commit, or push |
 
 ## Rules

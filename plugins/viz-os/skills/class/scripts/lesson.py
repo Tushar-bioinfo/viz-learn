@@ -2,6 +2,7 @@
 """Build a viz-os class lesson: lesson.yaml -> one self-contained lesson.html, after a lint pass.
 
 Usage: lesson.py path/to/lesson.yaml [-o lesson.html] [--katex-dir DIR] [--quiet]
+       lesson.py --limits   (print every count and word limit the lint enforces; no lesson needed)
 
 A lesson is a deck file with `board` scenes in it. This script runs the deck's own build.py (from the sibling
 `deck` skill) with the board kit and the lesson rules added, so every deck rule and check still applies.
@@ -15,6 +16,7 @@ DECK = CLASS.parent / "deck"
 KIT = CLASS / "kit"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lesson_lint import EXPRS, FMT, adv_only, as_list, items_of, make_lint  # noqa: E402
+import lesson_lint as LL  # noqa: E402
 import product  # noqa: E402
 import hands  # noqa: E402
 import strip  # noqa: E402
@@ -196,11 +198,53 @@ def build(path, out=None, katex_dir=None, quiet=False):
     return B.build(path, out, katex_dir, quiet, ext=ext(B))
 
 
+def print_limits():
+    """Every count and word limit the lint enforces, read from its constants (lesson_lint.py; build.py for the legend limits),
+    so each number has one source. The full voice (`learner.voice: full`) lets a line run to several sentences."""
+    B, L = deck_build(), LL
+    full = L.FULL
+    lines = [
+        "lesson limits, read from lesson_lint.py and the deck's build.py (`learner.voice`: short by default, or full)",
+        f"full voice: each sentence {L.LINE_WORDS} words at most, on top of the line total shown after `full`",
+        f"say (teacher line): {L.SAY_WORDS} words short, {full['say']} full",
+        f"why (step reason, grey): {L.WHY_WORDS} words short, {full['why']} full",
+        f"think question: {L.SAY_WORDS} words short, {full['think q']} full",
+        f"think answer: {L.ANSWER_WORDS} words short, {full['think a']} full",
+        f"note: {L.NOTE_WORDS} words short, {full['note']} full",
+        f"item say (a calc, eqn, assemble or params label): {L.SAY_WORDS} words, both voices",
+        f"more: the ask (the fold's label) {L.SAY_WORDS} words; all its reading {L.FOLD_WORDS} words (both voices)",
+        f"refresher ask: {L.SAY_WORDS} words",
+        f"transfer (the field's name): {L.TRANSFER_WORDS} words",
+        f"term (a card's foot): {L.TERM_WORDS} words",
+        f"short (a card's name): {L.SHORT_WORDS} words",
+        f"legend label or name on a plot: {B.LEGEND_WORDS} words (deck)",
+        f"legend entries on one plane, space or chart: {B.LEGEND_MAX} at most (deck)",
+        f"formula terms: {L.TERMS_MOST} at most",
+        f"scenes: {L.SCENES[0]} to {L.SCENES[1]}, not counting the title",
+        f"steps in one scene: {L.STEP_CAP} at most",
+        f"think stop: a warning after {L.THINK_GAP} steps in a row with none",
+        f"depth (scenes one idea may fill): {L.DEPTH} by default, 1 to 6 (learner.depth)",
+        f"chance ruler: {L.CHANCE_MOST} noise steps at most",
+        f"number format: decimals 0 to {L.FMT_MOST}",
+        f"beads: {L.BEADS_ROWS[0]} to {L.BEADS_ROWS[1]} rows; {L.BEADS_WHOLE[0]} to {L.BEADS_WHOLE[1]} beads a ring",
+        f"recorder: {L.RECORDER_ROWS[0]} to {L.RECORDER_ROWS[1]} readings; trace name {L.RECORDER_WORDS} words",
+        f"wheel: {L.WHEEL_GROUPS} groups at most; group name {L.WHEEL_NAME} characters",
+        f"pileup: {L.PILEUP_ROWS[0]} to {L.PILEUP_ROWS[1]} rows; run name {L.PILEUP_WORDS} words",
+    ]
+    print("\n".join(lines))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("lesson")
+    ap.add_argument("lesson", nargs="?")
     ap.add_argument("-o", "--out")
     ap.add_argument("--katex-dir", help="folder with katex.min.js, katex.min.css and fonts/ to inline (offline lessons)")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--limits", action="store_true", help="print every count and word limit the lint enforces, then exit")
     a = ap.parse_args()
+    if a.limits:
+        print_limits()
+        sys.exit(0)
+    if not a.lesson:
+        ap.error("a lesson.yaml path is needed (or --limits)")
     sys.exit(build(a.lesson, a.out, a.katex_dir, a.quiet))

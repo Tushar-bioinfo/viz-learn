@@ -10,6 +10,7 @@ Start with [AGENTS.md](../AGENTS.md) for the goal and rules and [learner.md](lea
 | "Work on C10…" | [c10-visuals.md](c10-visuals.md): block, dependencies and State now; use draw-math's How we work |
 | New C10 planner | [c10-handoff.md](c10-handoff.md): the user's wishes, sources, who to delegate cheap work to; then the block's rows in [c10-plan-v2.md](c10-plan-v2.md), the design |
 | Open problems | [backlog.md](backlog.md): routes to class, deck/shared and sketch details |
+| Token cost of a build | [inefficiencies.md](inefficiencies.md): the waste found, what was fixed, good practice; measure with `tools/session_cost.py` |
 | Checks for this change | [testing.md](testing.md): choose the applicable section; setup is §4 |
 | Release or explicit UPDATE | [release.md](release.md) / [update.md](update.md); no release is implied by ordinary work |
 

@@ -85,6 +85,9 @@ def lint_controls(Lx, where, s, steps):
                 Lx.err(where, f"control `{c.get('name')}`: `every` is seconds per frame when playing, 0.3 to 10")
         if "toggle" in c and not (isinstance(c["toggle"], list) and len(c["toggle"]) == 2 and all(isinstance(x, str) for x in c["toggle"])):
             Lx.err(where, f"control `{c.get('name')}`: `toggle` is two labels, [off, on]: the name is 0 for the first and 1 for the second")
+        # check.py writes a slider's `value` into its page script as it is: a name there is read as a variable and crashes the check
+        if "run" not in c and "toggle" not in c and c.get("value") is not None and (isinstance(c["value"], bool) or not isinstance(c["value"], (int, float))):
+            Lx.err(where, f"control `{c.get('name')}`: `value` is where the slider starts, a number like 0.3; a name is not read here")
     if len(runs) > 1:
         Lx.err(where, "one run per scene: Next stops on its frames, so two would fight")
     framed = [st for st in steps if isinstance(st, dict) and "frame" in st]
@@ -515,8 +518,8 @@ def lint_formula(B, Lx, w, f, kind, names, symbols):
     # a bracket object (a matrix, or \mat{NAME}) reads as one term, however many [name] tags it holds
     rest, objs = bracket_objects(str(f["tex"]))
     count = len(set(TERM.findall(rest))) + objs
-    if count > 5:
-        Lx.warn(w, f"{count} terms: more than 5 is a wall; build the formula over two scenes")
+    if count > TERMS_MOST:
+        Lx.warn(w, f"{count} terms: more than {TERMS_MOST} is a wall; build the formula over two scenes")
     if kind != "assemble":
         return
     plug = f.get("plug")
@@ -1566,12 +1569,13 @@ SAY_WORDS, NOTE_WORDS, ANSWER_WORDS = 14, 16, 18   # a lesson's limits: a say or
 WHY_WORDS = 12                   # a step's reason, in grey at the end of its line
 OPS = ("calc", "col", "assemble")
 FOLD_WORDS = 160                 # a step's extra reading, all paragraphs together   # items that compute: their step says why (a step `why`, or a calc's own `why`)
-# learner.voice: `short` (the default) keeps the limits above; `full` lets a line run to 2 or 3 sentences, each one breath
+# learner.voice: `short` (the default) keeps the limits above; `full` lets a line run to several sentences (a say up to 100 words), each one breath
 VOICES = ("short", "full")
-FULL = {"say": 50, "why": 24, "think q": 24, "think a": 40, "note": 30}   # by field; an item's `say` is a card label and keeps SAY_WORDS
+FULL = {"say": 100, "why": 48, "think q": 48, "think a": 80, "note": 60}   # by field; an item's `say` is a card label and keeps SAY_WORDS
 SENTENCE = re.compile(r"(?<=[.?!])\s+(?=[A-Z0-9${(\"“'‘])")
 PLAIN = {"a", "A", "I", "an", "as", "at", "be", "by", "do", "go", "if", "in", "is", "it", "no", "of", "on", "or", "so", "to", "up", "us", "we"}   # short symbol names that are also words
 STEP_CAP, THINK_GAP = 10, 6      # steps in one scene; steps in a row with no think stop
+TERMS_MOST = 5                   # a formula's terms (a bracket object counts as one): more is a wall
 SCENES = (8, 14)
 CARDS = (5, 8)
 # keys whose text the learner reads; a number typed here goes stale when the data changes
@@ -1810,6 +1814,10 @@ def lint_links(Lx, deck, data=None):
                 pre = inner.split(":")[0].strip() if re.match(r"^[\w-]+:", inner) else None
                 t = pre or inner.strip()
                 w = f"{where} step {j}" if j else where
+                # a key with a space before the colon (==T cell:T cells==) is no link and no colour: the page prints it as typed
+                if pre is None and (sp := re.match(r"^([^:=]*\s[^:=]*):(?=\S)", inner)):
+                    Lx.warn(w, f"`=={inner}==`: a link key has no spaces, so the page shows “{inner}” as typed: link a mark by its `id` (==c1:{inner.split(':', 1)[1]}==), or write plain ==words==")
+                    continue
                 if t in elsewhere and elsewhere[t] != i:
                     Lx.err(w, f"`=={inner}==` names a mark on slide {elsewhere[t] + 1}, not on this scene: a word links only to its own scene's figure; name a mark here, or reword it")
                 elif len(t.split()) <= 2 and (hit := next((k for k in keys if near(t, k)), None)):
@@ -1865,7 +1873,7 @@ def voice_of(Lx, deck):
     learner = deck.get("learner") if isinstance(deck.get("learner"), dict) else {}
     v = learner.get("voice", "short")
     if v not in VOICES:
-        Lx.err("learner", f"`voice: {v!r}` is `short` (lines inside the word limits, the default) or `full` (2 or 3 short sentences a line)")
+        Lx.err("learner", f"`voice: {v!r}` is `short` (lines inside the word limits, the default) or `full` (several short sentences a line)")
         return "short"
     return v
 

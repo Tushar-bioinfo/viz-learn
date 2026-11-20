@@ -1,6 +1,6 @@
 # The learner and their taste
 
-A biologist/bioinformatician who learns visually. Pictures carry the story. <!-- A: audience. -->
+A student in bioinformatics, digital pathology and cancer genomics who uses AI/ML and learns visually. Pictures carry the story. <!-- A: audience. -->
 
 ## Learning
 - Concrete example before the general rule. Draw matrices/vectors and dot products: which rows/columns are read, and the shape made. Name notation, assumptions, distribution parameters, formula origins and relatives. Explain why beside each step; ask predictions. <!-- A: audience; T: change 9. -->
