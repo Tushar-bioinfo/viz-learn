@@ -299,6 +299,7 @@
       const gw = pw, gh = ph, ox = m.l, oy = m.t, shape = (own[1] - own[0]) / (own[3] - own[2]);                     // the shape limit reads the author's ranges
       if (!p.fill && (shape < .6 || shape > 1.8)) R.issues.push(`a plane is ${shape.toFixed(2)} wide per 1 tall: its width over height must stay between 0.6 and 1.8, so change its x and y ranges or the spacing of what it shows`);
       const sx = x => ox + (x - box[0]) * ux, sy = y => oy + gh - (y - box[2]) * uy;
+      const pxSide = mk => (mk.pixel === true ? 1 : Number(mk.pixel)) * Math.min(ux, uy);   // a `pixel` square's side in screen px
       R.unit = [ux, uy];
       const grid = sv('g', { class: 'pgrid' }, svg);
       const short = Math.min(box[1] - box[0], box[3] - box[2]), tx = niceStep(p.fill ? box[1] - box[0] : short), ty = niceStep(p.fill ? box[3] - box[2] : short);
@@ -341,7 +342,7 @@
       const key = (mk, c, kind, st) => { if (mk.label) legend.push({ text: mk.label, c, kind, st, mk }); };   // `name` sits beside the mark, `label` in the legend: a mark may have both
       // dots, named points and lines first, so every name placed after them clears them
       list(p.marks).forEach(mk => { const where = `slide ${ctx.index + 1} plane`; if (mk.when != null && !num(mk.when, where)) return;
-        if (mk.points) list(L.val(mk.points.from, ctx.scope, where)).forEach(r => dots.push([sx(r[mk.points.x]), sy(r[mk.points.y])]));
+        if (mk.points) { const pr = mk.pixel ? pxSide(mk) * 0.71 : null; list(L.val(mk.points.from, ctx.scope, where)).forEach(r => dots.push(pr ? [sx(r[mk.points.x]), sy(r[mk.points.y]), pr] : [sx(r[mk.points.x]), sy(r[mk.points.y])])); }
         if (mk.point) { const [x, y] = pt(mk.point, where); dots.push(mk.centre ? [sx(x), sy(y), 17] : [sx(x), sy(y)]); }
         if (mk.ring) { const [x, y] = pt(mk.ring, where); dots.push([sx(x), sy(y), 23]); }
         const L2 = mk.line ? clipLine(pt(mk.line, where), box) : mk.segment ? list(mk.segment).map(q => pt(q, where)) : null;
@@ -388,6 +389,7 @@
           seg(sg[0], sg[1], g, c, mk.dash); key(mk, c, mk.dash ? 'dash' : 'line', st);
         } else if (mk.points) {
           const P = mk.points, rows = list(L.val(P.from, ctx.scope, where)), colors = P.colors || {};
+          if (mk.pixel) g.classList.add('px');   // a true-colour image: it never steps back or brightens (board.css)
           // with rgb, each dot takes its own row's colour (r, g, b are row keys, like x and y), so there is no colour key
           // the mark's own name and label must fit every dot; the first dot a word misses is reported
           const seen = new Set(), whole = (j, own, who) => trueCheck(i, own.hex, own.lv, [['name', mk.name], ['label', mk.label]].filter(([w, t]) => t != null && wrongWords(t, own.hex || '#000').length && !seen.has(w) && seen.add(w)), st, j, who);
@@ -396,7 +398,9 @@
             const own = mk.rgb != null ? rgbOf(mk.rgb, x, y, L.scope(ctx.scope, r), where, i, r, j, who) : { hex: colors[gk] && colors[gk].color || colors[gk] || mk.color || 'mist', lv: null };   // plain dots are neutral: s1 is a series colour, and a legend may give it a meaning
             if (P.label) trueCheck(i, own.hex, own.lv, [['dot', r[P.label]]], st, j);
             if (HEX.test(own.hex || '')) whole(j, own, who ?? `row ${j + 1}`);
-            sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${col(own.hex)}` }, g); });
+            // `pixel`: a square of the plane's own size (one unit, or the given side) with a hairline gap, so an image's pixels can be counted
+            if (mk.pixel) { const sd = pxSide(mk), h = sd / 2 - Math.min(1, sd * 0.04); sv('rect', { x: sx(x) - h, y: sy(y) - h, width: 2 * h, height: 2 * h, style: `fill:${col(own.hex)}` }, g); }
+            else sv('circle', { cx: sx(x), cy: sy(y), r: 10, style: `fill:${col(own.hex)}` }, g); });
           if (P.label) rows.forEach(r => name(r[P.label], sx(r[P.x]), sy(r[P.y]), g));
           if (mk.rgb == null) Object.entries(colors).forEach(([k, v]) => { const hx = v && v.color || v; trueCheck(i, hx, null, [['label', (v && v.label) || k]], st); legend.push({ text: (v && v.label) || k, c: col(hx), kind: 'dot', st }); });
         } else if (mk.point) {

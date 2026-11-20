@@ -105,7 +105,7 @@ PLANE = {"points": "{from, x, y, by, label, colors}", "shade": "[w0, w1, w2]", "
          "square": "[[x1, y1], [x2, y2]]", "text": "a label (and at: [x, y])", "ring": "[x, y]", "quarters": "[cx, cy]"}
 
 
-MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "term", "dash", "when", "side", "from", "at", "id", "centre"}   # what every mark may also take (board.md)
+MARK_FIELDS = {"step", "color", "rgb", "label", "name", "says", "term", "dash", "when", "side", "from", "at", "id", "centre", "pixel"}   # what every mark may also take (board.md)
 # legend limits and word counts (a {{number}}, $maths$ or `code` is one word) come from the deck: B.LEGEND_WORDS,
 # B.LEGEND_MAX, B.name_words
 
@@ -154,6 +154,8 @@ def lint_plane(B, Lx, w, pl, names):
                       + ("; it looks like the end of a sentence: a comma inside an unquoted `{ }` value splits it, so quote that value" if prose else ""))
         if "centre" in mk and (k != "point" or mk["centre"] is not True):
             Lx.err(w, f"plane mark {i + 1}: `centre: true` goes on a `point` (a centre drawn as a ring with a cross, never like a data dot)")
+        if "pixel" in mk and (k != "points" or not (mk["pixel"] is True or (isinstance(mk["pixel"], (int, float)) and not isinstance(mk["pixel"], bool) and mk["pixel"] > 0))):
+            Lx.err(w, f"plane mark {i + 1}: `pixel` goes on `points`, as `true` (a square one unit wide) or a side above 0: it draws each row as an image pixel")
         if pl.get("fill") and k in ("vector", "foot", "square"):
             Lx.err(w, f"a plane with `fill` stretches its axes, so a `{k}` would not read true: delete `fill`, or drop the mark")
         if mk.get("when") is not None:
