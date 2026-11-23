@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 import json
+import os
 import subprocess
 from pathlib import Path
 from unittest.mock import patch
@@ -334,13 +335,58 @@ class HarnessTests(unittest.TestCase):
             (root / 'skills/deck/extra').write_text('extra')
             self.assertEqual(harnesses.inspect('Codex', 'candidate', self.expected)['state'], 'stale')
 
-    def test_t3_retains_unrelated_shared_skills(self):
-        profile = self.home / '.t3/userdata/providers/antigravity/id/antigravity-cli'
-        self.package(profile)
-        (profile / 'skills/.viz-os-install.json').write_text('{}')
-        (profile / 'skills/other').mkdir()
+    def test_t3_verifies_config_plugin_symlink_and_preserves_other_customizations(self):
+        agy_pkg = self.home / '.gemini/config/plugins/viz-os'
+        self.package(agy_pkg)
+        profile = self.home / '.t3/userdata/providers/antigravity/id/config'
+        (profile / 'skills/other').mkdir(parents=True)
         (profile / 'skills/other/SKILL.md').write_text('do not delete')
+        (profile / 'plugins/other').mkdir(parents=True)
+        (profile / 'plugins/other/plugin.json').write_text('{"name": "other"}')
+        self.assertEqual(harnesses.inspect('T3', 'candidate', self.expected)['state'], 'stale')
+        (profile / 'plugins/viz-os').symlink_to(agy_pkg)
         self.assertEqual(harnesses.inspect('T3', 'candidate', self.expected)['state'], 'files verified')
+        (profile / 'config.json').write_text(json.dumps({'plugins': {'viz-os': {'enabled': False}}}))
+        self.assertEqual(harnesses.inspect('T3', 'candidate', self.expected)['state'], 'disabled')
+        (profile / 'config.json').unlink()
+        (profile / 'plugins/viz-os').unlink()
+        (profile / 'plugins/viz-os').mkdir()
+        self.assertEqual(harnesses.inspect('T3', 'candidate', self.expected)['state'], 'blocked')
+
+    def test_install_t3_agy_links_only_viz_os_and_refuses_unowned(self):
+        agy_pkg = self.home / '.gemini/config/plugins/viz-os'
+        (agy_pkg / 'plugin.json').parent.mkdir(parents=True, exist_ok=True)
+        (agy_pkg / 'plugin.json').write_text('{"name": "viz-os"}')
+        for name in ('class', 'deck', 'sketch'):
+            (agy_pkg / 'skills' / name).mkdir(parents=True)
+            (agy_pkg / 'skills' / name / 'SKILL.md').write_text(f'# {name}\n')
+        other_plugin = self.home / '.gemini/config/plugins/other-disabled'
+        other_plugin.mkdir(parents=True)
+        (other_plugin / 'plugin.json').write_text('{"name": "other-disabled"}')
+        profile = self.home / '.t3/userdata/providers/antigravity/id/config'
+        (profile / 'skills/other').mkdir(parents=True)
+        (profile / 'skills/other/SKILL.md').write_text('do not delete')
+
+        script = Path(__file__).resolve().parent / 'install_t3_agy.sh'
+        env = {**os.environ, 'HOME': str(self.home)}
+        first = subprocess.run(['bash', str(script)], env=env, capture_output=True, text=True)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        link = profile / 'plugins/viz-os'
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(link.resolve(), agy_pkg.resolve())
+        self.assertFalse((profile / 'plugins/other-disabled').exists())
+        self.assertEqual((profile / 'skills/other/SKILL.md').read_text(), 'do not delete')
+
+        second = subprocess.run(['bash', str(script)], env=env, capture_output=True, text=True)
+        self.assertEqual(second.returncode, 0, second.stderr)
+
+        link.unlink()
+        link.mkdir()
+        sentinel = link / 'custom.txt'
+        sentinel.write_text('keep me')
+        blocked = subprocess.run(['bash', str(script)], env=env, capture_output=True, text=True)
+        self.assertNotEqual(blocked.returncode, 0)
+        self.assertEqual(sentinel.read_text(), 'keep me')
 
     def test_missing_cli_with_existing_installation_is_blocked(self):
         (self.home / '.codex/plugins').mkdir(parents=True)

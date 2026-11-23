@@ -52,12 +52,27 @@ def inspect(label, sha, expected, log=None):
     state = {'target': label, 'state': 'absent', 'runtime': 'not tested'}
     version = u.plugin_version(sha)
     if label == 'T3':
-        profiles = sorted((HOME / '.t3/userdata/providers/antigravity').glob('*/antigravity-cli'))
+        profiles = [p for p in sorted((HOME / '.t3/userdata/providers/antigravity').glob('*/config'))
+                    if p.is_dir() and not p.is_symlink()]
         if not profiles:
             return state
-        skills = {k: v for k, v in expected.items() if k.startswith('skills/')}
-        ok = all((p / 'skills/.viz-os-install.json').is_file() and not any(
-            u.compare_skills(skills, p, names=('class', 'deck', 'sketch'))) for p in profiles)
+        agy_pkg = (HOME / '.gemini/config/plugins/viz-os').resolve()
+        disabled = False
+        for p in profiles:
+            cfg = u.load(p / 'config.json')
+            if cfg.get('plugins', {}).get('viz-os', {}).get('enabled') is False:
+                disabled = True
+            plugins_dir = p / 'plugins'
+            if plugins_dir.is_symlink() or (plugins_dir.exists() and not plugins_dir.is_dir()):
+                return dict(state, state='blocked', detail='unsafe plugins path')
+            link = plugins_dir / 'viz-os'
+            if link.exists() or link.is_symlink():
+                if not link.is_symlink() or link.resolve() != agy_pkg:
+                    return dict(state, state='blocked', detail='unowned viz-os path in T3 profile')
+        if disabled:
+            return dict(state, state='disabled', detail='preserved; enable explicitly in T3 config.json if wanted')
+        ok = (all((p / 'plugins/viz-os').is_symlink() and (p / 'plugins/viz-os').resolve() == agy_pkg for p in profiles)
+              and agy_pkg.is_dir() and matches(expected, agy_pkg))
         return dict(state, state='files verified' if ok else 'stale', detail=f'{len(profiles)} profile(s); provider runtime unknown')
     if not shutil.which(CLIS[label]):
         # Existing manager files without a working CLI are a failure, not an absent target.
